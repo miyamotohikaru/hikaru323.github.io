@@ -7,9 +7,9 @@ import Link from "next/link";
 interface LookupData {
   exists: boolean;
   word: string;
-  reading: string;
-  partOfSpeech: string;
-  definition: string;
+  reading?: string;
+  partOfSpeech?: string;
+  definition?: string;
   note?: string;
   etymology?: string;
   examples?: string[];
@@ -49,9 +49,9 @@ export default function LookupResult({ result }: LookupResultProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           word: result.word,
-          reading: result.reading,
-          partOfSpeech: result.partOfSpeech,
-          definition: result.definition,
+          reading: result.reading || "",
+          partOfSpeech: result.partOfSpeech || "名詞",
+          definition: result.definition || "",
           etymology: result.etymology || "",
           examples: result.examples || [],
           synonyms: result.synonyms || "",
@@ -94,18 +94,7 @@ export default function LookupResult({ result }: LookupResultProps) {
         <div className="rejection-card">
           <div className="rejection-header">
             <span className="rejection-word">{result.word}</span>
-            <span className="rejection-reading">{result.reading}</span>
-            <span className="rejection-pos">{result.partOfSpeech}</span>
           </div>
-          <div className="rejection-definition">
-            <span className="rejection-label">正式な意味</span>
-            <p>{result.definition}</p>
-          </div>
-          {result.note && (
-            <div className="rejection-note">
-              <p>{result.note}</p>
-            </div>
-          )}
           <div className="rejection-footer">
             <p>この言葉はすでに世の中に存在しております。</p>
             <p>当辞典は、まだこの世に存在しない言葉のみを収録しております。</p>
@@ -115,24 +104,28 @@ export default function LookupResult({ result }: LookupResultProps) {
     );
   }
 
-  // ===== 存在しない言葉 → 辞書エントリ生成 =====
+  // ===== 存在しない言葉 → 辞書エントリ表示 =====
   return (
     <div className="lookup-result lookup-accepted fade-in">
       <div className="accepted-stamp">新語発見</div>
       <div className="accepted-card">
         <div className="word-header">
           <h2 className="word-title">{result.word}</h2>
-          <div>
-            <span className="word-reading">{result.reading}</span>
-            <span className="word-pos">{result.partOfSpeech}</span>
-          </div>
+          {(result.reading || result.partOfSpeech) && (
+            <div>
+              {result.reading && <span className="word-reading">{result.reading}</span>}
+              {result.partOfSpeech && <span className="word-pos">{result.partOfSpeech}</span>}
+            </div>
+          )}
         </div>
 
         <div className="word-body">
-          <div className="word-section">
-            <div className="section-label">意味</div>
-            <p className="word-definition">{result.definition}</p>
-          </div>
+          {result.definition && (
+            <div className="word-section">
+              <div className="section-label">意味</div>
+              <p className="word-definition">{result.definition}</p>
+            </div>
+          )}
 
           {result.etymology && (
             <div className="word-section">
@@ -156,6 +149,13 @@ export default function LookupResult({ result }: LookupResultProps) {
             <div className="word-section">
               <div className="section-label">類義語</div>
               <p className="word-etymology">{result.synonyms}</p>
+            </div>
+          )}
+
+          {result.note && (
+            <div className="word-section">
+              <div className="section-label">備考</div>
+              <p className="word-etymology">{result.note}</p>
             </div>
           )}
         </div>

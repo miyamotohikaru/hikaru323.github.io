@@ -10,9 +10,9 @@ import { WordEntry } from "@/lib/types";
 interface LookupData {
   exists: boolean;
   word: string;
-  reading: string;
-  partOfSpeech: string;
-  definition: string;
+  reading?: string;
+  partOfSpeech?: string;
+  definition?: string;
   note?: string;
   etymology?: string;
   examples?: string[];
