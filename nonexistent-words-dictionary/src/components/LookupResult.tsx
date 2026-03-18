@@ -121,10 +121,6 @@ export default function LookupResult({ result }: LookupResultProps) {
       <div className="accepted-card">
         <div className="word-header">
           <h2 className="word-title">{result.word}</h2>
-          <div>
-            {reading && <span className="word-reading">{reading}</span>}
-            {result.partOfSpeech && <span className="word-pos">{result.partOfSpeech}</span>}
-          </div>
         </div>
 
         <div className="word-body">
@@ -132,38 +128,6 @@ export default function LookupResult({ result }: LookupResultProps) {
             <div className="word-section">
               <div className="section-label">意味</div>
               <p className="word-definition">{result.definition}</p>
-            </div>
-          )}
-
-          {result.etymology && (
-            <div className="word-section">
-              <div className="section-label">語源</div>
-              <p className="word-etymology">{result.etymology}</p>
-            </div>
-          )}
-
-          {result.examples && result.examples.length > 0 && (
-            <div className="word-section">
-              <div className="section-label">用例</div>
-              <ul className="word-examples">
-                {result.examples.map((ex, i) => (
-                  <li key={i} className="word-example">{ex}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {result.synonyms && (
-            <div className="word-section">
-              <div className="section-label">類義語</div>
-              <p className="word-etymology">{result.synonyms}</p>
-            </div>
-          )}
-
-          {result.note && (
-            <div className="word-section">
-              <div className="section-label">備考</div>
-              <p className="word-etymology">{result.note}</p>
             </div>
           )}
         </div>
