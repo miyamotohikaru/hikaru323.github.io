@@ -76,7 +76,16 @@ export default function RootLayout({
           </div>
         </header>
         <div className="page-wrapper">
-          {children}
+          <div className="book-container">
+            <div className="book-inner">
+              {children}
+            </div>
+            <div className="book-corner" />
+            <div className="book-edge-marker" style={{ top: "15%" }} />
+            <div className="book-edge-marker" style={{ top: "35%" }} />
+            <div className="book-edge-marker" style={{ top: "55%" }} />
+            <div className="book-edge-marker" style={{ top: "75%" }} />
+          </div>
         </div>
         <footer className="site-footer">
           <div className="footer-inner">
