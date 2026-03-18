@@ -1484,30 +1484,27 @@ a:hover {
   padding: 1rem 0;
 }
 
-/* ===== Like Button ===== */
+/* ===== Like Button (X / Twitter style) ===== */
 .like-button {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.15rem;
   background: transparent;
-  border: 1px solid var(--border-color);
-  padding: 0.5rem 1rem;
-  border-radius: 2px;
+  border: none;
+  padding: 0.4rem 0.6rem;
   color: var(--text-secondary);
   font-family: var(--font-body);
-  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s;
 }
 
 .like-button:hover:not(:disabled) {
-  border-color: var(--accent-gold-dim);
-  color: var(--accent-gold);
+  color: #e0245e;
 }
 
 .like-button.liked {
-  border-color: var(--accent-gold-dim);
-  color: var(--accent-gold);
+  color: #e0245e;
 }
 
 .like-button:disabled {
@@ -1515,11 +1512,30 @@ a:hover {
 }
 
 .like-heart {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.like-button:hover:not(:disabled) .like-heart {
+  transform: scale(1.2);
+}
+
+.like-pop .like-heart {
+  animation: like-pop-anim 0.4s ease;
+}
+
+@keyframes like-pop-anim {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.4); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
 }
 
 .like-count {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  min-height: 1.1em;
+  line-height: 1;
 }
 
 /* ===== Share Buttons ===== */
