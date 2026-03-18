@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, getFieldValue } from "@/lib/firebase";
+import { getDb, getFieldValue, useInMemoryStore } from "@/lib/firebase";
+import { addWord, findByWord, listWords } from "@/lib/in-memory-store";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { checkAllFieldsForNG } from "@/lib/ng-words";
 
 const HIRAGANA_REGEX = /^[ぁ-ゖー]+$/;
+
+// Firebaseが使えるか事前チェック（初回のみ）
+let _firebaseAvailable: boolean | null = null;
+async function isFirebaseAvailable(): Promise<boolean> {
+  if (_firebaseAvailable !== null) return _firebaseAvailable;
+  try {
+    await getDb();
+    _firebaseAvailable = true;
+  } catch {
+    _firebaseAvailable = false;
+  }
+  return _firebaseAvailable;
+}
 
 export async function POST(request: NextRequest) {
   const ip =
@@ -72,45 +86,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "不適切な表現が含まれています。" }, { status: 400 });
     }
 
-    const db = await getDb();
-    const FieldValue = await getFieldValue();
+    const firebaseOk = await isFirebaseAvailable();
 
-    // Duplicate check
-    const existing = await db
-      .collection("words")
-      .where("word", "==", word)
-      .limit(1)
-      .get();
+    if (firebaseOk) {
+      // === Firebase モード ===
+      const db = await getDb();
+      const FieldValue = await getFieldValue();
 
-    if (!existing.empty) {
-      const existingDoc = existing.docs[0];
-      return NextResponse.json(
-        {
-          error: "この言葉はすでに掲載されています。",
-          existingId: existingDoc.id,
-        },
-        { status: 409 }
-      );
+      const existing = await db
+        .collection("words")
+        .where("word", "==", word)
+        .limit(1)
+        .get();
+
+      if (!existing.empty) {
+        const existingDoc = existing.docs[0];
+        return NextResponse.json(
+          { error: "この言葉はすでに掲載されています。", existingId: existingDoc.id },
+          { status: 409 }
+        );
+      }
+
+      const docRef = await db.collection("words").add({
+        word, reading, partOfSpeech, definition, etymology,
+        examples, synonyms, nickname,
+        likes: 0, viewCount: 0, isVisible: true, source: "user",
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+      return NextResponse.json({ success: true, id: docRef.id });
+    } else {
+      // === インメモリモード（Firebase未設定時） ===
+      const existing = findByWord(word);
+      if (existing) {
+        return NextResponse.json(
+          { error: "この言葉はすでに掲載されています。", existingId: existing.id },
+          { status: 409 }
+        );
+      }
+
+      const { id } = addWord({
+        word, reading, partOfSpeech, definition, etymology,
+        examples, synonyms, nickname,
+        likes: 0, viewCount: 0, isVisible: true, source: "user",
+      });
+
+      return NextResponse.json({ success: true, id });
     }
-
-    // Save to Firestore
-    const docRef = await db.collection("words").add({
-      word,
-      reading,
-      partOfSpeech,
-      definition,
-      etymology,
-      examples,
-      synonyms,
-      nickname,
-      likes: 0,
-      viewCount: 0,
-      isVisible: true,
-      source: "user",
-      createdAt: FieldValue.serverTimestamp(),
-    });
-
-    return NextResponse.json({ success: true, id: docRef.id });
   } catch (error) {
     console.error("Word submission error:", error);
     return NextResponse.json(
@@ -128,42 +150,49 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
     const cursor = searchParams.get("cursor");
 
-    const db = await getDb();
+    const firebaseOk = await isFirebaseAvailable();
 
-    let query = db.collection("words").where("isVisible", "==", true);
+    if (firebaseOk) {
+      const db = await getDb();
+      let query = db.collection("words").where("isVisible", "==", true);
 
-    if (kana) {
-      const nextChar = String.fromCharCode(kana.charCodeAt(0) + 1);
-      query = query.where("reading", ">=", kana).where("reading", "<", nextChar);
-    }
+      if (kana) {
+        const nextChar = String.fromCharCode(kana.charCodeAt(0) + 1);
+        query = query.where("reading", ">=", kana).where("reading", "<", nextChar);
+      }
 
-    if (sort === "popular") {
-      query = query.orderBy("likes", "desc");
-    } else {
-      if (!kana) {
-        query = query.orderBy("createdAt", "desc");
+      if (sort === "popular") {
+        query = query.orderBy("likes", "desc");
       } else {
-        query = query.orderBy("reading", "asc");
+        if (!kana) {
+          query = query.orderBy("createdAt", "desc");
+        } else {
+          query = query.orderBy("reading", "asc");
+        }
       }
-    }
 
-    query = query.limit(limit);
+      query = query.limit(limit);
 
-    if (cursor) {
-      const cursorDoc = await db.collection("words").doc(cursor).get();
-      if (cursorDoc.exists) {
-        query = query.startAfter(cursorDoc);
+      if (cursor) {
+        const cursorDoc = await db.collection("words").doc(cursor).get();
+        if (cursorDoc.exists) {
+          query = query.startAfter(cursorDoc);
+        }
       }
+
+      const snapshot = await query.get();
+      const words = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
+      }));
+
+      return NextResponse.json({ words });
+    } else {
+      // インメモリモード
+      const words = listWords({ kana, sort, limit, cursor });
+      return NextResponse.json({ words });
     }
-
-    const snapshot = await query.get();
-    const words = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
-    }));
-
-    return NextResponse.json({ words });
   } catch (error) {
     console.error("Words fetch error:", error);
     return NextResponse.json(
