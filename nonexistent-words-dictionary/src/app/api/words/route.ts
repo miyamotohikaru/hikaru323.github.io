@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
     request.headers.get("x-real-ip") ||
     "unknown";
 
-  if (!checkRateLimit(ip, 1)) {
+  if (!checkRateLimit(ip, 5)) {
     return NextResponse.json(
-      { error: "投稿は1分間に1回までです。少々お待ちください。" },
+      { error: "しばらくお待ちください。" },
       { status: 429 }
     );
   }
