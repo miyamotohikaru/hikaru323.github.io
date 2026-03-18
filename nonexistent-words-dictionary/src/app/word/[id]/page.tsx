@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 import { Metadata } from "next";
 import WordDetailClient from "./WordDetailClient";
 import { WordEntry } from "@/lib/types";
@@ -9,6 +9,7 @@ interface PageProps {
 
 async function getWord(id: string): Promise<WordEntry | null> {
   try {
+    const db = await getDb();
     const doc = await db.collection("words").doc(id).get();
     if (!doc.exists || !doc.data()?.isVisible) return null;
     const data = doc.data()!;
@@ -35,6 +36,7 @@ async function getWord(id: string): Promise<WordEntry | null> {
 
 async function getRelatedWords(word: WordEntry): Promise<WordEntry[]> {
   try {
+    const db = await getDb();
     const snapshot = await db
       .collection("words")
       .where("isVisible", "==", true)

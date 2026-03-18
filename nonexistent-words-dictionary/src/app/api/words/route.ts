@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
+import { getDb, getFieldValue } from "@/lib/firebase";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { checkAllFieldsForNG } from "@/lib/ng-words";
-import { FieldValue } from "firebase-admin/firestore";
 
 const HIRAGANA_REGEX = /^[ぁ-ゖー]+$/;
 
@@ -73,6 +72,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "不適切な表現が含まれています。" }, { status: 400 });
     }
 
+    const db = await getDb();
+    const FieldValue = await getFieldValue();
+
     // Duplicate check
     const existing = await db
       .collection("words")
@@ -125,6 +127,8 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get("sort") || "newest";
     const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
     const cursor = searchParams.get("cursor");
+
+    const db = await getDb();
 
     let query = db.collection("words").where("isVisible", "==", true);
 

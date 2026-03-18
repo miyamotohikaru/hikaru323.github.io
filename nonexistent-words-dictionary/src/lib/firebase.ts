@@ -1,7 +1,13 @@
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import type { Firestore, FieldValue as FieldValueType } from "firebase-admin/firestore";
 
-function getFirebaseAdmin() {
+let _db: Firestore | null = null;
+
+export async function getDb(): Promise<Firestore> {
+  if (_db) return _db;
+
+  const { initializeApp, getApps, cert } = await import("firebase-admin/app");
+  const { getFirestore } = await import("firebase-admin/firestore");
+
   if (getApps().length === 0) {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -12,14 +18,17 @@ function getFirebaseAdmin() {
         credential: cert({ projectId, clientEmail, privateKey }),
       });
     } else if (projectId) {
-      // For environments with default credentials (e.g., Vercel with Firebase integration)
       initializeApp({ projectId });
     } else {
-      // Fallback: initialize without credentials for development
       initializeApp({ projectId: "demo-project" });
     }
   }
-  return getFirestore();
+
+  _db = getFirestore();
+  return _db;
 }
 
-export const db = getFirebaseAdmin();
+export async function getFieldValue(): Promise<typeof FieldValueType> {
+  const { FieldValue } = await import("firebase-admin/firestore");
+  return FieldValue;
+}

@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 
 export const runtime = "nodejs";
 
@@ -11,6 +11,7 @@ export async function GET(
   const { id } = await params;
 
   try {
+    const db = await getDb();
     const doc = await db.collection("words").doc(id).get();
     if (!doc.exists) {
       return new Response("Not found", { status: 404 });

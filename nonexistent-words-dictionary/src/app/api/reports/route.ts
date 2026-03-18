@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import { getDb, getFieldValue } from "@/lib/firebase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +10,9 @@ export async function POST(request: NextRequest) {
     if (!wordId) {
       return NextResponse.json({ error: "wordIdが必要です。" }, { status: 400 });
     }
+
+    const db = await getDb();
+    const FieldValue = await getFieldValue();
 
     // Check if the word exists
     const wordDoc = await db.collection("words").doc(wordId).get();

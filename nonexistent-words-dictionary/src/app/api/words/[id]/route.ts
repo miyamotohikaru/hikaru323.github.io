@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import { getDb, getFieldValue } from "@/lib/firebase";
 
 export async function GET(
   _request: NextRequest,
@@ -8,6 +7,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const db = await getDb();
+    const FieldValue = await getFieldValue();
     const docRef = db.collection("words").doc(id);
     const doc = await docRef.get();
 
