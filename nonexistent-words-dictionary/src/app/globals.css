@@ -215,24 +215,28 @@ a:hover {
 /* ===== Hero ===== */
 .hero {
   text-align: center;
-  padding: 4rem 0 3rem;
+  padding: 2rem 0 1.5rem;
+  transition: padding 0.4s ease;
+}
+
+/* Initial state: search bar centered in the book */
+.hero-centered {
+  padding: 8rem 0 6rem;
+}
+
+.hero-centered .site-title {
+  font-size: 2rem;
+  margin-bottom: 2rem;
 }
 
 .site-title {
   font-family: var(--font-heading);
-  font-size: 2.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: 0.15em;
-  margin-bottom: 0.75rem;
-}
-
-.site-subtitle {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  margin-bottom: 2.5rem;
-  letter-spacing: 0.08em;
-  line-height: 1.8;
+  margin-bottom: 1rem;
+  transition: font-size 0.4s ease, margin-bottom 0.4s ease;
 }
 
 /* ===== Lookup Form (Dictionary Search) ===== */
@@ -1492,11 +1496,19 @@ a:hover {
   }
 
   .hero {
-    padding: 2rem 0 1.5rem;
+    padding: 1.5rem 0 1rem;
+  }
+
+  .hero-centered {
+    padding: 5rem 0 3rem;
+  }
+
+  .hero-centered .site-title {
+    font-size: 1.5rem;
   }
 
   .site-title {
-    font-size: 1.8rem;
+    font-size: 1.3rem;
   }
 
   .rejection-card,
@@ -1599,7 +1611,11 @@ a:hover {
   }
 
   .site-title {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
+  }
+
+  .hero-centered {
+    padding: 4rem 0 2rem;
   }
 
   .header-inner {

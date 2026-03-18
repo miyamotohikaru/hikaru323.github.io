@@ -25,6 +25,7 @@ export default function Home() {
   const [totalCount, setTotalCount] = useState(0);
   const [lookupResult, setLookupResult] = useState<LookupData | null>(null);
   const [isLooking, setIsLooking] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     fetch("/api/words?sort=newest&limit=10")
@@ -44,18 +45,25 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
+  const handleResult = (result: LookupData) => {
+    setLookupResult(result);
+    setHasSearched(true);
+  };
+
+  const handleClear = () => {
+    setLookupResult(null);
+    setHasSearched(false);
+  };
+
   return (
     <main className="main-content">
-      <div className="hero">
+      {/* Initial: centered search bar only */}
+      <div className={`hero ${!hasSearched && !isLooking ? "hero-centered" : ""}`}>
         <h1 className="site-title">存在しない言葉辞典</h1>
-        <p className="site-subtitle">
-          この辞典に載っている言葉は、まだこの世に存在しません。<br />
-          言葉を引いてみてください。
-        </p>
         <SearchForm
-          onResult={(result) => setLookupResult(result)}
+          onResult={handleResult}
           onLoading={(loading) => setIsLooking(loading)}
-          onClear={() => setLookupResult(null)}
+          onClear={handleClear}
         />
       </div>
 
@@ -76,16 +84,16 @@ export default function Home() {
         <LookupResult result={lookupResult} />
       )}
 
-      {/* Today's Word */}
-      {!lookupResult && !isLooking && todayWord && (
+      {/* Today's Word - only before first search */}
+      {!hasSearched && !isLooking && todayWord && (
         <section className="section">
           <h2 className="section-title">今日の一語</h2>
           <WordCard entry={todayWord} />
         </section>
       )}
 
-      {/* Recent Words */}
-      {!lookupResult && !isLooking && recentWords.length > 0 && (
+      {/* Recent Words - only before first search */}
+      {!hasSearched && !isLooking && recentWords.length > 0 && (
         <section className="section">
           <h2 className="section-title">みんなが最近つくった言葉</h2>
           <div className="word-grid">
