@@ -1,0 +1,12 @@
+{
+  "name": "hikaru323.github.io",
+  "version": "1.0.0",
+  "description": "宮本ひかるのポートフォリオサイト",
+  "scripts": {
+    "dev": "live-server",
+    "start": "live-server"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
