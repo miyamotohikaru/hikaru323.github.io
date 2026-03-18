@@ -1,0 +1,104 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { GOJUON_ROWS } from "@/lib/types";
+import { WordEntry } from "@/lib/types";
+
+type WordWithId = WordEntry & { id: string };
+
+export default function GojuonPage() {
+  const [selectedRow, setSelectedRow] = useState(0);
+  const [selectedKana, setSelectedKana] = useState("あ");
+  const [words, setWords] = useState<WordWithId[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchWords = useCallback(async (kana: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/words?kana=${encodeURIComponent(kana)}`);
+      const data = await res.json();
+      setWords(data.words || []);
+    } catch {
+      setWords([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchWords(selectedKana);
+  }, [selectedKana, fetchWords]);
+
+  const handleRowClick = (rowIndex: number) => {
+    setSelectedRow(rowIndex);
+    setSelectedKana(GOJUON_ROWS[rowIndex].kana[0]);
+  };
+
+  const handleKanaClick = (kana: string) => {
+    setSelectedKana(kana);
+  };
+
+  return (
+    <main className="main-content">
+      <div className="gojuon-header">
+        <Link href="/" className="back-link">
+          ← 辞典に戻る
+        </Link>
+        <h1 className="page-title">五十音一覧</h1>
+        <p className="page-subtitle">登録された造語を五十音順でお引きいただけます。</p>
+      </div>
+
+      <div className="gojuon-layout">
+        <nav className="gojuon-nav">
+          <div className="row-tabs">
+            {GOJUON_ROWS.map((row, i) => (
+              <button
+                key={row.label}
+                className={`row-tab ${selectedRow === i ? "active" : ""}`}
+                onClick={() => handleRowClick(i)}
+              >
+                {row.label}
+              </button>
+            ))}
+          </div>
+          <div className="kana-tabs">
+            {GOJUON_ROWS[selectedRow].kana.map((k) => (
+              <button
+                key={k}
+                className={`kana-tab ${selectedKana === k ? "active" : ""}`}
+                onClick={() => handleKanaClick(k)}
+              >
+                {k}
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        <div className="gojuon-content">
+          <h2 className="kana-heading">「{selectedKana}」</h2>
+          {loading ? (
+            <p className="loading-text">読み込み中…</p>
+          ) : words.length === 0 ? (
+            <p className="empty-text">
+              「{selectedKana}」で始まる言葉はまだ登録されていません。
+            </p>
+          ) : (
+            <ul className="word-list">
+              {words.map((word) => (
+                <li key={word.id} className="word-list-item">
+                  <Link href={`/word/${word.id}`} className="word-list-link">
+                    <span className="word-list-word">{word.word}</span>
+                    <span className="word-list-reading">【{word.reading}】</span>
+                    <span className="word-list-pos">{word.partOfSpeech}</span>
+                    <p className="word-list-def">{word.definition}</p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
