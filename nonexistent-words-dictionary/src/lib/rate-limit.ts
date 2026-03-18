@@ -3,16 +3,16 @@ const rateMap = new Map<string, number[]>();
 const WINDOW_MS = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 5;
 
-export function checkRateLimit(ip: string): boolean {
+export function checkRateLimit(key: string, maxRequests = MAX_REQUESTS): boolean {
   const now = Date.now();
-  const timestamps = rateMap.get(ip) || [];
+  const timestamps = rateMap.get(key) || [];
   const recent = timestamps.filter((t) => now - t < WINDOW_MS);
 
-  if (recent.length >= MAX_REQUESTS) {
+  if (recent.length >= maxRequests) {
     return false;
   }
 
   recent.push(now);
-  rateMap.set(ip, recent);
+  rateMap.set(key, recent);
   return true;
 }

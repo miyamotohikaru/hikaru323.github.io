@@ -1,5 +1,5 @@
 export interface WordEntry {
-  id?: string;
+  id: string;
   word: string;
   reading: string;
   partOfSpeech: string;
@@ -7,28 +7,36 @@ export interface WordEntry {
   etymology: string;
   examples: string[];
   synonyms: string;
-  notes: string;
-  createdAt?: Date;
+  nickname: string;
+  likes: number;
+  viewCount: number;
+  isVisible: boolean;
+  source: "user" | "ai";
+  createdAt?: string | null;
 }
 
-export interface ExistsResponse {
-  exists: true;
-  word: string;
-}
-
-export interface NotExistsResponse {
-  exists: false;
+export interface WordFormData {
   word: string;
   reading: string;
   partOfSpeech: string;
   definition: string;
-  etymology: string;
-  examples: string[];
-  synonyms: string;
-  notes: string;
+  etymology?: string;
+  examples?: string[];
+  synonyms?: string;
+  nickname: string;
 }
 
-export type LookupResponse = ExistsResponse | NotExistsResponse;
+export const PARTS_OF_SPEECH = [
+  "名詞",
+  "動詞",
+  "形容詞",
+  "形容動詞",
+  "副詞",
+  "感動詞",
+  "連体詞",
+  "接続詞",
+  "その他",
+] as const;
 
 export const GOJUON_ROWS = [
   { label: "あ行", kana: ["あ", "い", "う", "え", "お"] },

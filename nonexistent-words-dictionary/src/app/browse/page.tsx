@@ -2,15 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { GOJUON_ROWS } from "@/lib/types";
-import { WordEntry } from "@/lib/types";
+import { GOJUON_ROWS, WordEntry } from "@/lib/types";
+import AdSense from "@/components/AdSense";
 
-type WordWithId = WordEntry & { id: string };
-
-export default function GojuonPage() {
+export default function BrowsePage() {
   const [selectedRow, setSelectedRow] = useState(0);
   const [selectedKana, setSelectedKana] = useState("あ");
-  const [words, setWords] = useState<WordWithId[]>([]);
+  const [words, setWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchWords = useCallback(async (kana: string) => {
@@ -46,7 +44,10 @@ export default function GojuonPage() {
           ← 辞典に戻る
         </Link>
         <h1 className="page-title">五十音一覧</h1>
-        <p className="page-subtitle">登録された造語を五十音順でお引きいただけます。</p>
+        <p className="page-subtitle">
+          登録された造語を五十音順でお引きいただけます。<br />
+          辞典が段々埋まっていく様子をお楽しみください。
+        </p>
       </div>
 
       <div className="gojuon-layout">
@@ -81,21 +82,25 @@ export default function GojuonPage() {
             <p className="loading-text">読み込み中…</p>
           ) : words.length === 0 ? (
             <p className="empty-text">
-              「{selectedKana}」で始まる言葉はまだ登録されていません。
+              「{selectedKana}」で始まる言葉はまだありません。<br />
+              あなたが最初の一語を投稿してみませんか？
             </p>
           ) : (
-            <ul className="word-list">
-              {words.map((word) => (
-                <li key={word.id} className="word-list-item">
-                  <Link href={`/word/${word.id}`} className="word-list-link">
-                    <span className="word-list-word">{word.word}</span>
-                    <span className="word-list-reading">【{word.reading}】</span>
-                    <span className="word-list-pos">{word.partOfSpeech}</span>
-                    <p className="word-list-def">{word.definition}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="word-list">
+                {words.map((word, index) => (
+                  <li key={word.id} className="word-list-item">
+                    <Link href={`/word/${word.id}`} className="word-list-link">
+                      <span className="word-list-word">{word.word}</span>
+                      <span className="word-list-reading">【{word.reading}】</span>
+                      <span className="word-list-pos">{word.partOfSpeech}</span>
+                      <p className="word-list-def">{word.definition}</p>
+                    </Link>
+                    {index === 9 && <AdSense slot="browse-feed" />}
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </div>
       </div>
