@@ -93,7 +93,8 @@ export default function SearchForm({ onResult, onLoading, onClear }: SearchFormP
           </button>
         </div>
         <p className="lookup-hint">
-          存在する言葉は丁重にお断りします。存在しない言葉だけが、この辞典に載ります。
+          存在しない言葉だけが、この辞典に載ります。<br />
+          <span className="lookup-hint-sub">※ 実在する言葉は掲載をお断りしております</span>
         </p>
       </form>
 

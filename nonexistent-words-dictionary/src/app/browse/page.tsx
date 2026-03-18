@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { GOJUON_ROWS, WordEntry } from "@/lib/types";
+import Bookshelf from "@/components/Bookshelf";
 import AdSense from "@/components/AdSense";
 
 export default function BrowsePage() {
@@ -46,7 +47,7 @@ export default function BrowsePage() {
         <h1 className="page-title">五十音一覧</h1>
         <p className="page-subtitle">
           登録された造語を五十音順でお引きいただけます。<br />
-          辞典が段々埋まっていく様子をお楽しみください。
+          背表紙をクリックすると本を取り出せます。
         </p>
       </div>
 
@@ -87,19 +88,8 @@ export default function BrowsePage() {
             </p>
           ) : (
             <>
-              <ul className="word-list">
-                {words.map((word, index) => (
-                  <li key={word.id} className="word-list-item">
-                    <Link href={`/word/${word.id}`} className="word-list-link">
-                      <span className="word-list-word">{word.word}</span>
-                      <span className="word-list-reading">【{word.reading}】</span>
-                      <span className="word-list-pos">{word.partOfSpeech}</span>
-                      <p className="word-list-def">{word.definition}</p>
-                    </Link>
-                    {index === 9 && <AdSense slot="browse-feed" />}
-                  </li>
-                ))}
-              </ul>
+              <Bookshelf words={words} />
+              {words.length > 9 && <AdSense slot="browse-feed" />}
             </>
           )}
         </div>

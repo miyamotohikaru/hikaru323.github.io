@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import SearchForm from "@/components/SearchForm";
 import LookupResult from "@/components/LookupResult";
-import WordCard from "@/components/WordCard";
+import Bookshelf from "@/components/Bookshelf";
 import AdSense from "@/components/AdSense";
 import { WordEntry } from "@/lib/types";
 
@@ -21,7 +21,6 @@ interface LookupData {
 
 export default function Home() {
   const [recentWords, setRecentWords] = useState<WordEntry[]>([]);
-  const [todayWord, setTodayWord] = useState<WordEntry | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [lookupResult, setLookupResult] = useState<LookupData | null>(null);
   const [isLooking, setIsLooking] = useState(false);
@@ -34,13 +33,6 @@ export default function Home() {
         const words = data.words || [];
         setRecentWords(words);
         setTotalCount(words.length);
-
-        if (words.length >= 10) {
-          const today = new Date();
-          const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-          const index = seed % words.length;
-          setTodayWord(words[index]);
-        }
       })
       .catch(() => {});
   }, []);
@@ -67,15 +59,18 @@ export default function Home() {
         />
       </div>
 
-      {/* Loading state */}
+      {/* Loading state - Page flip animation */}
       {isLooking && (
-        <div className="lookup-loading fade-in">
-          <div className="lookup-loading-book">
-            <div className="lookup-loading-page" />
-            <div className="lookup-loading-page" />
-            <div className="lookup-loading-page" />
+        <div className="page-flip-loading fade-in">
+          <div className="page-flip-book">
+            <div className="page-flip-cover-back" />
+            <div className="page-flip-page page-flip-page-1" />
+            <div className="page-flip-page page-flip-page-2" />
+            <div className="page-flip-page page-flip-page-3" />
+            <div className="page-flip-page page-flip-page-4" />
+            <div className="page-flip-cover-front" />
           </div>
-          <p className="lookup-loading-text">辞典をめくっています…</p>
+          <p className="page-flip-text">辞典をめくっています…</p>
         </div>
       )}
 
@@ -84,26 +79,12 @@ export default function Home() {
         <LookupResult result={lookupResult} />
       )}
 
-      {/* Today's Word - only before first search */}
-      {!hasSearched && !isLooking && todayWord && (
-        <section className="section">
-          <h2 className="section-title">今日の一語</h2>
-          <WordCard entry={todayWord} />
-        </section>
-      )}
-
-      {/* Recent Words - only before first search */}
+      {/* Recent Words as Bookshelf - only before first search */}
       {!hasSearched && !isLooking && recentWords.length > 0 && (
         <section className="section">
           <h2 className="section-title">みんなが最近つくった言葉</h2>
-          <div className="word-grid">
-            {recentWords.map((word, index) => (
-              <div key={word.id}>
-                <WordCard entry={word} compact />
-                {index === 4 && <AdSense slot="top-feed" />}
-              </div>
-            ))}
-          </div>
+          <Bookshelf words={recentWords} />
+          <AdSense slot="top-feed" />
           {totalCount >= 10 && (
             <p className="section-footer-text">
               現在 {totalCount} 語が掲載されています

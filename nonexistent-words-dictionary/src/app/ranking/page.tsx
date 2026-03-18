@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { WordEntry } from "@/lib/types";
+import Bookshelf from "@/components/Bookshelf";
 import AdSense from "@/components/AdSense";
 
 type Tab = "popular" | "newest";
@@ -52,30 +53,10 @@ export default function RankingPage() {
       ) : words.length === 0 ? (
         <p className="empty-text">まだ投稿がありません。</p>
       ) : (
-        <ol className="ranking-list">
-          {words.map((word, index) => (
-            <li key={word.id} className="ranking-item">
-              <Link href={`/word/${word.id}`} className="ranking-link">
-                <span className="ranking-rank">
-                  {activeTab === "popular" ? `${index + 1}.` : ""}
-                </span>
-                <div className="ranking-content">
-                  <div className="ranking-word-header">
-                    <span className="word-list-word">{word.word}</span>
-                    <span className="word-list-reading">【{word.reading}】</span>
-                    <span className="word-list-pos">{word.partOfSpeech}</span>
-                  </div>
-                  <p className="word-list-def">{word.definition}</p>
-                  <div className="ranking-meta">
-                    <span className="ranking-likes">♥ {word.likes}</span>
-                    <span className="ranking-nickname">{word.nickname}</span>
-                  </div>
-                </div>
-              </Link>
-              {index === 9 && <AdSense slot="ranking-feed" />}
-            </li>
-          ))}
-        </ol>
+        <>
+          <Bookshelf words={words} />
+          <AdSense slot="ranking-feed" />
+        </>
       )}
     </main>
   );

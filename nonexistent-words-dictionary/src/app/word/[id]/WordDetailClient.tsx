@@ -40,7 +40,9 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
         </Link>
       </div>
 
-      <WordCard entry={word} showLink={false} />
+      <div className="word-detail-book-open">
+        <WordCard entry={word} showLink={false} />
+      </div>
 
       <div className="word-actions">
         <LikeButton wordId={word.id} initialLikes={word.likes} />
