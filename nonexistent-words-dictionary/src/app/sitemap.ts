@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://fictionary.vercel.app";
@@ -13,6 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
+    const db = await getDb();
     const snapshot = await db
       .collection("words")
       .where("isVisible", "==", true)
