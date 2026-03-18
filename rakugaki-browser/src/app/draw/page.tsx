@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Canvas from "@/components/Canvas";
 import Toolbar from "@/components/Toolbar";
-import type { Point, Stroke, Tool } from "@/lib/types";
+import type { Point, Stroke, Tool, PenType } from "@/lib/types";
+import { saveDrawing } from "@/lib/storage";
 
 export default function DrawPage() {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
@@ -12,6 +13,9 @@ export default function DrawPage() {
   const [color, setColor] = useState("#ccff00");
   const [brushSize, setBrushSize] = useState(4);
   const [tool, setTool] = useState<Tool>("pen");
+  const [penType, setPenType] = useState<PenType>("pen");
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const drawingId = useRef(crypto.randomUUID());
 
   const handleStrokeStart = useCallback(() => {
     setCurrentStroke([]);
@@ -31,12 +35,13 @@ export default function DrawPage() {
         color: tool === "eraser" ? "eraser" : color,
         width: brushSize,
         timestamp: Date.now(),
+        penType: tool === "eraser" ? "pen" : penType,
       };
 
       setStrokes((s) => [...s, newStroke]);
       return [];
     });
-  }, [color, brushSize, tool]);
+  }, [color, brushSize, tool, penType]);
 
   const handleUndo = useCallback(() => {
     setStrokes((prev) => prev.slice(0, -1));
@@ -44,7 +49,56 @@ export default function DrawPage() {
 
   const handleClear = useCallback(() => {
     setStrokes([]);
+    drawingId.current = crypto.randomUUID();
   }, []);
+
+  const handleSave = useCallback(() => {
+    // Generate thumbnail from canvas
+    const canvas = document.querySelector("canvas");
+    if (!canvas) return;
+
+    // Create a smaller thumbnail
+    const thumbCanvas = document.createElement("canvas");
+    const thumbSize = 400;
+    thumbCanvas.width = thumbSize;
+    thumbCanvas.height = thumbSize;
+    const thumbCtx = thumbCanvas.getContext("2d");
+    if (!thumbCtx) return;
+
+    // Fill with dark background
+    thumbCtx.fillStyle = "#0a0a0a";
+    thumbCtx.fillRect(0, 0, thumbSize, thumbSize);
+
+    // Draw the canvas content scaled down
+    const scale = Math.min(
+      thumbSize / canvas.width,
+      thumbSize / canvas.height
+    );
+    const offsetX = (thumbSize - canvas.width * scale) / 2;
+    const offsetY = (thumbSize - canvas.height * scale) / 2;
+    thumbCtx.drawImage(
+      canvas,
+      offsetX,
+      offsetY,
+      canvas.width * scale,
+      canvas.height * scale
+    );
+
+    const thumbnail = thumbCanvas.toDataURL("image/webp", 0.7);
+    const now = Date.now();
+
+    saveDrawing({
+      id: drawingId.current,
+      strokes,
+      thumbnail,
+      title: `らくがき #${Math.floor(Math.random() * 9999)}`,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    setSaveMessage("保存しました！");
+    setTimeout(() => setSaveMessage(null), 2000);
+  }, [strokes]);
 
   return (
     <div className="relative w-screen h-screen bg-[#0a0a0a] overflow-hidden">
@@ -64,6 +118,13 @@ export default function DrawPage() {
         {strokes.length} ストローク
       </div>
 
+      {/* Save message toast */}
+      {saveMessage && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-neon text-black font-medium px-4 py-2 rounded-full text-sm animate-fade-in">
+          {saveMessage}
+        </div>
+      )}
+
       {/* Canvas */}
       <Canvas
         strokes={strokes}
@@ -71,6 +132,7 @@ export default function DrawPage() {
         color={color}
         brushSize={brushSize}
         tool={tool}
+        penType={penType}
         onStrokeStart={handleStrokeStart}
         onStrokePoint={handleStrokePoint}
         onStrokeEnd={handleStrokeEnd}
@@ -81,11 +143,15 @@ export default function DrawPage() {
         color={color}
         brushSize={brushSize}
         tool={tool}
+        penType={penType}
         onColorChange={setColor}
         onBrushSizeChange={setBrushSize}
         onToolChange={setTool}
+        onPenTypeChange={setPenType}
         onUndo={handleUndo}
         onClear={handleClear}
+        onSave={handleSave}
+        canSave={strokes.length > 0}
       />
     </div>
   );
