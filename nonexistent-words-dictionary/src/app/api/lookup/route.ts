@@ -3,6 +3,24 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { containsNGWord } from "@/lib/ng-words";
 import { existsInDictionary } from "@/lib/dictionary";
 
+// カタカナ→ひらがな変換
+function katakanaToHiragana(str: string): string {
+  return str.replace(/[\u30A1-\u30F6]/g, (ch) =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  );
+}
+
+// 簡易的な読み推定（漢字が含まれない場合のみ対応）
+function guessReading(word: string): string {
+  // すでにひらがなのみ
+  if (/^[ぁ-ゖー]+$/.test(word)) return word;
+  // カタカナ→ひらがな
+  const converted = katakanaToHiragana(word);
+  if (/^[ぁ-ゖー]+$/.test(converted)) return converted;
+  // 漢字混じり等は空で返す（フロントで入力してもらう）
+  return "";
+}
+
 export async function POST(request: NextRequest) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
@@ -41,20 +59,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const reading = guessReading(word);
+
     // 存在しない言葉 → 仮の定義を返す
     return NextResponse.json({
       exists: false,
       word,
-      reading: "",
+      reading,
       partOfSpeech: "名詞",
-      definition: "突然の幸運や予期せぬ収穫によって、一時的に浮き足立ち、普段の冷静さを失った状態。または、そのような状態にある人を指す。特に、思いがけない利益を得た直後の、落ち着きのない心理状態を表す。",
-      etymology: "江戸時代の商人言葉に由来するとされる。「富（とみ）」に「子（ご）」をつけた愛称形で、本来は「急に富を得た者」を意味した。転じて、宝くじや相場での思いがけない利益により、地に足がつかなくなった状態を揶揄する言葉として定着。明治期の落語にも「とみご気分」という表現が見られる。",
+      definition: `まだ誰にも定義されていない言葉。「${word}」という響きの中に、新しい概念が眠っている。意味はあなたが決めてください。`,
+      etymology: "",
       examples: [
-        "宝くじで十万円当たったばかりの彼は、完全にとみごになっていて、誰彼構わず奢ると言い出した。",
-        "株で儲けたからといってとみごになるな、来月には元の木阿弥かもしれないぞ。",
+        `「${word}」という言葉を聞いたとき、なぜか懐かしい気持ちになった。`,
       ],
-      synonyms: "浮かれ者、成金気分、調子乗り",
-      note: "やや古風な響きを持つ言葉で、現代では主に年配者が使用する。批判的なニュアンスを含むため、本人を前にしての使用は避けるべきである。",
+      synonyms: "",
+      note: "",
     });
   } catch (error) {
     console.error("Lookup error:", error);

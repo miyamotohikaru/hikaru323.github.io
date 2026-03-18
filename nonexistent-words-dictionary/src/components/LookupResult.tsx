@@ -23,6 +23,7 @@ interface LookupResultProps {
 export default function LookupResult({ result }: LookupResultProps) {
   const router = useRouter();
   const [nickname, setNickname] = useState("");
+  const [reading, setReading] = useState(result.reading || "");
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -34,9 +35,18 @@ export default function LookupResult({ result }: LookupResultProps) {
     if (saved) setNickname(saved);
   }, []);
 
+  useEffect(() => {
+    setReading(result.reading || "");
+  }, [result.reading]);
+
   const handleSave = async () => {
     if (!nickname.trim()) {
       setSaveError("掲載者名を入力してください。");
+      return;
+    }
+
+    if (!reading.trim()) {
+      setSaveError("読み（ひらがな）を入力してください。");
       return;
     }
 
@@ -49,7 +59,7 @@ export default function LookupResult({ result }: LookupResultProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           word: result.word,
-          reading: result.reading || "",
+          reading: reading.trim(),
           partOfSpeech: result.partOfSpeech || "名詞",
           definition: result.definition || "",
           etymology: result.etymology || "",
@@ -111,12 +121,10 @@ export default function LookupResult({ result }: LookupResultProps) {
       <div className="accepted-card">
         <div className="word-header">
           <h2 className="word-title">{result.word}</h2>
-          {(result.reading || result.partOfSpeech) && (
-            <div>
-              {result.reading && <span className="word-reading">{result.reading}</span>}
-              {result.partOfSpeech && <span className="word-pos">{result.partOfSpeech}</span>}
-            </div>
-          )}
+          <div>
+            {reading && <span className="word-reading">{reading}</span>}
+            {result.partOfSpeech && <span className="word-pos">{result.partOfSpeech}</span>}
+          </div>
         </div>
 
         <div className="word-body">
@@ -166,6 +174,19 @@ export default function LookupResult({ result }: LookupResultProps) {
             <div className="save-divider" />
             <p className="save-prompt">この言葉を辞典に掲載しますか？</p>
             <div className="save-form">
+              {!result.reading && (
+                <div className="save-nickname-wrapper">
+                  <label className="save-label">読み（ひらがな）</label>
+                  <input
+                    type="text"
+                    value={reading}
+                    onChange={(e) => setReading(e.target.value)}
+                    placeholder="よみがなを入力"
+                    className="save-nickname-input"
+                    maxLength={30}
+                  />
+                </div>
+              )}
               <div className="save-nickname-wrapper">
                 <label className="save-label">掲載者名</label>
                 <input
