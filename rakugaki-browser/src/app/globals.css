@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #141414;
+  --bg-card: #1a1a1a;
+  --text-primary: #e0e0e0;
+  --text-secondary: #888888;
+  --accent-neon: #ccff00;
+  --accent-neon-dim: #99cc00;
+  --border-color: #2a2a2a;
+}
+
+@theme inline {
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+  --color-neon: var(--accent-neon);
+  --color-neon-dim: var(--accent-neon-dim);
+  --color-card: var(--bg-card);
+  --color-border: var(--border-color);
+  --color-muted: var(--text-secondary);
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, monospace;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--accent-neon);
+  color: #000;
+}
