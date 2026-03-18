@@ -2,6 +2,7 @@
 
 import { WordEntry } from "@/lib/types";
 import Link from "next/link";
+import LikeButton from "@/components/LikeButton";
 
 interface WordCardProps {
   entry: WordEntry;
@@ -24,9 +25,11 @@ export default function WordCard({ entry, showLink = true, compact = false }: Wo
           </p>
           <div className="word-card-compact-footer">
             <span className="word-card-nickname">{entry.nickname}</span>
-            {entry.likes > 0 && <span className="word-card-likes">♥ {entry.likes}</span>}
           </div>
         </Link>
+        <div className="word-card-compact-like">
+          <LikeButton wordId={entry.id} initialLikes={entry.likes} />
+        </div>
       </article>
     );
   }

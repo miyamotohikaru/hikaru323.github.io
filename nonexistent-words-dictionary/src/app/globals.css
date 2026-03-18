@@ -1427,10 +1427,17 @@ a:hover {
 
 /* ===== Word Card Compact ===== */
 .word-card-compact {
+  position: relative;
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--accent-gold-dim);
   background-color: var(--bg-card);
   transition: background-color 0.2s;
+}
+
+.word-card-compact-like {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
 }
 
 .word-card-compact:hover {
