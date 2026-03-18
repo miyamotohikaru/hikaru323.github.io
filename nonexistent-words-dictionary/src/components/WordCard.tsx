@@ -16,8 +16,6 @@ export default function WordCard({ entry, showLink = true, compact = false }: Wo
         <Link href={`/word/${entry.id}`} className="word-card-compact-link">
           <div className="word-card-compact-header">
             <span className="word-list-word">{entry.word}</span>
-            <span className="word-list-reading">【{entry.reading}】</span>
-            <span className="word-list-pos">{entry.partOfSpeech}</span>
           </div>
           <p className="word-list-def">
             {entry.definition.length > 40
