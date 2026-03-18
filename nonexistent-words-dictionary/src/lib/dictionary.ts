@@ -138,19 +138,51 @@ const DICTIONARY_WORDS = new Set([
 ]);
 
 /**
- * 入力された言葉がローカル辞書に存在するか判定
+ * ローカル辞書で高速チェック（同期）
  */
-export function existsInDictionary(word: string): boolean {
-  // 完全一致
+function existsInLocalDictionary(word: string): boolean {
   if (DICTIONARY_WORDS.has(word)) return true;
-
-  // ひらがな/カタカナの揺れを考慮
   const hiragana = toHiragana(word);
   const katakana = toKatakana(word);
   if (DICTIONARY_WORDS.has(hiragana)) return true;
   if (DICTIONARY_WORDS.has(katakana)) return true;
-
   return false;
+}
+
+/**
+ * 日本語版Wiktionaryで単語の存在をチェック（非同期）
+ * ページが存在すれば実在する言葉と判定
+ */
+async function existsInWiktionary(word: string): Promise<boolean> {
+  try {
+    const url = `https://ja.wiktionary.org/w/api.php?action=query&titles=${encodeURIComponent(word)}&format=json&origin=*`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    if (!res.ok) return false;
+    const data = await res.json();
+    const pages = data?.query?.pages;
+    if (!pages) return false;
+    // ページが存在しない場合、IDが "-1" になる
+    return !Object.keys(pages).includes("-1");
+  } catch {
+    // API失敗時は安全側に倒す（存在しない扱い）
+    return false;
+  }
+}
+
+/**
+ * 入力された言葉が実在するか判定
+ * 1. ローカル辞書で高速チェック
+ * 2. Wiktionary APIで広範囲チェック
+ */
+export async function existsInDictionary(word: string): Promise<boolean> {
+  // ローカル辞書に一致 → 即座に実在判定
+  if (existsInLocalDictionary(word)) return true;
+
+  // 1文字のひらがな/カタカナは辞書に載っていても意味がないのでスキップ
+  if (word.length === 1) return false;
+
+  // Wiktionary APIでチェック
+  return existsInWiktionary(word);
 }
 
 /** カタカナ → ひらがな変換 */

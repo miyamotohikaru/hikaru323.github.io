@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "不適切な表現が含まれています。" }, { status: 400 });
     }
 
-    const exists = existsInDictionary(word);
+    const exists = await existsInDictionary(word);
 
     if (exists) {
       return NextResponse.json({
