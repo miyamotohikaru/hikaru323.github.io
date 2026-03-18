@@ -1,18 +1,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import SubmitForm from "@/components/SearchForm";
+import SearchForm from "@/components/SearchForm";
+import LookupResult from "@/components/LookupResult";
 import WordCard from "@/components/WordCard";
 import AdSense from "@/components/AdSense";
 import { WordEntry } from "@/lib/types";
+
+interface LookupData {
+  exists: boolean;
+  word: string;
+  reading: string;
+  partOfSpeech: string;
+  definition: string;
+  note?: string;
+  etymology?: string;
+  examples?: string[];
+  synonyms?: string;
+}
 
 export default function Home() {
   const [recentWords, setRecentWords] = useState<WordEntry[]>([]);
   const [todayWord, setTodayWord] = useState<WordEntry | null>(null);
   const [totalCount, setTotalCount] = useState(0);
+  const [lookupResult, setLookupResult] = useState<LookupData | null>(null);
+  const [isLooking, setIsLooking] = useState(false);
 
   useEffect(() => {
-    // Fetch recent words
     fetch("/api/words?sort=newest&limit=10")
       .then((res) => res.json())
       .then((data) => {
@@ -20,7 +34,6 @@ export default function Home() {
         setRecentWords(words);
         setTotalCount(words.length);
 
-        // Today's word: pick based on date seed if 10+ words
         if (words.length >= 10) {
           const today = new Date();
           const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
@@ -36,14 +49,35 @@ export default function Home() {
       <div className="hero">
         <h1 className="site-title">存在しない言葉辞典</h1>
         <p className="site-subtitle">
-          存在しない言葉だけを受け付ける辞書。<br />
-          あなたの造語で、空っぽの辞典を育ててください。
+          この辞典に載っている言葉は、まだこの世に存在しません。<br />
+          言葉を引いてみてください。
         </p>
-        <SubmitForm />
+        <SearchForm
+          onResult={(result) => setLookupResult(result)}
+          onLoading={(loading) => setIsLooking(loading)}
+          onClear={() => setLookupResult(null)}
+        />
       </div>
 
+      {/* Loading state */}
+      {isLooking && (
+        <div className="lookup-loading fade-in">
+          <div className="lookup-loading-book">
+            <div className="lookup-loading-page" />
+            <div className="lookup-loading-page" />
+            <div className="lookup-loading-page" />
+          </div>
+          <p className="lookup-loading-text">辞典をめくっています…</p>
+        </div>
+      )}
+
+      {/* Lookup Result */}
+      {!isLooking && lookupResult && (
+        <LookupResult result={lookupResult} />
+      )}
+
       {/* Today's Word */}
-      {todayWord && (
+      {!lookupResult && !isLooking && todayWord && (
         <section className="section">
           <h2 className="section-title">今日の一語</h2>
           <WordCard entry={todayWord} />
@@ -51,7 +85,7 @@ export default function Home() {
       )}
 
       {/* Recent Words */}
-      {recentWords.length > 0 && (
+      {!lookupResult && !isLooking && recentWords.length > 0 && (
         <section className="section">
           <h2 className="section-title">みんなが最近つくった言葉</h2>
           <div className="word-grid">

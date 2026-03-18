@@ -235,45 +235,357 @@ a:hover {
   line-height: 1.8;
 }
 
-/* ===== Submit Form ===== */
-.submit-form-container {
+/* ===== Lookup Form (Dictionary Search) ===== */
+.lookup-container {
   max-width: 560px;
   margin: 0 auto;
 }
 
-.submit-form {
+.lookup-form {
   width: 100%;
 }
 
-.search-input-wrapper {
+.lookup-input-wrapper {
   display: flex;
   border: 1px solid var(--border-light);
   border-radius: 2px;
   overflow: hidden;
   background-color: var(--bg-secondary);
-  transition: border-color 0.2s;
+  transition: border-color 0.3s;
 }
 
-.search-input-wrapper:focus-within {
+.lookup-input-wrapper:focus-within {
   border-color: var(--accent-gold-dim);
 }
 
-.search-input {
+.lookup-input {
   flex: 1;
   width: 100%;
-  padding: 0.9rem 1.2rem;
+  padding: 1rem 1.2rem;
   background: transparent;
   border: none;
   outline: none;
   color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 1rem;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  letter-spacing: 0.1em;
+}
+
+.lookup-input::placeholder {
+  color: var(--text-muted);
+  font-size: 0.95rem;
   letter-spacing: 0.05em;
 }
 
-.search-input::placeholder {
+.lookup-button {
+  padding: 1rem 1.8rem;
+  background-color: var(--accent-gold-dim);
+  border: none;
+  color: var(--bg-primary);
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.15em;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.lookup-button:hover:not(:disabled) {
+  background-color: var(--accent-gold);
+}
+
+.lookup-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lookup-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(20, 18, 16, 0.3);
+  border-top-color: var(--bg-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.lookup-hint {
+  font-size: 0.8rem;
   color: var(--text-muted);
+  margin-top: 0.75rem;
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+}
+
+/* ===== Lookup Loading ===== */
+.lookup-loading {
+  text-align: center;
+  padding: 3rem 0 2rem;
+}
+
+.lookup-loading-book {
+  display: inline-flex;
+  gap: 3px;
+  margin-bottom: 1rem;
+}
+
+.lookup-loading-page {
+  width: 4px;
+  height: 24px;
+  background-color: var(--accent-gold-dim);
+  opacity: 0.4;
+  animation: pageFlip 1.2s ease-in-out infinite;
+}
+
+.lookup-loading-page:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.lookup-loading-page:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes pageFlip {
+  0%, 100% { transform: scaleX(1); opacity: 0.3; }
+  50% { transform: scaleX(2.5); opacity: 0.8; }
+}
+
+.lookup-loading-text {
+  font-family: var(--font-heading);
   font-size: 0.9rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+/* ===== Lookup Result (Shared) ===== */
+.lookup-result {
+  margin-top: 2rem;
+}
+
+/* ===== Rejection (Real Word) ===== */
+.rejection-stamp {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: #c47a6a;
+  letter-spacing: 0.2em;
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.4rem 0;
+  border-top: 1px solid rgba(196, 122, 106, 0.2);
+  border-bottom: 1px solid rgba(196, 122, 106, 0.2);
+}
+
+.rejection-card {
+  border: 1px solid rgba(196, 122, 106, 0.15);
+  background-color: rgba(196, 122, 106, 0.03);
+  padding: 2rem 2.5rem;
+}
+
+.rejection-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(196, 122, 106, 0.1);
+}
+
+.rejection-word {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-right: 0.75rem;
+}
+
+.rejection-reading {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-right: 0.75rem;
+}
+
+.rejection-pos {
+  font-size: 0.8rem;
+  color: #c47a6a;
+  border: 1px solid rgba(196, 122, 106, 0.3);
+  padding: 0.15rem 0.5rem;
+}
+
+.rejection-definition {
+  margin-bottom: 1.5rem;
+}
+
+.rejection-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  color: rgba(196, 122, 106, 0.6);
+  letter-spacing: 0.15em;
+  margin-bottom: 0.4rem;
+}
+
+.rejection-definition p {
+  font-size: 1rem;
+  line-height: 1.9;
+  color: var(--text-primary);
+}
+
+.rejection-note {
+  padding: 1rem 1.2rem;
+  background-color: rgba(196, 122, 106, 0.05);
+  border-left: 2px solid rgba(196, 122, 106, 0.2);
+  margin-bottom: 1.5rem;
+}
+
+.rejection-note p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-style: italic;
+}
+
+.rejection-footer {
+  padding-top: 1rem;
+  border-top: 1px solid rgba(196, 122, 106, 0.1);
+}
+
+.rejection-footer p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+}
+
+/* ===== Accepted (New Word) ===== */
+.accepted-stamp {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: var(--accent-gold);
+  letter-spacing: 0.2em;
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.4rem 0;
+  border-top: 1px solid rgba(196, 169, 106, 0.2);
+  border-bottom: 1px solid rgba(196, 169, 106, 0.2);
+}
+
+.accepted-card {
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-gold-dim);
+  background-color: var(--bg-card);
+  padding: 2.5rem 3rem;
+}
+
+/* ===== Save Section ===== */
+.save-section {
+  margin-top: 1.5rem;
+}
+
+.save-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--border-color) 20%,
+    var(--border-color) 80%,
+    transparent 100%
+  );
+  margin-bottom: 1.5rem;
+}
+
+.save-prompt {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.save-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.save-nickname-wrapper {
+  flex: 1;
+}
+
+.save-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.05em;
+}
+
+.save-nickname-input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.save-nickname-input:focus {
+  border-color: var(--accent-gold-dim);
+}
+
+.save-button {
+  padding: 0.7rem 1.5rem;
+  background-color: var(--accent-gold-dim);
+  border: none;
+  border-radius: 2px;
+  color: var(--bg-primary);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: var(--accent-gold);
+}
+
+.save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-error {
+  text-align: center;
+  padding: 0.75rem;
+  color: #c47a6a;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.save-success {
+  text-align: center;
+}
+
+.save-success-text {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--accent-gold);
+  letter-spacing: 0.05em;
+  margin-top: 1rem;
+}
+
+.save-success-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
 }
 
 /* ===== Form Fields ===== */
@@ -1185,6 +1497,19 @@ a:hover {
 
   .site-title {
     font-size: 1.8rem;
+  }
+
+  .rejection-card,
+  .accepted-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .rejection-word {
+    font-size: 1.4rem;
+  }
+
+  .save-form {
+    flex-direction: column;
   }
 
   .word-card {
