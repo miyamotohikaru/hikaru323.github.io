@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useCallback } from "react";
-import type { Point, Stroke, Tool } from "@/lib/types";
+import type { Point, Stroke, Tool, PenType } from "@/lib/types";
 
 interface CanvasProps {
   strokes: Stroke[];
@@ -9,9 +9,40 @@ interface CanvasProps {
   color: string;
   brushSize: number;
   tool: Tool;
+  penType: PenType;
   onStrokeStart: () => void;
   onStrokePoint: (point: Point) => void;
   onStrokeEnd: () => void;
+}
+
+function getPenStyle(penType: PenType, color: string, width: number) {
+  switch (penType) {
+    case "marker":
+      return {
+        alpha: 0.7,
+        lineCap: "round" as CanvasLineCap,
+        lineJoin: "round" as CanvasLineJoin,
+        width: width * 1.5,
+        color,
+      };
+    case "highlighter":
+      return {
+        alpha: 0.3,
+        lineCap: "square" as CanvasLineCap,
+        lineJoin: "bevel" as CanvasLineJoin,
+        width: width * 3,
+        color,
+      };
+    case "pen":
+    default:
+      return {
+        alpha: 1,
+        lineCap: "round" as CanvasLineCap,
+        lineJoin: "round" as CanvasLineJoin,
+        width,
+        color,
+      };
+  }
 }
 
 export default function Canvas({
@@ -20,6 +51,7 @@ export default function Canvas({
   color,
   brushSize,
   tool,
+  penType,
   onStrokeStart,
   onStrokePoint,
   onStrokeEnd,
@@ -28,20 +60,33 @@ export default function Canvas({
   const isDrawing = useRef(false);
 
   const drawStroke = useCallback(
-    (ctx: CanvasRenderingContext2D, points: Point[], strokeColor: string, strokeWidth: number, isEraser: boolean) => {
+    (
+      ctx: CanvasRenderingContext2D,
+      points: Point[],
+      strokeColor: string,
+      strokeWidth: number,
+      isEraser: boolean,
+      strokePenType: PenType
+    ) => {
       if (points.length < 2) return;
 
       ctx.save();
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.lineWidth = strokeWidth;
 
       if (isEraser) {
         ctx.globalCompositeOperation = "destination-out";
         ctx.strokeStyle = "rgba(0,0,0,1)";
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.globalAlpha = 1;
       } else {
+        const style = getPenStyle(strokePenType, strokeColor, strokeWidth);
         ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = strokeColor;
+        ctx.strokeStyle = style.color;
+        ctx.lineWidth = style.width;
+        ctx.lineCap = style.lineCap;
+        ctx.lineJoin = style.lineJoin;
+        ctx.globalAlpha = style.alpha;
       }
 
       ctx.beginPath();
@@ -71,14 +116,28 @@ export default function Canvas({
 
     for (const stroke of strokes) {
       const isEraser = stroke.color === "eraser";
-      drawStroke(ctx, stroke.points, stroke.color, stroke.width, isEraser);
+      drawStroke(
+        ctx,
+        stroke.points,
+        stroke.color,
+        stroke.width,
+        isEraser,
+        stroke.penType || "pen"
+      );
     }
 
     if (currentStroke.length > 0) {
       const isEraser = tool === "eraser";
-      drawStroke(ctx, currentStroke, isEraser ? "eraser" : color, brushSize, isEraser);
+      drawStroke(
+        ctx,
+        currentStroke,
+        isEraser ? "eraser" : color,
+        brushSize,
+        isEraser,
+        penType
+      );
     }
-  }, [strokes, currentStroke, color, brushSize, tool, drawStroke]);
+  }, [strokes, currentStroke, color, brushSize, tool, penType, drawStroke]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

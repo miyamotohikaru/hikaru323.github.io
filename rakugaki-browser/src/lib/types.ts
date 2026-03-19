@@ -10,13 +10,17 @@ export interface Stroke {
   color: string;
   width: number;
   timestamp: number;
+  penType: PenType;
 }
 
 export interface Drawing {
-  urlKey: string;
+  id: string;
   strokes: Stroke[];
+  thumbnail: string;
+  title: string;
   createdAt: number;
   updatedAt: number;
 }
 
 export type Tool = "pen" | "eraser";
+export type PenType = "pen" | "marker" | "highlighter";
