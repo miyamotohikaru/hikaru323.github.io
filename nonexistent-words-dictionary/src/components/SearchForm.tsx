@@ -74,7 +74,7 @@ export default function SearchForm({ onResult, onLoading, onClear }: SearchFormP
             type="text"
             value={word}
             onChange={(e) => handleChange(e.target.value)}
-            placeholder="言葉を引いてみる"
+            placeholder="存在しない言葉を入力..."
             className="lookup-input"
             maxLength={20}
             disabled={isLoading}
@@ -93,8 +93,7 @@ export default function SearchForm({ onResult, onLoading, onClear }: SearchFormP
           </button>
         </div>
         <p className="lookup-hint">
-          存在しない言葉だけが、この辞典に載ります。<br />
-          <span className="lookup-hint-sub">※ 実在する言葉は掲載をお断りしております</span>
+          ※ 実在する言葉は掲載をお断りしております
         </p>
       </form>
 

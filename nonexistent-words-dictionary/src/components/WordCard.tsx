@@ -64,7 +64,7 @@ export default function WordCard({ entry, showLink = true, compact = false }: Wo
 
         {entry.examples && entry.examples.length > 0 && (
           <div className="word-section">
-            <h3 className="section-label">例文</h3>
+            <h3 className="section-label">用例</h3>
             <ul className="word-examples">
               {entry.examples.map((ex, i) => (
                 <li key={i} className="word-example">

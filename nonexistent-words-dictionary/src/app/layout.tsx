@@ -27,7 +27,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Noto+Serif+JP:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=IM+Fell+English&family=Noto+Sans+JP:wght@400;500&family=Noto+Serif+JP:wght@400;500&family=Shippori+Mincho+B1:wght@500;700&display=swap"
           rel="stylesheet"
         />
         {/* Google Analytics */}
@@ -59,37 +59,35 @@ export default function RootLayout({
       <body>
         <header className="site-header">
           <div className="header-inner">
-            <Link href="/" className="header-logo">
-              存在しない言葉辞典
+            <Link href="/" className="header-logo-group">
+              <span className="header-logo">存在しない言葉辞典</span>
+              <span className="header-logo-en">FICTIONARY</span>
             </Link>
             <nav className="header-nav">
+              <Link href="/" className="header-link">
+                引く
+              </Link>
               <Link href="/browse" className="header-link">
-                五十音一覧
+                一覧
               </Link>
               <Link href="/ranking" className="header-link">
                 ランキング
-              </Link>
-              <Link href="/about" className="header-link">
-                about
               </Link>
             </nav>
           </div>
         </header>
         <div className="page-wrapper">
-          <div className="book-container">
-            <div className="book-inner">
-              {children}
-            </div>
-            <div className="book-corner" />
-            <div className="book-edge-marker" style={{ top: "15%" }} />
-            <div className="book-edge-marker" style={{ top: "35%" }} />
-            <div className="book-edge-marker" style={{ top: "55%" }} />
-            <div className="book-edge-marker" style={{ top: "75%" }} />
-          </div>
+          {children}
         </div>
         <footer className="site-footer">
           <div className="footer-inner">
-            <p className="footer-tagline">存在しない言葉辞典 — 空っぽの辞典を、みんなで育てる</p>
+            <p className="footer-title">
+              存在しない言葉辞典 —{" "}
+              <span className="footer-en">FICTIONARY</span>
+            </p>
+            <p className="footer-sub">
+              この辞典のすべての言葉は利用者によって創作されたものです
+            </p>
             <nav className="footer-nav">
               <Link href="/about">このサイトについて</Link>
               <Link href="/privacy">プライバシーポリシー</Link>

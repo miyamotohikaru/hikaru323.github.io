@@ -99,82 +99,103 @@ export default function LookupResult({ result }: LookupResultProps) {
   // ===== 実在する言葉 → 丁重にお断り =====
   if (result.exists) {
     return (
-      <div className="lookup-result lookup-rejection fade-in">
-        <div className="rejection-stamp">掲載をお断りいたします</div>
-        <div className="rejection-card">
-          <div className="rejection-header">
-            <span className="rejection-word">{result.word}</span>
-          </div>
-          <div className="rejection-footer">
-            <p>この言葉はすでに世の中に存在しております。</p>
-            <p>当辞典は、まだこの世に存在しない言葉のみを収録しております。</p>
-          </div>
-        </div>
+      <div className="page-rejection">
+        <p className="page-rejection-text">
+          「{result.word}」は実在する言葉のため、<br />
+          本辞典には掲載しておりません。
+        </p>
       </div>
     );
   }
 
-  // ===== 存在しない言葉 → 辞書エントリ表示 =====
+  // ===== 存在しない言葉 → 紙面に定義表示 =====
   return (
-    <div className="lookup-result lookup-accepted fade-in">
-      <div className="accepted-stamp">新語発見</div>
-      <div className="accepted-card">
-        <div className="word-header">
-          <h2 className="word-title">{result.word}</h2>
-        </div>
+    <div className="page-accepted">
+      {/* Word header */}
+      <div className="ink-delay-1">
+        <h2 className="page-word-title">{result.word}</h2>
+        {(result.reading || result.partOfSpeech) && (
+          <div className="page-word-meta">
+            {result.reading && (
+              <span className="page-word-reading">【{result.reading}】</span>
+            )}
+            {result.partOfSpeech && (
+              <span className="page-word-pos">{result.partOfSpeech}</span>
+            )}
+          </div>
+        )}
+      </div>
 
-        <div className="word-body">
-          {result.definition && (
-            <div className="word-section">
-              <div className="section-label">意味</div>
-              <p className="word-definition">{result.definition}</p>
-            </div>
-          )}
+      {/* Definition */}
+      {result.definition && (
+        <div className="ink-delay-2">
+          <p className="page-word-definition">{result.definition}</p>
         </div>
+      )}
 
-        {/* Save to dictionary */}
+      {/* Etymology */}
+      {result.etymology && (
+        <div className="ink-delay-3">
+          <p className="page-section-label">語源</p>
+          <p className="page-etymology">{result.etymology}</p>
+        </div>
+      )}
+
+      {/* Examples */}
+      {result.examples && result.examples.length > 0 && (
+        <div className="ink-delay-3">
+          <p className="page-section-label">用例</p>
+          {result.examples.map((ex, i) => (
+            <p key={i} className="page-example">{ex}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Save form */}
+      <div className="ink-delay-4">
+        <div className="page-divider" />
+
         {!saved ? (
-          <div className="save-section">
-            <div className="save-divider" />
-            <p className="save-prompt">この言葉を辞典に掲載しますか？</p>
-            <div className="save-form">
+          <div className="page-save">
+            <p className="page-save-prompt">この言葉を辞典に掲載しますか？</p>
+            <div className="page-save-form">
               {!result.reading && (
-                <div className="save-nickname-wrapper">
-                  <label className="save-label">読み（ひらがな）</label>
+                <div className="page-save-field">
+                  <label className="page-save-label">読み（ひらがな）</label>
                   <input
                     type="text"
                     value={reading}
                     onChange={(e) => setReading(e.target.value)}
                     placeholder="よみがなを入力"
-                    className="save-nickname-input"
+                    className="page-save-input"
                     maxLength={30}
                   />
                 </div>
               )}
-              <div className="save-nickname-wrapper">
-                <label className="save-label">掲載者名</label>
+              <div className="page-save-field">
+                <label className="page-save-label">掲載者名</label>
                 <input
                   type="text"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder="あなたのニックネーム"
-                  className="save-nickname-input"
+                  className="page-save-input"
                   maxLength={15}
                 />
               </div>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="save-button"
+                className="page-save-button"
               >
-                {isSaving ? "掲載中…" : "この辞典に載せる"}
+                {isSaving ? "掲載中…" : "この言葉を辞典に載せる"}
               </button>
             </div>
             {saveError && (
-              <div className="save-error">
+              <div className="page-save-error">
                 <p>{saveError}</p>
                 {existingId && (
-                  <Link href={`/word/${existingId}`} className="error-link">
+                  <Link href={`/word/${existingId}`} className="page-save-error-link">
                     掲載済みのページを見る →
                   </Link>
                 )}
@@ -182,13 +203,12 @@ export default function LookupResult({ result }: LookupResultProps) {
             )}
           </div>
         ) : (
-          <div className="save-success fade-in">
-            <div className="save-divider" />
-            <p className="save-success-text">
+          <div className="page-save-success">
+            <p className="page-save-success-text">
               掲載されました。辞典のページに移動します…
             </p>
             {savedId && (
-              <Link href={`/word/${savedId}`} className="save-success-link">
+              <Link href={`/word/${savedId}`} className="page-save-success-link">
                 掲載ページを見る →
               </Link>
             )}
