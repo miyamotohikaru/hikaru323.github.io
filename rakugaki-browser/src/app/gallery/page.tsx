@@ -12,12 +12,141 @@ function formatDate(ts: number): string {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+function ShareModal({ drawing, onClose }: { drawing: DrawingMeta; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = typeof window !== "undefined" ? window.location.origin + "/gallery" : "";
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `らくがき (${drawing.strokeCount} strokes)`,
+          text: "みんなのらくがきを見てね！",
+          url: shareUrl,
+        });
+      } catch {
+        // user cancelled
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const handleDownload = () => {
+    if (!drawing.thumbnail) return;
+    const a = document.createElement("a");
+    a.href = drawing.thumbnail;
+    a.download = `rakugaki-${formatDate(drawing.createdAt)}.webp`;
+    a.click();
+  };
+
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent("らくがきのブラウザで描いたよ！")}&url=${encodeURIComponent(shareUrl)}`;
+  const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent("らくがきのブラウザで描いたよ！")}`;
+
+  const actionBtn: React.CSSProperties = {
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+    background: "none", border: "none", cursor: "pointer", padding: 8,
+    fontSize: 12, color: "#666", minWidth: 64,
+  };
+
+  const iconCircle = (bg: string): React.CSSProperties => ({
+    width: 48, height: 48, borderRadius: "50%", background: bg,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 22, color: "#fff",
+  });
+
+  return (
+    <>
+      <div style={{
+        position: "fixed", inset: 0, zIndex: 300,
+        background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+      }} onClick={onClose} />
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 310,
+        background: "#fff", borderRadius: "20px 20px 0 0",
+        padding: "20px 24px 32px",
+        animation: "slideUp 0.3s ease",
+        maxWidth: 480, margin: "0 auto",
+      }}>
+        {/* Handle */}
+        <div style={{
+          width: 40, height: 4, borderRadius: 2, background: "#e8e0d8",
+          margin: "0 auto 16px",
+        }} />
+
+        {/* Preview */}
+        <div style={{
+          display: "flex", gap: 16, marginBottom: 20, alignItems: "center",
+        }}>
+          <div style={{
+            width: 80, height: 60, borderRadius: 10, overflow: "hidden",
+            background: "#faf6f0", flexShrink: 0,
+          }}>
+            {drawing.thumbnail && (
+              <img src={drawing.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            )}
+          </div>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>
+              {drawing.strokeCount} strokes
+            </p>
+            <p style={{ fontSize: 12, color: "#999" }}>{formatDate(drawing.createdAt)}</p>
+          </div>
+        </div>
+
+        {/* Share buttons */}
+        <div style={{
+          display: "flex", justifyContent: "center", gap: 12, marginBottom: 16,
+        }}>
+          <button onClick={handleShare} style={actionBtn}>
+            <div style={iconCircle("#e07a3a")}>📤</div>
+            <span>シェア</span>
+          </button>
+          <a href={twitterUrl} target="_blank" rel="noopener noreferrer" style={actionBtn}>
+            <div style={iconCircle("#1da1f2")}>𝕏</div>
+            <span>Twitter</span>
+          </a>
+          <a href={lineUrl} target="_blank" rel="noopener noreferrer" style={actionBtn}>
+            <div style={iconCircle("#06c755")}>💬</div>
+            <span>LINE</span>
+          </a>
+          <button onClick={handleDownload} style={actionBtn}>
+            <div style={iconCircle("#888")}>↓</div>
+            <span>保存</span>
+          </button>
+        </div>
+
+        {/* Copy link */}
+        <button onClick={handleCopyLink} style={{
+          width: "100%", padding: "12px", borderRadius: 12,
+          border: "1px solid #e8e0d8", background: "#faf6f0",
+          cursor: "pointer", fontSize: 14, color: "#666",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+        }}>
+          {copied ? "✓ コピーしました！" : "🔗 リンクをコピー"}
+        </button>
+      </div>
+    </>
+  );
+}
+
 function GalleryContent() {
   const searchParams = useSearchParams();
   const justSaved = searchParams.get("saved") === "1";
 
   const [drawings, setDrawings] = useState<DrawingMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shareTarget, setShareTarget] = useState<DrawingMeta | null>(null);
 
   useEffect(() => {
     getGallery().then((g) => {
@@ -34,6 +163,9 @@ function GalleryContent() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#faf6f0" }}>
+      {/* Share modal */}
+      {shareTarget && <ShareModal drawing={shareTarget} onClose={() => setShareTarget(null)} />}
+
       {/* Header */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -101,13 +233,25 @@ function GalleryContent() {
             gap: 16,
           }}>
             {drawings.map((d, i) => (
-              <div key={d.id} style={{
-                background: "#fff", borderRadius: 16, overflow: "hidden",
-                border: i === 0 && justSaved ? "2px solid #e07a3a" : "1px solid #e8e0d8",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                position: "relative",
-                transition: "transform 0.2s",
-              }}>
+              <div
+                key={d.id}
+                onClick={() => setShareTarget(d)}
+                style={{
+                  background: "#fff", borderRadius: 16, overflow: "hidden",
+                  border: i === 0 && justSaved ? "2px solid #e07a3a" : "1px solid #e8e0d8",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  position: "relative", cursor: "pointer",
+                  transition: "transform 0.15s, box-shadow 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "";
+                  e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)";
+                }}
+              >
                 {/* NEW badge */}
                 {i === 0 && justSaved && (
                   <div style={{
