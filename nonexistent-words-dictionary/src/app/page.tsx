@@ -1,12 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import SearchForm from "@/components/SearchForm";
 import LookupResult from "@/components/LookupResult";
 import DictionaryPage from "@/components/DictionaryPage";
-import AdSense from "@/components/AdSense";
-import Link from "next/link";
-import { WordEntry } from "@/lib/types";
 
 interface LookupData {
   exists: boolean;
@@ -21,24 +18,11 @@ interface LookupData {
 }
 
 export default function Home() {
-  const [recentWords, setRecentWords] = useState<WordEntry[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
   const [lookupResult, setLookupResult] = useState<LookupData | null>(null);
   const [displayedResult, setDisplayedResult] = useState<LookupData | null>(null);
   const [isLooking, setIsLooking] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isPageOpen, setIsPageOpen] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/words?sort=newest&limit=10")
-      .then((res) => res.json())
-      .then((data) => {
-        const words = data.words || [];
-        setRecentWords(words);
-        setTotalCount(words.length);
-      })
-      .catch(() => {});
-  }, []);
 
   const handleResult = (result: LookupData) => {
     setHasSearched(true);
@@ -111,47 +95,6 @@ export default function Home() {
         </DictionaryPage>
       )}
 
-      {/* Recent Words - only before first search */}
-      {!hasSearched && !isLooking && recentWords.length > 0 && (
-        <>
-          {totalCount >= 10 && recentWords[0] && (
-            <section className="section">
-              <span className="section-label-text">今日の一語</span>
-              <Link href={`/word/${recentWords[0].id}`} className="today-word">
-                <span className="today-word-title">{recentWords[0].word}</span>
-                <span className="today-word-def">
-                  {recentWords[0].definition.length > 60
-                    ? recentWords[0].definition.substring(0, 60) + "…"
-                    : recentWords[0].definition}
-                </span>
-              </Link>
-            </section>
-          )}
-
-          <section className="section">
-            <span className="section-label-text">最近の登録語</span>
-            <div className="recent-words-list">
-              {recentWords.map((w) => (
-                <Link key={w.id} href={`/word/${w.id}`} className="recent-word-row">
-                  <span className="recent-word-title">{w.word}</span>
-                  <span className="recent-word-reading">【{w.reading}】</span>
-                  <span className="recent-word-def">
-                    {w.definition.length > 40
-                      ? w.definition.substring(0, 40) + "…"
-                      : w.definition}
-                  </span>
-                </Link>
-              ))}
-            </div>
-            <AdSense slot="top-feed" />
-            {totalCount >= 10 && (
-              <p className="section-footer-text">
-                現在 {totalCount} 語が掲載されています
-              </p>
-            )}
-          </section>
-        </>
-      )}
     </main>
   );
 }
