@@ -10,6 +10,8 @@ export interface WordDoc {
   examples: string[];
   synonyms: string;
   nickname: string;
+  kojienFormatted: string;
+  authorToken: string;
   likes: number;
   viewCount: number;
   isVisible: boolean;
@@ -82,4 +84,26 @@ export function likeWord(id: string): number | null {
 export function incrementView(id: string): void {
   const doc = words.get(id);
   if (doc) doc.viewCount++;
+}
+
+export function getKanaCounts(): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const doc of words.values()) {
+    if (!doc.isVisible || !doc.reading) continue;
+    const firstChar = doc.reading.charAt(0);
+    counts[firstChar] = (counts[firstChar] || 0) + 1;
+  }
+  return counts;
+}
+
+export function getRandomWord(): WordDoc | null {
+  const visible = Array.from(words.values()).filter((w) => w.isVisible);
+  if (visible.length === 0) return null;
+  return visible[Math.floor(Math.random() * visible.length)];
+}
+
+export function listWordsByAuthor(authorToken: string): WordDoc[] {
+  return Array.from(words.values())
+    .filter((w) => w.isVisible && w.authorToken === authorToken)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { containsNGWord } from "@/lib/ng-words";
-import { existsInDictionary } from "@/lib/dictionary";
+import { existsInLocalDictionary } from "@/lib/dictionary";
 
 // カタカナ→ひらがな変換
 function katakanaToHiragana(str: string): string {
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "不適切な表現が含まれています。" }, { status: 400 });
     }
 
-    const exists = await existsInDictionary(word);
+    const exists = existsInLocalDictionary(word);
 
     if (exists) {
       return NextResponse.json({
