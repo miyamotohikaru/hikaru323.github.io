@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       word,
       reading,
       partOfSpeech: "名詞",
-      definition: `まだ誰にも定義されていない言葉。「${word}」という響きの中に、新しい概念が眠っている。意味はあなたが決めてください。`,
+      definition: `まだ誰にも定義されていない言葉。「${word}」という響きの中に、新しい概念が眠っている。`,
       etymology: "",
       examples: [
         `「${word}」という言葉を聞いたとき、なぜか懐かしい気持ちになった。`,
