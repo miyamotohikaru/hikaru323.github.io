@@ -56,13 +56,10 @@ export default function Home() {
       <div className={`hero ${!hasSearched && !isLooking ? "hero-centered" : ""}`}>
         {!hasSearched && !isLooking && (
           <div className="hero-copy">
-            <h1 className="hero-title">
-              この辞典に載っている言葉は、<br />
-              まだこの世界のどこにも存在しません。
-            </h1>
+            <h1 className="hero-title">存在しない言葉辞典</h1>
             <p className="hero-subtitle">
-              あなたが考えた「存在しない言葉」を入力してください。<br />
-              辞典がその言葉を、永遠に記録します。
+              存在しない言葉だけを受け付ける辞書。<br />
+              あなたの造語で、空っぽの辞典を育ててください。
             </p>
           </div>
         )}
@@ -82,6 +79,14 @@ export default function Home() {
             <div className="page-flip-page page-flip-page-2" />
             <div className="page-flip-page page-flip-page-3" />
             <div className="page-flip-page page-flip-page-4" />
+            <div className="page-flip-page page-flip-page-5" />
+            <div className="page-flip-page page-flip-page-6" />
+            <div className="page-flip-page page-flip-page-7" />
+            <div className="page-flip-page page-flip-page-8" />
+            <div className="page-flip-page page-flip-page-9" />
+            <div className="page-flip-page page-flip-page-10" />
+            <div className="page-flip-page page-flip-page-11" />
+            <div className="page-flip-page page-flip-page-12" />
             <div className="page-flip-cover-front" />
           </div>
           <p className="page-flip-text">辞典をめくっています…</p>

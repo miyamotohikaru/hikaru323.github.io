@@ -88,7 +88,7 @@ export default function SearchForm({ onResult, onLoading, onClear }: SearchFormP
             {isLoading ? (
               <span className="lookup-spinner" />
             ) : (
-              <span className="lookup-button-text">引く</span>
+              <span className="lookup-button-text">🔍</span>
             )}
           </button>
         </div>
