@@ -170,19 +170,66 @@ async function existsInWiktionary(word: string): Promise<boolean> {
 }
 
 /**
+ * Weblio辞書で単語の存在をチェック（非同期）
+ * ページが存在し、辞書コンテンツが含まれていれば実在する言葉と判定
+ */
+async function existsInWeblio(word: string): Promise<boolean> {
+  try {
+    const url = `https://www.weblio.jp/content/${encodeURIComponent(word)}`;
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(5000),
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; NonexistentWordsDictionary/1.0)",
+      },
+    });
+    // 404やリダイレクトで見つからない場合
+    if (!res.ok) return false;
+    const html = await res.text();
+    // Weblioで見つからない場合に表示されるメッセージをチェック
+    if (html.includes("に一致する情報は見つかりませんでした") ||
+        html.includes("についての情報は見つかりませんでした") ||
+        html.includes("は見つかりませんでした")) {
+      return false;
+    }
+    // 辞書コンテンツ（用語解説セクション）が存在するかチェック
+    if (html.includes("kiji") || html.includes("NetDicBody")) {
+      return true;
+    }
+    return false;
+  } catch {
+    // API失敗時は安全側に倒す（存在しない扱い）
+    return false;
+  }
+}
+
+export interface DictionaryCheckResult {
+  exists: boolean;
+  source?: "local" | "wiktionary" | "weblio";
+}
+
+/**
  * 入力された言葉が実在するか判定
  * 1. ローカル辞書で高速チェック
  * 2. Wiktionary APIで広範囲チェック
+ * 3. Weblio辞書で広範囲チェック
  */
-export async function existsInDictionary(word: string): Promise<boolean> {
+export async function existsInDictionary(word: string): Promise<DictionaryCheckResult> {
   // ローカル辞書に一致 → 即座に実在判定
-  if (existsInLocalDictionary(word)) return true;
+  if (existsInLocalDictionary(word)) return { exists: true, source: "local" };
 
   // 1文字のひらがな/カタカナは辞書に載っていても意味がないのでスキップ
-  if (word.length === 1) return false;
+  if (word.length === 1) return { exists: false };
 
-  // Wiktionary APIでチェック
-  return existsInWiktionary(word);
+  // Wiktionary と Weblio を並列チェック
+  const [wiktionaryResult, weblioResult] = await Promise.all([
+    existsInWiktionary(word),
+    existsInWeblio(word),
+  ]);
+
+  if (wiktionaryResult) return { exists: true, source: "wiktionary" };
+  if (weblioResult) return { exists: true, source: "weblio" };
+
+  return { exists: false };
 }
 
 /** カタカナ → ひらがな変換 */

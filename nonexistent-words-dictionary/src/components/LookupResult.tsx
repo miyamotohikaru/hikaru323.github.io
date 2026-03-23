@@ -14,6 +14,7 @@ interface LookupData {
   etymology?: string;
   examples?: string[];
   synonyms?: string;
+  source?: "local" | "wiktionary" | "weblio";
 }
 
 interface LookupResultProps {
@@ -98,11 +99,20 @@ export default function LookupResult({ result }: LookupResultProps) {
 
   // ===== 実在する言葉 → 丁重にお断り =====
   if (result.exists) {
+    const sourceLabel = result.source === "weblio"
+      ? "Weblio辞書"
+      : result.source === "wiktionary"
+        ? "Wiktionary"
+        : "辞書";
+
     return (
       <div className="page-rejection">
         <p className="page-rejection-text">
           「{result.word}」は実在する言葉のため、<br />
           本辞典には掲載しておりません。
+        </p>
+        <p className="page-rejection-source">
+          ※ {sourceLabel}に掲載されている言葉です。
         </p>
       </div>
     );
