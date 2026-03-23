@@ -15,14 +15,8 @@ interface DrawingCanvasProps {
 }
 
 function drawSmoothLine(
-  ctx: CanvasRenderingContext2D,
-  points: Point[],
-  color: string,
-  width: number,
-  alpha: number,
-  cap: CanvasLineCap,
-  join: CanvasLineJoin,
-  isEraser = false
+  ctx: CanvasRenderingContext2D, points: Point[], color: string,
+  width: number, alpha: number, cap: CanvasLineCap, join: CanvasLineJoin, isEraser = false
 ) {
   if (points.length < 2) return;
   ctx.save();
@@ -50,33 +44,6 @@ function drawSmoothLine(
   ctx.restore();
 }
 
-function drawPencil(ctx: CanvasRenderingContext2D, points: Point[], color: string, width: number) {
-  if (points.length < 2) return;
-  ctx.save();
-  ctx.globalAlpha = 0.6;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width * 0.6;
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) {
-    const jx = (Math.random() - 0.5) * 1.5;
-    const jy = (Math.random() - 0.5) * 1.5;
-    ctx.lineTo(points[i].x + jx, points[i].y + jy);
-  }
-  ctx.stroke();
-  // Second pass for texture
-  ctx.globalAlpha = 0.3;
-  ctx.lineWidth = width * 0.3;
-  ctx.beginPath();
-  ctx.moveTo(points[0].x + 0.5, points[0].y + 0.5);
-  for (let i = 1; i < points.length; i++) {
-    ctx.lineTo(points[i].x + (Math.random() - 0.5) * 2, points[i].y + (Math.random() - 0.5) * 2);
-  }
-  ctx.stroke();
-  ctx.restore();
-}
-
 function drawCrayon(ctx: CanvasRenderingContext2D, points: Point[], color: string, width: number) {
   if (points.length < 2) return;
   ctx.save();
@@ -88,11 +55,28 @@ function drawCrayon(ctx: CanvasRenderingContext2D, points: Point[], color: strin
     ctx.beginPath();
     ctx.moveTo(points[0].x + (Math.random() - 0.5) * 3, points[0].y + (Math.random() - 0.5) * 3);
     for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(
-        points[i].x + (Math.random() - 0.5) * 3,
-        points[i].y + (Math.random() - 0.5) * 3
-      );
+      ctx.lineTo(points[i].x + (Math.random() - 0.5) * 3, points[i].y + (Math.random() - 0.5) * 3);
     }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawFude(ctx: CanvasRenderingContext2D, points: Point[], color: string, width: number) {
+  if (points.length < 2) return;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = 0.8;
+  ctx.lineCap = "round";
+  for (let i = 1; i < points.length; i++) {
+    const speed = Math.sqrt(
+      Math.pow(points[i].x - points[i - 1].x, 2) + Math.pow(points[i].y - points[i - 1].y, 2)
+    );
+    const w = width * Math.max(0.3, Math.min(2.5, 8 / (speed + 1)));
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.moveTo(points[i - 1].x, points[i - 1].y);
+    ctx.lineTo(points[i].x, points[i].y);
     ctx.stroke();
   }
   ctx.restore();
@@ -104,10 +88,8 @@ function drawAirbrush(ctx: CanvasRenderingContext2D, points: Point[], color: str
   const g = parseInt(color.slice(3, 5), 16);
   const b = parseInt(color.slice(5, 7), 16);
   const radius = width * 2;
-  const step = Math.max(3, radius * 0.3);
-  for (let i = 0; i < points.length; i += step / 5) {
-    const idx = Math.min(Math.floor(i), points.length - 1);
-    const p = points[idx];
+  for (let i = 0; i < points.length; i += Math.max(1, Math.floor(points.length / 80))) {
+    const p = points[i];
     const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
     grad.addColorStop(0, `rgba(${r},${g},${b},0.08)`);
     grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
@@ -144,14 +126,12 @@ function drawCalligraphy(ctx: CanvasRenderingContext2D, points: Point[], color: 
   if (points.length < 2) return;
   ctx.save();
   ctx.strokeStyle = color;
-  ctx.fillStyle = color;
   ctx.globalAlpha = 0.85;
   for (let i = 1; i < points.length; i++) {
     const dx = points[i].x - points[i - 1].x;
     const dy = points[i].y - points[i - 1].y;
     const angle = Math.atan2(dy, dx);
-    const w = width * (0.3 + 0.7 * Math.abs(Math.cos(angle - Math.PI / 4)));
-    ctx.lineWidth = w;
+    ctx.lineWidth = width * (0.3 + 0.7 * Math.abs(Math.cos(angle - Math.PI / 4)));
     ctx.lineCap = "butt";
     ctx.beginPath();
     ctx.moveTo(points[i - 1].x, points[i - 1].y);
@@ -161,41 +141,26 @@ function drawCalligraphy(ctx: CanvasRenderingContext2D, points: Point[], color: 
   ctx.restore();
 }
 
-function drawDots(ctx: CanvasRenderingContext2D, points: Point[], color: string, width: number) {
+function drawCharcoal(ctx: CanvasRenderingContext2D, points: Point[], color: string, width: number) {
+  if (points.length < 2) return;
   ctx.save();
-  ctx.fillStyle = color;
-  ctx.globalAlpha = 0.9;
-  let dist = 0;
-  const spacing = Math.max(width * 1.2, 8);
-  for (let i = 1; i < points.length; i++) {
-    const dx = points[i].x - points[i - 1].x;
-    const dy = points[i].y - points[i - 1].y;
-    const segLen = Math.sqrt(dx * dx + dy * dy);
-    dist += segLen;
-    if (dist >= spacing) {
-      ctx.beginPath();
-      ctx.arc(points[i].x, points[i].y, width / 2, 0, Math.PI * 2);
-      ctx.fill();
-      dist = 0;
+  ctx.strokeStyle = color;
+  ctx.lineCap = "round";
+  for (let pass = 0; pass < 5; pass++) {
+    ctx.globalAlpha = 0.12 + Math.random() * 0.08;
+    ctx.lineWidth = width * (0.6 + Math.random() * 1.0);
+    ctx.beginPath();
+    ctx.moveTo(
+      points[0].x + (Math.random() - 0.5) * width * 0.4,
+      points[0].y + (Math.random() - 0.5) * width * 0.4
+    );
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(
+        points[i].x + (Math.random() - 0.5) * width * 0.4,
+        points[i].y + (Math.random() - 0.5) * width * 0.4
+      );
     }
-  }
-  ctx.restore();
-}
-
-function drawSpray(ctx: CanvasRenderingContext2D, points: Point[], color: string, width: number) {
-  ctx.save();
-  ctx.fillStyle = color;
-  const radius = width * 2;
-  const density = Math.max(10, width * 3);
-  const step = Math.max(1, Math.floor(points.length / 60));
-  for (let i = 0; i < points.length; i += step) {
-    const p = points[i];
-    for (let j = 0; j < density; j++) {
-      const a = Math.random() * Math.PI * 2;
-      const r = Math.random() * radius;
-      ctx.globalAlpha = 0.3 * (1 - r / radius);
-      ctx.fillRect(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r, 1.5, 1.5);
-    }
+    ctx.stroke();
   }
   ctx.restore();
 }
@@ -205,32 +170,32 @@ function renderStroke(ctx: CanvasRenderingContext2D, points: Point[], color: str
     case "pen":
       drawSmoothLine(ctx, points, color, width, 1, "round", "round");
       break;
+    case "ballpoint":
+      drawSmoothLine(ctx, points, color, width * 0.7, 0.85, "round", "round");
+      break;
     case "marker":
       drawSmoothLine(ctx, points, color, width * 1.5, 0.7, "round", "round");
       break;
     case "highlighter":
       drawSmoothLine(ctx, points, color, width * 3, 0.3, "square", "bevel");
       break;
-    case "pencil":
-      drawPencil(ctx, points, color, width);
-      break;
     case "crayon":
       drawCrayon(ctx, points, color, width * 1.2);
       break;
-    case "airbrush":
-      drawAirbrush(ctx, points, color, width);
-      break;
-    case "watercolor":
-      drawWatercolor(ctx, points, color, width * 2);
+    case "fude":
+      drawFude(ctx, points, color, width * 1.5);
       break;
     case "calligraphy":
       drawCalligraphy(ctx, points, color, width);
       break;
-    case "dot":
-      drawDots(ctx, points, color, width);
+    case "watercolor":
+      drawWatercolor(ctx, points, color, width * 2);
       break;
-    case "spray":
-      drawSpray(ctx, points, color, width);
+    case "airbrush":
+      drawAirbrush(ctx, points, color, width);
+      break;
+    case "charcoal":
+      drawCharcoal(ctx, points, color, width * 1.2);
       break;
     case "eraser":
       drawSmoothLine(ctx, points, color, width * 2, 1, "round", "round", true);
@@ -239,14 +204,8 @@ function renderStroke(ctx: CanvasRenderingContext2D, points: Point[], color: str
 }
 
 export default function DrawingCanvas({
-  strokes,
-  currentStroke,
-  color,
-  brushSize,
-  brush,
-  onStrokeStart,
-  onStrokePoint,
-  onStrokeEnd,
+  strokes, currentStroke, color, brushSize, brush,
+  onStrokeStart, onStrokePoint, onStrokeEnd,
 }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
@@ -257,11 +216,9 @@ export default function DrawingCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     for (const s of strokes) {
-      renderStroke(ctx, s.points, s.color, s.width, s.brush);
+      renderStroke(ctx, s.points, s.color, s.width, s.brush || "pen");
     }
-
     if (currentStroke.length > 0) {
       renderStroke(ctx, currentStroke, brush === "eraser" ? "#000" : color, brushSize, brush);
     }
@@ -289,22 +246,16 @@ export default function DrawingCanvas({
 
   const getPoint = (e: React.PointerEvent): Point => {
     const rect = canvasRef.current!.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      pressure: e.pressure,
-    };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top, pressure: e.pressure };
   };
 
   return (
     <canvas
       ref={canvasRef}
       style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 10,
-        cursor: "crosshair",
-        touchAction: "none",
+        position: "fixed", inset: 0, zIndex: 10,
+        cursor: "crosshair", touchAction: "none",
+        background: "#faf6f0",
       }}
       onPointerDown={(e) => {
         isDrawing.current = true;
@@ -312,20 +263,9 @@ export default function DrawingCanvas({
         onStrokeStart();
         onStrokePoint(getPoint(e));
       }}
-      onPointerMove={(e) => {
-        if (!isDrawing.current) return;
-        onStrokePoint(getPoint(e));
-      }}
-      onPointerUp={() => {
-        if (!isDrawing.current) return;
-        isDrawing.current = false;
-        onStrokeEnd();
-      }}
-      onPointerLeave={() => {
-        if (!isDrawing.current) return;
-        isDrawing.current = false;
-        onStrokeEnd();
-      }}
+      onPointerMove={(e) => { if (isDrawing.current) onStrokePoint(getPoint(e)); }}
+      onPointerUp={() => { if (isDrawing.current) { isDrawing.current = false; onStrokeEnd(); } }}
+      onPointerLeave={() => { if (isDrawing.current) { isDrawing.current = false; onStrokeEnd(); } }}
     />
   );
 }

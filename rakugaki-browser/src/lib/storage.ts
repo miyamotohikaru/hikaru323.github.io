@@ -1,6 +1,23 @@
-import type { DrawingData, DrawingMeta } from "./types";
+import type { DrawingMeta, Stroke } from "./types";
 
 const API = "/api/storage";
+
+function localGet<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(`rakugaki:${key}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function localSet(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(`rakugaki:${key}`, JSON.stringify(value));
+  } catch {
+    // storage full or unavailable
+  }
+}
 
 async function kvGet<T>(key: string): Promise<T | null> {
   try {
@@ -20,59 +37,53 @@ async function kvSet(key: string, value: unknown): Promise<void> {
       body: JSON.stringify({ key, value }),
     });
   } catch {
-    // silent fail
+    // silent
   }
 }
 
-export async function saveDrawing(drawing: DrawingData): Promise<void> {
-  // Save full drawing
-  await kvSet(`drawing:${drawing.id}`, drawing);
+export async function loadSharedCanvas(): Promise<Stroke[]> {
+  // Try localStorage first (always available), then server
+  const local = localGet<Stroke[]>("canvas:shared");
+  if (local && local.length > 0) return local;
 
-  // Update gallery list
-  const gallery = (await kvGet<DrawingMeta[]>("gallery:recent")) ?? [];
+  const server = await kvGet<Stroke[]>("canvas:shared");
+  return server ?? [];
+}
+
+export async function saveToGallery(
+  strokes: Stroke[],
+  thumbnail: string
+): Promise<void> {
+  const id = crypto.randomUUID();
+  const now = Date.now();
+
   const meta: DrawingMeta = {
-    id: drawing.id,
-    thumbnail: drawing.thumbnail,
-    title: drawing.title,
-    createdAt: drawing.createdAt,
+    id,
+    thumbnail,
+    strokeCount: strokes.length,
+    createdAt: now,
   };
 
-  const filtered = gallery.filter((d) => d.id !== drawing.id);
-  filtered.unshift(meta);
-  await kvSet("gallery:recent", filtered.slice(0, 100));
+  // Save shared canvas to both localStorage and server
+  localSet("canvas:shared", strokes);
+  kvSet("canvas:shared", strokes); // fire and forget
 
-  // Also save to localStorage as backup
-  try {
-    const local = JSON.parse(localStorage.getItem("rakugaki-my") ?? "[]");
-    const localFiltered = local.filter((d: DrawingMeta) => d.id !== drawing.id);
-    localFiltered.unshift(meta);
-    localStorage.setItem("rakugaki-my", JSON.stringify(localFiltered.slice(0, 50)));
-  } catch {
-    // localStorage not available
-  }
+  // Update gallery in localStorage (primary)
+  const gallery = localGet<DrawingMeta[]>("gallery:recent") ?? [];
+  gallery.unshift(meta);
+  const trimmed = gallery.slice(0, 100);
+  localSet("gallery:recent", trimmed);
+
+  // Also update server (fire and forget)
+  kvSet("gallery:recent", trimmed);
 }
 
 export async function getGallery(): Promise<DrawingMeta[]> {
-  const gallery = await kvGet<DrawingMeta[]>("gallery:recent");
-  return gallery ?? [];
-}
+  // Try localStorage first
+  const local = localGet<DrawingMeta[]>("gallery:recent");
+  if (local && local.length > 0) return local;
 
-export function getMyDrawings(): DrawingMeta[] {
-  try {
-    return JSON.parse(localStorage.getItem("rakugaki-my") ?? "[]");
-  } catch {
-    return [];
-  }
-}
-
-export function deleteMyDrawing(id: string): void {
-  try {
-    const local = JSON.parse(localStorage.getItem("rakugaki-my") ?? "[]");
-    localStorage.setItem(
-      "rakugaki-my",
-      JSON.stringify(local.filter((d: DrawingMeta) => d.id !== id))
-    );
-  } catch {
-    // ignore
-  }
+  // Fallback to server
+  const server = await kvGet<DrawingMeta[]>("gallery:recent");
+  return server ?? [];
 }
