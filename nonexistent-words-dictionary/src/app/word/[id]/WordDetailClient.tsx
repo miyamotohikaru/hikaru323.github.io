@@ -40,7 +40,9 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
         </Link>
       </div>
 
-      <WordCard entry={word} showLink={false} />
+      <div className="word-detail-content fade-in">
+        <WordCard entry={word} showLink={false} />
+      </div>
 
       <div className="word-actions">
         <LikeButton wordId={word.id} initialLikes={word.likes} />
@@ -52,7 +54,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
       {/* Related Words */}
       {relatedWords.length > 0 && (
         <section className="section">
-          <h2 className="section-title">関連する造語</h2>
+          <span className="section-label-text">関連する造語</span>
           <div className="word-grid">
             {relatedWords.map((w) => (
               <WordCard key={w.id} entry={w} compact />

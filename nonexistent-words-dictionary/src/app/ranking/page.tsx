@@ -52,30 +52,30 @@ export default function RankingPage() {
       ) : words.length === 0 ? (
         <p className="empty-text">まだ投稿がありません。</p>
       ) : (
-        <ol className="ranking-list">
-          {words.map((word, index) => (
-            <li key={word.id} className="ranking-item">
-              <Link href={`/word/${word.id}`} className="ranking-link">
-                <span className="ranking-rank">
-                  {activeTab === "popular" ? `${index + 1}.` : ""}
-                </span>
+        <>
+          <div className="ranking-list">
+            {words.map((w, i) => (
+              <Link key={w.id} href={`/word/${w.id}`} className="ranking-item">
+                <span className="ranking-rank">{i + 1}</span>
                 <div className="ranking-content">
-                  <div className="ranking-word-header">
-                    <span className="word-list-word">{word.word}</span>
-                    <span className="word-list-reading">【{word.reading}】</span>
-                    <span className="word-list-pos">{word.partOfSpeech}</span>
+                  <div className="ranking-word">{w.word}</div>
+                  <div className="ranking-def">
+                    {w.definition.length > 60
+                      ? w.definition.substring(0, 60) + "…"
+                      : w.definition}
                   </div>
-                  <p className="word-list-def">{word.definition}</p>
                   <div className="ranking-meta">
-                    <span className="ranking-likes">♥ {word.likes}</span>
-                    <span className="ranking-nickname">{word.nickname}</span>
+                    {w.likes > 0 && (
+                      <span className="ranking-likes">♥ {w.likes}</span>
+                    )}
+                    <span className="ranking-nickname">{w.nickname}</span>
                   </div>
                 </div>
               </Link>
-              {index === 9 && <AdSense slot="ranking-feed" />}
-            </li>
-          ))}
-        </ol>
+            ))}
+          </div>
+          <AdSense slot="ranking-feed" />
+        </>
       )}
     </main>
   );

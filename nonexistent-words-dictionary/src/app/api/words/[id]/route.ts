@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, getFieldValue } from "@/lib/firebase";
+import { getDb, getFieldValue, isFirebaseAvailable } from "@/lib/firebase";
+import { getWord, incrementView } from "@/lib/in-memory-store";
 
 export async function GET(
   _request: NextRequest,
@@ -7,24 +8,38 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const db = await getDb();
-    const FieldValue = await getFieldValue();
-    const docRef = db.collection("words").doc(id);
-    const doc = await docRef.get();
 
-    if (!doc.exists || !doc.data()?.isVisible) {
-      return NextResponse.json({ error: "語が見つかりません。" }, { status: 404 });
+    if (isFirebaseAvailable()) {
+      try {
+        const db = await getDb();
+        const FieldValue = await getFieldValue();
+        const docRef = db.collection("words").doc(id);
+        const doc = await docRef.get();
+
+        if (!doc.exists || !doc.data()?.isVisible) {
+          return NextResponse.json({ error: "語が見つかりません。" }, { status: 404 });
+        }
+
+        await docRef.update({ viewCount: FieldValue.increment(1) });
+
+        const data = doc.data()!;
+        return NextResponse.json({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+        });
+      } catch (fbError) {
+        console.error("Firebase error, falling back to in-memory:", fbError);
+      }
     }
 
-    // Increment view count
-    await docRef.update({ viewCount: FieldValue.increment(1) });
-
-    const data = doc.data()!;
-    return NextResponse.json({
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
-    });
+    // インメモリモード
+    const doc = getWord(id);
+    if (!doc || !doc.isVisible) {
+      return NextResponse.json({ error: "語が見つかりません。" }, { status: 404 });
+    }
+    incrementView(id);
+    return NextResponse.json(doc);
   } catch (error) {
     console.error("Word fetch error:", error);
     return NextResponse.json(

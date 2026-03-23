@@ -41,13 +41,13 @@ export default function LikeButton({ wordId, initialLikes }: LikeButtonProps) {
 
   return (
     <button
-      className={`like-button ${liked ? "liked" : ""}`}
+      className={`like-button ${liked ? "liked" : ""} ${liked ? "like-pop" : ""}`}
       onClick={handleLike}
       disabled={liked || isLoading}
       aria-label="いいね"
     >
       <span className="like-heart">{liked ? "♥" : "♡"}</span>
-      <span className="like-count">{likes}</span>
+      <span className="like-count">{likes > 0 ? likes : ""}</span>
     </button>
   );
 }

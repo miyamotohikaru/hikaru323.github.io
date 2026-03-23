@@ -2,6 +2,7 @@
 
 import { WordEntry } from "@/lib/types";
 import Link from "next/link";
+import LikeButton from "@/components/LikeButton";
 
 interface WordCardProps {
   entry: WordEntry;
@@ -16,8 +17,6 @@ export default function WordCard({ entry, showLink = true, compact = false }: Wo
         <Link href={`/word/${entry.id}`} className="word-card-compact-link">
           <div className="word-card-compact-header">
             <span className="word-list-word">{entry.word}</span>
-            <span className="word-list-reading">【{entry.reading}】</span>
-            <span className="word-list-pos">{entry.partOfSpeech}</span>
           </div>
           <p className="word-list-def">
             {entry.definition.length > 40
@@ -26,9 +25,11 @@ export default function WordCard({ entry, showLink = true, compact = false }: Wo
           </p>
           <div className="word-card-compact-footer">
             <span className="word-card-nickname">{entry.nickname}</span>
-            {entry.likes > 0 && <span className="word-card-likes">♥ {entry.likes}</span>}
           </div>
         </Link>
+        <div className="word-card-compact-like">
+          <LikeButton wordId={entry.id} initialLikes={entry.likes} />
+        </div>
       </article>
     );
   }
@@ -63,7 +64,7 @@ export default function WordCard({ entry, showLink = true, compact = false }: Wo
 
         {entry.examples && entry.examples.length > 0 && (
           <div className="word-section">
-            <h3 className="section-label">例文</h3>
+            <h3 className="section-label">用例</h3>
             <ul className="word-examples">
               {entry.examples.map((ex, i) => (
                 <li key={i} className="word-example">

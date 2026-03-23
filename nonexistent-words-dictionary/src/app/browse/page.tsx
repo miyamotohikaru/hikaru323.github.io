@@ -5,8 +5,10 @@ import Link from "next/link";
 import { GOJUON_ROWS, WordEntry } from "@/lib/types";
 import AdSense from "@/components/AdSense";
 
+// Flatten all kana into a single array for the grid
+const ALL_KANA = GOJUON_ROWS.flatMap((row) => row.kana);
+
 export default function BrowsePage() {
-  const [selectedRow, setSelectedRow] = useState(0);
   const [selectedKana, setSelectedKana] = useState("あ");
   const [words, setWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -28,11 +30,6 @@ export default function BrowsePage() {
     fetchWords(selectedKana);
   }, [selectedKana, fetchWords]);
 
-  const handleRowClick = (rowIndex: number) => {
-    setSelectedRow(rowIndex);
-    setSelectedKana(GOJUON_ROWS[rowIndex].kana[0]);
-  };
-
   const handleKanaClick = (kana: string) => {
     setSelectedKana(kana);
   };
@@ -45,65 +42,52 @@ export default function BrowsePage() {
         </Link>
         <h1 className="page-title">五十音一覧</h1>
         <p className="page-subtitle">
-          登録された造語を五十音順でお引きいただけます。<br />
-          辞典が段々埋まっていく様子をお楽しみください。
+          登録された造語を五十音順でお引きいただけます。
         </p>
       </div>
 
-      <div className="gojuon-layout">
-        <nav className="gojuon-nav">
-          <div className="row-tabs">
-            {GOJUON_ROWS.map((row, i) => (
-              <button
-                key={row.label}
-                className={`row-tab ${selectedRow === i ? "active" : ""}`}
-                onClick={() => handleRowClick(i)}
-              >
-                {row.label}
-              </button>
-            ))}
-          </div>
-          <div className="kana-tabs">
-            {GOJUON_ROWS[selectedRow].kana.map((k) => (
-              <button
-                key={k}
-                className={`kana-tab ${selectedKana === k ? "active" : ""}`}
-                onClick={() => handleKanaClick(k)}
-              >
-                {k}
-              </button>
-            ))}
-          </div>
-        </nav>
-
-        <div className="gojuon-content">
-          <h2 className="kana-heading">「{selectedKana}」</h2>
-          {loading ? (
-            <p className="loading-text">読み込み中…</p>
-          ) : words.length === 0 ? (
-            <p className="empty-text">
-              「{selectedKana}」で始まる言葉はまだありません。<br />
-              あなたが最初の一語を投稿してみませんか？
-            </p>
-          ) : (
-            <>
-              <ul className="word-list">
-                {words.map((word, index) => (
-                  <li key={word.id} className="word-list-item">
-                    <Link href={`/word/${word.id}`} className="word-list-link">
-                      <span className="word-list-word">{word.word}</span>
-                      <span className="word-list-reading">【{word.reading}】</span>
-                      <span className="word-list-pos">{word.partOfSpeech}</span>
-                      <p className="word-list-def">{word.definition}</p>
-                    </Link>
-                    {index === 9 && <AdSense slot="browse-feed" />}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
+      {/* Gojuon Grid */}
+      <div className="gojuon-grid">
+        {ALL_KANA.map((k) => (
+          <button
+            key={k}
+            className={`gojuon-cell ${selectedKana === k ? "active" : ""}`}
+            onClick={() => handleKanaClick(k)}
+          >
+            {k}
+          </button>
+        ))}
       </div>
+
+      {/* Word List */}
+      <h2 className="kana-heading">「{selectedKana}」</h2>
+      {loading ? (
+        <p className="loading-text">読み込み中…</p>
+      ) : words.length === 0 ? (
+        <p className="empty-text">
+          「{selectedKana}」で始まる言葉はまだありません。<br />
+          あなたが最初の一語を投稿してみませんか？
+        </p>
+      ) : (
+        <>
+          <div className="browse-word-list">
+            {words.map((w) => (
+              <Link key={w.id} href={`/word/${w.id}`} className="browse-word-item">
+                <span>
+                  <span className="browse-word-name">{w.word}</span>
+                  <span className="browse-word-reading">【{w.reading}】</span>
+                </span>
+                <span className="browse-word-def">
+                  {w.definition.length > 50
+                    ? w.definition.substring(0, 50) + "…"
+                    : w.definition}
+                </span>
+              </Link>
+            ))}
+          </div>
+          {words.length > 9 && <AdSense slot="browse-feed" />}
+        </>
+      )}
     </main>
   );
 }
