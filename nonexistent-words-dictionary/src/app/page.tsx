@@ -134,7 +134,7 @@ export default function Home() {
       localStorage.setItem("fictionary_posts_count", String(postsCount + 1));
       localStorage.setItem("fictionary_nickname", trimmedNickname);
 
-      router.push(`/word/${data.id}`);
+      router.push(`/word/${data.id}?just_posted=1`);
     } catch {
       setSaveError("通信に失敗しました。");
     } finally {

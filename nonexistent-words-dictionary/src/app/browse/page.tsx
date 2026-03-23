@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { GOJUON_ROWS, WordEntry } from "@/lib/types";
 import KojienEntry from "@/components/KojienEntry";
@@ -11,6 +11,7 @@ export default function BrowsePage() {
   const [allWords, setAllWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeRow, setActiveRow] = useState<string | null>(null);
+  const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   useEffect(() => {
     fetch("/api/words?limit=100&sort=newest")
@@ -52,6 +53,16 @@ export default function BrowsePage() {
     ? GOJUON_ROWS.filter((r) => r.label === activeRow)
     : GOJUON_ROWS;
 
+  const handleTabClick = (label: string | null) => {
+    setActiveRow(label);
+    if (label) {
+      const el = sectionRefs.current.get(label);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  };
+
   return (
     <main className="main-content">
       <div className="browse-header">
@@ -63,59 +74,71 @@ export default function BrowsePage() {
         </p>
       </div>
 
-      {/* 五十音タブ */}
-      <div className="gojuon-tabs">
-        <button
-          className={`gojuon-tab ${activeRow === null ? "active" : ""}`}
-          onClick={() => setActiveRow(null)}
-        >
-          全て
-        </button>
-        {GOJUON_TABS.map((row) => {
-          const count = rowCounts.get(row.label) || 0;
-          return (
-            <button
-              key={row.label}
-              className={`gojuon-tab ${activeRow === row.label ? "active" : ""} ${count === 0 ? "empty" : ""}`}
-              onClick={() => setActiveRow(row.label)}
-            >
-              {row.kana[0]}
-              {count > 0 && <span className="gojuon-tab-count">{count}</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 単語一覧 */}
-      {loading ? (
-        <p className="loading-text">読み込み中…</p>
-      ) : allWords.length === 0 ? (
-        <p className="empty-text">
-          まだ言葉が登録されていません。<br />
-          あなたが最初の一語を投稿してみませんか？
-        </p>
-      ) : (
-        <div className="browse-entries">
-          {displayRows.map((row) => {
-            const words = wordsByRow.get(row.label) || [];
-            if (words.length === 0 && activeRow === null) return null;
+      {/* 辞書の索引（つめ/サムインデックス風） */}
+      <div className="dict-index-container">
+        <div className="dict-index-sidebar">
+          <button
+            className={`dict-index-tab ${activeRow === null ? "active" : ""}`}
+            onClick={() => handleTabClick(null)}
+          >
+            全
+          </button>
+          {GOJUON_TABS.map((row) => {
+            const count = rowCounts.get(row.label) || 0;
             return (
-              <section key={row.label} className="browse-row-section">
-                <h2 className="browse-row-heading">── {row.label} ──</h2>
-                {words.length === 0 ? (
-                  <p className="browse-row-empty">この行にはまだ言葉がありません</p>
-                ) : (
-                  <div className="browse-row-entries">
-                    {words.map((word) => (
-                      <KojienEntry key={word.id} entry={word} showMeta />
-                    ))}
-                  </div>
-                )}
-              </section>
+              <button
+                key={row.label}
+                className={`dict-index-tab ${activeRow === row.label ? "active" : ""} ${count === 0 ? "empty" : ""}`}
+                onClick={() => handleTabClick(row.label)}
+              >
+                <span className="dict-index-kana">{row.kana[0]}</span>
+                {count > 0 && <span className="dict-index-count">{count}</span>}
+              </button>
             );
           })}
         </div>
-      )}
+
+        {/* 単語一覧 */}
+        <div className="dict-index-content">
+          {loading ? (
+            <p className="loading-text">読み込み中…</p>
+          ) : allWords.length === 0 ? (
+            <p className="empty-text">
+              まだ言葉が登録されていません。<br />
+              あなたが最初の一語を投稿してみませんか？
+            </p>
+          ) : (
+            <div className="browse-entries">
+              {displayRows.map((row) => {
+                const words = wordsByRow.get(row.label) || [];
+                if (words.length === 0 && activeRow === null) return null;
+                return (
+                  <section
+                    key={row.label}
+                    className="dict-index-section"
+                    ref={(el) => { if (el) sectionRefs.current.set(row.label, el); }}
+                  >
+                    <div className="dict-index-heading">
+                      <span className="dict-index-heading-kana">{row.kana[0]}</span>
+                      <span className="dict-index-heading-label">{row.label}</span>
+                      <span className="dict-index-heading-line" />
+                    </div>
+                    {words.length === 0 ? (
+                      <p className="browse-row-empty">この行にはまだ言葉がありません</p>
+                    ) : (
+                      <div className="browse-row-entries">
+                        {words.map((word) => (
+                          <KojienEntry key={word.id} entry={word} showMeta />
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
