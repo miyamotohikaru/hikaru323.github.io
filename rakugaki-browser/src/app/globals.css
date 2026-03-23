@@ -1,50 +1,63 @@
-@import "tailwindcss";
-
-:root {
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #141414;
-  --bg-card: #1a1a1a;
-  --text-primary: #e0e0e0;
-  --text-secondary: #888888;
-  --accent-neon: #ccff00;
-  --accent-neon-dim: #99cc00;
-  --border-color: #2a2a2a;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-@theme inline {
-  --color-background: var(--bg-primary);
-  --color-foreground: var(--text-primary);
-  --color-neon: var(--accent-neon);
-  --color-neon-dim: var(--accent-neon-dim);
-  --color-card: var(--bg-card);
-  --color-border: var(--border-color);
-  --color-muted: var(--text-secondary);
-  --font-sans: system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, monospace;
+:root {
+  --bg: #0a0a0a;
+  --bg2: #141414;
+  --bg3: #1a1a1a;
+  --fg: #e0e0e0;
+  --fg2: #888888;
+  --neon: #ccff00;
+  --neon-dim: #99cc00;
+  --border: #2a2a2a;
 }
 
 body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: var(--accent-neon);
+  background: var(--neon);
   color: #000;
 }
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) translateX(-50%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) translateX(-50%);
-  }
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast {
+  0% { opacity: 0; transform: translate(-50%, -12px); }
+  15% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -12px); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
 }

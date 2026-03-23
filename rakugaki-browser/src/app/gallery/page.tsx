@@ -2,211 +2,224 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import type { Drawing } from "@/lib/types";
-import { getDrawings, deleteDrawing } from "@/lib/storage";
+import type { DrawingMeta } from "@/lib/types";
+import { getGallery, getMyDrawings, deleteMyDrawing } from "@/lib/storage";
 
-// Sample gallery items to show as "other people's work"
-const SAMPLE_DRAWINGS: Omit<Drawing, "strokes">[] = [
-  {
-    id: "sample-1",
-    thumbnail: "",
-    title: "ネオンフラワー",
-    createdAt: Date.now() - 86400000 * 2,
-    updatedAt: Date.now() - 86400000 * 2,
-  },
-  {
-    id: "sample-2",
-    thumbnail: "",
-    title: "夜の東京",
-    createdAt: Date.now() - 86400000 * 5,
-    updatedAt: Date.now() - 86400000 * 5,
-  },
-  {
-    id: "sample-3",
-    thumbnail: "",
-    title: "抽象アート #42",
-    createdAt: Date.now() - 86400000 * 1,
-    updatedAt: Date.now() - 86400000 * 1,
-  },
-];
-
-function formatDate(timestamp: number): string {
-  const d = new Date(timestamp);
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
+function formatDate(ts: number): string {
+  const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-
   if (mins < 1) return "たった今";
   if (mins < 60) return `${mins}分前`;
   if (hours < 24) return `${hours}時間前`;
   if (days < 7) return `${days}日前`;
+  const d = new Date(ts);
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+const SAMPLE_ART: DrawingMeta[] = [
+  { id: "s1", thumbnail: "", title: "ネオンフラワー", createdAt: Date.now() - 86400000 * 2 },
+  { id: "s2", thumbnail: "", title: "夜の東京タワー", createdAt: Date.now() - 86400000 * 5 },
+  { id: "s3", thumbnail: "", title: "抽象アート #42", createdAt: Date.now() - 86400000 * 1 },
+  { id: "s4", thumbnail: "", title: "猫のスケッチ", createdAt: Date.now() - 86400000 * 3 },
+];
+
+const GRADIENTS = [
+  "radial-gradient(circle at 30% 40%, #ff006630, transparent 50%), radial-gradient(circle at 70% 60%, #ccff0030, transparent 50%)",
+  "linear-gradient(135deg, #0a0a0a, #1a1a2e), radial-gradient(circle at 80% 20%, #ff990030, transparent 40%)",
+  "conic-gradient(from 45deg, #ff006620, #ccff0020, #00ccff20, #ff00ff20, #ff006620)",
+  "radial-gradient(circle at 50% 50%, #00ccff20, transparent 60%), radial-gradient(circle at 20% 80%, #ff336630, transparent 40%)",
+];
+
 export default function GalleryPage() {
-  const [myDrawings, setMyDrawings] = useState<Drawing[]>([]);
   const [tab, setTab] = useState<"mine" | "community">("mine");
+  const [myDrawings, setMyDrawings] = useState<DrawingMeta[]>([]);
+  const [communityDrawings, setCommunityDrawings] = useState<DrawingMeta[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setMyDrawings(getDrawings());
+    setMyDrawings(getMyDrawings());
+    getGallery().then((g) => {
+      setCommunityDrawings(g.length > 0 ? g : []);
+      setLoading(false);
+    });
   }, []);
 
   const handleDelete = (id: string) => {
-    deleteDrawing(id);
-    setMyDrawings(getDrawings());
+    deleteMyDrawing(id);
+    setMyDrawings(getMyDrawings());
   };
 
+  const cardStyle: React.CSSProperties = {
+    background: "#141414",
+    borderRadius: 12,
+    border: "1px solid #2a2a2a",
+    overflow: "hidden",
+    transition: "border-color 0.2s",
+    cursor: "pointer",
+    position: "relative",
+  };
+
+  const tabBtn = (active: boolean): React.CSSProperties => ({
+    flex: 1,
+    padding: "8px 16px",
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 500,
+    border: "none",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    background: active ? "#ccff00" : "transparent",
+    color: active ? "#000" : "#888",
+  });
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between px-8 py-6 border-b border-border">
-        <Link href="/" className="text-neon font-bold text-lg tracking-wide">
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <header style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "20px 32px", borderBottom: "1px solid #2a2a2a",
+      }}>
+        <Link href="/" style={{ color: "#ccff00", fontWeight: 700, fontSize: 18, letterSpacing: "0.05em", textDecoration: "none" }}>
           らくがきのブラウザ
         </Link>
-        <nav className="flex gap-6 text-sm text-muted">
-          <Link href="/draw" className="hover:text-neon transition-colors">
-            描く
-          </Link>
-          <Link href="/gallery" className="text-neon">
-            ギャラリー
-          </Link>
+        <nav style={{ display: "flex", gap: 24, fontSize: 14, color: "#888" }}>
+          <Link href="/draw" style={{ textDecoration: "none", color: "inherit" }}>描く</Link>
+          <Link href="/gallery" style={{ textDecoration: "none", color: "#ccff00" }}>ギャラリー</Link>
         </nav>
       </header>
 
-      <main className="flex-1 px-8 py-8 max-w-6xl mx-auto w-full">
+      <main style={{ flex: 1, padding: "32px", maxWidth: 1100, margin: "0 auto", width: "100%" }}>
         {/* Tabs */}
-        <div className="flex gap-1 bg-[#141414] rounded-xl p-1 mb-8 max-w-xs">
-          <button
-            onClick={() => setTab("mine")}
-            className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === "mine"
-                ? "bg-neon text-black"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
+        <div style={{
+          display: "flex", gap: 4, background: "#141414",
+          borderRadius: 12, padding: 4, maxWidth: 280, marginBottom: 32,
+        }}>
+          <button onClick={() => setTab("mine")} style={tabBtn(tab === "mine")}>
             自分の作品
           </button>
-          <button
-            onClick={() => setTab("community")}
-            className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === "community"
-                ? "bg-neon text-black"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
+          <button onClick={() => setTab("community")} style={tabBtn(tab === "community")}>
             みんなの作品
           </button>
         </div>
 
         {tab === "mine" ? (
-          <>
-            {myDrawings.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="text-5xl mb-4 opacity-30">
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-muted">
-                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold mb-2">まだ作品がありません</h3>
-                <p className="text-muted mb-6">
-                  描いて保存すると、ここに表示されます。
-                </p>
-                <Link
-                  href="/draw"
-                  className="inline-flex items-center gap-2 bg-neon text-black font-bold px-6 py-3 rounded-full hover:bg-neon-dim transition-colors"
-                >
-                  描きはじめる
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {myDrawings.map((drawing) => (
-                  <div
-                    key={drawing.id}
-                    className="group relative bg-[#141414] rounded-xl border border-border overflow-hidden hover:border-neon/30 transition-all"
+          myDrawings.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "80px 0" }}>
+              <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>✏️</div>
+              <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>まだ作品がありません</h3>
+              <p style={{ color: "#888", marginBottom: 24 }}>描いて保存すると、ここに表示されます。</p>
+              <Link href="/draw" style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "#ccff00", color: "#000", fontWeight: 600,
+                padding: "12px 28px", borderRadius: 24, textDecoration: "none",
+              }}>
+                描きはじめる →
+              </Link>
+            </div>
+          ) : (
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gap: 16,
+            }}>
+              {myDrawings.map((d) => (
+                <div key={d.id} style={cardStyle}>
+                  <div style={{
+                    aspectRatio: "1", background: "#0a0a0a",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    overflow: "hidden",
+                  }}>
+                    {d.thumbnail ? (
+                      <img src={d.thumbnail} alt={d.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <span style={{ color: "#333", fontSize: 32 }}>🖼</span>
+                    )}
+                  </div>
+                  <div style={{ padding: 12 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {d.title}
+                    </h3>
+                    <p style={{ fontSize: 12, color: "#888", marginTop: 4 }}>{formatDate(d.createdAt)}</p>
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }}
+                    style={{
+                      position: "absolute", top: 8, right: 8,
+                      background: "rgba(0,0,0,0.6)", border: "none",
+                      color: "#888", cursor: "pointer", padding: "4px 8px",
+                      borderRadius: 8, fontSize: 12,
+                    }}
                   >
-                    <div className="aspect-square relative bg-[#0a0a0a]">
-                      {drawing.thumbnail ? (
-                        <Image
-                          src={drawing.thumbnail}
-                          alt={drawing.title}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted">
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <polyline points="21 15 16 10 5 21" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <h3 className="text-sm font-medium truncate">{drawing.title}</h3>
-                      <p className="text-xs text-muted mt-0.5">
-                        {formatDate(drawing.createdAt)}
-                      </p>
-                    </div>
-                    {/* Delete button */}
-                    <button
-                      onClick={() => handleDelete(drawing.id)}
-                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                      title="削除"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 6L6 18M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          /* Community tab */
-          <div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {SAMPLE_DRAWINGS.map((item) => (
-                <div
-                  key={item.id}
-                  className="group relative bg-[#141414] rounded-xl border border-border overflow-hidden hover:border-neon/30 transition-all"
-                >
-                  <div className="aspect-square relative bg-[#0a0a0a] flex items-center justify-center">
-                    {/* Placeholder art using CSS gradients */}
-                    <div
-                      className="w-full h-full"
-                      style={{
-                        background:
-                          item.id === "sample-1"
-                            ? "radial-gradient(circle at 30% 40%, #ff006630, transparent 50%), radial-gradient(circle at 70% 60%, #ccff0030, transparent 50%), radial-gradient(circle at 50% 80%, #00ccff30, transparent 40%)"
-                            : item.id === "sample-2"
-                              ? "linear-gradient(135deg, #0a0a0a 0%, #141414 50%, #1a1a2e 100%), radial-gradient(circle at 80% 20%, #ff990020, transparent 30%)"
-                              : "conic-gradient(from 45deg, #ff006620, #ccff0020, #00ccff20, #ff00ff20, #ff006620)",
-                      }}
-                    />
-                  </div>
-                  <div className="p-3">
-                    <h3 className="text-sm font-medium truncate">{item.title}</h3>
-                    <p className="text-xs text-muted mt-0.5">
-                      {formatDate(item.createdAt)}
-                    </p>
-                  </div>
+                    ✕
+                  </button>
                 </div>
               ))}
             </div>
-            <div className="text-center py-12">
-              <p className="text-muted text-sm">
-                コミュニティ機能は準備中です。もうすぐ、みんなの作品をここで見られるようになります。
-              </p>
-            </div>
+          )
+        ) : (
+          <div>
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "80px 0" }}>
+                <div style={{
+                  width: 32, height: 32,
+                  border: "3px solid #333", borderTopColor: "#ccff00",
+                  borderRadius: "50%", animation: "spin 0.8s linear infinite",
+                  margin: "0 auto 16px",
+                }} />
+                <p style={{ color: "#888" }}>読み込み中...</p>
+              </div>
+            ) : (
+              <>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: 16,
+                }}>
+                  {/* Real community drawings */}
+                  {communityDrawings.map((d) => (
+                    <div key={d.id} style={cardStyle}>
+                      <div style={{
+                        aspectRatio: "1", background: "#0a0a0a",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        overflow: "hidden",
+                      }}>
+                        {d.thumbnail ? (
+                          <img src={d.thumbnail} alt={d.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <span style={{ color: "#333", fontSize: 32 }}>🖼</span>
+                        )}
+                      </div>
+                      <div style={{ padding: 12 }}>
+                        <h3 style={{ fontSize: 14, fontWeight: 500 }}>{d.title}</h3>
+                        <p style={{ fontSize: 12, color: "#888", marginTop: 4 }}>{formatDate(d.createdAt)}</p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Sample placeholders */}
+                  {SAMPLE_ART.map((item, i) => (
+                    <div key={item.id} style={cardStyle}>
+                      <div style={{
+                        aspectRatio: "1",
+                        background: GRADIENTS[i % GRADIENTS.length],
+                      }} />
+                      <div style={{ padding: 12 }}>
+                        <h3 style={{ fontSize: 14, fontWeight: 500 }}>{item.title}</h3>
+                        <p style={{ fontSize: 12, color: "#888", marginTop: 4 }}>{formatDate(item.createdAt)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ textAlign: "center", padding: "48px 0" }}>
+                  <p style={{ color: "#666", fontSize: 14 }}>
+                    Vercel KV を接続すると、みんなの作品がリアルタイムで表示されます。
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         )}
       </main>
