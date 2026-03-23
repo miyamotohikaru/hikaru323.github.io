@@ -1,77 +1,48 @@
 "use client";
 
 import { useState } from "react";
-import SearchForm from "@/components/SearchForm";
-import LookupResult from "@/components/LookupResult";
-import DictionaryPage from "@/components/DictionaryPage";
+import SubmitForm from "@/components/SubmitForm";
+import KojienPreview from "@/components/KojienPreview";
+import RecentWords from "@/components/RecentWords";
 
-interface LookupData {
+interface KojienEntryData {
+  word: string;
+  reading: string;
+  partOfSpeech: string;
+  definition: string;
+  example: string;
+  formatted: string;
+}
+
+interface SubmitResult {
   exists: boolean;
   word: string;
-  reading?: string;
-  partOfSpeech?: string;
-  definition?: string;
-  note?: string;
-  etymology?: string;
-  examples?: string[];
-  synonyms?: string;
+  reason?: string;
+  kojienEntry?: KojienEntryData;
+  nickname?: string;
 }
 
 export default function Home() {
-  const [lookupResult, setLookupResult] = useState<LookupData | null>(null);
-  const [displayedResult, setDisplayedResult] = useState<LookupData | null>(null);
-  const [isLooking, setIsLooking] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [isPageOpen, setIsPageOpen] = useState(false);
+  const [result, setResult] = useState<SubmitResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [nickname, setNickname] = useState("");
 
-  const handleResult = (result: LookupData) => {
-    setHasSearched(true);
-    setLookupResult(result);
-
-    if (displayedResult) {
-      // Close current page, then open new one
-      setIsPageOpen(false);
-      setTimeout(() => {
-        setDisplayedResult(result);
-        setIsPageOpen(true);
-      }, 350);
-    } else {
-      setDisplayedResult(result);
-      setIsPageOpen(true);
-    }
+  const handleResult = (data: SubmitResult) => {
+    setNickname(data.nickname || "");
+    setResult(data);
   };
 
-  const handleClear = () => {
-    setIsPageOpen(false);
-    setTimeout(() => {
-      setLookupResult(null);
-      setDisplayedResult(null);
-      setHasSearched(false);
-    }, 350);
+  const handleRetry = () => {
+    setResult(null);
   };
 
   return (
     <main className="main-content">
-      {/* Hero + Search */}
-      <div className={`hero ${!hasSearched && !isLooking ? "hero-centered" : ""}`}>
-        {!hasSearched && !isLooking && (
-          <div className="hero-copy">
-            <h1 className="hero-title">存在しない言葉辞典</h1>
-            <p className="hero-subtitle">
-              存在しない言葉だけを受け付ける辞書。<br />
-              あなたの造語で、空っぽの辞典を育ててください。
-            </p>
-          </div>
-        )}
-        <SearchForm
-          onResult={handleResult}
-          onLoading={(loading) => setIsLooking(loading)}
-          onClear={handleClear}
-        />
-      </div>
+      {/* 最近生まれた言葉 */}
+      {!result && !isLoading && <RecentWords />}
 
-      {/* Loading state */}
-      {isLooking && (
+      {/* ローディング中 */}
+      {isLoading && (
         <div className="page-flip-loading fade-in">
           <div className="page-flip-book">
             <div className="page-flip-cover-back" />
@@ -89,17 +60,45 @@ export default function Home() {
             <div className="page-flip-page page-flip-page-12" />
             <div className="page-flip-cover-front" />
           </div>
-          <p className="page-flip-text">辞典をめくっています…</p>
+          <p className="page-flip-text">編纂者が審査しています…</p>
         </div>
       )}
 
-      {/* Result in DictionaryPage */}
-      {!isLooking && displayedResult && (
-        <DictionaryPage isOpen={isPageOpen}>
-          <LookupResult result={displayedResult} />
-        </DictionaryPage>
+      {/* 結果表示 */}
+      {!isLoading && result && (
+        <>
+          {result.exists ? (
+            <div className="rejection-container fade-in">
+              <div className="rejection-card">
+                <p className="rejection-text">
+                  「{result.word}」は実在する言葉のため、<br />
+                  本辞典には掲載しておりません。
+                </p>
+                {result.reason && (
+                  <p className="rejection-reason">{result.reason}</p>
+                )}
+                <button onClick={handleRetry} className="rejection-retry">
+                  別の言葉を申請する
+                </button>
+              </div>
+            </div>
+          ) : result.kojienEntry ? (
+            <KojienPreview
+              entry={result.kojienEntry}
+              nickname={nickname}
+              onRetry={handleRetry}
+            />
+          ) : null}
+        </>
       )}
 
+      {/* 投稿フォーム */}
+      {!result && !isLoading && (
+        <div className="submit-section">
+          <div className="submit-divider" />
+          <SubmitForm onResult={handleResult} onLoading={setIsLoading} />
+        </div>
+      )}
     </main>
   );
 }

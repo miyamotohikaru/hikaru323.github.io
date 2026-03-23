@@ -10,6 +10,8 @@ export interface WordDoc {
   examples: string[];
   synonyms: string;
   nickname: string;
+  kojienFormatted: string;
+  authorToken: string;
   likes: number;
   viewCount: number;
   isVisible: boolean;

@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { WordEntry } from "@/lib/types";
-import Bookshelf from "@/components/Bookshelf";
-import AdSense from "@/components/AdSense";
+import KojienEntry from "@/components/KojienEntry";
 
 type Tab = "popular" | "newest";
 
@@ -53,10 +52,11 @@ export default function RankingPage() {
       ) : words.length === 0 ? (
         <p className="empty-text">まだ投稿がありません。</p>
       ) : (
-        <>
-          <Bookshelf words={words} />
-          <AdSense slot="ranking-feed" />
-        </>
+        <div className="browse-row-entries">
+          {words.map((w) => (
+            <KojienEntry key={w.id} entry={w} showMeta />
+          ))}
+        </div>
       )}
     </main>
   );

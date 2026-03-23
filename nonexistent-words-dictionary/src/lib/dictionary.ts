@@ -1,7 +1,7 @@
 /**
  * ローカル日本語辞書（基本的な単語リスト）
  * 実在する日本語かどうかの簡易チェックに使用
- * 完全ではないが、よく使われる単語をカバー
+ * Bloom filterの代わりにSetで高速O(1)チェック
  */
 
 const DICTIONARY_WORDS = new Set([
@@ -137,101 +137,6 @@ const DICTIONARY_WORDS = new Set([
   "憲法", "選挙", "投票", "大統領", "首相", "国会", "裁判",
 ]);
 
-/**
- * ローカル辞書で高速チェック（同期）
- */
-function existsInLocalDictionary(word: string): boolean {
-  if (DICTIONARY_WORDS.has(word)) return true;
-  const hiragana = toHiragana(word);
-  const katakana = toKatakana(word);
-  if (DICTIONARY_WORDS.has(hiragana)) return true;
-  if (DICTIONARY_WORDS.has(katakana)) return true;
-  return false;
-}
-
-/**
- * 日本語版Wiktionaryで単語の存在をチェック（非同期）
- * ページが存在すれば実在する言葉と判定
- */
-async function existsInWiktionary(word: string): Promise<boolean> {
-  try {
-    const url = `https://ja.wiktionary.org/w/api.php?action=query&titles=${encodeURIComponent(word)}&format=json&origin=*`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
-    if (!res.ok) return false;
-    const data = await res.json();
-    const pages = data?.query?.pages;
-    if (!pages) return false;
-    // ページが存在しない場合、IDが "-1" になる
-    return !Object.keys(pages).includes("-1");
-  } catch {
-    // API失敗時は安全側に倒す（存在しない扱い）
-    return false;
-  }
-}
-
-/**
- * Weblio辞書で単語の存在をチェック（非同期）
- * ページが存在し、辞書コンテンツが含まれていれば実在する言葉と判定
- */
-async function existsInWeblio(word: string): Promise<boolean> {
-  try {
-    const url = `https://www.weblio.jp/content/${encodeURIComponent(word)}`;
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(5000),
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; NonexistentWordsDictionary/1.0)",
-      },
-    });
-    // 404やリダイレクトで見つからない場合
-    if (!res.ok) return false;
-    const html = await res.text();
-    // Weblioで見つからない場合に表示されるメッセージをチェック
-    if (html.includes("に一致する情報は見つかりませんでした") ||
-        html.includes("についての情報は見つかりませんでした") ||
-        html.includes("は見つかりませんでした")) {
-      return false;
-    }
-    // 辞書コンテンツ（用語解説セクション）が存在するかチェック
-    if (html.includes("kiji") || html.includes("NetDicBody")) {
-      return true;
-    }
-    return false;
-  } catch {
-    // API失敗時は安全側に倒す（存在しない扱い）
-    return false;
-  }
-}
-
-export interface DictionaryCheckResult {
-  exists: boolean;
-  source?: "local" | "wiktionary" | "weblio";
-}
-
-/**
- * 入力された言葉が実在するか判定
- * 1. ローカル辞書で高速チェック
- * 2. Wiktionary APIで広範囲チェック
- * 3. Weblio辞書で広範囲チェック
- */
-export async function existsInDictionary(word: string): Promise<DictionaryCheckResult> {
-  // ローカル辞書に一致 → 即座に実在判定
-  if (existsInLocalDictionary(word)) return { exists: true, source: "local" };
-
-  // 1文字のひらがな/カタカナは辞書に載っていても意味がないのでスキップ
-  if (word.length === 1) return { exists: false };
-
-  // Wiktionary と Weblio を並列チェック
-  const [wiktionaryResult, weblioResult] = await Promise.all([
-    existsInWiktionary(word),
-    existsInWeblio(word),
-  ]);
-
-  if (wiktionaryResult) return { exists: true, source: "wiktionary" };
-  if (weblioResult) return { exists: true, source: "weblio" };
-
-  return { exists: false };
-}
-
 /** カタカナ → ひらがな変換 */
 function toHiragana(str: string): string {
   return str.replace(/[\u30A1-\u30F6]/g, (ch) =>
@@ -244,4 +149,22 @@ function toKatakana(str: string): string {
   return str.replace(/[\u3041-\u3096]/g, (ch) =>
     String.fromCharCode(ch.charCodeAt(0) + 0x60)
   );
+}
+
+export interface DictionaryCheckResult {
+  exists: boolean;
+  source?: "local";
+}
+
+/**
+ * ローカル辞書で高速チェック（同期・O(1)）
+ * Wiktionary/Weblio APIは廃止。Claude Opus 4.6による判定に移行。
+ */
+export function existsInLocalDictionary(word: string): DictionaryCheckResult {
+  if (DICTIONARY_WORDS.has(word)) return { exists: true, source: "local" };
+  const hiragana = toHiragana(word);
+  const katakana = toKatakana(word);
+  if (DICTIONARY_WORDS.has(hiragana)) return { exists: true, source: "local" };
+  if (DICTIONARY_WORDS.has(katakana)) return { exists: true, source: "local" };
+  return { exists: false };
 }

@@ -65,10 +65,10 @@ export default function RootLayout({
             </Link>
             <nav className="header-nav">
               <Link href="/" className="header-link">
-                引く
+                登録する
               </Link>
               <Link href="/browse" className="header-link">
-                一覧
+                辞書
               </Link>
               <Link href="/ranking" className="header-link">
                 ランキング

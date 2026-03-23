@@ -32,6 +32,8 @@ export async function POST(request: NextRequest) {
       .filter((e: string) => e && e.length > 0);
     const synonyms = body.synonyms?.trim() || "";
     const nickname = body.nickname?.trim();
+    const kojienFormatted = body.kojienFormatted?.trim() || "";
+    const authorToken = body.authorToken?.trim() || "";
 
     // Validation
     if (!word || !reading || !partOfSpeech || !definition || !nickname) {
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
 
         const docRef = await db.collection("words").add({
           word, reading, partOfSpeech, definition, etymology,
-          examples, synonyms, nickname,
+          examples, synonyms, nickname, kojienFormatted, authorToken,
           likes: 0, viewCount: 0, isVisible: true, source: "user",
           createdAt: FieldValue.serverTimestamp(),
         });
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     const { id } = addWord({
       word, reading, partOfSpeech, definition, etymology,
-      examples, synonyms, nickname,
+      examples, synonyms, nickname, kojienFormatted, authorToken,
       likes: 0, viewCount: 0, isVisible: true, source: "user",
     });
 
@@ -170,11 +172,16 @@ export async function GET(request: NextRequest) {
         }
 
         const snapshot = await query.get();
-        const words = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
-        }));
+        const words = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            kojienFormatted: data.kojienFormatted || "",
+            authorToken: data.authorToken || "",
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+          };
+        });
 
         return NextResponse.json({ words });
       } catch (fbError) {
