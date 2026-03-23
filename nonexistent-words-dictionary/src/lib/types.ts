@@ -12,6 +12,9 @@ export interface WordEntry {
   viewCount: number;
   isVisible: boolean;
   source: "user" | "ai";
+  kojienFormatted: string;
+  authorToken: string;
+  featuredDate?: string | null;
   createdAt?: string | null;
 }
 

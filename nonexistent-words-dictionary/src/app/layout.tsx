@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
 import Script from "next/script";
+import RandomWordButton from "@/components/RandomWordButton";
 
 export const metadata: Metadata = {
   title: "存在しない言葉辞典",
@@ -65,14 +66,18 @@ export default function RootLayout({
             </Link>
             <nav className="header-nav">
               <Link href="/" className="header-link">
-                引く
+                登録する
               </Link>
               <Link href="/browse" className="header-link">
-                一覧
+                辞書
               </Link>
               <Link href="/ranking" className="header-link">
                 ランキング
               </Link>
+              <Link href="/my" className="header-link">
+                語集
+              </Link>
+              <RandomWordButton />
             </nav>
           </div>
         </header>

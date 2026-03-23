@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import WordCard from "@/components/WordCard";
 import LikeButton from "@/components/LikeButton";
@@ -14,18 +16,16 @@ interface Props {
 }
 
 export default function WordDetailClient({ word, relatedWords }: Props) {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!word) {
+      router.replace("/");
+    }
+  }, [word, router]);
+
   if (!word) {
-    return (
-      <main className="main-content">
-        <div className="not-found">
-          <h1>語が見つかりません</h1>
-          <p>お探しの言葉は辞典に登録されていないようです。</p>
-          <Link href="/" className="nav-link">
-            辞典に戻る →
-          </Link>
-        </div>
-      </main>
-    );
+    return null;
   }
 
   const shareUrl = typeof window !== "undefined"

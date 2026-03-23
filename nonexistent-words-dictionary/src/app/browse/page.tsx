@@ -1,92 +1,120 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GOJUON_ROWS, WordEntry } from "@/lib/types";
-import AdSense from "@/components/AdSense";
+import KojienEntry from "@/components/KojienEntry";
 
-// Flatten all kana into a single array for the grid
-const ALL_KANA = GOJUON_ROWS.flatMap((row) => row.kana);
+const GOJUON_TABS = GOJUON_ROWS.slice(0, 10); // あ〜わ行のみ（清音）
 
 export default function BrowsePage() {
-  const [selectedKana, setSelectedKana] = useState("あ");
-  const [words, setWords] = useState<WordEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchWords = useCallback(async (kana: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/words?kana=${encodeURIComponent(kana)}`);
-      const data = await res.json();
-      setWords(data.words || []);
-    } catch {
-      setWords([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [allWords, setAllWords] = useState<WordEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeRow, setActiveRow] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchWords(selectedKana);
-  }, [selectedKana, fetchWords]);
+    fetch("/api/words?limit=100&sort=newest")
+      .then((res) => res.json())
+      .then((data) => setAllWords(data.words || []))
+      .catch(() => setAllWords([]))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const handleKanaClick = (kana: string) => {
-    setSelectedKana(kana);
-  };
+  // Group words by gojuon row
+  const wordsByRow = new Map<string, WordEntry[]>();
+  for (const row of GOJUON_ROWS) {
+    wordsByRow.set(row.label, []);
+  }
+  for (const word of allWords) {
+    if (!word.reading) continue;
+    const firstChar = word.reading.charAt(0);
+    for (const row of GOJUON_ROWS) {
+      if (row.kana.includes(firstChar)) {
+        wordsByRow.get(row.label)!.push(word);
+        break;
+      }
+    }
+  }
+
+  // Sort within each group by reading
+  for (const [, words] of wordsByRow) {
+    words.sort((a, b) => a.reading.localeCompare(b.reading));
+  }
+
+  // Count for tab indicators
+  const rowCounts = new Map<string, number>();
+  for (const [label, words] of wordsByRow) {
+    rowCounts.set(label, words.length);
+  }
+
+  // Rows to display
+  const displayRows = activeRow
+    ? GOJUON_ROWS.filter((r) => r.label === activeRow)
+    : GOJUON_ROWS;
 
   return (
     <main className="main-content">
-      <div className="gojuon-header">
-        <Link href="/" className="back-link">
-          ← 辞典に戻る
-        </Link>
-        <h1 className="page-title">五十音一覧</h1>
+      <div className="browse-header">
+        <Link href="/" className="back-link">← 辞典に戻る</Link>
+        <h1 className="page-title">辞書</h1>
         <p className="page-subtitle">
-          登録された造語を五十音順でお引きいただけます。
+          収録語を五十音順でお引きいただけます。
+          現在 {allWords.length} 語収録
         </p>
       </div>
 
-      {/* Gojuon Grid */}
-      <div className="gojuon-grid">
-        {ALL_KANA.map((k) => (
-          <button
-            key={k}
-            className={`gojuon-cell ${selectedKana === k ? "active" : ""}`}
-            onClick={() => handleKanaClick(k)}
-          >
-            {k}
-          </button>
-        ))}
+      {/* 五十音タブ */}
+      <div className="gojuon-tabs">
+        <button
+          className={`gojuon-tab ${activeRow === null ? "active" : ""}`}
+          onClick={() => setActiveRow(null)}
+        >
+          全て
+        </button>
+        {GOJUON_TABS.map((row) => {
+          const count = rowCounts.get(row.label) || 0;
+          return (
+            <button
+              key={row.label}
+              className={`gojuon-tab ${activeRow === row.label ? "active" : ""} ${count === 0 ? "empty" : ""}`}
+              onClick={() => setActiveRow(row.label)}
+            >
+              {row.kana[0]}
+              {count > 0 && <span className="gojuon-tab-count">{count}</span>}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Word List */}
-      <h2 className="kana-heading">「{selectedKana}」</h2>
+      {/* 単語一覧 */}
       {loading ? (
         <p className="loading-text">読み込み中…</p>
-      ) : words.length === 0 ? (
+      ) : allWords.length === 0 ? (
         <p className="empty-text">
-          「{selectedKana}」で始まる言葉はまだありません。<br />
+          まだ言葉が登録されていません。<br />
           あなたが最初の一語を投稿してみませんか？
         </p>
       ) : (
-        <>
-          <div className="browse-word-list">
-            {words.map((w) => (
-              <Link key={w.id} href={`/word/${w.id}`} className="browse-word-item">
-                <span>
-                  <span className="browse-word-name">{w.word}</span>
-                  <span className="browse-word-reading">【{w.reading}】</span>
-                </span>
-                <span className="browse-word-def">
-                  {w.definition.length > 50
-                    ? w.definition.substring(0, 50) + "…"
-                    : w.definition}
-                </span>
-              </Link>
-            ))}
-          </div>
-          {words.length > 9 && <AdSense slot="browse-feed" />}
-        </>
+        <div className="browse-entries">
+          {displayRows.map((row) => {
+            const words = wordsByRow.get(row.label) || [];
+            if (words.length === 0 && activeRow === null) return null;
+            return (
+              <section key={row.label} className="browse-row-section">
+                <h2 className="browse-row-heading">── {row.label} ──</h2>
+                {words.length === 0 ? (
+                  <p className="browse-row-empty">この行にはまだ言葉がありません</p>
+                ) : (
+                  <div className="browse-row-entries">
+                    {words.map((word) => (
+                      <KojienEntry key={word.id} entry={word} showMeta />
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })}
+        </div>
       )}
     </main>
   );
