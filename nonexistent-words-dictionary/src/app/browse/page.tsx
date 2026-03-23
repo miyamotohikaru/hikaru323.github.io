@@ -2,21 +2,30 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { GOJUON_ROWS, WordEntry } from "@/lib/types";
-import AdSense from "@/components/AdSense";
+import { GOJUON_ROWS } from "@/lib/types";
+import type { WordEntry } from "@/lib/types";
+import KojienEntry from "@/components/KojienEntry";
 
-// Flatten all kana into a single array for the grid
 const ALL_KANA = GOJUON_ROWS.flatMap((row) => row.kana);
 
 export default function BrowsePage() {
   const [selectedKana, setSelectedKana] = useState("あ");
   const [words, setWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [kanaCounts, setKanaCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetch("/api/words?counts=true")
+      .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
+      .then((data) => setKanaCounts(data.kanaCounts || {}))
+      .catch(() => {});
+  }, []);
 
   const fetchWords = useCallback(async (kana: string) => {
     setLoading(true);
     try {
       const res = await fetch(`/api/words?kana=${encodeURIComponent(kana)}`);
+      if (!res.ok) throw new Error();
       const data = await res.json();
       setWords(data.words || []);
     } catch {
@@ -30,10 +39,6 @@ export default function BrowsePage() {
     fetchWords(selectedKana);
   }, [selectedKana, fetchWords]);
 
-  const handleKanaClick = (kana: string) => {
-    setSelectedKana(kana);
-  };
-
   return (
     <main className="main-content">
       <div className="gojuon-header">
@@ -46,20 +51,21 @@ export default function BrowsePage() {
         </p>
       </div>
 
-      {/* Gojuon Grid */}
       <div className="gojuon-grid">
-        {ALL_KANA.map((k) => (
-          <button
-            key={k}
-            className={`gojuon-cell ${selectedKana === k ? "active" : ""}`}
-            onClick={() => handleKanaClick(k)}
-          >
-            {k}
-          </button>
-        ))}
+        {ALL_KANA.map((k) => {
+          const count = kanaCounts[k] || 0;
+          return (
+            <button
+              key={k}
+              className={`gojuon-cell ${selectedKana === k ? "active" : ""} ${count > 0 ? "has-words" : "empty"}`}
+              onClick={() => setSelectedKana(k)}
+            >
+              {k}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Word List */}
       <h2 className="kana-heading">「{selectedKana}」</h2>
       {loading ? (
         <p className="loading-text">読み込み中…</p>
@@ -69,24 +75,11 @@ export default function BrowsePage() {
           あなたが最初の一語を投稿してみませんか？
         </p>
       ) : (
-        <>
-          <div className="browse-word-list">
-            {words.map((w) => (
-              <Link key={w.id} href={`/word/${w.id}`} className="browse-word-item">
-                <span>
-                  <span className="browse-word-name">{w.word}</span>
-                  <span className="browse-word-reading">【{w.reading}】</span>
-                </span>
-                <span className="browse-word-def">
-                  {w.definition.length > 50
-                    ? w.definition.substring(0, 50) + "…"
-                    : w.definition}
-                </span>
-              </Link>
-            ))}
-          </div>
-          {words.length > 9 && <AdSense slot="browse-feed" />}
-        </>
+        <div className="browse-kojien-list">
+          {words.map((w) => (
+            <KojienEntry key={w.id} entry={w} />
+          ))}
+        </div>
       )}
     </main>
   );

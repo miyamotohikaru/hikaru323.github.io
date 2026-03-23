@@ -1,105 +1,100 @@
 "use client";
 
-import { useState } from "react";
-import SearchForm from "@/components/SearchForm";
-import LookupResult from "@/components/LookupResult";
-import DictionaryPage from "@/components/DictionaryPage";
+import { useState, useEffect } from "react";
+import SubmitForm from "@/components/SubmitForm";
+import KojienPreview from "@/components/KojienPreview";
+import RecentWords from "@/components/RecentWords";
+import type { WordEntry, KojienEntryData } from "@/lib/types";
 
-interface LookupData {
+interface SubmitResult {
   exists: boolean;
   word: string;
-  reading?: string;
-  partOfSpeech?: string;
-  definition?: string;
-  note?: string;
-  etymology?: string;
-  examples?: string[];
-  synonyms?: string;
+  reason?: string;
+  kojienEntry?: KojienEntryData;
+  nickname?: string;
 }
 
 export default function Home() {
-  const [lookupResult, setLookupResult] = useState<LookupData | null>(null);
-  const [displayedResult, setDisplayedResult] = useState<LookupData | null>(null);
-  const [isLooking, setIsLooking] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [isPageOpen, setIsPageOpen] = useState(false);
+  const [result, setResult] = useState<SubmitResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [recentWords, setRecentWords] = useState<WordEntry[]>([]);
+  const [dailyWord, setDailyWord] = useState<WordEntry | null>(null);
 
-  const handleResult = (result: LookupData) => {
-    setHasSearched(true);
-    setLookupResult(result);
+  useEffect(() => {
+    fetch("/api/words?sort=newest&limit=5")
+      .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
+      .then((data) => setRecentWords(data.words || []))
+      .catch(() => {});
 
-    if (displayedResult) {
-      // Close current page, then open new one
-      setIsPageOpen(false);
-      setTimeout(() => {
-        setDisplayedResult(result);
-        setIsPageOpen(true);
-      }, 350);
-    } else {
-      setDisplayedResult(result);
-      setIsPageOpen(true);
-    }
+    fetch("/api/daily")
+      .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
+      .then((data) => { if (data.word) setDailyWord(data.word); })
+      .catch(() => {});
+  }, []);
+
+  const handleResult = (data: SubmitResult) => {
+    setResult(data);
   };
 
-  const handleClear = () => {
-    setIsPageOpen(false);
-    setTimeout(() => {
-      setLookupResult(null);
-      setDisplayedResult(null);
-      setHasSearched(false);
-    }, 350);
+  const handleRetry = () => {
+    setResult(null);
   };
 
   return (
     <main className="main-content">
-      {/* Hero + Search */}
-      <div className={`hero ${!hasSearched && !isLooking ? "hero-centered" : ""}`}>
-        {!hasSearched && !isLooking && (
-          <div className="hero-copy">
-            <h1 className="hero-title">存在しない言葉辞典</h1>
-            <p className="hero-subtitle">
-              存在しない言葉だけを受け付ける辞書。<br />
-              あなたの造語で、空っぽの辞典を育ててください。
+      {/* Daily Word */}
+      {dailyWord && (
+        <div className="daily-section">
+          <h2 className="daily-label">本日の見出し語</h2>
+          <div className="daily-card">
+            <p className="daily-formatted">
+              {dailyWord.kojienFormatted ||
+                `${dailyWord.word}【${dailyWord.reading}】（${dailyWord.partOfSpeech}）${dailyWord.definition}`}
             </p>
+            <span className="daily-likes">♡ {dailyWord.likes}</span>
           </div>
-        )}
-        <SearchForm
-          onResult={handleResult}
-          onLoading={(loading) => setIsLooking(loading)}
-          onClear={handleClear}
-        />
-      </div>
-
-      {/* Loading state */}
-      {isLooking && (
-        <div className="page-flip-loading fade-in">
-          <div className="page-flip-book">
-            <div className="page-flip-cover-back" />
-            <div className="page-flip-page page-flip-page-1" />
-            <div className="page-flip-page page-flip-page-2" />
-            <div className="page-flip-page page-flip-page-3" />
-            <div className="page-flip-page page-flip-page-4" />
-            <div className="page-flip-page page-flip-page-5" />
-            <div className="page-flip-page page-flip-page-6" />
-            <div className="page-flip-page page-flip-page-7" />
-            <div className="page-flip-page page-flip-page-8" />
-            <div className="page-flip-page page-flip-page-9" />
-            <div className="page-flip-page page-flip-page-10" />
-            <div className="page-flip-page page-flip-page-11" />
-            <div className="page-flip-page page-flip-page-12" />
-            <div className="page-flip-cover-front" />
-          </div>
-          <p className="page-flip-text">辞典をめくっています…</p>
         </div>
       )}
 
-      {/* Result in DictionaryPage */}
-      {!isLooking && displayedResult && (
-        <DictionaryPage isOpen={isPageOpen}>
-          <LookupResult result={displayedResult} />
-        </DictionaryPage>
+      {/* Recent Words */}
+      <RecentWords words={recentWords} />
+
+      <div className="divider" />
+
+      {/* Submit / Result */}
+      {!result && !isLoading && (
+        <SubmitForm onResult={handleResult} onLoading={setIsLoading} />
       )}
 
+      {isLoading && (
+        <div className="loading-section fade-in">
+          <div className="loading-spinner" />
+          <p className="loading-text">辞典を編纂中…</p>
+        </div>
+      )}
+
+      {result && result.exists && (
+        <div className="rejection-section fade-in">
+          <p className="rejection-text">
+            「{result.word}」は実在する言葉のため、<br />
+            本辞典には掲載しておりません。
+          </p>
+          {result.reason && (
+            <p className="rejection-reason">{result.reason}</p>
+          )}
+          <button onClick={handleRetry} className="retry-button">
+            別の言葉を申請する
+          </button>
+        </div>
+      )}
+
+      {result && !result.exists && result.kojienEntry && (
+        <KojienPreview
+          entry={result.kojienEntry}
+          nickname={result.nickname || ""}
+          onRetry={handleRetry}
+        />
+      )}
     </main>
   );
 }

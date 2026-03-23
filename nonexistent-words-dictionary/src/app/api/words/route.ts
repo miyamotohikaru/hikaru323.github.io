@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getFieldValue, isFirebaseAvailable } from "@/lib/firebase";
-import { addWord, findByWord, listWords } from "@/lib/in-memory-store";
+import { addWord, findByWord, listWords, getKanaCounts } from "@/lib/in-memory-store";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { checkAllFieldsForNG } from "@/lib/ng-words";
 
@@ -32,6 +32,8 @@ export async function POST(request: NextRequest) {
       .filter((e: string) => e && e.length > 0);
     const synonyms = body.synonyms?.trim() || "";
     const nickname = body.nickname?.trim();
+    const kojienFormatted = body.kojienFormatted?.trim() || "";
+    const authorToken = body.authorToken?.trim() || "";
 
     // Validation
     if (!word || !reading || !partOfSpeech || !definition || !nickname) {
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
 
         const docRef = await db.collection("words").add({
           word, reading, partOfSpeech, definition, etymology,
-          examples, synonyms, nickname,
+          examples, synonyms, nickname, kojienFormatted, authorToken,
           likes: 0, viewCount: 0, isVisible: true, source: "user",
           createdAt: FieldValue.serverTimestamp(),
         });
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     const { id } = addWord({
       word, reading, partOfSpeech, definition, etymology,
-      examples, synonyms, nickname,
+      examples, synonyms, nickname, kojienFormatted, authorToken,
       likes: 0, viewCount: 0, isVisible: true, source: "user",
     });
 
@@ -135,10 +137,34 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const wantCounts = searchParams.get("counts") === "true";
     const kana = searchParams.get("kana");
     const sort = searchParams.get("sort") || "newest";
-    const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
+    const parsedLimit = parseInt(searchParams.get("limit") || "20", 10);
+    const limit = Math.min(Number.isFinite(parsedLimit) ? parsedLimit : 20, 100);
     const cursor = searchParams.get("cursor");
+
+    if (wantCounts) {
+      if (isFirebaseAvailable()) {
+        try {
+          const db = await getDb();
+          const snapshot = await db.collection("words").where("isVisible", "==", true).select("reading").get();
+          const counts: Record<string, number> = {};
+          snapshot.docs.forEach((doc) => {
+            const reading = doc.data().reading;
+            if (reading) {
+              const firstChar = reading.charAt(0);
+              counts[firstChar] = (counts[firstChar] || 0) + 1;
+            }
+          });
+          return NextResponse.json({ kanaCounts: counts });
+        } catch {
+          // fallback to in-memory
+        }
+      }
+      const kanaCounts = getKanaCounts();
+      return NextResponse.json({ kanaCounts });
+    }
 
     if (isFirebaseAvailable()) {
       try {
@@ -170,11 +196,26 @@ export async function GET(request: NextRequest) {
         }
 
         const snapshot = await query.get();
-        const words = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
-        }));
+        const words = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            word: data.word || "",
+            reading: data.reading || "",
+            partOfSpeech: data.partOfSpeech || "",
+            definition: data.definition || "",
+            etymology: data.etymology || "",
+            examples: data.examples || [],
+            synonyms: data.synonyms || "",
+            nickname: data.nickname || "",
+            kojienFormatted: data.kojienFormatted || "",
+            likes: data.likes || 0,
+            viewCount: data.viewCount || 0,
+            isVisible: data.isVisible ?? true,
+            source: data.source || "user",
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+          };
+        });
 
         return NextResponse.json({ words });
       } catch (fbError) {
@@ -183,7 +224,8 @@ export async function GET(request: NextRequest) {
     }
 
     // インメモリモード
-    const words = listWords({ kana, sort, limit, cursor });
+    const rawWords = listWords({ kana, sort, limit, cursor });
+    const words = rawWords.map(({ authorToken: _, ...rest }) => rest);
     return NextResponse.json({ words });
   } catch (error) {
     console.error("Words fetch error:", error);

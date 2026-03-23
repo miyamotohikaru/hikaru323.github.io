@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import WordCard from "@/components/WordCard";
+import KojienEntry from "@/components/KojienEntry";
 import LikeButton from "@/components/LikeButton";
 import ShareButtons from "@/components/ShareButtons";
 import ReportButton from "@/components/ReportButton";
-import AdSense from "@/components/AdSense";
 import { WordEntry } from "@/lib/types";
 
 interface Props {
@@ -41,7 +40,25 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
       </div>
 
       <div className="word-detail-content fade-in">
-        <WordCard entry={word} showLink={false} />
+        <KojienEntry entry={word} showLink={false} />
+
+        {word.etymology && (
+          <div className="word-section">
+            <div className="section-label">語源</div>
+            <p className="word-etymology">{word.etymology}</p>
+          </div>
+        )}
+
+        {word.examples.length > 0 && (
+          <div className="word-section">
+            <div className="section-label">用例</div>
+            <ul className="word-examples">
+              {word.examples.map((ex, i) => (
+                <li key={i} className="word-example">{ex}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="word-actions">
@@ -49,21 +66,16 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
         <ShareButtons word={word.word} url={shareUrl} />
       </div>
 
-      <AdSense slot="word-detail-1" />
-
-      {/* Related Words */}
       {relatedWords.length > 0 && (
         <section className="section">
           <span className="section-label-text">関連する造語</span>
-          <div className="word-grid">
+          <div className="browse-kojien-list">
             {relatedWords.map((w) => (
-              <WordCard key={w.id} entry={w} compact />
+              <KojienEntry key={w.id} entry={w} />
             ))}
           </div>
         </section>
       )}
-
-      <AdSense slot="word-detail-2" />
 
       <div className="report-section">
         <ReportButton wordId={word.id} />
