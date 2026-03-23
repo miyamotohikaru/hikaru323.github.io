@@ -1037,6 +1037,11 @@ a:hover { color: var(--text-primary); }
   white-space: nowrap;
 }
 
+.kana-section {
+  margin-bottom: 2.5rem;
+  scroll-margin-top: 1rem;
+}
+
 .kana-heading {
   font-family: var(--font-heading);
   font-size: 1.125rem;

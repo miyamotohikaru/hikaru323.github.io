@@ -32,7 +32,6 @@ export default function LookupResult({ result }: LookupResultProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [savedId, setSavedId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [existingId, setExistingId] = useState<string | null>(null);
 
@@ -118,10 +117,9 @@ export default function LookupResult({ result }: LookupResultProps) {
 
       localStorage.setItem("fictionary_nickname", nickname.trim());
       setSaved(true);
-      setSavedId(data.id);
 
-      // Navigate after brief delay
-      setTimeout(() => router.push(`/word/${data.id}`), 1200);
+      // Navigate to browse page after brief delay
+      setTimeout(() => router.push("/browse"), 1200);
     } catch {
       setSaveError("通信に失敗しました。");
     } finally {
@@ -350,13 +348,11 @@ export default function LookupResult({ result }: LookupResultProps) {
         ) : (
           <div className="page-save-success">
             <p className="page-save-success-text">
-              掲載されました。辞典のページに移動します…
+              掲載されました。一覧ページに移動します…
             </p>
-            {savedId && (
-              <Link href={`/word/${savedId}`} className="page-save-success-link">
-                掲載ページを見る →
-              </Link>
-            )}
+            <Link href="/browse" className="page-save-success-link">
+              掲載一覧を見る →
+            </Link>
           </div>
         )}
       </div>
