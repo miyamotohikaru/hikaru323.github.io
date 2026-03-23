@@ -15,6 +15,7 @@ import pkg from "bloom-filters";
 const { BloomFilter } = pkg;
 
 const SEED_DIR = process.argv[2] || "/tmp/neologd/mecab-ipadic-neologd/seed";
+const BASE_DIR = process.argv[3] || "/tmp/mecab-utf8";
 const OUTPUT = path.resolve("src/lib/neologd-bloom.json");
 
 // 偽陽性率 0.1% (strict — 存在する言葉を通してしまうリスクを最小化)
@@ -45,11 +46,26 @@ async function main() {
   console.log("============================");
   console.log(`Seed directory: ${SEED_DIR}`);
 
-  // 全CSVファイルから表層形を抽出
-  const csvFiles = fs.readdirSync(SEED_DIR).filter((f) => f.endsWith(".csv"));
-  console.log(`Found ${csvFiles.length} CSV files`);
-
   const allWords = new Set();
+
+  // 1. ベース辞書（mecab-ipadic）を読み込み
+  if (fs.existsSync(BASE_DIR)) {
+    const baseCsvFiles = fs.readdirSync(BASE_DIR).filter((f) => f.endsWith(".csv"));
+    console.log(`\n[Base dict] Found ${baseCsvFiles.length} CSV files in ${BASE_DIR}`);
+    for (const file of baseCsvFiles) {
+      const filePath = path.join(BASE_DIR, file);
+      const words = await extractWords(filePath);
+      for (const w of words) allWords.add(w);
+    }
+    console.log(`  → Base dict total: ${allWords.size.toLocaleString()} unique words`);
+  } else {
+    console.log(`\n[Base dict] Not found at ${BASE_DIR}, skipping`);
+  }
+
+  // 2. NEologd拡張辞書を読み込み
+  const csvFiles = fs.readdirSync(SEED_DIR).filter((f) => f.endsWith(".csv"));
+  console.log(`\n[NEologd] Found ${csvFiles.length} CSV files in ${SEED_DIR}`);
+
   for (const file of csvFiles) {
     const filePath = path.join(SEED_DIR, file);
     console.log(`  Processing: ${file}...`);
