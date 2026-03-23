@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { GOJUON_ROWS, WordEntry } from "@/lib/types";
+import Bookshelf from "@/components/Bookshelf";
 import AdSense from "@/components/AdSense";
 
 // Flatten all kana into a single array for the grid
@@ -70,21 +71,7 @@ export default function BrowsePage() {
         </p>
       ) : (
         <>
-          <div className="browse-word-list">
-            {words.map((w) => (
-              <Link key={w.id} href={`/word/${w.id}`} className="browse-word-item">
-                <span>
-                  <span className="browse-word-name">{w.word}</span>
-                  <span className="browse-word-reading">【{w.reading}】</span>
-                </span>
-                <span className="browse-word-def">
-                  {w.definition.length > 50
-                    ? w.definition.substring(0, 50) + "…"
-                    : w.definition}
-                </span>
-              </Link>
-            ))}
-          </div>
+          <Bookshelf words={words} />
           {words.length > 9 && <AdSense slot="browse-feed" />}
         </>
       )}

@@ -25,6 +25,11 @@ export default function LookupResult({ result }: LookupResultProps) {
   const router = useRouter();
   const [nickname, setNickname] = useState("");
   const [reading, setReading] = useState(result.reading || "");
+  const [definition, setDefinition] = useState(result.definition || "");
+  const [etymology, setEtymology] = useState(result.etymology || "");
+  const [examples, setExamples] = useState<string[]>(result.examples || []);
+  const [synonyms, setSynonyms] = useState(result.synonyms || "");
+  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -38,7 +43,28 @@ export default function LookupResult({ result }: LookupResultProps) {
 
   useEffect(() => {
     setReading(result.reading || "");
-  }, [result.reading]);
+    setDefinition(result.definition || "");
+    setEtymology(result.etymology || "");
+    setExamples(result.examples || []);
+    setSynonyms(result.synonyms || "");
+    setIsEditing(false);
+  }, [result]);
+
+  const handleExampleChange = (index: number, value: string) => {
+    const newExamples = [...examples];
+    newExamples[index] = value;
+    setExamples(newExamples);
+  };
+
+  const addExample = () => {
+    if (examples.length < 3) {
+      setExamples([...examples, ""]);
+    }
+  };
+
+  const removeExample = (index: number) => {
+    setExamples(examples.filter((_, i) => i !== index));
+  };
 
   const handleSave = async () => {
     if (!nickname.trim()) {
@@ -51,10 +77,16 @@ export default function LookupResult({ result }: LookupResultProps) {
       return;
     }
 
+    if (!definition.trim()) {
+      setSaveError("意味を入力してください。");
+      return;
+    }
+
     setIsSaving(true);
     setSaveError(null);
 
     try {
+      const filteredExamples = examples.filter((ex) => ex.trim() !== "");
       const res = await fetch("/api/words", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -62,12 +94,12 @@ export default function LookupResult({ result }: LookupResultProps) {
           word: result.word,
           reading: reading.trim(),
           partOfSpeech: result.partOfSpeech || "名詞",
-          definition: result.definition || "",
-          etymology: result.etymology || "",
-          examples: result.examples || [],
-          synonyms: result.synonyms || "",
+          definition: definition.trim(),
+          etymology: etymology.trim(),
+          examples: filteredExamples,
+          synonyms: synonyms.trim(),
           nickname: nickname.trim(),
-          source: "ai",
+          source: isEditing ? "user" : "ai",
         }),
       });
 
@@ -115,10 +147,10 @@ export default function LookupResult({ result }: LookupResultProps) {
       {/* Word header */}
       <div className="ink-delay-1">
         <h2 className="page-word-title">{result.word}</h2>
-        {(result.reading || result.partOfSpeech) && (
+        {(reading || result.partOfSpeech) && !isEditing && (
           <div className="page-word-meta">
-            {result.reading && (
-              <span className="page-word-reading">【{result.reading}】</span>
+            {reading && (
+              <span className="page-word-reading">【{reading}】</span>
             )}
             {result.partOfSpeech && (
               <span className="page-word-pos">{result.partOfSpeech}</span>
@@ -127,29 +159,141 @@ export default function LookupResult({ result }: LookupResultProps) {
         )}
       </div>
 
-      {/* Definition */}
-      {result.definition && (
+      {/* Edit mode */}
+      {isEditing ? (
         <div className="ink-delay-2">
-          <p className="page-word-definition">{result.definition}</p>
+          <div className="page-edit-form">
+            <div className="page-save-field">
+              <label className="page-save-label">読み（ひらがな）</label>
+              <input
+                type="text"
+                value={reading}
+                onChange={(e) => setReading(e.target.value)}
+                placeholder="よみがなを入力"
+                className="page-save-input"
+                maxLength={30}
+              />
+            </div>
+            <div className="page-save-field">
+              <label className="page-save-label">意味</label>
+              <textarea
+                value={definition}
+                onChange={(e) => setDefinition(e.target.value)}
+                placeholder="この言葉の意味を入力"
+                className="page-edit-textarea"
+                maxLength={200}
+                rows={3}
+              />
+            </div>
+            <div className="page-save-field">
+              <label className="page-save-label">語源（任意）</label>
+              <input
+                type="text"
+                value={etymology}
+                onChange={(e) => setEtymology(e.target.value)}
+                placeholder="語源を入力"
+                className="page-save-input"
+                maxLength={200}
+              />
+            </div>
+            <div className="page-save-field">
+              <label className="page-save-label">用例（任意）</label>
+              {examples.map((ex, i) => (
+                <div key={i} className="page-edit-example-row">
+                  <input
+                    type="text"
+                    value={ex}
+                    onChange={(e) => handleExampleChange(i, e.target.value)}
+                    placeholder={`用例 ${i + 1}`}
+                    className="page-save-input"
+                    maxLength={100}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExample(i)}
+                    className="page-edit-remove-btn"
+                    title="用例を削除"
+                  >
+                    -
+                  </button>
+                </div>
+              ))}
+              {examples.length < 3 && (
+                <button
+                  type="button"
+                  onClick={addExample}
+                  className="page-edit-add-btn"
+                >
+                  + 用例を追加
+                </button>
+              )}
+            </div>
+            <div className="page-save-field">
+              <label className="page-save-label">類義語（任意）</label>
+              <input
+                type="text"
+                value={synonyms}
+                onChange={(e) => setSynonyms(e.target.value)}
+                placeholder="類義語を入力"
+                className="page-save-input"
+                maxLength={30}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="page-edit-done-btn"
+            >
+              編集を終える
+            </button>
+          </div>
         </div>
-      )}
+      ) : (
+        <>
+          {/* Definition (display mode) */}
+          {definition && (
+            <div className="ink-delay-2">
+              <p className="page-word-definition">{definition}</p>
+            </div>
+          )}
 
-      {/* Etymology */}
-      {result.etymology && (
-        <div className="ink-delay-3">
-          <p className="page-section-label">語源</p>
-          <p className="page-etymology">{result.etymology}</p>
-        </div>
-      )}
+          {/* Etymology */}
+          {etymology && (
+            <div className="ink-delay-3">
+              <p className="page-section-label">語源</p>
+              <p className="page-etymology">{etymology}</p>
+            </div>
+          )}
 
-      {/* Examples */}
-      {result.examples && result.examples.length > 0 && (
-        <div className="ink-delay-3">
-          <p className="page-section-label">用例</p>
-          {result.examples.map((ex, i) => (
-            <p key={i} className="page-example">{ex}</p>
-          ))}
-        </div>
+          {/* Examples */}
+          {examples.length > 0 && examples.some((ex) => ex.trim()) && (
+            <div className="ink-delay-3">
+              <p className="page-section-label">用例</p>
+              {examples.filter((ex) => ex.trim()).map((ex, i) => (
+                <p key={i} className="page-example">{ex}</p>
+              ))}
+            </div>
+          )}
+
+          {/* Synonyms */}
+          {synonyms && (
+            <div className="ink-delay-3">
+              <p className="page-section-label">類義語</p>
+              <p className="page-etymology">{synonyms}</p>
+            </div>
+          )}
+
+          {/* Edit button */}
+          <div className="ink-delay-3">
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="page-edit-btn"
+            >
+              内容を編集する
+            </button>
+          </div>
+        </>
       )}
 
       {/* Save form */}
@@ -160,7 +304,7 @@ export default function LookupResult({ result }: LookupResultProps) {
           <div className="page-save">
             <p className="page-save-prompt">この言葉を辞典に掲載しますか？</p>
             <div className="page-save-form">
-              {!result.reading && (
+              {!reading && (
                 <div className="page-save-field">
                   <label className="page-save-label">読み（ひらがな）</label>
                   <input
