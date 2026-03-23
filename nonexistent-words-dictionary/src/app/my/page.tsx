@@ -24,20 +24,14 @@ export default function MyPage() {
 
     const fetchData = async () => {
       try {
-        // 全語を取得してフィルタリング
-        const res = await fetch("/api/words?limit=100&sort=newest");
+        const res = await fetch("/api/my", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ authorToken, likedIds }),
+        });
         const data = await res.json();
-        const allWords: WordEntry[] = data.words || [];
-
-        // 自分が投稿した語（authorTokenで照合）
-        if (authorToken) {
-          setMyWords(allWords.filter((w) => w.authorToken === authorToken));
-        }
-
-        // いいねした語
-        if (likedIds.length > 0) {
-          setLikedWords(allWords.filter((w) => likedIds.includes(w.id)));
-        }
+        setMyWords(data.myWords || []);
+        setLikedWords(data.likedWords || []);
       } catch {
         // silently fail
       } finally {

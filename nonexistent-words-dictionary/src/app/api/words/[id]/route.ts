@@ -25,7 +25,19 @@ export async function GET(
         const data = doc.data()!;
         return NextResponse.json({
           id: doc.id,
-          ...data,
+          word: data.word || "",
+          reading: data.reading || "",
+          partOfSpeech: data.partOfSpeech || "",
+          definition: data.definition || "",
+          etymology: data.etymology || "",
+          examples: data.examples || [],
+          synonyms: data.synonyms || "",
+          nickname: data.nickname || "",
+          kojienFormatted: data.kojienFormatted || "",
+          likes: data.likes || 0,
+          viewCount: data.viewCount || 0,
+          isVisible: true,
+          source: data.source || "user",
           createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
         });
       } catch (fbError) {
@@ -39,7 +51,8 @@ export async function GET(
       return NextResponse.json({ error: "語が見つかりません。" }, { status: 404 });
     }
     incrementView(id);
-    return NextResponse.json(doc);
+    const { authorToken: _at, ...safeDoc } = doc;
+    return NextResponse.json(safeDoc);
   } catch (error) {
     console.error("Word fetch error:", error);
     return NextResponse.json(
