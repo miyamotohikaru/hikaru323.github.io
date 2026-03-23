@@ -82,25 +82,23 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Feature cards */}
+      {/* Feature descriptions */}
       <div style={{
-        display: "flex", gap: 16, padding: "20px 40px 40px",
+        display: "flex", gap: 32, padding: "20px 40px 40px",
         position: "relative", zIndex: 10, flexWrap: "wrap",
         animation: "fadeIn 0.6s ease 0.9s both",
+        borderTop: "1px solid #ece5dc",
+        marginTop: 8,
       }}>
         {[
-          { icon: "🖌️", title: "自由に落書き", desc: "11種のブラシで、好きなように描ける" },
-          { icon: "🌐", title: "URLで共有", desc: "同じページを開いた全員の落書きが重なる" },
-          { icon: "🎨", title: "アーカイブ", desc: "累積された落書きがアートとして成立する" },
+          { num: "01", title: "自由に落書き", desc: "11種のブラシで、好きなように描ける" },
+          { num: "02", title: "URLで共有", desc: "同じページを開いた全員の落書きが重なる" },
+          { num: "03", title: "アーカイブ", desc: "累積された落書きがアートとして成立する" },
         ].map((f, i) => (
-          <div key={i} style={{
-            flex: "1 1 200px", background: "#fff", borderRadius: 16,
-            padding: "20px 24px", border: "1px solid #e8e0d8",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>{f.icon}</div>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{f.title}</h3>
-            <p style={{ fontSize: 13, color: "#999", lineHeight: 1.5 }}>{f.desc}</p>
+          <div key={i} style={{ flex: "1 1 180px" }}>
+            <span style={{ fontSize: 11, color: "#ccc", fontFamily: "monospace", letterSpacing: "0.1em" }}>{f.num}</span>
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginTop: 4, marginBottom: 4 }}>{f.title}</h3>
+            <p style={{ fontSize: 13, color: "#bbb", lineHeight: 1.6 }}>{f.desc}</p>
           </div>
         ))}
       </div>
