@@ -1875,6 +1875,159 @@ a:hover { color: var(--text-primary); }
 
 .rejection-retry:hover { border-color: var(--text-sub); color: var(--text-primary); }
 
+/* ===== Daily Word ===== */
+.daily-word {
+  margin-bottom: 2.5rem;
+  text-align: center;
+}
+
+.daily-word-label {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  letter-spacing: 0.2em;
+  margin-bottom: 1rem;
+  padding: 0.25rem 1rem;
+  border: 1px solid var(--base-border);
+}
+
+.daily-word-card {
+  display: block;
+  background-color: var(--page-bg);
+  padding: 2rem 1.5rem;
+  border-radius: 2px;
+  box-shadow: 2px 2px 12px rgba(0,0,0,0.15);
+  margin: 1rem 0;
+  transition: box-shadow 0.2s;
+  color: inherit;
+}
+
+.daily-word-card:hover {
+  box-shadow: 2px 2px 16px rgba(0,0,0,0.25);
+  color: inherit;
+}
+
+.daily-word-text {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--page-text);
+  line-height: 2;
+  text-align: left;
+}
+
+.daily-word-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+/* ===== Author Title ===== */
+.author-title {
+  font-family: var(--font-heading);
+  font-size: 0.6875rem;
+  color: var(--text-sub);
+  letter-spacing: 0.1em;
+  border: 1px solid var(--base-border);
+  padding: 0.125rem 0.5rem;
+  margin-left: 0.5rem;
+}
+
+/* ===== Random Word Button ===== */
+.random-word-button {
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  font-size: 1.125rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.2s, transform 0.2s;
+  line-height: 1;
+}
+
+.random-word-button:hover:not(:disabled) {
+  color: var(--text-primary);
+  transform: rotate(90deg);
+}
+
+.random-word-button:disabled { opacity: 0.5; }
+
+/* ===== My Page ===== */
+.my-header { padding: 2rem 0 1rem; }
+
+.my-profile {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.my-nickname {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  color: var(--text-primary);
+}
+
+.my-author-title {
+  font-size: 0.75rem;
+}
+
+.my-section {
+  margin-bottom: 2.5rem;
+}
+
+.my-section-heading {
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  letter-spacing: 0.15em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--base-border);
+}
+
+.my-empty {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.my-empty-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  border: 1px solid var(--base-border);
+  padding: 0.5rem 1.5rem;
+  transition: all 0.2s;
+}
+
+.my-empty-link:hover {
+  border-color: var(--text-sub);
+  color: var(--text-primary);
+}
+
+/* ===== Kojien Entry with Like ===== */
+.kojien-entry-inner {
+  display: flex;
+  align-items: flex-start;
+}
+
+.kojien-entry-link { flex: 1; min-width: 0; }
+
+.kojien-entry-like {
+  flex-shrink: 0;
+  padding-top: 0.75rem;
+}
+
+/* ===== Gojuon Tab Count ===== */
+.gojuon-tab-count {
+  display: block;
+  font-size: 0.5625rem;
+  color: var(--text-sub);
+  opacity: 0.6;
+  line-height: 1;
+  margin-top: 0.125rem;
+}
+
 /* ===== Browse Page Redesign ===== */
 .browse-header { padding: 2rem 0 1rem; }
 

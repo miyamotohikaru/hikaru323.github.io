@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { WordEntry } from "@/lib/types";
+import LikeButton from "@/components/LikeButton";
 
 interface KojienEntryProps {
   entry: WordEntry;
@@ -13,27 +14,32 @@ export default function KojienEntry({ entry, showMeta = false }: KojienEntryProp
 
   return (
     <article className="kojien-entry">
-      <Link href={`/word/${entry.id}`} className="kojien-entry-link">
-        {formatted ? (
-          <p className="kojien-entry-text">{formatted}</p>
-        ) : (
-          <p className="kojien-entry-text">
-            <span className="kojien-word">{entry.word}</span>
-            【{entry.reading}】（{entry.partOfSpeech}）{entry.definition}
-            {entry.examples && entry.examples.length > 0 && entry.examples[0] && (
-              <>。▽用例「{entry.examples[0]}」</>
-            )}
-          </p>
-        )}
-        {showMeta && (
-          <span className="kojien-entry-meta">
-            ── 投稿者: {entry.nickname}
-            {entry.createdAt && (
-              <> · {formatRelativeTime(entry.createdAt)}</>
-            )}
-          </span>
-        )}
-      </Link>
+      <div className="kojien-entry-inner">
+        <Link href={`/word/${entry.id}`} className="kojien-entry-link">
+          {formatted ? (
+            <p className="kojien-entry-text">{formatted}</p>
+          ) : (
+            <p className="kojien-entry-text">
+              <span className="kojien-word">{entry.word}</span>
+              【{entry.reading}】（{entry.partOfSpeech}）{entry.definition}
+              {entry.examples && entry.examples.length > 0 && entry.examples[0] && (
+                <>。▽用例「{entry.examples[0]}」</>
+              )}
+            </p>
+          )}
+          {showMeta && (
+            <span className="kojien-entry-meta">
+              ── 投稿者: {entry.nickname}
+              {entry.createdAt && (
+                <> · {formatRelativeTime(entry.createdAt)}</>
+              )}
+            </span>
+          )}
+        </Link>
+        <div className="kojien-entry-like">
+          <LikeButton wordId={entry.id} initialLikes={entry.likes} />
+        </div>
+      </div>
     </article>
   );
 }

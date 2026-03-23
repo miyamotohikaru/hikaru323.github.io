@@ -4,6 +4,7 @@ import { useState } from "react";
 import SubmitForm from "@/components/SubmitForm";
 import KojienPreview from "@/components/KojienPreview";
 import RecentWords from "@/components/RecentWords";
+import DailyWord from "@/components/DailyWord";
 
 interface KojienEntryData {
   word: string;
@@ -38,6 +39,9 @@ export default function Home() {
 
   return (
     <main className="main-content">
+      {/* 今日の一語 */}
+      {!result && !isLoading && <DailyWord />}
+
       {/* 最近生まれた言葉 */}
       {!result && !isLoading && <RecentWords />}
 

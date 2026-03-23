@@ -80,6 +80,7 @@ export default function BrowsePage() {
               onClick={() => setActiveRow(row.label)}
             >
               {row.kana[0]}
+              {count > 0 && <span className="gojuon-tab-count">{count}</span>}
             </button>
           );
         })}
