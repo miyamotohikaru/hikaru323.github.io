@@ -72,7 +72,7 @@ export default function DrawPage() {
     await saveToGallery(strokes, thumb.toDataURL("image/webp", 0.6));
 
     // Navigate to gallery after saving
-    router.push("/gallery?saved=1");
+    router.push("/saved");
   }, [strokes, router]);
 
   const topBtn: React.CSSProperties = {
