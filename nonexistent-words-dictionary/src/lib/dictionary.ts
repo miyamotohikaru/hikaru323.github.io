@@ -18,7 +18,13 @@ function getBloomFilter(): InstanceType<typeof BloomFilter> {
 }
 
 export function existsInLocalDictionary(word: string): boolean {
-  const filter = getBloomFilter();
+  let filter;
+  try {
+    filter = getBloomFilter();
+  } catch (e) {
+    console.error("Bloom filter load failed, skipping local check:", e);
+    return false;
+  }
   if (filter.has(word)) return true;
   const hiragana = toHiragana(word);
   const katakana = toKatakana(word);

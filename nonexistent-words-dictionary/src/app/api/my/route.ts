@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, isFirebaseAvailable } from "@/lib/firebase";
 import { listWordsByAuthor, getWord } from "@/lib/in-memory-store";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  if (!checkRateLimit(ip, 10)) {
+    return NextResponse.json(
+      { error: "しばらくお待ちください。" },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const authorToken: string | undefined = body.authorToken;
