@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { WordEntry } from "@/lib/types";
 
@@ -34,9 +34,12 @@ export default function RankingPage() {
   const [activeTab, setActiveTab] = useState<Tab>("popular");
   const [words, setWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<WordEntry | null>(null);
+  const bookRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLoading(true);
+    setSelectedWord(null);
     const sort = activeTab === "popular" ? "popular" : "newest";
     fetch(`/api/words?sort=${sort}&limit=20`)
       .then((res) => res.json())
@@ -44,6 +47,20 @@ export default function RankingPage() {
       .catch(() => setWords([]))
       .finally(() => setLoading(false));
   }, [activeTab]);
+
+  useEffect(() => {
+    if (selectedWord && bookRef.current) {
+      bookRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedWord]);
+
+  const handleBookClick = (word: WordEntry) => {
+    if (selectedWord?.id === word.id) {
+      setSelectedWord(null);
+    } else {
+      setSelectedWord(word);
+    }
+  };
 
   return (
     <main className="main-content">
@@ -84,16 +101,17 @@ export default function RankingPage() {
                   const globalIndex = shelfIndex * 5 + i;
                   const color = getSpineColor(globalIndex);
                   const width = getBookWidth(w);
+                  const isSelected = selectedWord?.id === w.id;
                   return (
-                    <Link
+                    <button
                       key={w.id}
-                      href={`/word/${w.id}`}
-                      className="book-spine"
+                      className={`book-spine${isSelected ? " spine-selected" : ""}`}
                       style={{
                         background: color.bg,
                         color: color.text,
                         width: `${width}px`,
                       }}
+                      onClick={() => handleBookClick(w)}
                     >
                       <span className="book-spine-rank">
                         {globalIndex + 1}
@@ -101,11 +119,66 @@ export default function RankingPage() {
                       <span className="book-spine-title">{w.word}</span>
                       <span className="book-spine-author">{w.nickname}</span>
                       <span className="book-spine-likes">♡ {w.likes}</span>
-                    </Link>
+                    </button>
                   );
                 })}
               </div>
               <div className="bookshelf-board" />
+
+              {/* 選択された本がこの段にある場合、説明を表示 */}
+              {selectedWord && shelf.some((w) => w.id === selectedWord.id) && (
+                <div ref={bookRef} className="open-book-wrapper book-enter">
+                  <div className="open-book">
+                    <div className="open-book-left">
+                      <div className="open-book-left-lines">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                          <div key={i} className="book-line" />
+                        ))}
+                      </div>
+                      <div className="open-book-left-text">
+                        存在しない言葉辞典
+                      </div>
+                    </div>
+                    <div className="open-book-spine" />
+                    <div className="open-book-right">
+                      <div className="open-book-header">
+                        <div className="open-book-word">{selectedWord.word}</div>
+                        <div className="open-book-meta">
+                          <span className="open-book-reading">
+                            【{selectedWord.reading}】
+                          </span>
+                          <span className="open-book-pos">
+                            {selectedWord.partOfSpeech}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="open-book-body">
+                        <p className="open-book-definition">
+                          {selectedWord.definition}
+                        </p>
+                        {selectedWord.examples &&
+                          selectedWord.examples.length > 0 &&
+                          selectedWord.examples[0] && (
+                            <p className="open-book-example">
+                              ▽用例 「{selectedWord.examples[0]}」
+                            </p>
+                          )}
+                      </div>
+                      <div className="open-book-footer">
+                        <span className="open-book-author">
+                          {selectedWord.nickname} 編
+                        </span>
+                        <Link
+                          href={`/word/${selectedWord.id}`}
+                          className="open-book-detail-link"
+                        >
+                          詳細を見る →
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

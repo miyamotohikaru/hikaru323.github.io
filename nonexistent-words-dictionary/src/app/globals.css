@@ -1946,6 +1946,20 @@ a:hover { color: var(--text-primary); }
   line-height: 1.7;
 }
 
+.open-book-example {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--page-text-sub);
+  line-height: 1.7;
+  margin-top: 0.5rem;
+}
+
+.open-book-author {
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  color: var(--page-text-sub);
+}
+
 .open-book-footer {
   display: flex;
   justify-content: space-between;
