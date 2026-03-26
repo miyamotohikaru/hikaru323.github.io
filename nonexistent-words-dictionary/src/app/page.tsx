@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import ShareButtons from "@/components/ShareButtons";
 
 interface KojienEntryData {
   word: string;
@@ -19,13 +19,23 @@ interface SubmitResult {
   kojienEntry?: KojienEntryData;
 }
 
-type Phase = "idle" | "loading" | "result";
+interface SavedWordData {
+  id: string;
+  word: string;
+  reading: string;
+  partOfSpeech: string;
+  definition: string;
+  example: string;
+  nickname: string;
+}
+
+type Phase = "idle" | "loading" | "result" | "shared";
 
 export default function Home() {
-  const router = useRouter();
   const [word, setWord] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<SubmitResult | null>(null);
+  const [savedWord, setSavedWord] = useState<SavedWordData | null>(null);
 
   // 結果カード用のstate
   const [editing, setEditing] = useState(false);
@@ -78,6 +88,7 @@ export default function Home() {
   const handleReset = () => {
     setPhase("idle");
     setResult(null);
+    setSavedWord(null);
     setWord("");
     setEditing(false);
     setSaveError(null);
@@ -134,7 +145,16 @@ export default function Home() {
       localStorage.setItem("fictionary_posts_count", String(postsCount + 1));
       localStorage.setItem("fictionary_nickname", trimmedNickname);
 
-      router.push(`/word/${data.id}?just_posted=1`);
+      setSavedWord({
+        id: data.id,
+        word: entry.word,
+        reading: trimmedReading,
+        partOfSpeech,
+        definition: def,
+        example: example || "",
+        nickname: trimmedNickname,
+      });
+      setPhase("shared");
     } catch {
       setSaveError("通信に失敗しました。");
     } finally {
@@ -204,6 +224,56 @@ export default function Home() {
         </div>
       )}
 
+      {/* シェア画面（掲載完了後） */}
+      {phase === "shared" && savedWord && (
+        <div className="share-dict-page fade-in">
+          <div className="share-dict-header">
+            <span className="share-dict-label">存在しない言葉辞典</span>
+            <span className="share-dict-page-num">p.{Math.floor(Math.random() * 900) + 100}</span>
+          </div>
+
+          <div className="share-dict-body">
+            <div className="share-dict-lines" />
+            <h1 className="share-dict-word">{savedWord.word}</h1>
+            <p className="share-dict-reading">【{savedWord.reading}】</p>
+            <span className="share-dict-pos">{savedWord.partOfSpeech}</span>
+            <p className="share-dict-definition">{savedWord.definition}</p>
+            {savedWord.example && (
+              <p className="share-dict-example">
+                <span className="share-dict-example-label">▽用例</span>
+                「{savedWord.example}」
+              </p>
+            )}
+            <div className="share-dict-author">
+              ── {savedWord.nickname} 編
+            </div>
+          </div>
+
+          <div className="share-dict-congrats">
+            <p className="share-dict-congrats-text">
+              新語が辞典に掲載されました
+            </p>
+            <p className="share-dict-congrats-sub">
+              あなたの言葉が辞典の一ページに刻まれました。<br />
+              この新しい言葉を世界に広めませんか？
+            </p>
+          </div>
+
+          <div className="share-dict-actions">
+            <ShareButtons
+              word={savedWord.word}
+              url={typeof window !== "undefined"
+                ? `${window.location.origin}/word/${savedWord.id}`
+                : `/word/${savedWord.id}`}
+            />
+          </div>
+
+          <button onClick={handleReset} className="share-dict-continue">
+            別の言葉を調べる →
+          </button>
+        </div>
+      )}
+
       {/* 結果表示 */}
       {phase === "result" && result && (
         <div className="paper-card fade-in">
@@ -228,6 +298,11 @@ export default function Home() {
           ) : result.kojienEntry ? (
             /* ===== 結果カード ===== */
             <div className="paper-body">
+              {/* 存在しない言葉メッセージ */}
+              <div className="paper-nonexistent-badge">
+                この言葉は辞典に存在しません ── 掲載できます
+              </div>
+
               {/* 見出し語 */}
               <div className="paper-word-header">
                 <h2 className="paper-word-title">{result.kojienEntry.word}</h2>

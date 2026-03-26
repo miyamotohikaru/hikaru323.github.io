@@ -1995,6 +1995,95 @@ a:hover { color: var(--text-primary); }
   color: var(--page-text-body);
 }
 
+/* ===== Nonexistent Word Badge ===== */
+.paper-nonexistent-badge {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--accent-garnet);
+  background: rgba(121, 46, 41, 0.06);
+  border: 1px solid rgba(121, 46, 41, 0.15);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+/* ===== KojienEntry Button & Detail ===== */
+.kojien-entry-button {
+  background: none;
+  border: none;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  color: inherit;
+}
+
+.kojien-entry-button:hover {
+  opacity: 0.8;
+}
+
+.kojien-entry-detail {
+  padding: 0.75rem 0 0.5rem;
+}
+
+.kojien-detail-card {
+  background: var(--page-bg);
+  border: 1px solid rgba(100, 85, 60, 0.1);
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.kojien-detail-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.kojien-detail-word {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.kojien-detail-reading {
+  font-size: 0.8125rem;
+  color: var(--text-sub);
+}
+
+.kojien-detail-pos {
+  font-size: 0.6875rem;
+  color: var(--text-sub);
+  background: rgba(88, 85, 56, 0.1);
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+
+.kojien-detail-definition {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-body);
+  line-height: 1.8;
+}
+
+.kojien-detail-example {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--text-sub);
+  margin-top: 0.5rem;
+  line-height: 1.7;
+}
+
+.kojien-detail-actions {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(100, 85, 60, 0.1);
+}
+
 /* ===== Animation ===== */
 .fade-in { animation: fadeIn 0.5s ease-out; }
 

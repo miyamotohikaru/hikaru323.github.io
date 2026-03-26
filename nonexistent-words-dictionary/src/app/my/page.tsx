@@ -46,7 +46,7 @@ export default function MyPage() {
     <main className="main-content">
       <div className="my-header">
         <Link href="/" className="back-link">← 辞典に戻る</Link>
-        <h1 className="page-title">あなたの語集</h1>
+        <h1 className="page-title">My 語集</h1>
         {nickname && (
           <div className="my-profile">
             <span className="my-nickname">{nickname}</span>
