@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>デザイン素材リンク集 - フリー素材まとめ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+      background-color: #0f1117;
+      color: #e0e0e0;
+      line-height: 1.7;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* ヘッダー */
+    .header {
+      background: linear-gradient(135deg, #1a1c2e 0%, #2d1f3d 50%, #1a2a3a 100%);
+      padding: 80px 20px 60px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .header h1 {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: #9ca3af;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* メインコンテンツ */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+
+    /* カテゴリセクション */
+    .category {
+      margin-bottom: 48px;
+    }
+
+    .category-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: #6b7280;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* カードグリッド */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    /* カード */
+    .card {
+      background: #1a1d2e;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 24px;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(167, 139, 250, 0.3);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .card-name {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: #f3f4f6;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: #9ca3af;
+      line-height: 1.8;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: auto;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #9ca3af;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .card-link {
+      font-size: 12px;
+      color: #a78bfa;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    /* アイコン背景色 */
+    .icon-orange { background: rgba(251, 146, 60, 0.15); }
+    .icon-gray { background: rgba(156, 163, 175, 0.15); }
+    .icon-coral { background: rgba(244, 114, 182, 0.15); }
+    .icon-blue { background: rgba(96, 165, 250, 0.15); }
+    .icon-green { background: rgba(52, 211, 153, 0.15); }
+    .icon-purple { background: rgba(167, 139, 250, 0.15); }
+    .icon-pink { background: rgba(236, 72, 153, 0.15); }
+    .icon-teal { background: rgba(45, 212, 191, 0.15); }
+
+    /* バック リンク */
+    .back-link {
+      display: inline-block;
+      margin-bottom: 32px;
+      font-size: 13px;
+      color: #6b7280;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: #a78bfa;
+    }
+
+    /* フッター */
+    .footer {
+      text-align: center;
+      padding: 32px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 700px) {
+      .header {
+        padding: 60px 16px 40px;
+      }
+
+      .header h1 {
+        font-size: 26px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .main {
+        padding: 32px 16px 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Design Resources</h1>
+    <p>デザイン制作に使える著作権フリーの素材サイト・ツールをまとめました。アイコン、イラスト、フォント、UIキットなど。</p>
+  </div>
+
+  <div class="main">
+    <a href="index.html" class="back-link">&larr; トップに戻る</a>
+
+    <!-- アイコン素材 -->
+    <div class="category">
+      <div class="category-title">Icons &mdash; アイコン素材</div>
+      <div class="grid">
+
+        <a href="https://icon-rainbow.com/" target="_blank" rel="noopener noreferrer" class="card">
+          <div class="card-header">
+            <div class="card-icon icon-orange">🌈</div>
+            <div class="card-name">Icon Rainbow</div>
+          </div>
+          <div class="card-desc">商用利用可能なアイコン素材を無料でダウンロードできるサイト。カラフルでポップなアイコンが豊富に揃っています。</div>
+          <div class="card-tags">
+            <span class="tag">商用利用OK</span>
+            <span class="tag">SVG / PNG</span>
+            <span class="tag">カラーアイコン</span>
+          </div>
+          <div class="card-link">icon-rainbow.com</div>
+        </a>
+
+        <a href="https://icooon-mono.com/" target="_blank" rel="noopener noreferrer" class="card">
+          <div class="card-header">
+            <div class="card-icon icon-gray">⬛</div>
+            <div class="card-name">ICOOON MONO</div>
+          </div>
+          <div class="card-desc">6000個以上のモノクロアイコンを無料で提供。シンプルで汎用性が高く、Webデザインやプレゼン資料に最適です。</div>
+          <div class="card-tags">
+            <span class="tag">商用利用OK</span>
+            <span class="tag">モノクロ</span>
+            <span class="tag">6000+素材</span>
+          </div>
+          <div class="card-link">icooon-mono.com</div>
+        </a>
+
+        <a href="https://fonts.google.com/icons" target="_blank" rel="noopener noreferrer" class="card">
+          <div class="card-header">
+            <div class="card-icon icon-blue">🔤</div>
+            <div class="card-name">Google Material Icons</div>
+          </div>
+          <div class="card-desc">Googleが提供するMaterial Designアイコン集。Outlined、Rounded、Sharpなど複数のスタイルから選べます。</div>
+          <div class="card-tags">
+            <span class="tag">オープンソース</span>
+            <span class="tag">Material Design</span>
+            <span class="tag">可変ウェイト</span>
+          </div>
+          <div class="card-link">fonts.google.com/icons</div>
+        </a>
+
+        <a href="https://lucide.dev/" target="_blank" rel="noopener noreferrer" class="card">
+          <div class="card-header">
+            <div class="card-icon icon-green">✦</div>
+            <div class="card-name">Lucide</div>
+          </div>
+          <div class="card-desc">Feather Iconsから派生したオープンソースのアイコンライブラリ。React・Vue・Svelteなど主要フレームワーク対応。</div>
+          <div class="card-tags">
+            <span class="tag">オープンソース</span>
+            <span class="tag">SVG</span>
+            <span class="tag">フレームワーク対応</span>
+          </div>
+          <div class="card-link">lucide.dev</div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- イラスト素材 -->
+    <div class="category">
+      <div class="category-title">Illustrations &mdash; イラスト素材</div>
+      <div class="grid">
+
+        <a href="https://undraw.co/" target="_blank" rel="noopener noreferrer" class="card">
+          <div class="card-header">
+            <div class="card-icon icon-purple">🎨</div>
+            <div class="card-name">unDraw</div>
+          </div>
+          <div class="card-desc">MIT Licenseのオープンソースイラスト集。メインカラーをカスタマイズでき、SVG・PNGでダウンロード可能。LPやアプリのデザインに。</div>
+          <div class="card-tags">
+            <span class="tag">MIT License</span>
+            <span class="tag">カラー変更可</span>
+            <span class="tag">SVG / PNG</span>
+          </div>
+          <div class="card-link">undraw.co</div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- フォント -->
+    <div class="category">
+      <div class="category-title">Fonts &mdash; フォント</div>
+      <div class="grid">
+
+        <a href="https://fonts.google.com/" target="_blank" rel="noopener noreferrer" class="card">
+          <div class="card-header">
+            <div class="card-icon icon-teal">A</div>
+            <div class="card-name">Google Fonts</div>
+          </div>
+          <div class="card-desc">1,500以上のオープンソースフォントを無料で利用可能。日本語フォント（Noto Sans JP等）も充実。WebフォントとしてCDNから直接読み込めます。</div>
+          <div class="card-tags">
+            <span class="tag">オープンソース</span>
+            <span class="tag">1500+フォント</span>
+            <span class="tag">日本語対応</span>
+          </div>
+          <div class="card-link">fonts.google.com</div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- アニメーション・ローディング -->
+    <div class="category">
+      <div class="category-title">Animation &mdash; アニメーション</div>
+      <div class="grid">
+
+        <a href="https://loading.io/" target="_blank" rel="noopener noreferrer" class="card">
+          <div class="card-header">
+            <div class="card-icon icon-pink">⟳</div>
+            <div class="card-name">Loading.io</div>
+          </div>
+          <div class="card-desc">ローディングアニメーション・アイコンジェネレーター。CSSアニメーション、GIF、SVGなど多様な形式で書き出しでき、カスタマイズも自由自在。</div>
+          <div class="card-tags">
+            <span class="tag">ローディング</span>
+            <span class="tag">GIF / SVG / CSS</span>
+            <span class="tag">カスタマイズ可</span>
+          </div>
+          <div class="card-link">loading.io</div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- UIキット・デザインリソース -->
+    <div class="category">
+      <div class="category-title">UI Kits &amp; Inspiration &mdash; UIキット・インスピレーション</div>
+      <div class="grid">
+
+        <a href="https://www.uistore.design/" target="_blank" rel="noopener noreferrer" class="card">
+          <div class="card-header">
+            <div class="card-icon icon-coral">📐</div>
+            <div class="card-name">UI Store Design</div>
+          </div>
+          <div class="card-desc">無料のUIキット、モックアップ、アイコンセットなどをまとめたデザインリソースサイト。Figma・Sketch・XD対応のテンプレートが豊富。</div>
+          <div class="card-tags">
+            <span class="tag">UIキット</span>
+            <span class="tag">モックアップ</span>
+            <span class="tag">Figma / Sketch</span>
+          </div>
+          <div class="card-link">uistore.design</div>
+        </a>
+
+        <a href="https://dribbble.com/" target="_blank" rel="noopener noreferrer" class="card">
+          <div class="card-header">
+            <div class="card-icon icon-pink">🏀</div>
+            <div class="card-name">Dribbble</div>
+          </div>
+          <div class="card-desc">世界中のデザイナーが作品を公開するプラットフォーム。UIデザイン、ロゴ、イラスト、アニメーションなどの最新トレンドをチェックできます。</div>
+          <div class="card-tags">
+            <span class="tag">インスピレーション</span>
+            <span class="tag">UIデザイン</span>
+            <span class="tag">ポートフォリオ</span>
+          </div>
+          <div class="card-link">dribbble.com</div>
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <p>すべてのリンク先は著作権フリー（または商用利用可能）の素材サイトです。各サイトの利用規約もご確認ください。</p>
+  </footer>
+
+</body>
+</html>
