@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { WordEntry } from "@/lib/types";
 import LikeButton from "@/components/LikeButton";
+import ShareButtons from "@/components/ShareButtons";
 
 interface KojienEntryProps {
   entry: WordEntry;
@@ -10,12 +11,20 @@ interface KojienEntryProps {
 }
 
 export default function KojienEntry({ entry, showMeta = false }: KojienEntryProps) {
+  const [expanded, setExpanded] = useState(false);
   const formatted = entry.kojienFormatted;
+
+  const shareUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/word/${entry.id}`
+    : `/word/${entry.id}`;
 
   return (
     <article className="kojien-entry">
       <div className="kojien-entry-inner">
-        <Link href={`/word/${entry.id}`} className="kojien-entry-link">
+        <button
+          className="kojien-entry-link kojien-entry-button"
+          onClick={() => setExpanded(!expanded)}
+        >
           {formatted ? (
             <p className="kojien-entry-text">{formatted}</p>
           ) : (
@@ -35,11 +44,33 @@ export default function KojienEntry({ entry, showMeta = false }: KojienEntryProp
               )}
             </span>
           )}
-        </Link>
+        </button>
         <div className="kojien-entry-like">
           <LikeButton wordId={entry.id} initialLikes={entry.likes} />
         </div>
       </div>
+
+      {/* 展開時: 詳細 & シェアボタン */}
+      {expanded && (
+        <div className="kojien-entry-detail fade-in">
+          <div className="kojien-detail-card">
+            <div className="kojien-detail-header">
+              <span className="kojien-detail-word">{entry.word}</span>
+              <span className="kojien-detail-reading">【{entry.reading}】</span>
+              <span className="kojien-detail-pos">{entry.partOfSpeech}</span>
+            </div>
+            <p className="kojien-detail-definition">{entry.definition}</p>
+            {entry.examples && entry.examples.length > 0 && entry.examples[0] && (
+              <p className="kojien-detail-example">
+                ▽用例 「{entry.examples[0]}」
+              </p>
+            )}
+            <div className="kojien-detail-actions">
+              <ShareButtons word={entry.word} url={shareUrl} />
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

@@ -30,7 +30,6 @@ export async function GET() {
               synonyms: data.synonyms || "",
               nickname: data.nickname || "",
               kojienFormatted: data.kojienFormatted || "",
-              authorToken: data.authorToken || "",
               likes: data.likes || 0,
               viewCount: data.viewCount || 0,
               isVisible: true,
@@ -47,12 +46,12 @@ export async function GET() {
     // インメモリフォールバック
     const words = listWords({ sort: "popular", limit: 1 });
     if (words.length > 0) {
+      const { authorToken: _at, ...safeWord } = words[0];
       return NextResponse.json({
         word: {
-          ...words[0],
-          kojienFormatted: words[0].kojienFormatted || "",
-          authorToken: words[0].authorToken || "",
-          source: words[0].source as "user" | "ai",
+          ...safeWord,
+          kojienFormatted: safeWord.kojienFormatted || "",
+          source: safeWord.source as "user" | "ai",
         },
       });
     }

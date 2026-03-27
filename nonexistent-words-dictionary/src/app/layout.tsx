@@ -75,7 +75,7 @@ export default function RootLayout({
                 ランキング
               </Link>
               <Link href="/my" className="header-link">
-                語集
+                My 語集
               </Link>
               <RandomWordButton />
             </nav>

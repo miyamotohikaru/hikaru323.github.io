@@ -26,7 +26,7 @@ async function getWord(id: string): Promise<WordEntry | null> {
         synonyms: data.synonyms || "",
         nickname: data.nickname || "",
         kojienFormatted: data.kojienFormatted || "",
-        authorToken: data.authorToken || "",
+        authorToken: "",
         likes: data.likes || 0,
         viewCount: data.viewCount || 0,
         isVisible: data.isVisible ?? true,
@@ -52,7 +52,7 @@ async function getWord(id: string): Promise<WordEntry | null> {
     synonyms: doc.synonyms,
     nickname: doc.nickname,
     kojienFormatted: doc.kojienFormatted || "",
-    authorToken: doc.authorToken || "",
+    authorToken: "",
     likes: doc.likes,
     viewCount: doc.viewCount,
     isVisible: doc.isVisible,
@@ -88,7 +88,7 @@ async function getRelatedWords(word: WordEntry): Promise<WordEntry[]> {
             synonyms: data.synonyms || "",
             nickname: data.nickname || "",
             kojienFormatted: data.kojienFormatted || "",
-            authorToken: data.authorToken || "",
+            authorToken: "",
             likes: data.likes || 0,
             viewCount: data.viewCount || 0,
             isVisible: true,
@@ -109,7 +109,7 @@ async function getRelatedWords(word: WordEntry): Promise<WordEntry[]> {
     .map((w) => ({
       ...w,
       kojienFormatted: w.kojienFormatted || "",
-      authorToken: w.authorToken || "",
+      authorToken: "",
       source: w.source as "user" | "ai",
     }));
 }

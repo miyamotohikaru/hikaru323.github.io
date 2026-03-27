@@ -176,9 +176,19 @@ export async function GET(request: NextRequest) {
           const data = doc.data();
           return {
             id: doc.id,
-            ...data,
+            word: data.word || "",
+            reading: data.reading || "",
+            partOfSpeech: data.partOfSpeech || "",
+            definition: data.definition || "",
+            etymology: data.etymology || "",
+            examples: data.examples || [],
+            synonyms: data.synonyms || "",
+            nickname: data.nickname || "",
             kojienFormatted: data.kojienFormatted || "",
-            authorToken: data.authorToken || "",
+            likes: data.likes || 0,
+            viewCount: data.viewCount || 0,
+            isVisible: true,
+            source: data.source || "user",
             createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
           };
         });
@@ -190,7 +200,8 @@ export async function GET(request: NextRequest) {
     }
 
     // インメモリモード
-    const words = listWords({ kana, sort, limit, cursor });
+    const rawWords = listWords({ kana, sort, limit, cursor });
+    const words = rawWords.map(({ authorToken: _at, ...rest }) => rest);
     return NextResponse.json({ words });
   } catch (error) {
     console.error("Words fetch error:", error);
