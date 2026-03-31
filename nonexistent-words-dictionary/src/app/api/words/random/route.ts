@@ -27,7 +27,18 @@ export async function GET() {
         }
 
         if (!snapshot.empty) {
-          return NextResponse.json({ id: snapshot.docs[0].id });
+          const doc = snapshot.docs[0];
+          const data = doc.data();
+          return NextResponse.json({
+            id: doc.id,
+            word: data.word || "",
+            reading: data.reading || "",
+            partOfSpeech: data.partOfSpeech || "",
+            definition: data.definition || "",
+            examples: data.examples || [],
+            nickname: data.nickname || "",
+            likes: data.likes || 0,
+          });
         }
       } catch (fbError) {
         console.error("Firebase error in random:", fbError);
@@ -37,8 +48,17 @@ export async function GET() {
     // インメモリフォールバック
     const words = listWords({ sort: "newest", limit: 100 });
     if (words.length > 0) {
-      const random = words[Math.floor(Math.random() * words.length)];
-      return NextResponse.json({ id: random.id });
+      const w = words[Math.floor(Math.random() * words.length)];
+      return NextResponse.json({
+        id: w.id,
+        word: w.word,
+        reading: w.reading,
+        partOfSpeech: w.partOfSpeech,
+        definition: w.definition,
+        examples: w.examples || [],
+        nickname: w.nickname,
+        likes: w.likes || 0,
+      });
     }
 
     return NextResponse.json({ id: null });
