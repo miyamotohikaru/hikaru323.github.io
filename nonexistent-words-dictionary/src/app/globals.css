@@ -2230,11 +2230,11 @@ a:hover { color: var(--text-primary); }
 
 /* ===== Falling Words ===== */
 .falling-words-container {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
@@ -2254,12 +2254,8 @@ a:hover { color: var(--text-primary); }
 }
 
 @keyframes fallingWord {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(calc(100vh + 4em));
-  }
+  from { transform: translateY(-2em); }
+  to { transform: translateY(105vh); }
 }
 
 /* ===== Animation ===== */
