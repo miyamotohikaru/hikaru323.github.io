@@ -45,7 +45,7 @@ export default function FallingWords() {
         duration: Math.random() * 8 + 10,
         delay: 0,
         size: isLeaf ? Math.random() * 20 + 16 : Math.random() * 0.7 + 0.9,
-        opacity: isLeaf ? Math.random() * 0.06 + 0.04 : Math.random() * 0.15 + 0.12,
+        opacity: isLeaf ? Math.random() * 0.1 + 0.1 : Math.random() * 0.15 + 0.12,
         rotation: Math.random() * 360,
       };
     };
