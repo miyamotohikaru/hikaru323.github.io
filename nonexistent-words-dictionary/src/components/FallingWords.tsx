@@ -78,8 +78,10 @@ export default function FallingWords() {
     <div className="falling-words-container" aria-hidden="true">
       {items.map((item) =>
         item.type === "leaf" ? (
-          <span
+          <img
             key={item.id}
+            src="/kosukuma_white.png"
+            alt=""
             className="falling-leaf"
             style={{
               left: `${item.x}%`,
@@ -87,24 +89,9 @@ export default function FallingWords() {
               animationDelay: `${item.delay}s`,
               opacity: item.opacity,
               width: `${item.size}px`,
-              height: `${item.size * 1.3}px`,
               transform: `rotate(${item.rotation}deg)`,
             }}
-          >
-            <svg viewBox="0 0 120 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M60 10 Q58 40, 55 70 Q52 100, 60 150" />
-                <path d="M55 30 Q30 25, 20 40 Q15 50, 35 50 Q45 48, 55 42" />
-                <path d="M53 55 Q28 50, 18 65 Q13 75, 33 75 Q43 73, 53 67" />
-                <path d="M52 80 Q30 77, 22 90 Q18 98, 36 97 Q44 95, 52 90" />
-                <path d="M54 105 Q38 103, 30 112 Q27 118, 40 118 Q47 116, 54 112" />
-                <path d="M58 20 Q80 15, 90 28 Q95 38, 75 38 Q65 37, 58 32" />
-                <path d="M56 45 Q78 40, 88 53 Q93 63, 73 63 Q63 61, 56 55" />
-                <path d="M55 70 Q75 67, 83 78 Q87 86, 70 85 Q62 83, 55 78" />
-                <path d="M56 93 Q72 90, 78 99 Q81 105, 68 105 Q61 103, 56 99" />
-              </g>
-            </svg>
-          </span>
+          />
         ) : (
           <span
             key={item.id}

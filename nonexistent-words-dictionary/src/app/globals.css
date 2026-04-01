@@ -2256,14 +2256,8 @@ a:hover { color: var(--text-primary); }
 .falling-leaf {
   position: absolute;
   top: -4em;
-  color: var(--text-sub);
   animation: fallingLeaf linear forwards;
   user-select: none;
-}
-
-.falling-leaf svg {
-  width: 100%;
-  height: 100%;
 }
 
 @keyframes fallingWord {
