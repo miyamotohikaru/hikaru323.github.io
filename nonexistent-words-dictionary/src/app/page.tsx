@@ -211,18 +211,6 @@ export default function Home() {
       </form>
       <p className="search-note">{t("home.note")}</p>
 
-      {/* 他の登録語を見る（初期状態のみ） */}
-      {phase === "idle" && (
-        <div className="home-browse-links">
-          <Link href="/browse" className="home-browse-btn">
-            {t("home.browseWords")}
-          </Link>
-          <Link href="/ranking" className="home-browse-btn-sub">
-            {t("home.viewRanking")}
-          </Link>
-        </div>
-      )}
-
       {/* ページめくりアニメーション */}
       {phase === "loading" && (
         <div className="page-flip-loading fade-in">
