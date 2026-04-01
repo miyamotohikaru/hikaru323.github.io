@@ -20,7 +20,7 @@ export default function FallingWords() {
   const counterRef = useRef(0);
 
   useEffect(() => {
-    fetch("/api/words?sort=newest&limit=50")
+    fetch("/api/words?sort=newest&limit=500")
       .then((res) => res.json())
       .then((data) => {
         const wordList = (data.words || []).map((w: { word: string }) => w.word);
