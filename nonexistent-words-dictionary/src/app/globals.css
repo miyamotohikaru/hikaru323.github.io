@@ -2492,9 +2492,10 @@ a:hover { color: var(--text-primary); }
   backdrop-filter: blur(4px);
   z-index: 200;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 1rem;
+  padding: 6rem 1rem 2rem;
+  overflow-y: auto;
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -2621,6 +2622,36 @@ a:hover { color: var(--text-primary); }
 .random-modal-retry:hover {
   border-color: var(--page-text-body);
   color: var(--page-text-body);
+}
+
+.random-modal-number {
+  font-family: var(--font-english);
+  font-size: 0.75rem;
+  color: var(--accent-garnet);
+  text-align: center;
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.random-modal-close-btn {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--page-text-sub);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.2s;
+}
+
+.random-modal-close-btn:hover {
+  color: var(--page-text-body);
+}
+
+@media (max-width: 480px) {
+  .random-modal-overlay { padding: 4rem 0.75rem 1.5rem; }
+  .random-modal-body { padding: 1rem; }
+  .random-modal-word { font-size: 1.25rem; }
 }
 
 /* ===== My Page ===== */

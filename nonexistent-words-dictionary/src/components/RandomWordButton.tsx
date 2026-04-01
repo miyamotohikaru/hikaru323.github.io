@@ -2,11 +2,23 @@
 
 import { useState } from "react";
 import ShareButtons from "@/components/ShareButtons";
-import { WordEntry } from "@/lib/types";
+
+interface RandomWord {
+  id: string;
+  word: string;
+  reading: string;
+  partOfSpeech: string;
+  definition: string;
+  examples: string[];
+  nickname: string;
+  likes: number;
+  wordNumber?: number;
+  totalCount?: number;
+}
 
 export default function RandomWordButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const [word, setWord] = useState<WordEntry | null>(null);
+  const [word, setWord] = useState<RandomWord | null>(null);
   const [showModal, setShowModal] = useState(false);
 
   const handleClick = async () => {
@@ -61,6 +73,13 @@ export default function RandomWordButton() {
 
             <div className="random-modal-body">
               <p className="random-modal-intro">あなたが引いた言葉は…</p>
+
+              {word.wordNumber && word.totalCount && (
+                <p className="random-modal-number">
+                  第 {word.wordNumber} 語 / 全 {word.totalCount} 語
+                </p>
+              )}
+
               <h2 className="random-modal-word">{word.word}</h2>
               <div className="random-modal-meta">
                 <span className="random-modal-reading">【{word.reading}】</span>
@@ -79,6 +98,9 @@ export default function RandomWordButton() {
               <ShareButtons word={word.word} url={shareUrl} />
               <button className="random-modal-retry" onClick={handleAnother}>
                 もう一回引く
+              </button>
+              <button className="random-modal-close-btn" onClick={handleClose}>
+                閉じる
               </button>
             </div>
           </div>
