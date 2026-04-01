@@ -294,6 +294,15 @@ export default function Home() {
           <button onClick={handleReset} className="share-dict-continue">
             {t("share.another")}
           </button>
+
+          <div className="home-browse-links">
+            <Link href="/browse" className="home-browse-btn">
+              {t("home.browseWords")}
+            </Link>
+            <Link href="/ranking" className="home-browse-btn-sub">
+              {t("home.viewRanking")}
+            </Link>
+          </div>
         </div>
       )}
 
