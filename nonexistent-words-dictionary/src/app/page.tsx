@@ -3,6 +3,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
+import FallingWords from "@/components/FallingWords";
 import { useI18n } from "@/lib/i18n";
 
 // カタカナをひらがなに変換
@@ -175,7 +176,8 @@ export default function Home() {
   const pageNumber = result ? `p.${Math.floor(Math.random() * 900) + 100}` : "";
 
   return (
-    <main className="main-content">
+    <main className="main-content" style={{ position: "relative" }}>
+      <FallingWords />
       {/* ヒーロー（初期状態のみ） */}
       {phase === "idle" && (
         <div className="hero-centered">
