@@ -209,6 +209,18 @@ export default function Home() {
       </form>
       <p className="search-note">※ 実在する言葉は掲載をお断りしております</p>
 
+      {/* 他の登録語を見る（初期状態のみ） */}
+      {phase === "idle" && (
+        <div className="home-browse-links">
+          <Link href="/browse" className="home-browse-btn">
+            登録されている言葉を見る →
+          </Link>
+          <Link href="/ranking" className="home-browse-btn-sub">
+            ランキングを見る →
+          </Link>
+        </div>
+      )}
+
       {/* ページめくりアニメーション */}
       {phase === "loading" && (
         <div className="page-flip-loading fade-in">
