@@ -1,7 +1,7 @@
 const rateMap = new Map<string, number[]>();
 
 const WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 5;
+const MAX_REQUESTS = 15;
 
 export function checkRateLimit(key: string, maxRequests = MAX_REQUESTS): boolean {
   const now = Date.now();

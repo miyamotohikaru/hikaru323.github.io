@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     request.headers.get("x-real-ip") ||
     "unknown";
 
-  if (!checkRateLimit(ip, 5)) {
+  if (!checkRateLimit(ip, 15)) {
     return NextResponse.json(
       { error: "しばらくお待ちください。" },
       { status: 429 }

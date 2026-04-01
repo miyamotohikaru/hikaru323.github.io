@@ -82,6 +82,8 @@ export default function Home() {
       const data = await res.json();
 
       if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setSaveError(errData.error || "エラーが発生しました。しばらくしてからお試しください。");
         setPhase("idle");
         return;
       }
@@ -215,6 +217,12 @@ export default function Home() {
         </button>
       </form>
       <p className="search-note">{t("home.note")}</p>
+
+      {phase === "idle" && saveError && (
+        <div className="error-message fade-in">
+          <p>{saveError}</p>
+        </div>
+      )}
 
       {/* ページめくりアニメーション */}
       {phase === "loading" && (
