@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import ShareButtons from "@/components/ShareButtons";
 import { useI18n } from "@/lib/i18n";
 
@@ -22,6 +23,11 @@ export default function RandomWordButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [word, setWord] = useState<RandomWord | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
 
   const handleClick = async () => {
     if (isLoading) return;
@@ -65,7 +71,7 @@ export default function RandomWordButton() {
         {isLoading ? t("omikuji.pulling") : t("omikuji.button")}
       </button>
 
-      {showModal && word && (
+      {showModal && word && portalTarget && createPortal(
         <div className="random-modal-overlay" onClick={handleClose}>
           <div className="random-modal" onClick={(e) => e.stopPropagation()}>
             <div className="random-modal-header">
@@ -106,7 +112,8 @@ export default function RandomWordButton() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        portalTarget
       )}
     </>
   );
