@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #FFF9F2;
+  --color-soft-black: #2D2D2D;
+  --color-ocean-bg: #D4F1F9;
+  --color-ocean-accent: #2CB1C9;
+  --color-sky-bg: #FFF0D4;
+  --color-sky-accent: #F5A623;
+  --color-land-bg: #FFE0D4;
+  --color-land-accent: #FF6B6B;
+  --color-reptile-bg: #D8F5D0;
+  --color-reptile-accent: #5CBF50;
+  --color-insect-bg: #E8D8F5;
+  --color-insect-accent: #9B6DC6;
+  --color-special-bg: #FFF5D0;
+  --color-special-accent: #F5C518;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+body {
+  background: #FFF9F2;
+  color: #2D2D2D;
+  font-family: 'Zen Maru Gothic', 'Rounded Mplus 1c', 'Hiragino Maru Gothic Pro', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
