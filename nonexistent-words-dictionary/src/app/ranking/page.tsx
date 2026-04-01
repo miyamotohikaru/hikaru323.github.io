@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { WordEntry } from "@/lib/types";
+import { useI18n } from "@/lib/i18n";
 
 type Tab = "popular" | "newest";
 
@@ -31,6 +32,7 @@ function getBookWidth(word: WordEntry) {
 }
 
 export default function RankingPage() {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>("popular");
   const [words, setWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,10 +68,10 @@ export default function RankingPage() {
     <main className="main-content">
       <div className="gojuon-header">
         <Link href="/" className="back-link">
-          ← 辞典に戻る
+          {t("common.backToDict")}
         </Link>
-        <h1 className="page-title">人気ランキング</h1>
-        <p className="page-subtitle">みんなに愛されている造語たち。</p>
+        <h1 className="page-title">{t("ranking.title")}</h1>
+        <p className="page-subtitle">{t("ranking.subtitle")}</p>
       </div>
 
       <div className="ranking-tabs">
@@ -77,20 +79,20 @@ export default function RankingPage() {
           className={`ranking-tab ${activeTab === "popular" ? "active" : ""}`}
           onClick={() => setActiveTab("popular")}
         >
-          殿堂入り
+          {t("ranking.popular")}
         </button>
         <button
           className={`ranking-tab ${activeTab === "newest" ? "active" : ""}`}
           onClick={() => setActiveTab("newest")}
         >
-          新着
+          {t("ranking.newest")}
         </button>
       </div>
 
       {loading ? (
-        <p className="loading-text">読み込み中…</p>
+        <p className="loading-text">{t("loading.text")}</p>
       ) : words.length === 0 ? (
-        <p className="empty-text">まだ投稿がありません。</p>
+        <p className="empty-text">{t("common.noPostsYet")}</p>
       ) : (
         <div className="bookshelf">
           {/* 本棚の段を作る（1段に5〜6冊） */}
@@ -136,7 +138,7 @@ export default function RankingPage() {
                         ))}
                       </div>
                       <div className="open-book-left-text">
-                        存在しない言葉辞典
+                        {t("home.title")}
                       </div>
                     </div>
                     <div className="open-book-spine" />
@@ -172,7 +174,7 @@ export default function RankingPage() {
                           href={`/word/${selectedWord.id}`}
                           className="open-book-detail-link"
                         >
-                          詳細を見る →
+                          {t("ranking.detail")}
                         </Link>
                       </div>
                     </div>

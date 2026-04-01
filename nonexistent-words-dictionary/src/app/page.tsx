@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
+import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
+import FallingWords from "@/components/FallingWords";
+import { useI18n } from "@/lib/i18n";
+
+// カタカナをひらがなに変換
+function toHiragana(str: string): string {
+  return str.replace(/[\u30A1-\u30F6]/g, (ch) =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  );
+}
 
 interface KojienEntryData {
   word: string;
@@ -32,6 +42,7 @@ interface SavedWordData {
 type Phase = "idle" | "loading" | "result" | "shared";
 
 export default function Home() {
+  const { t } = useI18n();
   const [word, setWord] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<SubmitResult | null>(null);
@@ -58,6 +69,9 @@ export default function Home() {
 
     setPhase("loading");
     setResult(null);
+    setSavedWord(null);
+    setEditing(false);
+    setSaveError(null);
 
     try {
       const res = await fetch("/api/submit", {
@@ -77,7 +91,7 @@ export default function Home() {
       if (data.kojienEntry) {
         setEditDef(data.kojienEntry.definition);
         setEditExample(data.kojienEntry.example || "");
-        setReading(data.kojienEntry.reading || "");
+        setReading(toHiragana(data.kojienEntry.reading || ""));
       }
       setPhase("result");
     } catch {
@@ -165,16 +179,17 @@ export default function Home() {
   const pageNumber = result ? `p.${Math.floor(Math.random() * 900) + 100}` : "";
 
   return (
-    <main className="main-content">
+    <main className="main-content" style={{ position: "relative" }}>
+      <FallingWords />
       {/* ヒーロー（初期状態のみ） */}
       {phase === "idle" && (
         <div className="hero-centered">
           <div className="hero-copy">
-            <h1 className="hero-title">存在しない言葉辞典</h1>
+            <h1 className="hero-title">{t("home.title")}</h1>
             <p className="hero-subtitle">
-              存在しない言葉だけを受け付ける辞書。
-              <br />
-              あなたの造語で、空っぽの辞典を育ててください。
+              {t("home.subtitle").split("\n").map((line, i) => (
+                <span key={i}>{line}{i === 0 && <br />}</span>
+              ))}
             </p>
           </div>
         </div>
@@ -186,7 +201,7 @@ export default function Home() {
           type="text"
           value={word}
           onChange={(e) => setWord(e.target.value)}
-          placeholder="存在しない言葉を入力..."
+          placeholder={t("home.placeholder")}
           className="search-input"
           maxLength={20}
           disabled={phase === "loading"}
@@ -199,7 +214,7 @@ export default function Home() {
           🔍
         </button>
       </form>
-      <p className="search-note">※ 実在する言葉は掲載をお断りしております</p>
+      <p className="search-note">{t("home.note")}</p>
 
       {/* ページめくりアニメーション */}
       {phase === "loading" && (
@@ -220,7 +235,7 @@ export default function Home() {
             <div className="page-flip-page page-flip-page-12" />
             <div className="page-flip-cover-front" />
           </div>
-          <p className="page-flip-text">編纂者が審査しています…</p>
+          <p className="page-flip-text">{t("loading.reviewing")}</p>
         </div>
       )}
 
@@ -228,7 +243,7 @@ export default function Home() {
       {phase === "shared" && savedWord && (
         <div className="share-dict-page fade-in">
           <div className="share-dict-header">
-            <span className="share-dict-label">存在しない言葉辞典</span>
+            <span className="share-dict-label">{t("share.title")}</span>
             <span className="share-dict-page-num">p.{Math.floor(Math.random() * 900) + 100}</span>
           </div>
 
@@ -251,11 +266,12 @@ export default function Home() {
 
           <div className="share-dict-congrats">
             <p className="share-dict-congrats-text">
-              新語が辞典に掲載されました
+              {t("share.congrats")}
             </p>
             <p className="share-dict-congrats-sub">
-              あなたの言葉が辞典の一ページに刻まれました。<br />
-              この新しい言葉を世界に広めませんか？
+              {t("share.congratsSub").split("\n").map((line, i) => (
+                <span key={i}>{line}{i === 0 && <br />}</span>
+              ))}
             </p>
           </div>
 
@@ -269,8 +285,17 @@ export default function Home() {
           </div>
 
           <button onClick={handleReset} className="share-dict-continue">
-            別の言葉を調べる →
+            {t("share.another")}
           </button>
+
+          <div className="home-browse-links">
+            <Link href="/browse" className="home-browse-btn">
+              {t("home.browseWords")}
+            </Link>
+            <Link href="/ranking" className="home-browse-btn-sub">
+              {t("home.viewRanking")}
+            </Link>
+          </div>
         </div>
       )}
 
@@ -287,12 +312,12 @@ export default function Home() {
             /* ===== 拒否カード ===== */
             <div className="paper-body paper-rejection">
               <p className="paper-rejection-text">
-                「{result.word}」は実在する言葉のため、
-                <br />
-                本辞典には掲載しておりません。
+                「{result.word}」{t("result.exists").split("\n").map((line, i) => (
+                  <span key={i}>{i > 0 && <br />}{line}</span>
+                ))}
               </p>
               <button onClick={handleReset} className="paper-retry-btn">
-                別の言葉を調べる
+                {t("result.tryAnother")}
               </button>
             </div>
           ) : result.kojienEntry ? (
@@ -300,7 +325,7 @@ export default function Home() {
             <div className="paper-body">
               {/* 存在しない言葉メッセージ */}
               <div className="paper-nonexistent-badge">
-                この言葉は辞典に存在しません ── 掲載できます
+                {t("result.nonexistent")}
               </div>
 
               {/* 見出し語 */}
@@ -324,7 +349,7 @@ export default function Home() {
               {/* 用例 */}
               {(result.kojienEntry.example || editing) && (
                 <div className="paper-example-section">
-                  <span className="paper-example-label">用例</span>
+                  <span className="paper-example-label">{t("result.example")}</span>
                   {editing ? (
                     <textarea
                       value={editExample}
@@ -344,33 +369,33 @@ export default function Home() {
                   onClick={() => setEditing(!editing)}
                   className="paper-edit-btn"
                 >
-                  {editing ? "編集を終了" : "内容を編集する"}
+                  {editing ? t("result.editDone") : t("result.editContent")}
                 </button>
               </div>
 
               {/* 掲載フォーム */}
               <div className="paper-register">
-                <p className="paper-register-heading">この言葉を辞典に掲載しますか？</p>
+                <p className="paper-register-heading">{t("result.registerHeading")}</p>
 
                 <div className="paper-register-field">
-                  <label className="paper-register-label">読み（ひらがな）</label>
+                  <label className="paper-register-label">{t("result.readingLabel")}</label>
                   <input
                     type="text"
                     value={reading}
-                    onChange={(e) => setReading(e.target.value)}
-                    placeholder="よみがなを入力"
+                    onChange={(e) => setReading(toHiragana(e.target.value))}
+                    placeholder={t("result.readingPlaceholder")}
                     className="paper-register-input"
                     maxLength={30}
                   />
                 </div>
 
                 <div className="paper-register-field">
-                  <label className="paper-register-label">掲載者名</label>
+                  <label className="paper-register-label">{t("result.nicknameLabel")}</label>
                   <input
                     type="text"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
-                    placeholder="ニックネーム"
+                    placeholder={t("result.nicknamePlaceholder")}
                     className="paper-register-input"
                     maxLength={15}
                   />
@@ -381,12 +406,22 @@ export default function Home() {
                   disabled={isSaving}
                   className="paper-register-btn"
                 >
-                  {isSaving ? "掲載中…" : "この言葉を辞典に載せる"}
+                  {isSaving ? t("result.submitting") : t("result.submit")}
                 </button>
 
                 {saveError && (
                   <p className="paper-register-error">{saveError}</p>
                 )}
+              </div>
+
+              {/* 他の登録語を見るボタン */}
+              <div className="paper-browse-links">
+                <Link href="/browse" className="paper-browse-btn">
+                  {t("result.browseOthers")}
+                </Link>
+                <Link href="/ranking" className="paper-browse-btn paper-browse-btn-sub">
+                  {t("result.viewRanking")}
+                </Link>
               </div>
             </div>
           ) : null}

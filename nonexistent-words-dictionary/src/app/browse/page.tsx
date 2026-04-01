@@ -4,10 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { GOJUON_ROWS, WordEntry } from "@/lib/types";
 import KojienEntry from "@/components/KojienEntry";
+import { useI18n } from "@/lib/i18n";
 
 const GOJUON_TABS = GOJUON_ROWS.slice(0, 10); // あ〜わ行のみ（清音）
 
 export default function BrowsePage() {
+  const { t } = useI18n();
   const [allWords, setAllWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeRow, setActiveRow] = useState<string | null>(null);
@@ -66,11 +68,11 @@ export default function BrowsePage() {
   return (
     <main className="main-content">
       <div className="browse-header">
-        <Link href="/" className="back-link">← 辞典に戻る</Link>
-        <h1 className="page-title">辞書</h1>
+        <Link href="/" className="back-link">{t("common.backToDict")}</Link>
+        <h1 className="page-title">{t("browse.title")}</h1>
         <p className="page-subtitle">
-          収録語を五十音順でお引きいただけます。
-          現在 {allWords.length} 語収録
+          {t("browse.subtitle")}
+          {" "}{allWords.length} {t("browse.wordsCount")}
         </p>
       </div>
 
@@ -81,7 +83,7 @@ export default function BrowsePage() {
             className={`dict-index-tab ${activeRow === null ? "active" : ""}`}
             onClick={() => handleTabClick(null)}
           >
-            全
+            {t("browse.allTab")}
           </button>
           {GOJUON_TABS.map((row) => {
             const count = rowCounts.get(row.label) || 0;
@@ -101,11 +103,12 @@ export default function BrowsePage() {
         {/* 単語一覧 */}
         <div className="dict-index-content">
           {loading ? (
-            <p className="loading-text">読み込み中…</p>
+            <p className="loading-text">{t("loading.text")}</p>
           ) : allWords.length === 0 ? (
             <p className="empty-text">
-              まだ言葉が登録されていません。<br />
-              あなたが最初の一語を投稿してみませんか？
+              {t("browse.noWords").split("\n").map((line, i) => (
+                <span key={i}>{line}{i < 1 && <br />}</span>
+              ))}
             </p>
           ) : (
             <div className="browse-entries">
@@ -124,7 +127,7 @@ export default function BrowsePage() {
                       <span className="dict-index-heading-line" />
                     </div>
                     {words.length === 0 ? (
-                      <p className="browse-row-empty">この行にはまだ言葉がありません</p>
+                      <p className="browse-row-empty">{t("browse.emptyRow")}</p>
                     ) : (
                       <div className="browse-row-entries">
                         {words.map((word) => (
