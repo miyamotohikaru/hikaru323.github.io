@@ -2253,9 +2253,27 @@ a:hover { color: var(--text-primary); }
   user-select: none;
 }
 
+.falling-leaf {
+  position: absolute;
+  top: -4em;
+  color: var(--text-sub);
+  animation: fallingLeaf linear forwards;
+  user-select: none;
+}
+
+.falling-leaf svg {
+  width: 100%;
+  height: 100%;
+}
+
 @keyframes fallingWord {
   from { transform: translateY(-2em); }
   to { transform: translateY(105vh); }
+}
+
+@keyframes fallingLeaf {
+  from { transform: translateY(-4em) rotate(0deg); }
+  to { transform: translateY(105vh) rotate(45deg); }
 }
 
 /* ===== Animation ===== */
