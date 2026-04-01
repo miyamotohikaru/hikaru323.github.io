@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ShareButtons from "@/components/ShareButtons";
+import { useI18n } from "@/lib/i18n";
 
 interface RandomWord {
   id: string;
@@ -17,6 +18,7 @@ interface RandomWord {
 }
 
 export default function RandomWordButton() {
+  const { t } = useI18n();
   const [isLoading, setIsLoading] = useState(false);
   const [word, setWord] = useState<RandomWord | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -60,23 +62,23 @@ export default function RandomWordButton() {
         onClick={handleClick}
         disabled={isLoading}
       >
-        {isLoading ? "引いてます…" : "おみくじ"}
+        {isLoading ? t("omikuji.pulling") : t("omikuji.button")}
       </button>
 
       {showModal && word && (
         <div className="random-modal-overlay" onClick={handleClose}>
           <div className="random-modal" onClick={(e) => e.stopPropagation()}>
             <div className="random-modal-header">
-              <span className="random-modal-label">存在しない言葉辞典</span>
+              <span className="random-modal-label">{t("home.title")}</span>
               <button className="random-modal-close" onClick={handleClose}>×</button>
             </div>
 
             <div className="random-modal-body">
-              <p className="random-modal-intro">あなたが引いた言葉は…</p>
+              <p className="random-modal-intro">{t("omikuji.intro")}</p>
 
               {word.wordNumber && word.totalCount && (
                 <p className="random-modal-number">
-                  第 {word.wordNumber} 語 / 全 {word.totalCount} 語
+                  {t("omikuji.wordNum", { n: word.wordNumber, total: word.totalCount })}
                 </p>
               )}
 
@@ -97,10 +99,10 @@ export default function RandomWordButton() {
             <div className="random-modal-actions">
               <ShareButtons word={word.word} url={shareUrl} />
               <button className="random-modal-retry" onClick={handleAnother}>
-                もう一回引く
+                {t("omikuji.retry")}
               </button>
               <button className="random-modal-close-btn" onClick={handleClose}>
-                閉じる
+                {t("omikuji.close")}
               </button>
             </div>
           </div>

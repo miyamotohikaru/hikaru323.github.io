@@ -5,8 +5,10 @@ import Link from "next/link";
 import { WordEntry } from "@/lib/types";
 import KojienEntry from "@/components/KojienEntry";
 import AuthorTitle from "@/components/AuthorTitle";
+import { useI18n } from "@/lib/i18n";
 
 export default function MyPage() {
+  const { t } = useI18n();
   const [myWords, setMyWords] = useState<WordEntry[]>([]);
   const [likedWords, setLikedWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,8 +47,8 @@ export default function MyPage() {
   return (
     <main className="main-content">
       <div className="my-header">
-        <Link href="/" className="back-link">← 辞典に戻る</Link>
-        <h1 className="page-title">My 語集</h1>
+        <Link href="/" className="back-link">{t("common.backToDict")}</Link>
+        <h1 className="page-title">{t("my.title")}</h1>
         {nickname && (
           <div className="my-profile">
             <span className="my-nickname">{nickname}</span>
@@ -54,27 +56,27 @@ export default function MyPage() {
           </div>
         )}
         <p className="page-subtitle">
-          投稿 {myWords.length}語 / 収蔵 {likedWords.length}語
+          {t("my.posted")} {myWords.length}{t("my.words")} / {t("my.collected")} {likedWords.length}{t("my.words")}
         </p>
       </div>
 
       {loading ? (
-        <p className="loading-text">読み込み中…</p>
+        <p className="loading-text">{t("loading.text")}</p>
       ) : postsCount === 0 && likedWords.length === 0 ? (
         <div className="my-empty">
           <p className="empty-text">
-            まだ語集が空です。<br />
-            言葉を投稿したり、いいねしたりすると<br />
-            ここに集まってきます。
+            {t("my.empty").split("\n").map((line, i) => (
+              <span key={i}>{line}{i < 2 && <br />}</span>
+            ))}
           </p>
-          <Link href="/" className="my-empty-link">言葉を投稿する →</Link>
+          <Link href="/" className="my-empty-link">{t("my.postWord")}</Link>
         </div>
       ) : (
         <>
           {/* 投稿した語 */}
           {myWords.length > 0 && (
             <section className="my-section">
-              <h2 className="my-section-heading">投稿した語</h2>
+              <h2 className="my-section-heading">{t("my.postedWords")}</h2>
               <div className="browse-row-entries">
                 {myWords.map((w) => (
                   <KojienEntry key={w.id} entry={w} showMeta />
@@ -86,7 +88,7 @@ export default function MyPage() {
           {/* 収蔵した語（いいねした語） */}
           {likedWords.length > 0 && (
             <section className="my-section">
-              <h2 className="my-section-heading">収蔵した語（いいねした語）</h2>
+              <h2 className="my-section-heading">{t("my.collectedWords")}</h2>
               <div className="browse-row-entries">
                 {likedWords.map((w) => (
                   <KojienEntry key={w.id} entry={w} showMeta />

@@ -106,6 +106,64 @@ a:hover { color: var(--text-primary); }
 
 .header-link:hover { color: var(--text-primary); }
 
+/* Language Switcher */
+.lang-switcher {
+  position: relative;
+}
+
+.lang-switcher-btn {
+  font-family: var(--font-ui);
+  font-size: 0.625rem;
+  color: var(--text-sub);
+  background: transparent;
+  border: 1px solid var(--base-border);
+  padding: 0.15rem 0.35rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  line-height: 1;
+}
+
+.lang-switcher-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-sub);
+}
+
+.lang-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.25rem;
+  background: var(--base-bg);
+  border: 1px solid var(--base-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 300;
+  min-width: 100px;
+}
+
+.lang-menu-item {
+  display: block;
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  background: transparent;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lang-menu-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.lang-menu-item.active {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
 /* ===== Page Wrapper ===== */
 .page-wrapper {
   max-width: 680px;
