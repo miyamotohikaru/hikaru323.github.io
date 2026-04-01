@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
+import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
+
+// カタカナをひらがなに変換
+function toHiragana(str: string): string {
+  return str.replace(/[\u30A1-\u30F6]/g, (ch) =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  );
+}
 
 interface KojienEntryData {
   word: string;
@@ -77,7 +85,7 @@ export default function Home() {
       if (data.kojienEntry) {
         setEditDef(data.kojienEntry.definition);
         setEditExample(data.kojienEntry.example || "");
-        setReading(data.kojienEntry.reading || "");
+        setReading(toHiragana(data.kojienEntry.reading || ""));
       }
       setPhase("result");
     } catch {
@@ -357,7 +365,7 @@ export default function Home() {
                   <input
                     type="text"
                     value={reading}
-                    onChange={(e) => setReading(e.target.value)}
+                    onChange={(e) => setReading(toHiragana(e.target.value))}
                     placeholder="よみがなを入力"
                     className="paper-register-input"
                     maxLength={30}
@@ -387,6 +395,16 @@ export default function Home() {
                 {saveError && (
                   <p className="paper-register-error">{saveError}</p>
                 )}
+              </div>
+
+              {/* 他の登録語を見るボタン */}
+              <div className="paper-browse-links">
+                <Link href="/browse" className="paper-browse-btn">
+                  他の登録語を一覧で見る →
+                </Link>
+                <Link href="/ranking" className="paper-browse-btn paper-browse-btn-sub">
+                  ランキングを見る →
+                </Link>
               </div>
             </div>
           ) : null}
