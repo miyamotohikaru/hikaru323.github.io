@@ -2244,7 +2244,7 @@ a:hover { color: var(--text-primary); }
   position: absolute;
   top: -2em;
   font-family: var(--font-heading);
-  color: var(--text-sub);
+  color: var(--text-primary);
   writing-mode: vertical-rl;
   text-orientation: mixed;
   letter-spacing: 0.1em;

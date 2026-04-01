@@ -69,6 +69,9 @@ export default function Home() {
 
     setPhase("loading");
     setResult(null);
+    setSavedWord(null);
+    setEditing(false);
+    setSaveError(null);
 
     try {
       const res = await fetch("/api/submit", {

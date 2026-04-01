@@ -42,8 +42,8 @@ export default function FallingWords() {
         x: Math.random() * 90 + 5,
         duration: Math.random() * 8 + 10,
         delay: 0,
-        size: Math.random() * 0.6 + 0.7,
-        opacity: Math.random() * 0.15 + 0.05,
+        size: Math.random() * 0.7 + 0.9,
+        opacity: Math.random() * 0.15 + 0.12,
       };
     };
 
