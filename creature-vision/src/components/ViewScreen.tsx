@@ -225,54 +225,19 @@ export default function ViewScreen({
         )}
       </div>
 
-      {/* Detail panels */}
-      <div className="mt-6 flex flex-col gap-4">
-        {/* Filter description */}
-        <div style={{ padding: 20, borderRadius: 18, background: catColor?.bg ?? "#f5f5f5" }}>
-          <div style={{ fontSize: 15, fontWeight: 900 }}>🎨 フィルター表現</div>
-          <p className="mt-2" style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.6 }}>
-            {creature.detail}
-          </p>
-        </div>
-
-        {/* Biology */}
+      {/* Detail panel */}
+      <div className="mt-6">
         <div
           style={{
             padding: 20,
             borderRadius: 18,
-            background: "#fff",
-            border: "2px solid rgba(0,0,0,0.05)",
+            background: catColor?.bg ?? "#f5f5f5",
           }}
         >
           <div style={{ fontSize: 15, fontWeight: 900 }}>🧬 なんでこうなの？</div>
-          <p className="mt-2" style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.6, color: "#555" }}>
+          <p className="mt-2" style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.8, color: "#555" }}>
             {creature.bio}
           </p>
-        </div>
-
-        {/* Specs */}
-        <div
-          style={{
-            padding: 20,
-            borderRadius: 18,
-            background: "#fff",
-            border: "2px solid rgba(0,0,0,0.05)",
-          }}
-        >
-          <div style={{ fontSize: 15, fontWeight: 900 }}>📊 スペック</div>
-          <div className="mt-3 flex flex-col gap-2">
-            {creature.specs.map((spec, i) => {
-              const [label, value] = spec.split("：");
-              return (
-                <div key={i} className="flex gap-2">
-                  <span style={{ fontWeight: 700, color: catColor?.accent ?? "#999", fontSize: 13 }}>
-                    {label}
-                  </span>
-                  <span style={{ fontSize: 13, color: "#555" }}>{value}</span>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
 
