@@ -11,13 +11,11 @@ type Phase = "upload" | "select" | "view";
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("upload");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [isVideo, setIsVideo] = useState(false);
   const [selectedId, setSelectedId] = useState(CREATURES[0]?.id ?? "dolphin");
   const [favs, setFavs] = useState<string[]>([]);
 
   const handleFile = useCallback((file: File) => {
     setMediaFile(file);
-    setIsVideo(file.type.startsWith("video/"));
     setPhase("select");
   }, []);
 
@@ -53,7 +51,6 @@ export default function Home() {
         creatures={CREATURES}
         selectedId={selectedId}
         mediaFile={mediaFile}
-        isVideo={isVideo}
         favs={favs}
         onBack={() => setPhase("select")}
         onToggleFav={toggleFav}
