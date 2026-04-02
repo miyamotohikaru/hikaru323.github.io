@@ -63,7 +63,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
 
       {/* Subtitle */}
       <p className="mt-3 text-center" style={{ color: "#999", fontSize: 16, fontWeight: 500 }}>
-        写真や動画をアップして 100種類の生き物の目で見てみよう！
+        写真をアップして 100種類の生き物の目で見てみよう！
       </p>
 
       {/* Upload area */}
@@ -90,15 +90,15 @@ export default function UploadScreen({ creatures, onFile }: Props) {
       >
         <div style={{ fontSize: 48, animation: "bounce 2.5s ease-in-out infinite" }}>📸</div>
         <p className="mt-3" style={{ fontWeight: 700, fontSize: 16, color: "#2D2D2D" }}>
-          写真・動画をえらぶ
+          写真をえらぶ
         </p>
         <p className="mt-1" style={{ fontSize: 12, color: "#aaa" }}>
-          JPG, PNG, WebP, MP4, WebM, MOV
+          JPG, PNG, WebP
         </p>
         <input
           ref={inputRef}
           type="file"
-          accept="image/*,video/*"
+          accept="image/*"
           className="hidden"
           onChange={(e) => handleFile(e.target.files)}
         />

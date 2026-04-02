@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Icon from "./Icon";
-import VideoControls from "./VideoControls";
 import CompareSlider from "./CompareSlider";
 import { applyFilter } from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
@@ -24,7 +23,6 @@ interface Props {
   creatures: Creature[];
   selectedId: string;
   mediaFile: File;
-  isVideo: boolean;
   favs: string[];
   onBack: () => void;
   onToggleFav: (id: string) => void;
@@ -37,7 +35,6 @@ export default function ViewScreen({
   creatures,
   selectedId,
   mediaFile,
-  isVideo,
   favs,
   onBack,
   onToggleFav,
@@ -45,31 +42,15 @@ export default function ViewScreen({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const compareCanvasRef = useRef<HTMLCanvasElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const animFrameRef = useRef<number>(0);
-  const selRef = useRef(selectedId);
-  const compRef = useRef(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   const [processing, setProcessing] = useState(false);
   const [comparing, setComparing] = useState(false);
-  const [comparePos, setComparePos] = useState(50);
-  const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [shareOk, setShareOk] = useState(false);
   const [mediaSrc, setMediaSrc] = useState("");
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
-
-  // Keep refs in sync
-  useEffect(() => {
-    selRef.current = selectedId;
-  }, [selectedId]);
-  useEffect(() => {
-    compRef.current = comparing;
-  }, [comparing]);
 
   // Load media
   useEffect(() => {
@@ -78,11 +59,12 @@ export default function ViewScreen({
     return () => URL.revokeObjectURL(url);
   }, [mediaFile]);
 
-  // Draw image
+  // Draw image and apply filter
   useEffect(() => {
-    if (isVideo || !mediaSrc) return;
+    if (!mediaSrc) return;
     const img = new Image();
     img.onload = () => {
+      imgRef.current = img;
       const canvas = canvasRef.current;
       const compareCanvas = compareCanvasRef.current;
       if (!canvas) return;
@@ -102,108 +84,27 @@ export default function ViewScreen({
 
       setProcessing(true);
       ctx.drawImage(img, 0, 0, w, h);
-      const c = creatures.find((c) => c.id === selRef.current)!;
+      const c = creatures.find((c) => c.id === selectedId)!;
       applyFilter(ctx, w, h, c.filterType, c.fp);
       setTimeout(() => setProcessing(false), 300);
     };
     img.src = mediaSrc;
-  }, [mediaSrc, isVideo, selectedId, creatures]);
+  }, [mediaSrc, selectedId, creatures]);
 
-  // Re-apply filter when creature changes (image mode)
+  // Re-apply filter when creature changes
   useEffect(() => {
-    if (isVideo || !mediaSrc) return;
+    if (!mediaSrc || !imgRef.current) return;
     const canvas = canvasRef.current;
     const compareCanvas = compareCanvasRef.current;
     if (!canvas || !compareCanvas) return;
     const ctx = canvas.getContext("2d")!;
-    const cmpCtx = compareCanvas.getContext("2d");
-    if (!cmpCtx) return;
 
     setProcessing(true);
-    // Redraw from compare (original)
     ctx.drawImage(compareCanvas, 0, 0);
     const c = creatures.find((c) => c.id === selectedId)!;
     applyFilter(ctx, canvas.width, canvas.height, c.filterType, c.fp);
     setTimeout(() => setProcessing(false), 300);
-  }, [selectedId, isVideo, mediaSrc, creatures]);
-
-  // Video frame loop
-  useEffect(() => {
-    if (!isVideo || !mediaSrc) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const compareCanvas = compareCanvasRef.current;
-    if (!video || !canvas) return;
-
-    video.src = mediaSrc;
-    video.muted = true;
-    video.loop = true;
-
-    const onLoaded = () => {
-      const scale = Math.min(1, MAX_W / video.videoWidth);
-      const w = Math.floor(video.videoWidth * scale);
-      const h = Math.floor(video.videoHeight * scale);
-      canvas.width = w;
-      canvas.height = h;
-      if (compareCanvas) {
-        compareCanvas.width = w;
-        compareCanvas.height = h;
-      }
-      setDuration(video.duration);
-    };
-    video.addEventListener("loadedmetadata", onLoaded);
-
-    const drawFrame = () => {
-      if (!video.paused && !video.ended) {
-        const ctx = canvas.getContext("2d")!;
-        const w = canvas.width;
-        const h = canvas.height;
-        ctx.drawImage(video, 0, 0, w, h);
-
-        // Compare canvas (original)
-        if (compRef.current && compareCanvas) {
-          compareCanvas.getContext("2d")!.drawImage(video, 0, 0, w, h);
-        }
-
-        const c = creatures.find((c) => c.id === selRef.current);
-        if (c) applyFilter(ctx, w, h, c.filterType, c.fp);
-        setCurrentTime(video.currentTime);
-      }
-      animFrameRef.current = requestAnimationFrame(drawFrame);
-    };
-    animFrameRef.current = requestAnimationFrame(drawFrame);
-
-    return () => {
-      cancelAnimationFrame(animFrameRef.current);
-      video.removeEventListener("loadedmetadata", onLoaded);
-    };
-  }, [isVideo, mediaSrc, creatures]);
-
-  const togglePlay = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) {
-      video.play();
-      setPlaying(true);
-    } else {
-      video.pause();
-      setPlaying(false);
-    }
-  }, []);
-
-  const toggleMute = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    setMuted(video.muted);
-  }, []);
-
-  const seek = useCallback((time: number) => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.currentTime = time;
-    setCurrentTime(time);
-  }, []);
+  }, [selectedId, mediaSrc, creatures]);
 
   const share = useCallback(() => {
     const text = `🔬 Creature Vision Lab\n\n${creature.name}（${creature.en}）の視覚\n🎨 ${creature.detail}\n🧬 ${creature.bio}\n\n#CreatureVision`;
@@ -276,23 +177,7 @@ export default function ViewScreen({
           <Icon id={creature.id} name={creature.name} cat={creature.cat} size={36} />
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <span style={{ fontSize: 20, fontWeight: 900 }}>{creature.name}のめ</span>
-            {isVideo && (
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "#fff",
-                  background: "#FF4444",
-                  padding: "2px 8px",
-                  borderRadius: 6,
-                }}
-              >
-                🎬 LIVE
-              </span>
-            )}
-          </div>
+          <span style={{ fontSize: 20, fontWeight: 900 }}>{creature.name}のめ</span>
           <div style={{ fontSize: 13, color: "#999" }}>{creature.en}</div>
         </div>
       </div>
@@ -308,7 +193,7 @@ export default function ViewScreen({
           className="block w-full"
           style={
             comparing
-              ? { clipPath: `inset(0 ${100 - comparePos}% 0 0)` }
+              ? { clipPath: `inset(0 ${100 - 50}% 0 0)` }
               : {}
           }
         />
@@ -317,7 +202,7 @@ export default function ViewScreen({
           <canvas
             ref={compareCanvasRef}
             className="absolute top-0 left-0 block w-full"
-            style={{ clipPath: `inset(0 0 0 ${comparePos}%)` }}
+            style={{ clipPath: `inset(0 0 0 ${50}%)` }}
           />
         )}
 
@@ -338,43 +223,7 @@ export default function ViewScreen({
             </p>
           </div>
         )}
-
-        {/* Video play button (initial) */}
-        {isVideo && !playing && (
-          <button
-            onClick={togglePlay}
-            className="absolute inset-0 flex items-center justify-center cursor-pointer"
-            style={{ background: "rgba(0,0,0,0.2)" }}
-          >
-            <div
-              className="flex items-center justify-center"
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.9)",
-                fontSize: 28,
-              }}
-            >
-              ▶
-            </div>
-          </button>
-        )}
       </div>
-
-      {/* Video controls */}
-      {isVideo && (
-        <VideoControls
-          playing={playing}
-          muted={muted}
-          currentTime={currentTime}
-          duration={duration}
-          accentColor={catColor?.accent ?? "#999"}
-          onTogglePlay={togglePlay}
-          onToggleMute={toggleMute}
-          onSeek={seek}
-        />
-      )}
 
       {/* Detail panels */}
       <div className="mt-6 flex flex-col gap-4">
@@ -395,7 +244,7 @@ export default function ViewScreen({
             border: "2px solid rgba(0,0,0,0.05)",
           }}
         >
-          <div style={{ fontSize: 15, fontWeight: 900 }}>🧬 せいぶつがく</div>
+          <div style={{ fontSize: 15, fontWeight: 900 }}>🧬 なんでこうなの？</div>
           <p className="mt-2" style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.6, color: "#555" }}>
             {creature.bio}
           </p>
@@ -426,9 +275,6 @@ export default function ViewScreen({
           </div>
         </div>
       </div>
-
-      {/* Hidden video element */}
-      {isVideo && <video ref={videoRef} className="hidden" playsInline />}
 
       <style>{`
         .pill-btn {
