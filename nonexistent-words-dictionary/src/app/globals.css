@@ -322,6 +322,21 @@ a:hover { color: var(--text-primary); }
   line-height: 2;
 }
 
+.paper-rejection-reason {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba(100, 85, 60, 0.05);
+  border-left: 3px solid rgba(100, 85, 60, 0.2);
+}
+
+.paper-rejection-reason-text {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--page-text-body);
+  line-height: 1.8;
+  text-align: left;
+}
+
 .paper-retry-btn {
   margin-top: 2rem;
   padding: 0.5rem 1.5rem;

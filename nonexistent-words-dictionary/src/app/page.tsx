@@ -324,6 +324,11 @@ export default function Home() {
                   <span key={i}>{i > 0 && <br />}{line}</span>
                 ))}
               </p>
+              {result.reason && (
+                <div className="paper-rejection-reason">
+                  <p className="paper-rejection-reason-text">{result.reason}</p>
+                </div>
+              )}
               <button onClick={handleReset} className="paper-retry-btn">
                 {t("result.tryAnother")}
               </button>

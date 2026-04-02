@@ -19,26 +19,29 @@ function guessReading(word: string): string {
 
 const SYSTEM_PROMPT = `あなたは「存在しない言葉辞典（FICTIONARY）」の編纂者です。
 
-ユーザーが新しい造語を送ってきます（意味の説明が添えられている場合もあります）。あなたの仕事は:
+ユーザーが言葉を送ってきます。あなたの仕事は:
 
 1. その言葉が実在する日本語かどうか判定する
-   - 辞書に載っている言葉はもちろん、日常会話、スラング、ネットミーム、
-     固有名詞、業界用語、方言として実在するものも「実在する」と判定する
+   - 辞書に載っている言葉、日常会話、スラング、ネットミーム、固有名詞、業界用語、方言として実在するものも「実在する」と判定
    - 判断に迷う場合は「実在する」側に倒す（厳格運用）
 
-2. 実在しない場合、辞書エントリを生成する
+2. 実在する場合:
+   - その言葉の実際の意味・由来・用法を詳しく説明する（辞書的な解説）
+   - 方言の場合はどの地方で使われるかも含める
+
+3. 実在しない場合、辞書エントリを生成する:
    - 意味の説明があればそれを尊重しつつ、辞書として自然な表現に整える
    - 意味の説明がなければ、言葉の響きや字面から創造的に定義を考案する
-   - 定義文は簡潔で断定的。辞書らしい乾いた文体
+   - 定義文は100〜200文字程度で、辞書らしく詳しく書く。言葉の背景や使われる場面も含める
    - 用例は日常会話で使えそうな自然な1文
 
 必ず以下のJSON形式で出力してください。他の文章は一切含めないでください:
 {
   "exists": boolean,
-  "reason": "実在する場合の理由（存在しない場合は空文字）",
+  "reason": "実在する場合：その言葉の実際の意味・由来の詳しい説明。存在しない場合は空文字",
   "reading": "ひらがな読み",
-  "partOfSpeech": "名詞|動詞|形容詞|形容動詞|副詞|感動詞",
-  "definition": "定義文",
+  "partOfSpeech": "名詞|動詞|形容詞|形容動詞|副詞|感動詞|連体詞|接続詞",
+  "definition": "定義文（100〜200文字で詳しく）",
   "example": "用例文",
   "formatted": "見出し語【読み】（品詞）定義文。▽用例「用例文」"
 }`;
@@ -74,22 +77,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "不適切な表現が含まれています。" }, { status: 400 });
     }
 
-    // Layer 1: ローカル辞書チェック（O(1)）
-    const localResult = existsInLocalDictionary(word);
-    if (localResult.exists) {
-      return NextResponse.json({
-        exists: true,
-        word,
-        reason: "一般的な日本語として辞書に登録されています。",
-      });
-    }
-
-    // Layer 2: Claude Opus 4.6 判定
     const apiKey = process.env.ANTHROPIC_API_KEY;
     const fallbackDef = meaning || `まだ誰にも定義されていない言葉。「${word}」という響きの中に、新しい概念が眠っている。`;
 
+    // ローカル辞書チェック（O(1)）
+    const localResult = existsInLocalDictionary(word);
+
     if (!apiKey) {
-      // APIキー未設定時はフォールバック（ローカル開発用）
+      // APIキー未設定時はフォールバック
+      if (localResult.exists) {
+        return NextResponse.json({
+          exists: true,
+          word,
+          reason: "一般的な日本語として辞書に登録されています。",
+        });
+      }
       const reading = guessReading(word);
       const formatted = `${word}【${reading || word}】（名詞）${fallbackDef}`;
       return NextResponse.json({
@@ -106,14 +108,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const userContent = meaning
+    // Claude API判定（ローカル辞書のヒント付き）
+    let userContent = meaning
       ? `言葉: ${word}\n意味: ${meaning}`
       : `言葉: ${word}`;
 
+    if (localResult.exists) {
+      userContent += `\n\nヒント: この言葉はローカル辞書で実在語として検出されました。実在する言葉として、その意味・由来を詳しく説明してください。`;
+    }
+
     const client = new Anthropic({ apiKey });
     const message = await client.messages.create({
-      model: "claude-opus-4-6-20250612",
-      max_tokens: 500,
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 800,
       messages: [
         {
           role: "user",
@@ -131,7 +138,13 @@ export async function POST(request: NextRequest) {
       if (!jsonMatch) throw new Error("No JSON found");
       parsed = JSON.parse(jsonMatch[0]);
     } catch {
-      // JSON解析失敗時のフォールバック
+      if (localResult.exists) {
+        return NextResponse.json({
+          exists: true,
+          word,
+          reason: "一般的な日本語として辞書に登録されています。",
+        });
+      }
       const reading = guessReading(word);
       const formatted = `${word}【${reading || word}】（名詞）${fallbackDef}`;
       return NextResponse.json({
@@ -162,7 +175,7 @@ export async function POST(request: NextRequest) {
       kojienEntry: {
         word,
         reading: parsed.reading || guessReading(word) || word,
-        partOfSpeech: parsed.partOfSpeech || "名",
+        partOfSpeech: parsed.partOfSpeech || "名詞",
         definition: parsed.definition || fallbackDef,
         example: parsed.example || "",
         formatted: parsed.formatted || `${word}【${parsed.reading || word}】（${parsed.partOfSpeech || "名詞"}）${parsed.definition || fallbackDef}。`,
