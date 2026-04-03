@@ -241,6 +241,23 @@ export default function ViewScreen({
         </div>
       </div>
 
+      {/* Specs panel */}
+      <div className="mt-4">
+        <div style={{
+          padding: 20,
+          borderRadius: 18,
+          background: "#fff",
+          border: "2px solid rgba(0,0,0,0.05)",
+        }}>
+          <div style={{ fontSize: 15, fontWeight: 900 }}>📊 スペック</div>
+          <ul className="mt-2" style={{ fontSize: 14, fontWeight: 500, lineHeight: 2, color: "#555", listStyle: "none", padding: 0 }}>
+            {creature.specs.map((spec, i) => (
+              <li key={i}>・{spec}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
       <style>{`
         .pill-btn {
           background: #fff;
