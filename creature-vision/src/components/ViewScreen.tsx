@@ -59,7 +59,7 @@ export default function ViewScreen({
     return () => URL.revokeObjectURL(url);
   }, [mediaFile]);
 
-  // Draw image and apply filter
+  // Load image and setup canvases
   useEffect(() => {
     if (!mediaSrc) return;
     const img = new Image();
@@ -73,7 +73,6 @@ export default function ViewScreen({
       const h = Math.floor(img.height * scale);
       canvas.width = w;
       canvas.height = h;
-      const ctx = canvas.getContext("2d")!;
 
       // Draw original for compare
       if (compareCanvas) {
@@ -82,6 +81,8 @@ export default function ViewScreen({
         compareCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
       }
 
+      // Apply initial filter
+      const ctx = canvas.getContext("2d")!;
       setProcessing(true);
       ctx.drawImage(img, 0, 0, w, h);
       const c = creatures.find((c) => c.id === selectedId)!;
@@ -89,22 +90,25 @@ export default function ViewScreen({
       setTimeout(() => setProcessing(false), 300);
     };
     img.src = mediaSrc;
-  }, [mediaSrc, selectedId, creatures]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaSrc]);
 
   // Re-apply filter when creature changes
   useEffect(() => {
-    if (!mediaSrc || !imgRef.current) return;
+    if (!imgRef.current) return;
     const canvas = canvasRef.current;
     const compareCanvas = compareCanvasRef.current;
     if (!canvas || !compareCanvas) return;
     const ctx = canvas.getContext("2d")!;
 
     setProcessing(true);
+    // Restore original image from compare canvas
     ctx.drawImage(compareCanvas, 0, 0);
     const c = creatures.find((c) => c.id === selectedId)!;
     applyFilter(ctx, canvas.width, canvas.height, c.filterType, c.fp);
     setTimeout(() => setProcessing(false), 300);
-  }, [selectedId, mediaSrc, creatures]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
 
   const share = useCallback(() => {
     const text = `🔬 Creature Vision Lab\n\n${creature.name}（${creature.en}）の視覚\n🎨 ${creature.detail}\n🧬 ${creature.bio}\n\n#CreatureVision`;

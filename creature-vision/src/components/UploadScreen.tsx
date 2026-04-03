@@ -5,10 +5,10 @@ import Icon from "./Icon";
 import { CATEGORY_COLORS } from "@/styles/theme";
 
 const MARQUEE_IDS = [
-  "dolphin","shark","octopus","eagle","owl","bat","dog","cat","horse",
-  "snake","chameleon","frog","ant","honeybee","dragonfly","spider",
-  "human","starfish","mantis-shrimp","jellyfish","lion","penguin",
-  "whale","goldfish","sea-turtle","butterfly","firefly","fox","rabbit","mouse",
+  "kosukuma","human","dog","cat","horse","goat","panda","chameleon","frog",
+  "eagle","kestrel","owl","bat","dragonfly","bee","cockroach","fly","spider",
+  "jumpingspider","snail","dolphin","shark","octopus","foureyedfish","deepsea",
+  "platypus","snake","mshrimp","starfish","mole","blindcavefish",
 ];
 
 interface Props {
@@ -36,9 +36,9 @@ export default function UploadScreen({ creatures, onFile }: Props) {
       className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
       style={{ animation: "fadeUp 0.6s ease-out" }}
     >
-      {/* Owl bounce icon */}
+      {/* Kosukuma bounce icon */}
       <div style={{ animation: "bounce 2s ease-in-out infinite" }}>
-        <Icon id="owl" name="フクロウ" cat="sky" size={80} />
+        <Icon id="kosukuma" name="こすくまくん" cat="special" size={80} />
       </div>
 
       {/* Title */}
@@ -63,7 +63,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
 
       {/* Subtitle */}
       <p className="mt-3 text-center" style={{ color: "#999", fontSize: 16, fontWeight: 500 }}>
-        写真をアップして 100種類の生き物の目で見てみよう！
+        写真をアップして、32種類の生き物の目で見てみよう
       </p>
 
       {/* Upload area */}
