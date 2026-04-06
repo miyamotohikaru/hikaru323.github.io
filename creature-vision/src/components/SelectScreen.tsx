@@ -140,6 +140,7 @@ export default function SelectScreen({ creatures, favs, onSelect, onBack }: Prop
             <div
               className="flex items-center justify-center"
               style={{
+                width: "100%",
                 aspectRatio: "1",
                 background: "#f5f5f5",
               }}

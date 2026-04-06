@@ -171,11 +171,39 @@ export default function ViewScreen({
             );
           });
 
-          const expandPx = Math.round(((exp - 1.0) / 2) * 512);
+          const isPortrait = h > w;
+          const baseDim = isPortrait ? h : w;
+          const expandPx = Math.round(((exp - 1.0) / 2) * Math.min(baseDim, 512));
+
+          let left = 0, right = 0, up = 0, down = 0;
+          if (isPortrait) {
+            up = expandPx;
+            down = expandPx;
+            const newH = h + up + down;
+            const ratio = newH / w;
+            if (ratio > 2.5) {
+              const max = Math.max(0, Math.floor((2.5 * w - h) / 2));
+              up = max;
+              down = max;
+            }
+          } else {
+            left = expandPx;
+            right = expandPx;
+            const newW = w + left + right;
+            const ratio = newW / h;
+            if (ratio > 2.5) {
+              const max = Math.max(0, Math.floor((2.5 * h - w) / 2));
+              left = max;
+              right = max;
+            }
+          }
+
           const form = new FormData();
           form.append("image", blob, "image.png");
-          form.append("left", String(expandPx));
-          form.append("right", String(expandPx));
+          form.append("left", String(left));
+          form.append("right", String(right));
+          form.append("up", String(up));
+          form.append("down", String(down));
 
           const res = await fetch("/api/expand", {
             method: "POST",

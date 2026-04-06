@@ -20,13 +20,14 @@ export default function Icon({ id, name, cat, size = 60 }: IconProps) {
         viewBox="0 0 100 100"
         width={size}
         height={size}
+        style={{ display: "block" }}
         dangerouslySetInnerHTML={{ __html: svg }}
       />
     );
   }
 
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size}>
+    <svg viewBox="0 0 100 100" width={size} height={size} style={{ display: "block" }}>
       <circle cx="50" cy="50" r="35" fill={color} opacity=".3" />
       <text
         x="50"
