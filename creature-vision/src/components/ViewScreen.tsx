@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import Icon from "./Icon";
 import CompareSlider from "./CompareSlider";
-import { applyFilter } from "./FilterEngine";
+import { applyFilter, expandFOV, FOV_DATA } from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
 
 interface Creature {
@@ -16,7 +16,6 @@ interface Creature {
   fp: Record<string, unknown>;
   detail: string;
   bio: string;
-  specs: string[];
 }
 
 interface Props {
@@ -48,6 +47,9 @@ export default function ViewScreen({
   const [comparing, setComparing] = useState(false);
   const [shareOk, setShareOk] = useState(false);
   const [mediaSrc, setMediaSrc] = useState("");
+  const [aiExpanded, setAiExpanded] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiExpandedSrc, setAiExpandedSrc] = useState<string | null>(null);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
@@ -74,17 +76,34 @@ export default function ViewScreen({
       canvas.width = w;
       canvas.height = h;
 
-      // Draw original for compare
+      // Reset AI state when image changes
+      setAiExpanded(false);
+      setAiExpandedSrc(null);
+
+      // Draw original for compare (human vision = no FOV expansion)
       if (compareCanvas) {
         compareCanvas.width = w;
         compareCanvas.height = h;
         compareCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
       }
 
-      // Apply initial filter
+      // Apply initial filter with FOV expansion
       const ctx = canvas.getContext("2d")!;
       setProcessing(true);
-      ctx.drawImage(img, 0, 0, w, h);
+
+      const fovData = FOV_DATA[selectedId];
+      const expansion = fovData?.expansion ?? 1.0;
+
+      if (expansion !== 0 && expansion !== 1.0) {
+        expandFOV(ctx, w, h, img, expansion);
+      } else if (expansion !== 0) {
+        ctx.drawImage(img, 0, 0, w, h);
+      }
+      // For expansion === 0, just draw normally (filter will make it black anyway)
+      if (expansion === 0) {
+        ctx.drawImage(img, 0, 0, w, h);
+      }
+
       const c = creatures.find((c) => c.id === selectedId)!;
       applyFilter(ctx, w, h, c.filterType, c.fp);
       setTimeout(() => setProcessing(false), 300);
@@ -102,8 +121,19 @@ export default function ViewScreen({
     const ctx = canvas.getContext("2d")!;
 
     setProcessing(true);
-    // Restore original image from compare canvas
-    ctx.drawImage(compareCanvas, 0, 0);
+    setAiExpanded(false);
+    setAiExpandedSrc(null);
+
+    const fovData = FOV_DATA[selectedId];
+    const expansion = fovData?.expansion ?? 1.0;
+    const img = imgRef.current;
+
+    if (expansion !== 0 && expansion !== 1.0) {
+      expandFOV(ctx, canvas.width, canvas.height, img, expansion);
+    } else {
+      ctx.drawImage(compareCanvas, 0, 0);
+    }
+
     const c = creatures.find((c) => c.id === selectedId)!;
     applyFilter(ctx, canvas.width, canvas.height, c.filterType, c.fp);
     setTimeout(() => setProcessing(false), 300);
@@ -116,6 +146,62 @@ export default function ViewScreen({
     setShareOk(true);
     setTimeout(() => setShareOk(false), 2000);
   }, [creature]);
+
+  const handleAiExpand = useCallback(async () => {
+    if (aiExpanded || aiLoading) return;
+    const apiKey = process.env.NEXT_PUBLIC_STABILITY_API_KEY;
+    if (!apiKey) {
+      console.warn("NEXT_PUBLIC_STABILITY_API_KEY not set");
+      return;
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    setAiLoading(true);
+    try {
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => b ? resolve(b) : reject(new Error("Failed")), "image/png");
+      });
+
+      const fovData = FOV_DATA[selectedId];
+      const expandPixels = Math.round(((fovData?.expansion ?? 1.0) - 1.0) * 512);
+
+      const formData = new FormData();
+      formData.append("image", blob, "image.png");
+      formData.append("left", String(expandPixels));
+      formData.append("right", String(expandPixels));
+      formData.append("prompt", "natural seamless extension of the scene, same lighting and style");
+
+      const res = await fetch("https://api.stability.ai/v2beta/stable-image/edit/outpaint", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Accept": "image/*",
+        },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("AI expansion failed");
+
+      const resultBlob = await res.blob();
+      const url = URL.createObjectURL(resultBlob);
+      setAiExpandedSrc(url);
+
+      const img = new Image();
+      img.onload = () => {
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const c = creatures.find((c) => c.id === selectedId)!;
+        applyFilter(ctx, canvas.width, canvas.height, c.filterType, c.fp);
+        setAiExpanded(true);
+        setAiLoading(false);
+      };
+      img.src = url;
+    } catch (e) {
+      console.error("AI expand error:", e);
+      setAiLoading(false);
+    }
+  }, [aiExpanded, aiLoading, selectedId, creatures]);
 
   const isFav = favs.includes(selectedId);
 
@@ -229,6 +315,34 @@ export default function ViewScreen({
         )}
       </div>
 
+      {/* FOV info */}
+      {(() => {
+        const fovData = FOV_DATA[creature.id];
+        if (!fovData) return null;
+        return (
+          <div className="mt-3 flex items-center gap-3 flex-wrap">
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#666" }}>
+              🔭 視野角: {fovData.fov === 0 ? "なし（目が退化）" : `${fovData.label}（人間は120°）`}
+            </span>
+            {fovData.expansion > 1.0 && !aiExpanded && process.env.NEXT_PUBLIC_STABILITY_API_KEY && (
+              <button
+                onClick={handleAiExpand}
+                disabled={aiLoading}
+                className="pill-btn"
+                style={aiLoading ? { opacity: 0.6 } : {}}
+              >
+                {aiLoading ? "⏳ 生成中..." : "✨ AIで広げる"}
+              </button>
+            )}
+            {aiExpanded && (
+              <span style={{ fontSize: 13, fontWeight: 700, color: catColor?.accent ?? "#999" }}>
+                ✅ AI生成済み
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Detail panel */}
       <div className="mt-6">
         <div
@@ -242,23 +356,6 @@ export default function ViewScreen({
           <p className="mt-2" style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.8, color: "#555" }}>
             {creature.bio}
           </p>
-        </div>
-      </div>
-
-      {/* Specs panel */}
-      <div className="mt-4">
-        <div style={{
-          padding: 20,
-          borderRadius: 18,
-          background: "#fff",
-          border: "2px solid rgba(0,0,0,0.05)",
-        }}>
-          <div style={{ fontSize: 15, fontWeight: 900 }}>📊 スペック</div>
-          <ul className="mt-2" style={{ fontSize: 14, fontWeight: 500, lineHeight: 2, color: "#555", listStyle: "none", padding: 0 }}>
-            {creature.specs.map((spec, i) => (
-              <li key={i}>・{spec}</li>
-            ))}
-          </ul>
         </div>
       </div>
 

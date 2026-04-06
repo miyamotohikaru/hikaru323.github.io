@@ -1264,6 +1264,126 @@ const ctxFilters: Record<string, CtxFilter> = {
 };
 
 // ---------------------------------------------------------------------------
+// FOV (Field of View) data & expansion
+// ---------------------------------------------------------------------------
+
+export const FOV_DATA: Record<string, { fov: number; expansion: number; label: string }> = {
+  kosukuma:      { fov: 270, expansion: 2.2,  label: "270°" },
+  human:         { fov: 120, expansion: 1.0,  label: "120°" },
+  dog:           { fov: 250, expansion: 2.1,  label: "250°" },
+  cat:           { fov: 200, expansion: 1.7,  label: "200°" },
+  horse:         { fov: 350, expansion: 2.9,  label: "350°" },
+  goat:          { fov: 340, expansion: 2.8,  label: "340°" },
+  panda:         { fov: 270, expansion: 2.2,  label: "270°" },
+  chameleon:     { fov: 342, expansion: 2.8,  label: "342°" },
+  frog:          { fov: 360, expansion: 3.0,  label: "360°" },
+  eagle:         { fov: 340, expansion: 2.8,  label: "340°" },
+  kestrel:       { fov: 340, expansion: 2.8,  label: "340°" },
+  owl:           { fov: 110, expansion: 0.9,  label: "110°" },
+  bat:           { fov: 360, expansion: 3.0,  label: "360°" },
+  dragonfly:     { fov: 360, expansion: 3.0,  label: "360°" },
+  bee:           { fov: 360, expansion: 3.0,  label: "360°" },
+  cockroach:     { fov: 360, expansion: 3.0,  label: "360°" },
+  fly:           { fov: 360, expansion: 3.0,  label: "360°" },
+  spider:        { fov: 360, expansion: 3.0,  label: "360°" },
+  jumpingspider: { fov: 90,  expansion: 0.75, label: "90°" },
+  snail:         { fov: 100, expansion: 0.8,  label: "100°" },
+  dolphin:       { fov: 300, expansion: 2.5,  label: "300°" },
+  shark:         { fov: 360, expansion: 3.0,  label: "360°" },
+  octopus:       { fov: 340, expansion: 2.8,  label: "340°" },
+  foureyedfish:  { fov: 360, expansion: 3.0,  label: "360°" },
+  deepsea:       { fov: 120, expansion: 1.0,  label: "120°" },
+  platypus:      { fov: 360, expansion: 3.0,  label: "360°" },
+  snake:         { fov: 300, expansion: 2.5,  label: "300°" },
+  mshrimp:       { fov: 360, expansion: 3.0,  label: "360°" },
+  starfish:      { fov: 360, expansion: 3.0,  label: "360°" },
+  mole:          { fov: 20,  expansion: 0.17, label: "20°" },
+  blindcavefish: { fov: 0,   expansion: 0,    label: "0°" },
+};
+
+export function expandFOV(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  img: CanvasImageSource,
+  expansion: number
+): void {
+  if (expansion === 0) return; // blindcavefish: no vision
+
+  if (expansion <= 1.0) {
+    // Narrow FOV: zoom into center
+    const imgW = (img as HTMLImageElement).naturalWidth || (img as HTMLCanvasElement).width;
+    const imgH = (img as HTMLImageElement).naturalHeight || (img as HTMLCanvasElement).height;
+    const zoomW = imgW * expansion;
+    const zoomH = imgH * expansion;
+    const sx = (imgW - zoomW) / 2;
+    const sy = (imgH - zoomH) / 2;
+    ctx.drawImage(img, sx, sy, zoomW, zoomH, 0, 0, w, h);
+    return;
+  }
+
+  // Wide FOV: expand with mirror + blur
+  const totalW = Math.round(w * expansion);
+  const sideW = Math.round((totalW - w) / 2);
+
+  const tmpCv = document.createElement("canvas");
+  tmpCv.width = totalW;
+  tmpCv.height = h;
+  const tmp = tmpCv.getContext("2d")!;
+
+  // Center: original image
+  tmp.drawImage(img, 0, 0, w, h, sideW, 0, w, h);
+
+  // Left side: mirror left 30% of original
+  const mirrorW = Math.min(sideW, Math.round(w * 0.3));
+  tmp.save();
+  tmp.translate(sideW, 0);
+  tmp.scale(-1, 1);
+  tmp.drawImage(img, 0, 0, (img as HTMLImageElement).naturalWidth * 0.3 || w * 0.3, (img as HTMLImageElement).naturalHeight || h, 0, 0, mirrorW, h);
+  tmp.restore();
+
+  // Right side: mirror right 30% of original
+  tmp.save();
+  tmp.translate(sideW + w + mirrorW, 0);
+  tmp.scale(-1, 1);
+  const imgNatW = (img as HTMLImageElement).naturalWidth || w;
+  const imgNatH = (img as HTMLImageElement).naturalHeight || h;
+  tmp.drawImage(img, imgNatW * 0.7, 0, imgNatW * 0.3, imgNatH, 0, 0, mirrorW, h);
+  tmp.restore();
+
+  // Blur left side
+  tmp.save();
+  tmp.beginPath();
+  tmp.rect(0, 0, sideW, h);
+  tmp.clip();
+  tmp.globalAlpha = 0.3;
+  for (let dx = -4; dx <= 4; dx += 2) {
+    for (let dy = -4; dy <= 4; dy += 2) {
+      tmp.drawImage(tmpCv, dx, dy);
+    }
+  }
+  tmp.globalAlpha = 1;
+  tmp.restore();
+
+  // Blur right side
+  tmp.save();
+  tmp.beginPath();
+  tmp.rect(sideW + w, 0, sideW, h);
+  tmp.clip();
+  tmp.globalAlpha = 0.3;
+  for (let dx = -4; dx <= 4; dx += 2) {
+    for (let dy = -4; dy <= 4; dy += 2) {
+      tmp.drawImage(tmpCv, dx, dy);
+    }
+  }
+  tmp.globalAlpha = 1;
+  tmp.restore();
+
+  // Draw expanded canvas scaled back to original size
+  ctx.drawImage(tmpCv, 0, 0, totalW, h, 0, 0, w, h);
+}
+
+// ---------------------------------------------------------------------------
 // Main export
 // ---------------------------------------------------------------------------
 
