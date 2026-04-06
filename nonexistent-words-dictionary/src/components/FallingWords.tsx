@@ -19,15 +19,16 @@ const ICON_SIZES = [20, 26, 32, 38];
 // ── Visual ──
 const FONT_SIZES = [14, 16, 18, 20, 23, 26];
 const FONT_FAMILY = '"Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", "MS PMincho", serif';
+// White tones to match kosukuma_white.png
 const COLORS = [
-  "rgba(184, 168, 130, 0.75)",
-  "rgba(196, 176, 138, 0.65)",
-  "rgba(168, 152, 118, 0.55)",
-  "rgba(200, 182, 148, 0.7)",
-  "rgba(176, 160, 128, 0.6)",
-  "rgba(192, 174, 140, 0.65)",
-  "rgba(160, 144, 112, 0.5)",
-  "rgba(188, 172, 136, 0.75)",
+  "rgba(255, 255, 255, 0.75)",
+  "rgba(255, 255, 255, 0.65)",
+  "rgba(255, 255, 255, 0.55)",
+  "rgba(250, 248, 245, 0.7)",
+  "rgba(255, 255, 255, 0.6)",
+  "rgba(245, 243, 240, 0.65)",
+  "rgba(255, 255, 255, 0.5)",
+  "rgba(250, 248, 245, 0.75)",
 ];
 
 interface Particle {
@@ -42,6 +43,8 @@ interface Particle {
   color: string;
   opacity: number;
   iconSize: number;
+  iconW: number;
+  iconH: number;
 }
 
 function rand(min: number, max: number): number {
@@ -127,6 +130,8 @@ export default function FallingWords() {
             color,
             opacity: rand(0.12, 0.35),
             iconSize: 0,
+            iconW: 0,
+            iconH: 0,
           });
         }
         scheduleWord();
@@ -139,25 +144,31 @@ export default function FallingWords() {
     const scheduleIcon = () => {
       const delay = rand(ICON_SPAWN_MIN, ICON_SPAWN_MAX);
       iconTimer = setTimeout(() => {
-        if (iconRef.current) {
-          const iconSize = ICON_SIZES[Math.floor(Math.random() * ICON_SIZES.length)];
+        const img = iconRef.current;
+        if (img && img.naturalWidth > 0) {
+          const baseSize = ICON_SIZES[Math.floor(Math.random() * ICON_SIZES.length)];
+          const aspect = img.naturalWidth / img.naturalHeight;
+          const iconW = baseSize;
+          const iconH = baseSize / aspect;
           const cw = window.innerWidth;
           const ch = window.innerHeight;
           const duration = rand(DURATION_MIN, DURATION_MAX);
-          const speed = (ch + iconSize + 100) / (duration * 60);
+          const speed = (ch + iconH + 100) / (duration * 60);
 
           particlesRef.current.push({
             type: "icon",
             word: "",
-            x: rand(iconSize, cw - iconSize),
-            y: -iconSize - 50,
+            x: rand(iconW, cw - iconW),
+            y: -iconH - 50,
             speed,
-            width: iconSize,
-            height: iconSize,
+            width: iconW,
+            height: iconH,
             fontSize: 0,
             color: "",
             opacity: rand(0.15, 0.4),
-            iconSize,
+            iconSize: baseSize,
+            iconW,
+            iconH,
           });
         }
         scheduleIcon();
@@ -190,12 +201,12 @@ export default function FallingWords() {
         if (p.type === "word") {
           ctx.font = `${p.fontSize}px ${FONT_FAMILY}`;
           ctx.fillStyle = p.color;
-          ctx.shadowColor = "rgba(184, 168, 130, 0.08)";
+          ctx.shadowColor = "rgba(255, 255, 255, 0.08)";
           ctx.shadowBlur = 4;
           ctx.textBaseline = "top";
           ctx.fillText(p.word, p.x, p.y);
         } else if (p.type === "icon" && iconRef.current) {
-          ctx.drawImage(iconRef.current, p.x, p.y, p.iconSize, p.iconSize);
+          ctx.drawImage(iconRef.current, p.x, p.y, p.iconW, p.iconH);
         }
 
         ctx.restore();
