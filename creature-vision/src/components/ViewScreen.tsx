@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Icon from "./Icon";
-import CompareSlider from "./CompareSlider";
 import { applyFilter, expandFOV, FOV_DATA } from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
 
@@ -40,35 +39,62 @@ export default function ViewScreen({
   onSelect,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const compareCanvasRef = useRef<HTMLCanvasElement>(null);
+  const humanCanvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const expandedCache = useRef<Map<string, string>>(new Map());
 
   const [processing, setProcessing] = useState(false);
-  const [comparing, setComparing] = useState(false);
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
   const [shareOk, setShareOk] = useState(false);
   const [mediaSrc, setMediaSrc] = useState("");
-  const [aiExpanded, setAiExpanded] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiExpandedSrc, setAiExpandedSrc] = useState<string | null>(null);
+  const [aiFailed, setAiFailed] = useState(false);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
+  const fovData = FOV_DATA[creature.id];
+  const expansion = fovData?.expansion ?? 1.0;
 
   // Load media
   useEffect(() => {
     const url = URL.createObjectURL(mediaFile);
     setMediaSrc(url);
+    // Clear cache when photo changes
+    expandedCache.current.forEach((u) => URL.revokeObjectURL(u));
+    expandedCache.current.clear();
     return () => URL.revokeObjectURL(url);
   }, [mediaFile]);
 
-  // Load image and setup canvases
+  // Helper: apply creature vision to canvas
+  const applyCreatureVision = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      w: number,
+      h: number,
+      sourceImg: CanvasImageSource,
+      creatureData: Creature,
+      exp: number
+    ) => {
+      if (exp > 0 && exp < 1.0) {
+        // Zoom in for narrow FOV
+        expandFOV(ctx, w, h, sourceImg, exp);
+      } else {
+        // Draw source image normally
+        ctx.drawImage(sourceImg, 0, 0, w, h);
+      }
+      applyFilter(ctx, w, h, creatureData.filterType, creatureData.fp);
+    },
+    []
+  );
+
+  // Load image and initial render
   useEffect(() => {
     if (!mediaSrc) return;
     const img = new Image();
     img.onload = () => {
       imgRef.current = img;
       const canvas = canvasRef.current;
-      const compareCanvas = compareCanvasRef.current;
+      const humanCanvas = humanCanvasRef.current;
       if (!canvas) return;
       const scale = Math.min(1, MAX_W / img.width);
       const w = Math.floor(img.width * scale);
@@ -76,132 +102,123 @@ export default function ViewScreen({
       canvas.width = w;
       canvas.height = h;
 
-      // Reset AI state when image changes
-      setAiExpanded(false);
-      setAiExpandedSrc(null);
-
-      // Draw original for compare (human vision = no FOV expansion)
-      if (compareCanvas) {
-        compareCanvas.width = w;
-        compareCanvas.height = h;
-        compareCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      // Human canvas (always original)
+      if (humanCanvas) {
+        humanCanvas.width = w;
+        humanCanvas.height = h;
+        humanCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
       }
 
-      // Apply initial filter with FOV expansion
-      const ctx = canvas.getContext("2d")!;
-      setProcessing(true);
-
-      const fovData = FOV_DATA[selectedId];
-      const expansion = fovData?.expansion ?? 1.0;
-
-      if (expansion !== 0 && expansion !== 1.0) {
-        expandFOV(ctx, w, h, img, expansion);
-      } else if (expansion !== 0) {
-        ctx.drawImage(img, 0, 0, w, h);
-      }
-      // For expansion === 0, just draw normally (filter will make it black anyway)
-      if (expansion === 0) {
-        ctx.drawImage(img, 0, 0, w, h);
-      }
-
-      const c = creatures.find((c) => c.id === selectedId)!;
-      applyFilter(ctx, w, h, c.filterType, c.fp);
-      setTimeout(() => setProcessing(false), 300);
+      // Apply creature vision
+      renderCreature(selectedId, img, w, h);
     };
     img.src = mediaSrc;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mediaSrc]);
 
-  // Re-apply filter when creature changes
+  // Re-render when creature changes
   useEffect(() => {
     if (!imgRef.current) return;
     const canvas = canvasRef.current;
-    const compareCanvas = compareCanvasRef.current;
-    if (!canvas || !compareCanvas) return;
-    const ctx = canvas.getContext("2d")!;
-
-    setProcessing(true);
-    setAiExpanded(false);
-    setAiExpandedSrc(null);
-
-    const fovData = FOV_DATA[selectedId];
-    const expansion = fovData?.expansion ?? 1.0;
-    const img = imgRef.current;
-
-    if (expansion !== 0 && expansion !== 1.0) {
-      expandFOV(ctx, canvas.width, canvas.height, img, expansion);
-    } else {
-      ctx.drawImage(compareCanvas, 0, 0);
-    }
-
-    const c = creatures.find((c) => c.id === selectedId)!;
-    applyFilter(ctx, canvas.width, canvas.height, c.filterType, c.fp);
-    setTimeout(() => setProcessing(false), 300);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!canvas) return;
+    renderCreature(selectedId, imgRef.current, canvas.width, canvas.height);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
+  // Main render function
+  const renderCreature = useCallback(
+    async (
+      creatureId: string,
+      img: HTMLImageElement,
+      w: number,
+      h: number
+    ) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d")!;
+      const c = creatures.find((cr) => cr.id === creatureId)!;
+      const fov = FOV_DATA[creatureId];
+      const exp = fov?.expansion ?? 1.0;
+
+      setAiFailed(false);
+
+      if (exp > 1.0) {
+        // Check cache first
+        const cached = expandedCache.current.get(creatureId);
+        if (cached) {
+          const cachedImg = new Image();
+          cachedImg.onload = () => {
+            ctx.drawImage(cachedImg, 0, 0, w, h);
+            applyFilter(ctx, w, h, c.filterType, c.fp);
+          };
+          cachedImg.src = cached;
+          return;
+        }
+
+        // AI outpainting
+        setIsLoadingAI(true);
+        setProcessing(true);
+        try {
+          // Create blob from original image
+          const tmpCanvas = document.createElement("canvas");
+          tmpCanvas.width = w;
+          tmpCanvas.height = h;
+          tmpCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            tmpCanvas.toBlob(
+              (b) => (b ? resolve(b) : reject(new Error("blob failed"))),
+              "image/png"
+            );
+          });
+
+          const expandPx = Math.round(((exp - 1.0) / 2) * 512);
+          const form = new FormData();
+          form.append("image", blob, "image.png");
+          form.append("left", String(expandPx));
+          form.append("right", String(expandPx));
+
+          const res = await fetch("/api/expand", {
+            method: "POST",
+            body: form,
+          });
+          if (!res.ok) throw new Error("API failed");
+
+          const resultBlob = await res.blob();
+          const url = URL.createObjectURL(resultBlob);
+          expandedCache.current.set(creatureId, url);
+
+          const aiImg = new Image();
+          aiImg.onload = () => {
+            ctx.drawImage(aiImg, 0, 0, w, h);
+            applyFilter(ctx, w, h, c.filterType, c.fp);
+            setIsLoadingAI(false);
+            setProcessing(false);
+          };
+          aiImg.src = url;
+        } catch (e) {
+          console.error("AI expand failed:", e);
+          setAiFailed(true);
+          // Fallback: original image + filter only
+          applyCreatureVision(ctx, w, h, img, c, 1.0);
+          setIsLoadingAI(false);
+          setProcessing(false);
+        }
+      } else {
+        // Zoom in or normal
+        setProcessing(true);
+        applyCreatureVision(ctx, w, h, img, c, exp);
+        setTimeout(() => setProcessing(false), 300);
+      }
+    },
+    [creatures, applyCreatureVision]
+  );
+
   const share = useCallback(() => {
-    const text = `🔬 Creature Vision Lab\n\n${creature.name}（${creature.en}）の視覚\n🎨 ${creature.detail}\n🧬 ${creature.bio}\n\n#CreatureVision`;
+    const text = `🔬 Creature Vision Lab\n\n${creature.name}（${creature.en}）の視覚\n🧬 ${creature.bio}\n\n#CreatureVision`;
     navigator.clipboard.writeText(text);
     setShareOk(true);
     setTimeout(() => setShareOk(false), 2000);
   }, [creature]);
-
-  const handleAiExpand = useCallback(async () => {
-    if (aiExpanded || aiLoading) return;
-    const apiKey = process.env.NEXT_PUBLIC_STABILITY_API_KEY;
-    if (!apiKey) {
-      console.warn("NEXT_PUBLIC_STABILITY_API_KEY not set");
-      return;
-    }
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    setAiLoading(true);
-    try {
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => b ? resolve(b) : reject(new Error("Failed")), "image/png");
-      });
-
-      const fovData = FOV_DATA[selectedId];
-      const expandPixels = Math.round(((fovData?.expansion ?? 1.0) - 1.0) * 512);
-
-      const formData = new FormData();
-      formData.append("image", blob, "image.png");
-      formData.append("left", String(expandPixels));
-      formData.append("right", String(expandPixels));
-      formData.append("prompt", "natural seamless extension of the scene, same lighting and style");
-
-      const res = await fetch("https://api.stability.ai/v2beta/stable-image/edit/outpaint", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Accept": "image/*",
-        },
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("AI expansion failed");
-
-      const resultBlob = await res.blob();
-      const url = URL.createObjectURL(resultBlob);
-      setAiExpandedSrc(url);
-
-      const img = new Image();
-      img.onload = () => {
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const c = creatures.find((c) => c.id === selectedId)!;
-        applyFilter(ctx, canvas.width, canvas.height, c.filterType, c.fp);
-        setAiExpanded(true);
-        setAiLoading(false);
-      };
-      img.src = url;
-    } catch (e) {
-      console.error("AI expand error:", e);
-      setAiLoading(false);
-    }
-  }, [aiExpanded, aiLoading, selectedId, creatures]);
 
   const isFav = favs.includes(selectedId);
 
@@ -210,19 +227,20 @@ export default function ViewScreen({
       className="min-h-screen px-4 py-6 mx-auto"
       style={{ maxWidth: 960, animation: "fadeUp 0.4s ease-out" }}
     >
-      {/* Top bar */}
+      {/* Top bar - only back, fav, share */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <button onClick={onBack} className="pill-btn">← もどる</button>
-        <button onClick={() => onToggleFav(selectedId)} className="pill-btn">
-          {isFav ? "❤️" : "🤍"} お気に入り
+        <button onClick={onBack} className="pill-btn">
+          ← もどる
+        </button>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => onToggleFav(selectedId)}
+          className="pill-btn"
+        >
+          {isFav ? "❤️" : "🤍"}
         </button>
         <button onClick={share} className="pill-btn">
-          {shareOk ? "✅" : "📤"} シェア
-        </button>
-        <button onClick={() => setComparing(!comparing)} className="pill-btn"
-          style={comparing ? { background: catColor?.accent, color: "#fff" } : {}}
-        >
-          ⇔ 比較
+          {shareOk ? "✅" : "📤"}
         </button>
       </div>
 
@@ -264,86 +282,232 @@ export default function ViewScreen({
             background: catColor?.bg ?? "#f5f5f5",
           }}
         >
-          <Icon id={creature.id} name={creature.name} cat={creature.cat} size={36} />
+          <Icon
+            id={creature.id}
+            name={creature.name}
+            cat={creature.cat}
+            size={36}
+          />
         </div>
         <div>
-          <span style={{ fontSize: 20, fontWeight: 900 }}>{creature.name}のめ</span>
+          <span style={{ fontSize: 20, fontWeight: 900 }}>
+            {creature.name}のめ
+          </span>
           <div style={{ fontSize: 13, color: "#999" }}>{creature.en}</div>
         </div>
       </div>
 
-      {/* Canvas area */}
-      <div className="relative" style={{ borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
-        {comparing && (
-          <CompareSlider creatureName={creature.name} accentColor={catColor?.accent ?? "#999"} />
-        )}
+      {/* Canvas area with tap-hold */}
+      <div
+        className="relative"
+        style={{
+          borderRadius: 18,
+          overflow: "hidden",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+        }}
+        onMouseDown={() => setIsHolding(true)}
+        onMouseUp={() => setIsHolding(false)}
+        onMouseLeave={() => setIsHolding(false)}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          setIsHolding(true);
+        }}
+        onTouchEnd={() => setIsHolding(false)}
+        onTouchCancel={() => setIsHolding(false)}
+      >
+        {/* Creature canvas (bottom layer) */}
+        <canvas ref={canvasRef} className="block w-full" />
 
+        {/* Human canvas (top layer, shown on hold) */}
         <canvas
-          ref={canvasRef}
-          className="block w-full"
-          style={
-            comparing
-              ? { clipPath: `inset(0 ${100 - 50}% 0 0)` }
-              : {}
-          }
+          ref={humanCanvasRef}
+          className="absolute top-0 left-0 block w-full"
+          style={{
+            opacity: isHolding ? 1 : 0,
+            transition: "opacity 0.3s ease",
+            pointerEvents: "none",
+          }}
         />
 
-        {comparing && (
-          <canvas
-            ref={compareCanvasRef}
-            className="absolute top-0 left-0 block w-full"
-            style={{ clipPath: `inset(0 0 0 ${50}%)` }}
-          />
+        {/* View mode label */}
+        <div
+          style={{
+            position: "absolute",
+            top: 12,
+            left: "50%",
+            transform: "translateX(-50%)",
+            padding: "6px 16px",
+            borderRadius: 100,
+            background: isHolding
+              ? "rgba(255,255,255,0.9)"
+              : `${catColor?.accent ?? "#999"}ee`,
+            color: isHolding ? "#333" : "#fff",
+            fontSize: 12,
+            fontWeight: 900,
+            transition: "all 0.3s ease",
+            pointerEvents: "none",
+          }}
+        >
+          {isHolding ? "👁 人間のめ" : `${creature.name}のめ`}
+        </div>
+
+        {/* Loading overlay: "○○に転生中" */}
+        {isLoadingAI && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(255,249,242,0.95)",
+              zIndex: 20,
+              borderRadius: 18,
+            }}
+          >
+            {/* Eye blink animation */}
+            <div
+              style={{
+                width: 80,
+                height: 40,
+                position: "relative",
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 80,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  border: "2.5px solid #2D2D2D",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    background: catColor?.accent ?? "#F5A623",
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: "#1A1A1A",
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: -2,
+                    right: -2,
+                    height: "100%",
+                    background: "#FFF9F2",
+                    borderBottom: "2px solid #2D2D2D",
+                    transformOrigin: "top center",
+                    animation: "eyeOpen 2s ease-in-out infinite",
+                  }}
+                />
+              </div>
+            </div>
+            <p
+              style={{
+                fontSize: 16,
+                fontWeight: 900,
+                color: "#2D2D2D",
+                textAlign: "center",
+              }}
+            >
+              {creature.name}に転生中...
+            </p>
+          </div>
         )}
 
-        {!comparing && (
-          <canvas ref={compareCanvasRef} className="hidden" />
-        )}
-
-        {/* Processing overlay */}
-        {processing && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center"
+        {/* Simple processing overlay (for non-AI processing) */}
+        {processing && !isLoadingAI && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center"
             style={{ background: "rgba(255,255,255,0.7)" }}
           >
             <div style={{ animation: "pulse 1s ease-in-out infinite" }}>
-              <Icon id={creature.id} name={creature.name} cat={creature.cat} size={60} />
+              <Icon
+                id={creature.id}
+                name={creature.name}
+                cat={creature.cat}
+                size={60}
+              />
             </div>
-            <p className="mt-2" style={{ fontWeight: 700, fontSize: 14, color: "#2D2D2D" }}>
+            <p
+              className="mt-2"
+              style={{ fontWeight: 700, fontSize: 14, color: "#2D2D2D" }}
+            >
               へんかんちゅう...
             </p>
           </div>
         )}
       </div>
 
-      {/* FOV info */}
-      {(() => {
-        const fovData = FOV_DATA[creature.id];
-        if (!fovData) return null;
-        return (
-          <div className="mt-3 flex items-center gap-3 flex-wrap">
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#666" }}>
-              🔭 視野角: {fovData.fov === 0 ? "なし（目が退化）" : `${fovData.label}（人間は120°）`}
-            </span>
-            {fovData.expansion > 1.0 && !aiExpanded && process.env.NEXT_PUBLIC_STABILITY_API_KEY && (
-              <button
-                onClick={handleAiExpand}
-                disabled={aiLoading}
-                className="pill-btn"
-                style={aiLoading ? { opacity: 0.6 } : {}}
-              >
-                {aiLoading ? "⏳ 生成中..." : "✨ AIで広げる"}
-              </button>
-            )}
-            {aiExpanded && (
-              <span style={{ fontSize: 13, fontWeight: 700, color: catColor?.accent ?? "#999" }}>
-                ✅ AI生成済み
-              </span>
-            )}
-          </div>
-        );
-      })()}
+      {/* Hint + FOV + error */}
+      {creature.id === "human" ? (
+        <p
+          className="mt-3 text-center"
+          style={{
+            fontSize: 13,
+            color: "#999",
+            fontWeight: 500,
+            lineHeight: 1.8,
+          }}
+        >
+          これがあなたの世界。でも電磁スペクトルのたった0.0035%しか見えていません。
+          <br />
+          他の生き物をタップして、別の世界を覗いてみよう。
+        </p>
+      ) : (
+        <p
+          className="mt-2 text-center"
+          style={{ fontSize: 12, color: "#bbb", fontWeight: 700 }}
+        >
+          👆 長押しで人間の目に戻る
+        </p>
+      )}
 
-      {/* Detail panel */}
+      {fovData && (
+        <p
+          className="mt-1 text-center"
+          style={{ fontSize: 13, fontWeight: 700, color: "#999" }}
+        >
+          🔭 視野角:{" "}
+          {fovData.fov === 0
+            ? "なし（目が退化）"
+            : `${fovData.fov}°（人間は120°）`}
+        </p>
+      )}
+
+      {aiFailed && expansion > 1.0 && (
+        <p
+          className="mt-1 text-center"
+          style={{ fontSize: 11, color: "#ccc" }}
+        >
+          ⚠ 画像拡張に失敗しました
+        </p>
+      )}
+
+      {/* Bio panel */}
       <div className="mt-6">
         <div
           style={{
@@ -352,8 +516,18 @@ export default function ViewScreen({
             background: catColor?.bg ?? "#f5f5f5",
           }}
         >
-          <div style={{ fontSize: 15, fontWeight: 900 }}>🧬 なんでこうなの？</div>
-          <p className="mt-2" style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.8, color: "#555" }}>
+          <div style={{ fontSize: 15, fontWeight: 900 }}>
+            🧬 なんでこうなの？
+          </div>
+          <p
+            className="mt-2"
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: 1.8,
+              color: "#555",
+            }}
+          >
             {creature.bio}
           </p>
         </div>
@@ -378,6 +552,12 @@ export default function ViewScreen({
         }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes eyeOpen {
+          0%   { transform: scaleY(1); }
+          20%  { transform: scaleY(0); }
+          80%  { transform: scaleY(0); }
+          100% { transform: scaleY(1); }
+        }
       `}</style>
     </div>
   );

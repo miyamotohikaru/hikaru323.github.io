@@ -2228,35 +2228,7 @@ a:hover { color: var(--text-primary); }
   border-top: 1px solid rgba(100, 85, 60, 0.1);
 }
 
-/* ===== Falling Words ===== */
-.falling-words-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.falling-word {
-  position: absolute;
-  top: -2em;
-  font-family: var(--font-heading);
-  color: var(--text-primary);
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  letter-spacing: 0.1em;
-  animation: fallingWord linear forwards;
-  white-space: nowrap;
-  user-select: none;
-}
-
-@keyframes fallingWord {
-  from { transform: translateY(-2em); }
-  to { transform: translateY(105vh); }
-}
+/* ===== Falling Words (Canvas-based) ===== */
 
 /* ===== Animation ===== */
 .fade-in { animation: fadeIn 0.5s ease-out; }

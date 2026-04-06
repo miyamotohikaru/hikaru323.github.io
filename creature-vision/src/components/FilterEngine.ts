@@ -1308,79 +1308,24 @@ export function expandFOV(
   img: CanvasImageSource,
   expansion: number
 ): void {
-  if (expansion === 0) return; // blindcavefish: no vision
+  if (expansion <= 0 || expansion >= 1.0) return;
 
-  if (expansion <= 1.0) {
-    // Narrow FOV: zoom into center
-    const imgW = (img as HTMLImageElement).naturalWidth || (img as HTMLCanvasElement).width;
-    const imgH = (img as HTMLImageElement).naturalHeight || (img as HTMLCanvasElement).height;
-    const zoomW = imgW * expansion;
-    const zoomH = imgH * expansion;
-    const sx = (imgW - zoomW) / 2;
-    const sy = (imgH - zoomH) / 2;
-    ctx.drawImage(img, sx, sy, zoomW, zoomH, 0, 0, w, h);
-    return;
-  }
+  // Narrow FOV: zoom into center + darken periphery
+  const imgW = (img as HTMLImageElement).naturalWidth || (img as HTMLCanvasElement).width;
+  const imgH = (img as HTMLImageElement).naturalHeight || (img as HTMLCanvasElement).height;
+  const cropW = imgW * expansion;
+  const cropH = imgH * expansion;
+  const sx = (imgW - cropW) / 2;
+  const sy = (imgH - cropH) / 2;
+  ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, w, h);
 
-  // Wide FOV: expand with mirror + blur
-  const totalW = Math.round(w * expansion);
-  const sideW = Math.round((totalW - w) / 2);
-
-  const tmpCv = document.createElement("canvas");
-  tmpCv.width = totalW;
-  tmpCv.height = h;
-  const tmp = tmpCv.getContext("2d")!;
-
-  // Center: original image
-  tmp.drawImage(img, 0, 0, w, h, sideW, 0, w, h);
-
-  // Left side: mirror left 30% of original
-  const mirrorW = Math.min(sideW, Math.round(w * 0.3));
-  tmp.save();
-  tmp.translate(sideW, 0);
-  tmp.scale(-1, 1);
-  tmp.drawImage(img, 0, 0, (img as HTMLImageElement).naturalWidth * 0.3 || w * 0.3, (img as HTMLImageElement).naturalHeight || h, 0, 0, mirrorW, h);
-  tmp.restore();
-
-  // Right side: mirror right 30% of original
-  tmp.save();
-  tmp.translate(sideW + w + mirrorW, 0);
-  tmp.scale(-1, 1);
-  const imgNatW = (img as HTMLImageElement).naturalWidth || w;
-  const imgNatH = (img as HTMLImageElement).naturalHeight || h;
-  tmp.drawImage(img, imgNatW * 0.7, 0, imgNatW * 0.3, imgNatH, 0, 0, mirrorW, h);
-  tmp.restore();
-
-  // Blur left side
-  tmp.save();
-  tmp.beginPath();
-  tmp.rect(0, 0, sideW, h);
-  tmp.clip();
-  tmp.globalAlpha = 0.3;
-  for (let dx = -4; dx <= 4; dx += 2) {
-    for (let dy = -4; dy <= 4; dy += 2) {
-      tmp.drawImage(tmpCv, dx, dy);
-    }
-  }
-  tmp.globalAlpha = 1;
-  tmp.restore();
-
-  // Blur right side
-  tmp.save();
-  tmp.beginPath();
-  tmp.rect(sideW + w, 0, sideW, h);
-  tmp.clip();
-  tmp.globalAlpha = 0.3;
-  for (let dx = -4; dx <= 4; dx += 2) {
-    for (let dy = -4; dy <= 4; dy += 2) {
-      tmp.drawImage(tmpCv, dx, dy);
-    }
-  }
-  tmp.globalAlpha = 1;
-  tmp.restore();
-
-  // Draw expanded canvas scaled back to original size
-  ctx.drawImage(tmpCv, 0, 0, totalW, h, 0, 0, w, h);
+  // Darken periphery (narrower FOV = more darkness)
+  const darkness = Math.max(0, 1 - expansion) * 0.8;
+  const vg = ctx.createRadialGradient(w / 2, h / 2, w * expansion * 0.3, w / 2, h / 2, w * 0.6);
+  vg.addColorStop(0, "rgba(0,0,0,0)");
+  vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, w, h);
 }
 
 // ---------------------------------------------------------------------------
