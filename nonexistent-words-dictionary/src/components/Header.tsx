@@ -12,10 +12,12 @@ export default function Header() {
   return (
     <header className="site-header">
       <div className="header-inner">
-        <Link href="/" className="header-logo-group">
-          <span className="header-logo">{t("home.title")}</span>
-          <span className="header-logo-en">FICTIONARY</span>
-        </Link>
+        <div className="header-center">
+          <Link href="/" className="header-logo-group">
+            <span className="header-logo">存在しない言葉辞典</span>
+            <span className="header-logo-en">FICTIONARY</span>
+          </Link>
+        </div>
         <nav className="header-nav">
           <Link href="/" className="header-link">
             {t("nav.register")}
@@ -25,9 +27,6 @@ export default function Header() {
           </Link>
           <Link href="/ranking" className="header-link">
             {t("nav.ranking")}
-          </Link>
-          <Link href="/my" className="header-link">
-            {t("nav.my")}
           </Link>
           <RandomWordButton />
           <div className="lang-switcher">

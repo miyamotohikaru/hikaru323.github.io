@@ -87,7 +87,6 @@ export default function Home() {
       }
 
       setResult(data);
-      // 結果の初期値をセット
       if (data.kojienEntry) {
         setEditDef(data.kojienEntry.definition);
         setEditExample(data.kojienEntry.example || "");
@@ -178,9 +177,16 @@ export default function Home() {
 
   const pageNumber = result ? `p.${Math.floor(Math.random() * 900) + 100}` : "";
 
+  // 品詞の広辞苑表記
+  const posMap: Record<string, string> = {
+    "名詞": "〘名〙", "動詞": "〘動〙", "形容詞": "〘形〙",
+    "形容動詞": "〘形動〙", "副詞": "〘副〙", "感動詞": "〘感〙",
+  };
+
   return (
     <main className="main-content" style={{ position: "relative" }}>
       <FallingWords />
+
       {/* ヒーロー（初期状態のみ） */}
       {phase === "idle" && (
         <div className="hero-centered">
@@ -195,26 +201,31 @@ export default function Home() {
         </div>
       )}
 
-      {/* 検索バー（常に表示） */}
-      <form onSubmit={handleSearch} className="search-bar">
-        <input
-          type="text"
-          value={word}
-          onChange={(e) => setWord(e.target.value)}
-          placeholder={t("home.placeholder")}
-          className="search-input"
-          maxLength={20}
-          disabled={phase === "loading"}
-        />
-        <button
-          type="submit"
-          className="search-button"
-          disabled={phase === "loading" || !word.trim()}
-        >
-          🔍
-        </button>
-      </form>
-      <p className="search-note">{t("home.note")}</p>
+      {/* 縦書き検索セクション */}
+      <div className="tategaki-search-section">
+        <form onSubmit={handleSearch} className="tategaki-search-form">
+          <div className="tategaki-search-strip">
+            <span className="tategaki-search-label">{t("result.readingLabel") || "見出し語"}</span>
+            <input
+              type="text"
+              value={word}
+              onChange={(e) => setWord(e.target.value)}
+              placeholder={"こ　と　ば　を　引　く"}
+              className="tategaki-search-input"
+              maxLength={20}
+              disabled={phase === "loading"}
+            />
+            <button
+              type="submit"
+              className="tategaki-search-button"
+              disabled={phase === "loading" || !word.trim()}
+            >
+              引く
+            </button>
+          </div>
+          <p className="tategaki-search-note">{t("home.note")}</p>
+        </form>
+      </div>
 
       {/* ページめくりアニメーション */}
       {phase === "loading" && (
@@ -243,33 +254,37 @@ export default function Home() {
       {phase === "shared" && savedWord && (
         <div className="share-dict-page fade-in">
           <div className="share-dict-header">
-            <span className="share-dict-label">{t("share.title")}</span>
+            <span className="share-dict-label">{t("share.title") || "存在しない言葉辞典"}</span>
             <span className="share-dict-page-num">p.{Math.floor(Math.random() * 900) + 100}</span>
           </div>
 
-          <div className="share-dict-body">
-            <div className="share-dict-lines" />
-            <h1 className="share-dict-word">{savedWord.word}</h1>
-            <p className="share-dict-reading">【{savedWord.reading}】</p>
-            <span className="share-dict-pos">{savedWord.partOfSpeech}</span>
-            <p className="share-dict-definition">{savedWord.definition}</p>
+          <div className="dictionary-page">
+            <div className="dict-entry ink-delay-1">
+              <span className="dict-headword">{savedWord.word}</span>
+            </div>
+            <div className="dict-entry ink-delay-2">
+              <span className="dict-reading">【{savedWord.reading}】</span>
+              <span className="dict-pos">{posMap[savedWord.partOfSpeech] || `〘${savedWord.partOfSpeech}〙`}</span>
+            </div>
+            <div className="dict-entry ink-delay-3">
+              <p className="dict-definition">{savedWord.definition}</p>
+            </div>
             {savedWord.example && (
-              <p className="share-dict-example">
-                <span className="share-dict-example-label">▽用例</span>
-                「{savedWord.example}」
-              </p>
+              <div className="dict-entry ink-delay-4">
+                <p className="dict-example">▽「{savedWord.example}」</p>
+              </div>
             )}
-            <div className="share-dict-author">
-              ── {savedWord.nickname} 編
+            <div className="dict-entry">
+              <span className="dict-author">── {savedWord.nickname} 編</span>
             </div>
           </div>
 
           <div className="share-dict-congrats">
             <p className="share-dict-congrats-text">
-              {t("share.congrats")}
+              {t("share.congrats") || "新語が辞典に掲載されました"}
             </p>
             <p className="share-dict-congrats-sub">
-              {t("share.congratsSub").split("\n").map((line, i) => (
+              {(t("share.congratsSub") || "あなたの言葉が辞典の一ページに刻まれました。\nこの新しい言葉を世界に広めませんか？").split("\n").map((line, i) => (
                 <span key={i}>{line}{i === 0 && <br />}</span>
               ))}
             </p>
@@ -285,15 +300,15 @@ export default function Home() {
           </div>
 
           <button onClick={handleReset} className="share-dict-continue">
-            {t("share.another")}
+            {t("share.another") || "もう一語引く"}
           </button>
 
           <div className="home-browse-links">
             <Link href="/browse" className="home-browse-btn">
-              {t("home.browseWords")}
+              {t("home.browseWords") || "辞書を見る"}
             </Link>
             <Link href="/ranking" className="home-browse-btn-sub">
-              {t("home.viewRanking")}
+              {t("home.viewRanking") || "ランキング"}
             </Link>
           </div>
         </div>
@@ -301,132 +316,139 @@ export default function Home() {
 
       {/* 結果表示 */}
       {phase === "result" && result && (
-        <div className="paper-card fade-in">
-          <div className="paper-lines">
-            <div className="paper-line" />
-            <div className="paper-line" />
-            <div className="paper-line" />
-          </div>
+        <div className="dict-page dict-page--opening fade-in">
+          <div className="dict-page__paper">
+            <div className="dict-page__binding" />
 
-          {result.exists ? (
-            /* ===== 拒否カード ===== */
-            <div className="paper-body paper-rejection">
-              <p className="paper-rejection-text">
-                「{result.word}」{t("result.exists").split("\n").map((line, i) => (
-                  <span key={i}>{i > 0 && <br />}{line}</span>
-                ))}
-              </p>
-              <button onClick={handleReset} className="paper-retry-btn">
-                {t("result.tryAnother")}
-              </button>
-            </div>
-          ) : result.kojienEntry ? (
-            /* ===== 結果カード ===== */
-            <div className="paper-body">
-              {/* 存在しない言葉メッセージ */}
-              <div className="paper-nonexistent-badge">
-                {t("result.nonexistent")}
-              </div>
-
-              {/* 見出し語 */}
-              <div className="paper-word-header">
-                <h2 className="paper-word-title">{result.kojienEntry.word}</h2>
-              </div>
-              <span className="paper-pos-badge">{result.kojienEntry.partOfSpeech}</span>
-
-              {/* 定義文 */}
-              {editing ? (
-                <textarea
-                  value={editDef}
-                  onChange={(e) => setEditDef(e.target.value)}
-                  className="paper-edit-textarea"
-                  rows={4}
-                />
-              ) : (
-                <p className="paper-definition">{result.kojienEntry.definition}</p>
-              )}
-
-              {/* 用例 */}
-              {(result.kojienEntry.example || editing) && (
-                <div className="paper-example-section">
-                  <span className="paper-example-label">{t("result.example")}</span>
-                  {editing ? (
-                    <textarea
-                      value={editExample}
-                      onChange={(e) => setEditExample(e.target.value)}
-                      className="paper-edit-textarea"
-                      rows={2}
-                    />
-                  ) : (
-                    <p className="paper-example-text">{result.kojienEntry.example}</p>
+            {result.exists ? (
+              /* ===== 拒否 ===== */
+              <div className="dict-page__content dict-page__content--revealing">
+                <div className="dictionary-page dictionary-page--rejection">
+                  <p className="dict-rejection-text">
+                    「{result.word}」は実在する言葉です。
+                  </p>
+                  {result.reason && (
+                    <p className="dict-rejection-reason">{result.reason}</p>
                   )}
                 </div>
-              )}
-
-              {/* 編集ボタン */}
-              <div className="paper-edit-toggle">
-                <button
-                  onClick={() => setEditing(!editing)}
-                  className="paper-edit-btn"
-                >
-                  {editing ? t("result.editDone") : t("result.editContent")}
+                <button onClick={handleReset} className="paper-retry-btn" style={{ marginTop: "1.5rem" }}>
+                  {t("result.tryAnother")}
                 </button>
               </div>
-
-              {/* 掲載フォーム */}
-              <div className="paper-register">
-                <p className="paper-register-heading">{t("result.registerHeading")}</p>
-
-                <div className="paper-register-field">
-                  <label className="paper-register-label">{t("result.readingLabel")}</label>
-                  <input
-                    type="text"
-                    value={reading}
-                    onChange={(e) => setReading(toHiragana(e.target.value))}
-                    placeholder={t("result.readingPlaceholder")}
-                    className="paper-register-input"
-                    maxLength={30}
-                  />
+            ) : result.kojienEntry ? (
+              /* ===== 辞書ページ風の結果 ===== */
+              <div className="dict-page__content dict-page__content--revealing">
+                <div className="paper-nonexistent-badge">
+                  {t("result.nonexistent")}
                 </div>
 
-                <div className="paper-register-field">
-                  <label className="paper-register-label">{t("result.nicknameLabel")}</label>
-                  <input
-                    type="text"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    placeholder={t("result.nicknamePlaceholder")}
-                    className="paper-register-input"
-                    maxLength={15}
-                  />
+                {/* 辞書ページ（縦書き） */}
+                <div className="dictionary-page">
+                  <div className="dict-entry ink-delay-1">
+                    <span className="dict-headword">{result.kojienEntry.word}</span>
+                  </div>
+                  <div className="dict-entry ink-delay-2">
+                    <span className="dict-reading">【{result.kojienEntry.reading}】</span>
+                    <span className="dict-pos">{posMap[result.kojienEntry.partOfSpeech] || `〘${result.kojienEntry.partOfSpeech}〙`}</span>
+                  </div>
+                  <div className="dict-entry ink-delay-3">
+                    <p className="dict-definition">{editing ? editDef : result.kojienEntry.definition}</p>
+                  </div>
+                  {(result.kojienEntry.example || editing) && (
+                    <div className="dict-entry ink-delay-4">
+                      <p className="dict-example">▽「{editing ? editExample : result.kojienEntry.example}」</p>
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="paper-register-btn"
-                >
-                  {isSaving ? t("result.submitting") : t("result.submit")}
-                </button>
+                <span className="dict-page-number">{pageNumber}</span>
 
-                {saveError && (
-                  <p className="paper-register-error">{saveError}</p>
-                )}
+                {/* 編集・掲載フォーム（横書き） */}
+                <div className="dict-form-area">
+                  {editing && (
+                    <div className="dict-edit-form">
+                      <div className="paper-register-field">
+                        <label className="paper-register-label">定義文</label>
+                        <textarea
+                          value={editDef}
+                          onChange={(e) => setEditDef(e.target.value)}
+                          className="paper-edit-textarea"
+                          rows={4}
+                        />
+                      </div>
+                      <div className="paper-register-field">
+                        <label className="paper-register-label">用例</label>
+                        <textarea
+                          value={editExample}
+                          onChange={(e) => setEditExample(e.target.value)}
+                          className="paper-edit-textarea"
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="paper-edit-toggle">
+                    <button
+                      onClick={() => setEditing(!editing)}
+                      className="paper-edit-btn"
+                    >
+                      {editing ? t("result.editDone") : t("result.editContent")}
+                    </button>
+                  </div>
+
+                  <div className="paper-register">
+                    <p className="paper-register-heading">{t("result.registerHeading")}</p>
+
+                    <div className="paper-register-field">
+                      <label className="paper-register-label">{t("result.readingLabel")}</label>
+                      <input
+                        type="text"
+                        value={reading}
+                        onChange={(e) => setReading(toHiragana(e.target.value))}
+                        placeholder={t("result.readingPlaceholder")}
+                        className="paper-register-input"
+                        maxLength={30}
+                      />
+                    </div>
+
+                    <div className="paper-register-field">
+                      <label className="paper-register-label">{t("result.nicknameLabel")}</label>
+                      <input
+                        type="text"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        placeholder={t("result.nicknamePlaceholder")}
+                        className="paper-register-input"
+                        maxLength={15}
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="paper-register-btn"
+                    >
+                      {isSaving ? t("result.submitting") : t("result.submit")}
+                    </button>
+
+                    {saveError && (
+                      <p className="paper-register-error">{saveError}</p>
+                    )}
+                  </div>
+
+                  <div className="paper-browse-links">
+                    <Link href="/browse" className="paper-browse-btn">
+                      {t("result.browseOthers")}
+                    </Link>
+                    <Link href="/ranking" className="paper-browse-btn paper-browse-btn-sub">
+                      {t("result.viewRanking")}
+                    </Link>
+                  </div>
+                </div>
               </div>
-
-              {/* 他の登録語を見るボタン */}
-              <div className="paper-browse-links">
-                <Link href="/browse" className="paper-browse-btn">
-                  {t("result.browseOthers")}
-                </Link>
-                <Link href="/ranking" className="paper-browse-btn paper-browse-btn-sub">
-                  {t("result.viewRanking")}
-                </Link>
-              </div>
-            </div>
-          ) : null}
-
-          <span className="paper-page-number">{pageNumber}</span>
+            ) : null}
+          </div>
         </div>
       )}
     </main>

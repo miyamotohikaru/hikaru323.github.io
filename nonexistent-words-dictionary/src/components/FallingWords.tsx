@@ -3,13 +3,13 @@
 import { useEffect, useRef } from "react";
 
 // ── Spawn ──
-const MAX_PARTICLES = 20;
-const SPAWN_INTERVAL_MIN = 1200; // ms
-const SPAWN_INTERVAL_MAX = 1800; // ms
+const MAX_PARTICLES = 15;
+const SPAWN_INTERVAL_MIN = 1500; // ms
+const SPAWN_INTERVAL_MAX = 2500; // ms
 
-// ── Fall speed ──
-const DURATION_MIN = 18; // seconds
-const DURATION_MAX = 25; // seconds
+// ── Horizontal speed (right to left) ──
+const DURATION_MIN = 20; // seconds
+const DURATION_MAX = 28; // seconds
 
 // ── Kosukuma icon ──
 const ICON_SPAWN_MIN = 2000; // ms
@@ -18,7 +18,9 @@ const ICON_SIZES = [20, 26, 32, 38];
 
 // ── Visual ──
 const FONT_SIZES = [14, 16, 18, 20, 23, 26];
-const FONT_FAMILY = '"Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", "MS PMincho", serif';
+const FONT_FAMILY =
+  '"Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", "MS PMincho", serif';
+const CHAR_SPACING = 1.3; // line-height multiplier for vertical char spacing
 // White tones to match kosukuma_white.png
 const COLORS = [
   "rgba(255, 255, 255, 0.75)",
@@ -37,8 +39,8 @@ interface Particle {
   x: number;
   y: number;
   speed: number; // px per frame (60fps)
-  width: number;
-  height: number;
+  colWidth: number; // horizontal width of the vertical text column
+  colHeight: number; // total vertical height of stacked characters
   fontSize: number;
   color: string;
   opacity: number;
@@ -72,7 +74,9 @@ export default function FallingWords() {
     fetch("/api/words?sort=newest&limit=500")
       .then((res) => res.json())
       .then((data) => {
-        const wordList = (data.words || []).map((w: { word: string }) => w.word);
+        const wordList = (data.words || []).map(
+          (w: { word: string }) => w.word,
+        );
         if (wordList.length > 0) {
           wordsRef.current = wordList;
         }
@@ -105,27 +109,34 @@ export default function FallingWords() {
         const words = wordsRef.current;
         if (words.length > 0 && particlesRef.current.length < MAX_PARTICLES) {
           const word = words[Math.floor(Math.random() * words.length)];
-          const fontSize = FONT_SIZES[Math.floor(Math.random() * FONT_SIZES.length)];
+          const fontSize =
+            FONT_SIZES[Math.floor(Math.random() * FONT_SIZES.length)];
           const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-          ctx.font = `${fontSize}px ${FONT_FAMILY}`;
-          const metrics = ctx.measureText(word);
-          const w = metrics.width;
-          const h = fontSize * 1.2;
+
+          // Measure the vertical column dimensions
+          const charStep = fontSize * CHAR_SPACING;
+          const colHeight = charStep * word.length;
+          const colWidth = fontSize; // single character width approximation
+
           const cw = window.innerWidth;
-          const margin = w / 2 + 10;
-          const duration = rand(DURATION_MIN, DURATION_MAX);
           const ch = window.innerHeight;
-          // speed = total distance / (duration * 60fps)
-          const speed = (ch + h + 100) / (duration * 60);
+          const duration = rand(DURATION_MIN, DURATION_MAX);
+          // speed = total horizontal distance / (duration * 60fps)
+          // distance = screen width + colWidth + buffer
+          const speed = (cw + colWidth + 100) / (duration * 60);
+
+          // Vertical position: random, but keep the column on screen
+          const margin = colHeight / 2 + 20;
+          const yPos = margin + Math.random() * Math.max(ch - margin * 2, 0);
 
           particlesRef.current.push({
             type: "word",
             word,
-            x: margin + Math.random() * Math.max(cw - margin * 2, 0),
-            y: -h - 50,
+            x: cw + colWidth, // start just off the right edge
+            y: yPos,
             speed,
-            width: w,
-            height: h,
+            colWidth,
+            colHeight,
             fontSize,
             color,
             opacity: rand(0.12, 0.35),
@@ -146,23 +157,24 @@ export default function FallingWords() {
       iconTimer = setTimeout(() => {
         const img = iconRef.current;
         if (img && img.naturalWidth > 0) {
-          const baseSize = ICON_SIZES[Math.floor(Math.random() * ICON_SIZES.length)];
+          const baseSize =
+            ICON_SIZES[Math.floor(Math.random() * ICON_SIZES.length)];
           const aspect = img.naturalWidth / img.naturalHeight;
           const iconW = baseSize;
           const iconH = baseSize / aspect;
           const cw = window.innerWidth;
           const ch = window.innerHeight;
           const duration = rand(DURATION_MIN, DURATION_MAX);
-          const speed = (ch + iconH + 100) / (duration * 60);
+          const speed = (cw + iconW + 100) / (duration * 60);
 
           particlesRef.current.push({
             type: "icon",
             word: "",
-            x: rand(iconW, cw - iconW),
-            y: -iconH - 50,
+            x: cw + iconW, // start off the right edge
+            y: rand(iconH, ch - iconH),
             speed,
-            width: iconW,
-            height: iconH,
+            colWidth: iconW,
+            colHeight: iconH,
             fontSize: 0,
             color: "",
             opacity: rand(0.15, 0.4),
@@ -187,10 +199,10 @@ export default function FallingWords() {
       // Update & draw
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.y += p.speed;
+        p.x -= p.speed; // move left
 
-        // Remove if off screen
-        if (p.y > ch + 100) {
+        // Remove if fully off the left edge
+        if (p.x < -p.colWidth - 50) {
           particles.splice(i, 1);
           continue;
         }
@@ -203,10 +215,23 @@ export default function FallingWords() {
           ctx.fillStyle = p.color;
           ctx.shadowColor = "rgba(255, 255, 255, 0.08)";
           ctx.shadowBlur = 4;
-          ctx.textBaseline = "top";
-          ctx.fillText(p.word, p.x, p.y);
+          ctx.textBaseline = "middle";
+          ctx.textAlign = "center";
+
+          // Draw each character vertically, stacked top to bottom
+          const charStep = p.fontSize * CHAR_SPACING;
+          const startY = p.y - (p.colHeight / 2) + charStep / 2;
+          for (let ci = 0; ci < p.word.length; ci++) {
+            ctx.fillText(p.word[ci], p.x, startY + ci * charStep);
+          }
         } else if (p.type === "icon" && iconRef.current) {
-          ctx.drawImage(iconRef.current, p.x, p.y, p.iconW, p.iconH);
+          ctx.drawImage(
+            iconRef.current,
+            p.x - p.iconW / 2,
+            p.y - p.iconH / 2,
+            p.iconW,
+            p.iconH,
+          );
         }
 
         ctx.restore();
