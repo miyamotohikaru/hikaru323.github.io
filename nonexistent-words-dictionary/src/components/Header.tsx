@@ -12,14 +12,12 @@ export default function Header() {
   return (
     <header className="site-header">
       <div className="header-inner">
-        <div className="header-center">
-          <Link href="/" className="header-logo-group">
-            <span className="header-logo">存在しない言葉辞典</span>
-            <span className="header-logo-en">FICTIONARY</span>
-          </Link>
-        </div>
+        <Link href="/" className="header-logo-group">
+          <span className="header-logo">{t("home.title")}</span>
+          <span className="header-logo-en">FICTIONARY</span>
+        </Link>
         <nav className="header-nav">
-          <Link href="/" className="header-link">
+          <Link href="/" className="header-link header-link--bordered">
             {t("nav.register")}
           </Link>
           <Link href="/browse" className="header-link">
@@ -29,13 +27,14 @@ export default function Header() {
             {t("nav.ranking")}
           </Link>
           <RandomWordButton />
+          <span className="header-divider" />
           <div className="lang-switcher">
             <button
               className="lang-switcher-btn"
               onClick={() => setShowLangMenu(!showLangMenu)}
               title="Language"
             >
-              {SUPPORTED_LANGS.find((l) => l.code === lang)?.label.slice(0, 2) || "ja"}
+              {SUPPORTED_LANGS.find((l) => l.code === lang)?.label || "日本語"} ›
             </button>
             {showLangMenu && (
               <div className="lang-menu">

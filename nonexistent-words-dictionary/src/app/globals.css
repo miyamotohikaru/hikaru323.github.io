@@ -62,17 +62,13 @@ a:hover { color: var(--text-primary); }
 }
 
 .header-inner {
-  max-width: 680px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0.5rem 1.5rem;
+  padding: 0.75rem 2rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 0.2rem;
-}
-
-.header-center {
-  text-align: center;
+  justify-content: space-between;
 }
 
 .header-logo-group {
@@ -102,23 +98,39 @@ a:hover { color: var(--text-primary); }
 
 .header-nav {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
   align-items: center;
-  justify-content: center;
   flex-wrap: nowrap;
   white-space: nowrap;
 }
 
 .header-link {
   font-family: var(--font-ui);
-  font-size: 0.8rem;
-  color: var(--text-sub);
+  font-size: 0.875rem;
+  color: var(--text-body);
   letter-spacing: 0.05em;
-  transition: color 0.2s;
+  transition: color 0.2s, border-color 0.2s;
   white-space: nowrap;
 }
 
 .header-link:hover { color: var(--text-primary); }
+
+.header-link--bordered {
+  border: 1px solid var(--text-sub);
+  padding: 0.4rem 1.25rem;
+  color: var(--text-primary);
+}
+
+.header-link--bordered:hover {
+  border-color: var(--text-primary);
+}
+
+.header-divider {
+  width: 1px;
+  height: 1rem;
+  background: var(--base-border);
+  flex-shrink: 0;
+}
 
 /* Language Switcher */
 .lang-switcher {
@@ -180,13 +192,15 @@ a:hover { color: var(--text-primary); }
 
 /* ===== Page Wrapper ===== */
 .page-wrapper {
-  max-width: 680px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 2rem;
   min-height: calc(100vh - 120px);
 }
 
-.main-content { padding: 3rem 0; }
+.main-content {
+  padding: 0;
+}
 
 /* ===== Hero ===== */
 .hero {
@@ -195,7 +209,9 @@ a:hover { color: var(--text-primary); }
   transition: padding 0.4s ease;
 }
 
-.hero-centered { padding: 4rem 0 3rem; position: relative; z-index: 1; }
+.hero-centered {
+  display: none; /* Hero integrated into search section */
+}
 
 .hero-copy { margin-bottom: 2rem; }
 
@@ -687,7 +703,7 @@ a:hover { color: var(--text-primary); }
   position: relative;
   background-color: var(--page-bg);
   min-height: 200px;
-  padding: 1.5rem 2rem 2rem 2rem;
+  padding: 1.5rem 2rem 2rem;
   transform-origin: left center;
   border-radius: 1px 3px 3px 1px;
   box-shadow: 2px 2px 12px rgba(0,0,0,0.15);
@@ -1703,8 +1719,8 @@ a:hover { color: var(--text-primary); }
 /* ===== Footer ===== */
 .site-footer {
   border-top: 1px solid var(--base-border);
-  padding: 1.5rem;
-  max-width: 680px;
+  padding: 2rem 1.5rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -2236,53 +2252,75 @@ a:hover { color: var(--text-primary); }
 /* ===== Tategaki (Vertical Writing) Search ===== */
 .tategaki-search-section {
   display: flex;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  align-items: center;
   justify-content: center;
-  padding: 2rem 0;
+  min-height: calc(100vh - 52px);
   position: relative;
   z-index: 1;
+  padding: 3rem 0;
+  gap: 2.5rem;
+}
+
+.tategaki-search-hero-title {
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.15em;
+  line-height: 1.4;
+}
+
+.tategaki-search-hero-sub {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  color: var(--text-body);
+  line-height: 2;
+  letter-spacing: 0.05em;
 }
 
 .tategaki-search-form {
   display: flex;
-  flex-direction: column;
+  writing-mode: vertical-rl;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0;
 }
 
 .tategaki-search-strip {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0;
 }
 
 .tategaki-search-label {
   font-family: var(--font-ui);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   color: var(--text-sub);
-  writing-mode: vertical-rl;
   letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
 }
 
 .tategaki-search-input {
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  width: 3rem;
-  height: 16rem;
+  width: 2.5rem;
+  height: 18rem;
   background: transparent;
   border: none;
-  border-right: 1px solid var(--base-border);
+  border-right: 1px solid var(--text-sub);
   outline: none;
   color: var(--text-primary);
   font-family: var(--font-heading);
   font-size: 1.1rem;
   letter-spacing: 0.05em;
-  padding: 0.5rem;
+  padding: 0.75rem 0.5rem;
   transition: border-color 0.3s;
 }
 
 .tategaki-search-input:focus {
-  border-right-color: var(--text-sub);
+  border-right-color: var(--text-primary);
 }
 
 .tategaki-search-input::placeholder {
@@ -2294,7 +2332,7 @@ a:hover { color: var(--text-primary); }
 
 .tategaki-search-button {
   writing-mode: vertical-rl;
-  padding: 1rem 0.75rem;
+  padding: 0.75rem 0.5rem;
   background-color: var(--accent-garnet);
   border: none;
   color: var(--text-primary);
@@ -2303,6 +2341,7 @@ a:hover { color: var(--text-primary); }
   cursor: pointer;
   transition: background-color 0.2s;
   letter-spacing: 0.1em;
+  width: 2.5rem;
 }
 
 .tategaki-search-button:hover:not(:disabled) { background-color: var(--accent-garnet-hover); }
@@ -2312,8 +2351,8 @@ a:hover { color: var(--text-primary); }
   font-family: var(--font-ui);
   font-size: 0.625rem;
   color: var(--text-sub);
-  writing-mode: vertical-rl;
   letter-spacing: 0.05em;
+  line-height: 1.8;
 }
 
 /* ===== Dictionary Page (Tategaki Content) ===== */
@@ -2321,7 +2360,7 @@ a:hover { color: var(--text-primary); }
   background: var(--page-bg);
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  padding: 2rem 2.5rem;
+  padding: 2.5rem 3rem;
   min-height: 400px;
   overflow-x: auto;
   position: relative;
@@ -2484,10 +2523,14 @@ a:hover { color: var(--text-primary); }
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
   .page-wrapper { padding: 0 1.25rem; }
-  .main-content { padding: 2rem 0; }
 
-  .hero-centered { padding: 3rem 0 2rem; }
-  .hero-title { font-size: 1.125rem; }
+  .tategaki-search-section { gap: 1.5rem; padding: 2rem 0; min-height: auto; }
+  .tategaki-search-hero-title { font-size: 2rem; }
+  .tategaki-search-hero-sub { font-size: 0.8125rem; }
+  .tategaki-search-input { height: 14rem; }
+
+  .header-inner { padding: 0.5rem 1rem; }
+  .header-link--bordered { padding: 0.3rem 0.75rem; }
 
   .word-title { font-size: 1.5rem; }
   .word-card { padding-left: 1rem; }
@@ -3256,7 +3299,7 @@ a:hover { color: var(--text-primary); }
 /* ===== Share Dictionary Page (掲載後シェアページ) ===== */
 .share-dict-page {
   max-width: 520px;
-  margin: 0 auto;
+  margin: 2rem auto 0;
   text-align: center;
   position: relative;
   z-index: 1;

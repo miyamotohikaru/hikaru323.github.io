@@ -187,45 +187,39 @@ export default function Home() {
     <main className="main-content" style={{ position: "relative" }}>
       <FallingWords />
 
-      {/* ヒーロー（初期状態のみ） */}
-      {phase === "idle" && (
-        <div className="hero-centered">
-          <div className="hero-copy">
-            <h1 className="hero-title">{t("home.title")}</h1>
-            <p className="hero-subtitle">
-              {t("home.subtitle").split("\n").map((line, i) => (
-                <span key={i}>{line}{i === 0 && <br />}</span>
-              ))}
-            </p>
-          </div>
+      {/* メイン: タイトル + 説明 + 検索（縦書き横並び） */}
+      {(phase === "idle" || phase === "loading") && (
+        <div className="tategaki-search-section">
+          <h1 className="tategaki-search-hero-title">{t("home.title")}</h1>
+          <p className="tategaki-search-hero-sub">
+            {t("home.subtitle").split("\n").map((line, i) => (
+              <span key={i}>{line}</span>
+            ))}
+          </p>
+          <form onSubmit={handleSearch} className="tategaki-search-form">
+            <div className="tategaki-search-strip">
+              <span className="tategaki-search-label">読み（ひらがな）</span>
+              <input
+                type="text"
+                value={word}
+                onChange={(e) => setWord(e.target.value)}
+                placeholder={"こ　と　ば　を　引　く"}
+                className="tategaki-search-input"
+                maxLength={20}
+                disabled={phase === "loading"}
+              />
+              <button
+                type="submit"
+                className="tategaki-search-button"
+                disabled={phase === "loading" || !word.trim()}
+              >
+                引く
+              </button>
+            </div>
+          </form>
+          <p className="tategaki-search-note">{t("home.note")}</p>
         </div>
       )}
-
-      {/* 縦書き検索セクション */}
-      <div className="tategaki-search-section">
-        <form onSubmit={handleSearch} className="tategaki-search-form">
-          <div className="tategaki-search-strip">
-            <span className="tategaki-search-label">{t("result.readingLabel") || "見出し語"}</span>
-            <input
-              type="text"
-              value={word}
-              onChange={(e) => setWord(e.target.value)}
-              placeholder={"こ　と　ば　を　引　く"}
-              className="tategaki-search-input"
-              maxLength={20}
-              disabled={phase === "loading"}
-            />
-            <button
-              type="submit"
-              className="tategaki-search-button"
-              disabled={phase === "loading" || !word.trim()}
-            >
-              引く
-            </button>
-          </div>
-          <p className="tategaki-search-note">{t("home.note")}</p>
-        </form>
-      </div>
 
       {/* ページめくりアニメーション */}
       {phase === "loading" && (
