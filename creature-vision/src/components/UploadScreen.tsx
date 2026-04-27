@@ -5,10 +5,10 @@ import Icon from "./Icon";
 import { CATEGORY_COLORS } from "@/styles/theme";
 
 const MARQUEE_IDS = [
-  "kosukuma","human","dog","cat","horse","goat","panda","chameleon","frog",
-  "eagle","kestrel","owl","bat","dragonfly","bee","cockroach","fly","spider",
-  "jumpingspider","snail","dolphin","shark","octopus","foureyedfish","deepsea",
-  "platypus","snake","mshrimp","starfish","mole","blindcavefish",
+  "kosukuma","human","dog","horse","goat","chameleon","frog",
+  "eagle","owl","bat","cockroach","mantis","spider","koala",
+  "dolphin","shark","octopus","foureyedfish","deepsea","snake",
+  "mshrimp","mole","flamingo","pigeon",
 ];
 
 interface Props {
@@ -63,7 +63,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
 
       {/* Subtitle */}
       <p className="mt-3 text-center" style={{ color: "#999", fontSize: 16, fontWeight: 500 }}>
-        写真をアップして、32種類の生き物の目で見てみよう
+        写真をアップして、24種類の生き物の目で見てみよう
       </p>
 
       {/* Upload area */}

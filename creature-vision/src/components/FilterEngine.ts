@@ -1248,6 +1248,190 @@ const filterSpliteye: CtxFilter = (ctx, w, h, fp) => {
   ctx.strokeStyle="rgba(255,255,255,0.5)"; ctx.lineWidth=2.5; ctx.stroke();
 };
 
+// 23. Stereo 3D - mantis vision (anaglyph-like)
+const filterStereo3d: CtxFilter = (ctx, w, h, fp) => {
+  const tmpCanvas = document.createElement("canvas");
+  tmpCanvas.width = w; tmpCanvas.height = h;
+  const tc = tmpCanvas.getContext("2d")!;
+  tc.drawImage(ctx.canvas, 0, 0);
+  const src = tc.getImageData(0, 0, w, h).data;
+
+  const d = ctx.createImageData(w, h);
+  const px = d.data;
+  const shift = 3;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const lx = Math.min(w - 1, x + shift);
+      const li = (y * w + lx) * 4;
+      px[i] = src[li];
+      const rx = Math.max(0, x - shift);
+      const ri = (y * w + rx) * 4;
+      px[i + 1] = src[ri + 1];
+      px[i + 2] = src[ri + 2];
+      px[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(d, 0, 0);
+
+  // Target lock-on mark
+  ctx.strokeStyle = "rgba(0,255,100,0.4)";
+  ctx.lineWidth = 1.5;
+  const cx = w / 2, cy = h / 2, s = w * 0.08;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - s);
+  ctx.lineTo(cx - s * 0.8, cy + s * 0.5);
+  ctx.lineTo(cx + s * 0.8, cy + s * 0.5);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - s * 1.3);
+  ctx.lineTo(cx, cy - s);
+  ctx.moveTo(cx, cy + s * 0.5);
+  ctx.lineTo(cx, cy + s * 0.8);
+  ctx.stroke();
+};
+
+// 24. Drowsy - koala vision
+const filterDrowsy: CtxFilter = (ctx, w, h, fp) => {
+  const d = ctx.getImageData(0, 0, w, h), px = d.data;
+  for (let i = 0; i < px.length; i += 4) {
+    let r = px[i], g = px[i+1], b = px[i+2];
+    const l = 0.299*r + 0.587*g + 0.114*b;
+    r = l + (r - l) * 0.35;
+    g = l + (g - l) * 0.75;
+    b = l + (b - l) * 0.55;
+    r = Math.min(255, r * 0.85);
+    g = Math.min(255, g * 1.05 + 8);
+    b = Math.min(255, b * 0.9);
+    r = r * 0.7 + 128 * 0.3;
+    g = g * 0.7 + 128 * 0.3;
+    b = b * 0.7 + 128 * 0.3;
+    px[i] = r; px[i+1] = g; px[i+2] = b;
+  }
+  ctx.putImageData(d, 0, 0);
+
+  ctx.globalAlpha = 0.15;
+  ctx.drawImage(ctx.canvas, -3, -3, w+6, h+6);
+  ctx.drawImage(ctx.canvas, 3, 3, w-6, h-6);
+  ctx.drawImage(ctx.canvas, -2, 0, w+4, h);
+  ctx.drawImage(ctx.canvas, 2, 0, w-4, h);
+  ctx.globalAlpha = 1;
+
+  const topLid = ctx.createLinearGradient(0, 0, 0, h * 0.4);
+  topLid.addColorStop(0, "rgba(30,25,20,0.85)");
+  topLid.addColorStop(0.6, "rgba(30,25,20,0.3)");
+  topLid.addColorStop(1, "rgba(30,25,20,0)");
+  ctx.fillStyle = topLid;
+  ctx.fillRect(0, 0, w, h * 0.4);
+
+  const botLid = ctx.createLinearGradient(0, h * 0.6, 0, h);
+  botLid.addColorStop(0, "rgba(30,25,20,0)");
+  botLid.addColorStop(0.4, "rgba(30,25,20,0.3)");
+  botLid.addColorStop(1, "rgba(30,25,20,0.85)");
+  ctx.fillStyle = botLid;
+  ctx.fillRect(0, h * 0.6, w, h * 0.4);
+};
+
+// 25. Upside down - flamingo vision
+const filterUpsidedown: CtxFilter = (ctx, w, h, fp) => {
+  const tmpCanvas = document.createElement("canvas");
+  tmpCanvas.width = w; tmpCanvas.height = h;
+  const tc = tmpCanvas.getContext("2d")!;
+  tc.drawImage(ctx.canvas, 0, 0);
+
+  // Flip upside down
+  ctx.save();
+  ctx.translate(0, h);
+  ctx.scale(1, -1);
+  ctx.drawImage(tmpCanvas, 0, 0);
+  ctx.restore();
+
+  // Pink/red tint (flamingo sees red strongly)
+  const d = ctx.getImageData(0, 0, w, h), px = d.data;
+  for (let i = 0; i < px.length; i += 4) {
+    let r = px[i], g = px[i+1], b = px[i+2];
+    const l = 0.299*r + 0.587*g + 0.114*b;
+    // Boost red/pink, slightly desaturate others
+    r = Math.min(255, l + (r - l) * 1.4 + 15);
+    g = Math.min(255, l + (g - l) * 0.8);
+    b = Math.min(255, l + (b - l) * 0.85 + 8);
+    px[i] = r; px[i+1] = g; px[i+2] = b;
+  }
+  ctx.putImageData(d, 0, 0);
+
+  // Slight water ripple effect at top (was bottom before flip)
+  ctx.globalAlpha = 0.08;
+  for (let i = 0; i < 3; i++) {
+    ctx.drawImage(ctx.canvas, Math.sin(i) * 2, i * 2 - 2, w, h);
+  }
+  ctx.globalAlpha = 1;
+};
+
+// 26. Magnetic vision - pigeon vision
+const filterMagneticvision: CtxFilter = (ctx, w, h, fp) => {
+  const d = ctx.getImageData(0, 0, w, h), px = d.data;
+  for (let i = 0; i < px.length; i += 4) {
+    let r = px[i], g = px[i+1], b = px[i+2];
+    const l = 0.299*r + 0.587*g + 0.114*b;
+    r = l + (r - l) * 1.8;
+    g = l + (g - l) * 1.8;
+    b = l + (b - l) * 1.8;
+    const uv = Math.min(255, (255 - r) * 0.25);
+    b = Math.min(255, b + uv * 0.5);
+    r = Math.min(255, Math.max(0, r + uv * 0.15));
+    px[i] = clamp(r); px[i+1] = clamp(g); px[i+2] = clamp(b);
+  }
+  ctx.putImageData(d, 0, 0);
+
+  // Magnetic field bands
+  ctx.globalCompositeOperation = "screen";
+  ctx.globalAlpha = 0.1;
+  const bandCount = 6;
+  const bandH = h / bandCount;
+  const colors = [
+    "rgba(80,80,255,0.3)", "rgba(160,60,220,0.3)", "rgba(220,80,180,0.3)",
+    "rgba(80,100,255,0.3)", "rgba(140,80,240,0.3)", "rgba(200,100,200,0.3)",
+  ];
+  for (let i = 0; i < bandCount; i++) {
+    const y = i * bandH;
+    const grad = ctx.createLinearGradient(0, y, 0, y + bandH);
+    grad.addColorStop(0, "rgba(0,0,0,0)");
+    grad.addColorStop(0.3, colors[i]);
+    grad.addColorStop(0.7, colors[i]);
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, y, w, bandH);
+  }
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 1;
+
+  // Compass indicator (top right)
+  const compassX = w - 40, compassY = 40, compassR = 15;
+  ctx.globalAlpha = 0.25;
+  ctx.beginPath();
+  ctx.arc(compassX, compassY, compassR, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255,255,255,0.5)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(compassX, compassY - compassR + 3);
+  ctx.lineTo(compassX - 3, compassY + 2);
+  ctx.lineTo(compassX + 3, compassY + 2);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255,100,100,0.6)";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(compassX, compassY + compassR - 3);
+  ctx.lineTo(compassX - 3, compassY - 2);
+  ctx.lineTo(compassX + 3, compassY - 2);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fill();
+  ctx.globalAlpha = 1;
+};
+
 // ---------------------------------------------------------------------------
 // Set of filters that operate directly on ctx (not via getImageData/putImageData in applyFilter)
 // ---------------------------------------------------------------------------
@@ -1261,6 +1445,10 @@ const ctxFilters: Record<string, CtxFilter> = {
   multieye: filterMultieye,
   multilayer: filterMultilayer,
   spliteye: filterSpliteye,
+  stereo3d: filterStereo3d,
+  drowsy: filterDrowsy,
+  upsidedown: filterUpsidedown,
+  magneticvision: filterMagneticvision,
 };
 
 // ---------------------------------------------------------------------------
@@ -1271,34 +1459,27 @@ export const FOV_DATA: Record<string, { fov: number; expansion: number; label: s
   kosukuma:      { fov: 270, expansion: 2.2,  label: "270°" },
   human:         { fov: 120, expansion: 1.0,  label: "120°" },
   dog:           { fov: 250, expansion: 2.1,  label: "250°" },
-  cat:           { fov: 200, expansion: 1.7,  label: "200°" },
   horse:         { fov: 350, expansion: 2.9,  label: "350°" },
   goat:          { fov: 340, expansion: 2.8,  label: "340°" },
-  panda:         { fov: 270, expansion: 2.2,  label: "270°" },
   chameleon:     { fov: 342, expansion: 2.8,  label: "342°" },
   frog:          { fov: 360, expansion: 3.0,  label: "360°" },
   eagle:         { fov: 340, expansion: 2.8,  label: "340°" },
-  kestrel:       { fov: 340, expansion: 2.8,  label: "340°" },
   owl:           { fov: 110, expansion: 0.9,  label: "110°" },
   bat:           { fov: 360, expansion: 3.0,  label: "360°" },
-  dragonfly:     { fov: 360, expansion: 3.0,  label: "360°" },
-  bee:           { fov: 360, expansion: 3.0,  label: "360°" },
   cockroach:     { fov: 360, expansion: 3.0,  label: "360°" },
-  fly:           { fov: 360, expansion: 3.0,  label: "360°" },
+  mantis:        { fov: 300, expansion: 2.5,  label: "300°" },
   spider:        { fov: 360, expansion: 3.0,  label: "360°" },
-  jumpingspider: { fov: 90,  expansion: 0.75, label: "90°" },
-  snail:         { fov: 100, expansion: 0.8,  label: "100°" },
+  koala:         { fov: 200, expansion: 1.7,  label: "200°" },
   dolphin:       { fov: 300, expansion: 2.5,  label: "300°" },
   shark:         { fov: 360, expansion: 3.0,  label: "360°" },
   octopus:       { fov: 340, expansion: 2.8,  label: "340°" },
   foureyedfish:  { fov: 360, expansion: 3.0,  label: "360°" },
   deepsea:       { fov: 120, expansion: 1.0,  label: "120°" },
-  platypus:      { fov: 360, expansion: 3.0,  label: "360°" },
   snake:         { fov: 300, expansion: 2.5,  label: "300°" },
   mshrimp:       { fov: 360, expansion: 3.0,  label: "360°" },
-  starfish:      { fov: 360, expansion: 3.0,  label: "360°" },
   mole:          { fov: 20,  expansion: 0.17, label: "20°" },
-  blindcavefish: { fov: 0,   expansion: 0,    label: "0°" },
+  flamingo:      { fov: 300, expansion: 2.5,  label: "300°" },
+  pigeon:        { fov: 340, expansion: 2.8,  label: "340°" },
 };
 
 export function expandFOV(
