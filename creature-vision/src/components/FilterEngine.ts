@@ -1308,24 +1308,184 @@ export function expandFOV(
   img: CanvasImageSource,
   expansion: number
 ): void {
-  if (expansion <= 0 || expansion >= 1.0) return;
+  if (expansion === 0) return;
 
-  // Narrow FOV: zoom into center + darken periphery
-  const imgW = (img as HTMLImageElement).naturalWidth || (img as HTMLCanvasElement).width;
-  const imgH = (img as HTMLImageElement).naturalHeight || (img as HTMLCanvasElement).height;
-  const cropW = imgW * expansion;
-  const cropH = imgH * expansion;
-  const sx = (imgW - cropW) / 2;
-  const sy = (imgH - cropH) / 2;
-  ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, w, h);
+  if (expansion < 1.0) {
+    // Narrow FOV: zoom into center + darken periphery
+    const imgW = (img as HTMLImageElement).naturalWidth || (img as HTMLCanvasElement).width;
+    const imgH = (img as HTMLImageElement).naturalHeight || (img as HTMLCanvasElement).height;
+    const cropW = imgW * expansion;
+    const cropH = imgH * expansion;
+    const sx = (imgW - cropW) / 2;
+    const sy = (imgH - cropH) / 2;
+    ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, w, h);
 
-  // Darken periphery (narrower FOV = more darkness)
-  const darkness = Math.max(0, 1 - expansion) * 0.8;
-  const vg = ctx.createRadialGradient(w / 2, h / 2, w * expansion * 0.3, w / 2, h / 2, w * 0.6);
-  vg.addColorStop(0, "rgba(0,0,0,0)");
-  vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
-  ctx.fillStyle = vg;
-  ctx.fillRect(0, 0, w, h);
+    const darkness = Math.max(0, 1 - expansion) * 0.8;
+    const vg = ctx.createRadialGradient(w / 2, h / 2, w * expansion * 0.3, w / 2, h / 2, w * 0.6);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, w, h);
+    return;
+  }
+
+  if (expansion <= 1.0) return;
+
+  // Wide FOV (expansion > 1.0): mirror + blur expansion
+  const totalW = Math.round(w * expansion);
+  const totalH = expansion > 2.0
+    ? Math.round(h * (1 + (expansion - 2.0) * 0.3))
+    : h;
+  const sideW = Math.round((totalW - w) / 2);
+  const topH = Math.round((totalH - h) / 2);
+
+  const tmp = document.createElement("canvas");
+  tmp.width = totalW;
+  tmp.height = totalH;
+  const tc = tmp.getContext("2d")!;
+
+  // Center: original image
+  tc.drawImage(img, 0, 0, w, h, sideW, topH, w, h);
+
+  // Left mirror: flip left 35% of image
+  if (sideW > 0) {
+    const srcW = Math.round(w * 0.35);
+    tc.save();
+    tc.translate(sideW, topH);
+    tc.scale(-1, 1);
+    tc.drawImage(img, 0, 0, srcW, h, 0, 0, Math.min(sideW, srcW), h);
+    tc.restore();
+    // Fill remaining left if sideW > srcW
+    if (sideW > srcW) {
+      tc.save();
+      tc.translate(sideW - srcW, topH);
+      tc.scale(-1, 1);
+      tc.drawImage(img, 0, 0, srcW, h, 0, 0, Math.min(sideW - srcW, srcW), h);
+      tc.restore();
+    }
+  }
+
+  // Right mirror: flip right 35% of image
+  if (sideW > 0) {
+    const imgW = (img as HTMLImageElement).naturalWidth || w;
+    const imgH = (img as HTMLImageElement).naturalHeight || h;
+    const srcW = Math.round(w * 0.35);
+    tc.save();
+    tc.translate(sideW + w + Math.min(sideW, srcW), topH);
+    tc.scale(-1, 1);
+    tc.drawImage(img, imgW - Math.round(imgW * 0.35), 0, Math.round(imgW * 0.35), imgH, 0, 0, Math.min(sideW, srcW), h);
+    tc.restore();
+    if (sideW > srcW) {
+      tc.save();
+      tc.translate(sideW + w + sideW, topH);
+      tc.scale(-1, 1);
+      tc.drawImage(img, imgW - Math.round(imgW * 0.35), 0, Math.round(imgW * 0.35), imgH, 0, 0, Math.min(sideW - srcW, srcW), h);
+      tc.restore();
+    }
+  }
+
+  // Top mirror
+  if (topH > 0) {
+    tc.save();
+    tc.translate(0, topH);
+    tc.scale(1, -1);
+    tc.drawImage(tmp, 0, topH, totalW, Math.min(topH, h), 0, 0, totalW, topH);
+    tc.restore();
+  }
+
+  // Bottom mirror
+  if (topH > 0) {
+    tc.save();
+    tc.translate(0, topH + h);
+    tc.scale(1, -1);
+    tc.drawImage(tmp, 0, topH + h - Math.min(topH, h), totalW, Math.min(topH, h), -0, -topH, totalW, topH);
+    tc.restore();
+    // Simpler: just flip bottom portion
+    tc.save();
+    tc.translate(0, totalH);
+    tc.scale(1, -1);
+    tc.drawImage(tmp, 0, topH, totalW, topH, 0, 0, totalW, topH);
+    tc.restore();
+  }
+
+  // Blur the extended edges using layered offset draws
+  // Left blur
+  if (sideW > 0) {
+    tc.save();
+    tc.beginPath();
+    tc.rect(0, 0, sideW + 10, totalH);
+    tc.clip();
+    tc.globalAlpha = 0.25;
+    for (let dx = -6; dx <= 6; dx += 3) {
+      for (let dy = -6; dy <= 6; dy += 3) {
+        tc.drawImage(tmp, dx, dy);
+      }
+    }
+    tc.globalAlpha = 1;
+    tc.restore();
+  }
+
+  // Right blur
+  if (sideW > 0) {
+    tc.save();
+    tc.beginPath();
+    tc.rect(sideW + w - 10, 0, sideW + 10, totalH);
+    tc.clip();
+    tc.globalAlpha = 0.25;
+    for (let dx = -6; dx <= 6; dx += 3) {
+      for (let dy = -6; dy <= 6; dy += 3) {
+        tc.drawImage(tmp, dx, dy);
+      }
+    }
+    tc.globalAlpha = 1;
+    tc.restore();
+  }
+
+  // Top blur
+  if (topH > 0) {
+    tc.save();
+    tc.beginPath();
+    tc.rect(0, 0, totalW, topH + 10);
+    tc.clip();
+    tc.globalAlpha = 0.25;
+    for (let dx = -4; dx <= 4; dx += 4) {
+      for (let dy = -6; dy <= 6; dy += 3) {
+        tc.drawImage(tmp, dx, dy);
+      }
+    }
+    tc.globalAlpha = 1;
+    tc.restore();
+  }
+
+  // Bottom blur
+  if (topH > 0) {
+    tc.save();
+    tc.beginPath();
+    tc.rect(0, topH + h - 10, totalW, topH + 10);
+    tc.clip();
+    tc.globalAlpha = 0.25;
+    for (let dx = -4; dx <= 4; dx += 4) {
+      for (let dy = -6; dy <= 6; dy += 3) {
+        tc.drawImage(tmp, dx, dy);
+      }
+    }
+    tc.globalAlpha = 1;
+    tc.restore();
+  }
+
+  // Blend boundaries with gradient
+  // Left boundary
+  if (sideW > 0) {
+    const blend = 30;
+    const lg = tc.createLinearGradient(sideW - blend, 0, sideW + blend, 0);
+    lg.addColorStop(0, "rgba(0,0,0,0)");
+    lg.addColorStop(0.5, "rgba(0,0,0,0)");
+    lg.addColorStop(1, "rgba(0,0,0,0)");
+    // The mirror already creates a reasonable boundary
+  }
+
+  // Draw expanded canvas scaled to original size
+  ctx.drawImage(tmp, 0, 0, totalW, totalH, 0, 0, w, h);
 }
 
 // ---------------------------------------------------------------------------
