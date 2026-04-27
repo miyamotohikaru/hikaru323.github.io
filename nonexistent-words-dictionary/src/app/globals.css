@@ -2,25 +2,35 @@
 
 /* ===== Design Tokens ===== */
 :root {
-  --base-bg: #1a1610;
-  --base-card: #242010;
+  --bg: #1f1610;
+  --bgSoft: #241a13;
+  --text: #e8d9bf;
+  --textSoft: #b8a584;
+  --textMute: #7a6953;
+  --rule: #46362a;
+  --accent: #b3392a;
+  --accentDim: #8e2a1e;
+  --font-main: "Hiragino Mincho ProN", "YuMincho", "Noto Serif JP", "Shippori Mincho", serif;
+  /* legacy aliases for pages that still reference old vars */
+  --base-bg: var(--bg);
+  --base-card: var(--bgSoft);
   --base-hover: #2e2818;
-  --base-border: #3a3425;
-  --text-primary: #D9D4C8;
-  --text-body: #AB968F;
-  --text-sub: #585538;
-  --text-placeholder: #4a4530;
-  --accent-garnet: #792E29;
-  --accent-garnet-hover: #8a3a34;
-  --accent-olive: #585538;
+  --base-border: var(--rule);
+  --text-primary: var(--text);
+  --text-body: var(--textSoft);
+  --text-sub: var(--textMute);
+  --text-placeholder: var(--textMute);
+  --accent-garnet: var(--accent);
+  --accent-garnet-hover: var(--accentDim);
+  --accent-olive: var(--textMute);
   --page-bg: #D9D4C8;
   --page-text: #242010;
   --page-text-body: #3a3425;
   --page-text-sub: #585538;
   --page-line: rgba(100, 85, 60, 0.1);
-  --font-heading: "Shippori Mincho B1", "Shippori Mincho", serif;
-  --font-body: "Noto Serif JP", serif;
-  --font-english: "IM Fell English", serif;
+  --font-heading: var(--font-main);
+  --font-body: var(--font-main);
+  --font-english: "Times New Roman", "IM Fell English", serif;
   --font-ui: "Noto Sans JP", sans-serif;
 }
 
@@ -28,9 +38,9 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background-color: var(--base-bg);
-  color: var(--text-primary);
-  font-family: var(--font-body);
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main);
   line-height: 1.8;
   min-height: 100vh;
   position: relative;
@@ -53,18 +63,16 @@ a:hover { color: var(--text-primary); }
 
 /* ===== Header ===== */
 .site-header {
-  border-bottom: 1px solid var(--base-border);
+  border-bottom: 1px solid var(--rule);
   position: sticky;
   top: 0;
-  background-color: rgba(26, 22, 16, 0.92);
-  backdrop-filter: blur(8px);
+  background-color: var(--bg);
   z-index: 100;
 }
 
 .header-inner {
-  max-width: 1200px;
   margin: 0 auto;
-  padding: 0.75rem 2rem;
+  padding: 18px 56px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -74,23 +82,23 @@ a:hover { color: var(--text-primary); }
 .header-logo-group {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 12px;
 }
 
 .header-logo {
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  letter-spacing: 0.05em;
+  font-family: var(--font-main);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
 .header-logo-en {
-  font-family: var(--font-english);
-  font-size: 0.6rem;
-  color: var(--text-sub);
-  letter-spacing: 0.15em;
+  font-family: "Times New Roman", serif;
+  font-size: 11px;
+  color: var(--textMute);
+  letter-spacing: 0.35em;
 }
 
 .header-logo-group:hover { color: inherit; }
@@ -98,37 +106,40 @@ a:hover { color: var(--text-primary); }
 
 .header-nav {
   display: flex;
-  gap: 1.5rem;
+  gap: 28px;
   align-items: center;
   flex-wrap: nowrap;
   white-space: nowrap;
 }
 
 .header-link {
-  font-family: var(--font-ui);
-  font-size: 0.875rem;
-  color: var(--text-body);
+  font-size: 14px;
+  color: var(--text);
   letter-spacing: 0.05em;
-  transition: color 0.2s, border-color 0.2s;
+  transition: opacity 0.2s;
   white-space: nowrap;
+  background: transparent;
 }
 
-.header-link:hover { color: var(--text-primary); }
+.header-link:hover { opacity: 0.7; color: var(--text); }
 
 .header-link--bordered {
-  border: 1px solid var(--text-sub);
-  padding: 0.4rem 1.25rem;
-  color: var(--text-primary);
+  border: 1px solid var(--text);
+  padding: 8px 24px;
+  font-weight: 600;
+  background: var(--text);
+  color: var(--bg);
 }
 
 .header-link--bordered:hover {
-  border-color: var(--text-primary);
+  opacity: 0.85;
+  color: var(--bg);
 }
 
 .header-divider {
   width: 1px;
-  height: 1rem;
-  background: var(--base-border);
+  height: 18px;
+  background: var(--rule);
   flex-shrink: 0;
 }
 
@@ -138,15 +149,15 @@ a:hover { color: var(--text-primary); }
 }
 
 .lang-switcher-btn {
-  font-family: var(--font-ui);
-  font-size: 0.625rem;
-  color: var(--text-sub);
+  font-size: 14px;
+  color: var(--text);
   background: transparent;
-  border: 1px solid var(--base-border);
-  padding: 0.15rem 0.35rem;
+  border: none;
+  padding: 0;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: opacity 0.2s;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .lang-switcher-btn:hover {
@@ -1718,35 +1729,36 @@ a:hover { color: var(--text-primary); }
 
 /* ===== Footer ===== */
 .site-footer {
-  border-top: 1px solid var(--base-border);
-  padding: 2rem 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  border-top: 1px solid var(--rule);
+  padding: 32px 56px;
 }
 
-.footer-inner { text-align: center; }
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
 
 .footer-title {
-  font-size: 0.75rem;
-  color: var(--text-sub);
+  font-size: 13px;
+  color: var(--textSoft);
   letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
 }
 
 .footer-en {
-  font-family: var(--font-english);
-  letter-spacing: 0.15em;
+  font-family: "Times New Roman", serif;
+  letter-spacing: 0.2em;
 }
 
 .footer-sub {
-  font-size: 0.625rem;
-  color: var(--base-border);
-  margin-bottom: 0.75rem;
+  font-size: 11px;
+  color: var(--textMute);
 }
 
-.footer-nav { display: flex; justify-content: center; gap: 1.5rem; }
-.footer-nav a { font-size: 0.75rem; color: var(--text-sub); }
-.footer-nav a:hover { color: var(--text-primary); }
+.footer-nav { display: flex; justify-content: center; gap: 32px; }
+.footer-nav a { font-size: 12px; color: var(--textSoft); letter-spacing: 0.12em; }
+.footer-nav a:hover { color: var(--text); }
 
 /* ===== Bottom Nav ===== */
 .bottom-nav { text-align: center; padding: 3rem 0; }
@@ -2249,110 +2261,127 @@ a:hover { color: var(--text-primary); }
   border-top: 1px solid rgba(100, 85, 60, 0.1);
 }
 
-/* ===== Tategaki (Vertical Writing) Search ===== */
+/* ===== Hero (Tategaki Search Section) ===== */
 .tategaki-search-section {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 52px);
+  min-height: calc(100vh - 68px - 100px); /* header + footer */
   position: relative;
   z-index: 1;
-  padding: 3rem 2rem;
+  padding: 40px 56px;
 }
 
 .tategaki-search-inner {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
   display: flex;
-  gap: 2.5rem;
+  flex-direction: row-reverse;
   align-items: center;
-  height: 60vh;
-  max-height: 600px;
+  gap: 44px;
 }
 
 .tategaki-search-hero-title {
-  font-family: var(--font-heading);
-  font-size: 3rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 0.15em;
-  line-height: 1.4;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: var(--font-main);
+  font-size: 42px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.06em;
+  line-height: 1.35;
   white-space: nowrap;
 }
 
 .tategaki-search-hero-sub {
-  font-family: var(--font-body);
-  font-size: 0.9375rem;
-  color: var(--text-body);
-  line-height: 2;
-  letter-spacing: 0.05em;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: var(--font-main);
+  font-size: 13px;
+  color: var(--textSoft);
+  line-height: 2.2;
+  letter-spacing: 0.15em;
+}
+
+.tategaki-search-rule {
+  width: 1px;
+  height: 160px;
+  background: var(--rule);
+  flex-shrink: 0;
 }
 
 .tategaki-search-form {
   display: flex;
-  flex-direction: column;
+  flex-direction: row-reverse;
   align-items: center;
-  gap: 0;
+  gap: 10px;
 }
 
 .tategaki-search-label {
-  font-family: var(--font-ui);
-  font-size: 0.6875rem;
-  color: var(--text-sub);
-  letter-spacing: 0.1em;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 11px;
+  color: var(--textMute);
+  letter-spacing: 0.3em;
+}
+
+.tategaki-search-input-wrap {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--textSoft);
+  width: 50px;
+  height: 380px;
 }
 
 .tategaki-search-input {
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  width: 2.5rem;
-  height: 18rem;
+  flex: 1;
+  width: 100%;
   background: transparent;
   border: none;
-  border-right: 1px solid var(--text-sub);
   outline: none;
-  color: var(--text-primary);
-  font-family: var(--font-heading);
-  font-size: 1.1rem;
-  letter-spacing: 0.05em;
-  padding: 0.75rem 0.5rem;
-  transition: border-color 0.3s;
-}
-
-.tategaki-search-input:focus {
-  border-right-color: var(--text-primary);
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 16px;
+  letter-spacing: 0.15em;
+  padding: 12px 8px;
 }
 
 .tategaki-search-input::placeholder {
-  color: var(--text-placeholder);
-  font-size: 0.875rem;
+  color: var(--textMute);
+  font-size: 14px;
 }
 
 .tategaki-search-input:disabled { opacity: 0.5; }
 
 .tategaki-search-button {
   writing-mode: vertical-rl;
-  padding: 0.75rem 0.5rem;
-  background-color: var(--accent-garnet);
+  text-orientation: mixed;
+  width: 100%;
+  padding: 14px 8px;
+  background-color: var(--accent);
   border: none;
-  color: var(--text-primary);
-  font-family: var(--font-ui);
-  font-size: 0.875rem;
+  border-top: 1px solid var(--textSoft);
+  color: #fff;
+  font-family: var(--font-main);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
-  letter-spacing: 0.1em;
-  width: 2.5rem;
+  letter-spacing: 0.4em;
 }
 
-.tategaki-search-button:hover:not(:disabled) { background-color: var(--accent-garnet-hover); }
+.tategaki-search-button:hover:not(:disabled) { background-color: var(--accentDim); }
 .tategaki-search-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .tategaki-search-note {
-  font-family: var(--font-ui);
-  font-size: 0.625rem;
-  color: var(--text-sub);
-  letter-spacing: 0.05em;
-  line-height: 1.8;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 11px;
+  color: var(--textMute);
+  letter-spacing: 0.2em;
+  position: absolute;
+  right: 56px;
+  bottom: 20px;
 }
 
 /* ===== Dictionary Page (Tategaki Content) ===== */
@@ -2524,14 +2553,17 @@ a:hover { color: var(--text-primary); }
 @media (max-width: 768px) {
   .page-wrapper { padding: 0 1.25rem; }
 
-  .tategaki-search-section { padding: 2rem 1rem; }
-  .tategaki-search-inner { gap: 1.5rem; height: 50vh; }
-  .tategaki-search-hero-title { font-size: 2rem; }
-  .tategaki-search-hero-sub { font-size: 0.8125rem; }
-  .tategaki-search-input { height: 14rem; }
+  .tategaki-search-section { padding: 24px 16px; }
+  .tategaki-search-inner { gap: 24px; flex-wrap: wrap; justify-content: center; }
+  .tategaki-search-hero-title { font-size: 28px; }
+  .tategaki-search-hero-sub { font-size: 11px; }
+  .tategaki-search-input-wrap { height: 280px; width: 44px; }
+  .tategaki-search-note { right: 16px; bottom: 12px; font-size: 10px; }
 
-  .header-inner { padding: 0.5rem 1rem; }
-  .header-link--bordered { padding: 0.3rem 0.75rem; }
+  .header-inner { padding: 12px 16px; }
+  .header-link--bordered { padding: 6px 14px; font-size: 12px; }
+  .header-link { font-size: 12px; }
+  .header-nav { gap: 16px; }
 
   .word-title { font-size: 1.5rem; }
   .word-card { padding-left: 1rem; }

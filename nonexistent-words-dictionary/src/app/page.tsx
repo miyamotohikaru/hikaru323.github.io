@@ -187,7 +187,7 @@ export default function Home() {
     <main className="main-content" style={{ position: "relative" }}>
       <FallingWords />
 
-      {/* メイン: タイトル + 説明 + 検索（縦書き・右から左に配置） */}
+      {/* ヒーロー: タイトル + 説明 + 罫線 + 検索フォーム */}
       {(phase === "idle" || phase === "loading") && (
         <div className="tategaki-search-section">
           <div className="tategaki-search-inner">
@@ -197,27 +197,30 @@ export default function Home() {
                 <span key={i}>{line}</span>
               ))}
             </p>
+            <div className="tategaki-search-rule" />
             <form onSubmit={handleSearch} className="tategaki-search-form">
               <span className="tategaki-search-label">読み（ひらがな）</span>
-              <input
-                type="text"
-                value={word}
-                onChange={(e) => setWord(e.target.value)}
-                placeholder={"こ　と　ば　を　引　く"}
-                className="tategaki-search-input"
-                maxLength={20}
-                disabled={phase === "loading"}
-              />
-              <button
-                type="submit"
-                className="tategaki-search-button"
-                disabled={phase === "loading" || !word.trim()}
-              >
-                引く
-              </button>
+              <div className="tategaki-search-input-wrap">
+                <input
+                  type="text"
+                  value={word}
+                  onChange={(e) => setWord(e.target.value)}
+                  placeholder={"こ　と　ば　を　引　く"}
+                  className="tategaki-search-input"
+                  maxLength={20}
+                  disabled={phase === "loading"}
+                />
+                <button
+                  type="submit"
+                  className="tategaki-search-button"
+                  disabled={phase === "loading" || !word.trim()}
+                >
+                  引く
+                </button>
+              </div>
             </form>
-            <p className="tategaki-search-note">{t("home.note")}</p>
           </div>
+          <p className="tategaki-search-note">{t("home.note")}</p>
         </div>
       )}
 

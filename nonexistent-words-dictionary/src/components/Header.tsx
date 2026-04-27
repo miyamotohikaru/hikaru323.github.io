@@ -34,7 +34,7 @@ export default function Header() {
               onClick={() => setShowLangMenu(!showLangMenu)}
               title="Language"
             >
-              {SUPPORTED_LANGS.find((l) => l.code === lang)?.label || "日本語"} ›
+              {SUPPORTED_LANGS.find((l) => l.code === lang)?.label || "日本語"} ▾
             </button>
             {showLangMenu && (
               <div className="lang-menu">
