@@ -1,7 +1,9 @@
 export async function POST(req: Request) {
   const apiKey = process.env.STABILITY_API_KEY;
   if (!apiKey) {
-    return new Response("API key not configured", { status: 500 });
+    return new Response(JSON.stringify({ error: "API key not configured" }), {
+      status: 500, headers: { "Content-Type": "application/json" }
+    });
   }
 
   try {
@@ -13,7 +15,9 @@ export async function POST(req: Request) {
     const down = Number(formData.get("down") || 0);
 
     if (!image) {
-      return new Response("No image provided", { status: 400 });
+      return new Response(JSON.stringify({ error: "No image provided" }), {
+        status: 400, headers: { "Content-Type": "application/json" }
+      });
     }
 
     const apiForm = new FormData();
@@ -22,8 +26,9 @@ export async function POST(req: Request) {
     if (right > 0) apiForm.append("right", String(right));
     if (up > 0) apiForm.append("up", String(up));
     if (down > 0) apiForm.append("down", String(down));
+    apiForm.append("output_format", "png");
     apiForm.append("prompt",
-      "natural seamless extension of the scene, same lighting and style"
+      "natural seamless extension of the scene, same lighting, style, and perspective, photorealistic"
     );
 
     const res = await fetch(
@@ -39,14 +44,21 @@ export async function POST(req: Request) {
     );
 
     if (!res.ok) {
-      return new Response("AI expansion failed", { status: 500 });
+      const errText = await res.text();
+      console.error("[expand API] Stability AI error:", res.status, errText);
+      return new Response(JSON.stringify({ error: errText }), {
+        status: res.status, headers: { "Content-Type": "application/json" }
+      });
     }
 
     const blob = await res.blob();
     return new Response(blob, {
-      headers: { "Content-Type": "image/png" },
+      headers: { "Content-Type": blob.type || "image/png" },
     });
   } catch (e) {
-    return new Response(String(e), { status: 500 });
+    console.error("[expand API] Error:", e);
+    return new Response(JSON.stringify({ error: String(e) }), {
+      status: 500, headers: { "Content-Type": "application/json" }
+    });
   }
 }

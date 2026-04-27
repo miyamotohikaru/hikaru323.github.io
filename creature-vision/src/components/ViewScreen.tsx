@@ -159,11 +159,16 @@ export default function ViewScreen({
         setIsLoadingAI(true);
         setProcessing(true);
         try {
-          // Create blob from original image
+          // Step 1: Resize image for API (max 512px longest side)
+          const maxApiSize = 512;
+          const scale = Math.min(1, maxApiSize / Math.max(w, h));
+          const apiW = Math.round(w * scale);
+          const apiH = Math.round(h * scale);
+
           const tmpCanvas = document.createElement("canvas");
-          tmpCanvas.width = w;
-          tmpCanvas.height = h;
-          tmpCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+          tmpCanvas.width = apiW;
+          tmpCanvas.height = apiH;
+          tmpCanvas.getContext("2d")!.drawImage(img, 0, 0, apiW, apiH);
           const blob = await new Promise<Blob>((resolve, reject) => {
             tmpCanvas.toBlob(
               (b) => (b ? resolve(b) : reject(new Error("blob failed"))),
@@ -171,31 +176,46 @@ export default function ViewScreen({
             );
           });
 
-          const isPortrait = h > w;
-          const baseDim = isPortrait ? h : w;
-          const expandPx = Math.round(((exp - 1.0) / 2) * Math.min(baseDim, 512));
+          // Step 2: Calculate expansion in all 4 directions (PxBee style)
+          // Horizontal expansion based on FOV
+          const hExpandTotal = Math.round(apiW * (exp - 1.0));
+          let left = Math.round(hExpandTotal / 2);
+          let right = Math.round(hExpandTotal / 2);
 
-          let left = 0, right = 0, up = 0, down = 0;
-          if (isPortrait) {
-            up = expandPx;
-            down = expandPx;
-            const newH = h + up + down;
-            const ratio = newH / w;
-            if (ratio > 2.5) {
-              const max = Math.max(0, Math.floor((2.5 * w - h) / 2));
-              up = max;
-              down = max;
-            }
-          } else {
-            left = expandPx;
-            right = expandPx;
-            const newW = w + left + right;
-            const ratio = newW / h;
-            if (ratio > 2.5) {
-              const max = Math.max(0, Math.floor((2.5 * h - w) / 2));
-              left = max;
-              right = max;
-            }
+          // Vertical expansion for wide FOV (> 200deg = exp > 1.67)
+          let up = 0;
+          let down = 0;
+          if (exp > 1.67) {
+            const vFactor = Math.min((exp - 1.67) / 1.33, 1.0); // 0 at 200deg, 1 at 360deg
+            const vExpandTotal = Math.round(apiH * vFactor * 0.6);
+            up = Math.round(vExpandTotal / 2);
+            down = Math.round(vExpandTotal / 2);
+          }
+
+          // Step 3: Clamp to API limits
+          // Stability AI max: output must be <= 1536 in any dimension
+          // Also: each expand value should be reasonable (max ~400px per side)
+          const maxPerSide = 400;
+          left = Math.min(left, maxPerSide);
+          right = Math.min(right, maxPerSide);
+          up = Math.min(up, maxPerSide);
+          down = Math.min(down, maxPerSide);
+
+          // Ensure output won't exceed API limits
+          const maxOutputDim = 1536;
+          while (apiW + left + right > maxOutputDim) {
+            left = Math.max(0, left - 10);
+            right = Math.max(0, right - 10);
+          }
+          while (apiH + up + down > maxOutputDim) {
+            up = Math.max(0, up - 10);
+            down = Math.max(0, down - 10);
+          }
+
+          // Ensure at least some expansion
+          if (left + right + up + down === 0) {
+            left = 50;
+            right = 50;
           }
 
           const form = new FormData();
@@ -209,7 +229,10 @@ export default function ViewScreen({
             method: "POST",
             body: form,
           });
-          if (!res.ok) throw new Error("API failed");
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({ error: "Unknown error" }));
+            throw new Error(errData.error || "API failed");
+          }
 
           const resultBlob = await res.blob();
           const url = URL.createObjectURL(resultBlob);
@@ -217,6 +240,9 @@ export default function ViewScreen({
 
           const aiImg = new Image();
           aiImg.onload = () => {
+            // Draw AI-expanded image to fill the canvas
+            // The expanded image is wider/taller, so drawing it into the same canvas
+            // creates a "zoomed out" effect showing the wider FOV
             ctx.drawImage(aiImg, 0, 0, w, h);
             applyFilter(ctx, w, h, c.filterType, c.fp);
             setIsLoadingAI(false);
