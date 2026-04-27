@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
 import FallingWords from "@/components/FallingWords";
@@ -56,6 +56,20 @@ export default function Home() {
   const [nickname, setNickname] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const hScrollRef = useRef<HTMLDivElement>(null);
+
+  // Wheel → horizontal scroll conversion
+  useEffect(() => {
+    const el = hScrollRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      el.scrollLeft -= e.deltaY;
+      e.preventDefault();
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem("fictionary_nickname");
@@ -311,140 +325,127 @@ export default function Home() {
         </div>
       )}
 
-      {/* 結果表示 */}
-      {phase === "result" && result && (
-        <div className="dict-page dict-page--opening fade-in">
-          <div className="dict-page__paper">
-            <div className="dict-page__binding" />
-
-            {result.exists ? (
-              /* ===== 拒否 ===== */
-              <div className="dict-page__content dict-page__content--revealing">
-                <div className="dictionary-page dictionary-page--rejection">
-                  <p className="dict-rejection-text">
-                    「{result.word}」は実在する言葉です。
-                  </p>
-                  {result.reason && (
-                    <p className="dict-rejection-reason">{result.reason}</p>
-                  )}
-                </div>
-                <button onClick={handleReset} className="paper-retry-btn" style={{ marginTop: "1.5rem" }}>
-                  {t("result.tryAnother")}
-                </button>
+      {/* ===== 結果表示 ===== */}
+      {phase === "result" && result && result.exists && (
+        /* ── 既存語（実在語）── */
+        <div className="h-scroll" ref={hScrollRef}>
+          {/* 検索フォーム列（最右） */}
+          <div className="result-search-col fade-in-rtl">
+            <span className="result-hit-count">該当　0 件（既存語）</span>
+            <form onSubmit={handleSearch} className="tategaki-search-form">
+              <span className="tategaki-search-label">読み（ひらがな）</span>
+              <div className="tategaki-search-input-wrap">
+                <input type="text" value={word} onChange={(e) => setWord(e.target.value)} className="tategaki-search-input" maxLength={20} />
+                <button type="submit" className="tategaki-search-button" disabled={!word.trim()}>引く</button>
               </div>
-            ) : result.kojienEntry ? (
-              /* ===== 辞書ページ風の結果 ===== */
-              <div className="dict-page__content dict-page__content--revealing">
-                <div className="paper-nonexistent-badge">
-                  {t("result.nonexistent")}
-                </div>
+            </form>
+            <span className="tategaki-search-note" style={{ position: "static" }}>{t("home.note")}</span>
+          </div>
 
-                {/* 辞書ページ（縦書き） */}
-                <div className="dictionary-page">
-                  <div className="dict-entry ink-delay-1">
-                    <span className="dict-headword">{result.kojienEntry.word}</span>
-                  </div>
-                  <div className="dict-entry ink-delay-2">
-                    <span className="dict-reading">【{result.kojienEntry.reading}】</span>
-                    <span className="dict-pos">{posMap[result.kojienEntry.partOfSpeech] || `〘${result.kojienEntry.partOfSpeech}〙`}</span>
-                  </div>
-                  <div className="dict-entry ink-delay-3">
-                    <p className="dict-definition">{editing ? editDef : result.kojienEntry.definition}</p>
-                  </div>
-                  {(result.kojienEntry.example || editing) && (
-                    <div className="dict-entry ink-delay-4">
-                      <p className="dict-example">▽「{editing ? editExample : result.kojienEntry.example}」</p>
-                    </div>
-                  )}
-                </div>
+          {/* 見出し列 + スタンプ */}
+          <div className="reject-headword-col fade-in-rtl">
+            <span className="result-reading">{result.word}</span>
+            <span className="stamp-unavailable">掲載不可</span>
+          </div>
 
-                <span className="dict-page-number">{pageNumber}</span>
+          {/* メッセージ列 */}
+          <div className="reject-message-col fade-in-rtl">
+            「{result.word}」は実在する言葉のため、<br />
+            本辞典には掲載できません。<br />
+            別の存在しない<br />
+            言葉を、お試しください。
+          </div>
 
-                {/* 編集・掲載フォーム（横書き） */}
-                <div className="dict-form-area">
-                  {editing && (
-                    <div className="dict-edit-form">
-                      <div className="paper-register-field">
-                        <label className="paper-register-label">定義文</label>
-                        <textarea
-                          value={editDef}
-                          onChange={(e) => setEditDef(e.target.value)}
-                          className="paper-edit-textarea"
-                          rows={4}
-                        />
-                      </div>
-                      <div className="paper-register-field">
-                        <label className="paper-register-label">用例</label>
-                        <textarea
-                          value={editExample}
-                          onChange={(e) => setEditExample(e.target.value)}
-                          className="paper-edit-textarea"
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  )}
+          {/* 既存辞書での意味 */}
+          {result.reason && (
+            <div className="reject-existing-col fade-in-rtl">
+              <span className="reject-existing-label">既存辞書より</span>
+              <p style={{ marginLeft: 12 }}>{result.reason}</p>
+            </div>
+          )}
 
-                  <div className="paper-edit-toggle">
-                    <button
-                      onClick={() => setEditing(!editing)}
-                      className="paper-edit-btn"
-                    >
-                      {editing ? t("result.editDone") : t("result.editContent")}
-                    </button>
-                  </div>
+          {/* 再検索 */}
+          <div className="reject-retry-col fade-in-rtl">
+            <button onClick={handleReset} className="reject-retry-btn">
+              別の言葉を引く
+            </button>
+          </div>
+        </div>
+      )}
 
-                  <div className="paper-register">
-                    <p className="paper-register-heading">{t("result.registerHeading")}</p>
-
-                    <div className="paper-register-field">
-                      <label className="paper-register-label">{t("result.readingLabel")}</label>
-                      <input
-                        type="text"
-                        value={reading}
-                        onChange={(e) => setReading(toHiragana(e.target.value))}
-                        placeholder={t("result.readingPlaceholder")}
-                        className="paper-register-input"
-                        maxLength={30}
-                      />
-                    </div>
-
-                    <div className="paper-register-field">
-                      <label className="paper-register-label">{t("result.nicknameLabel")}</label>
-                      <input
-                        type="text"
-                        value={nickname}
-                        onChange={(e) => setNickname(e.target.value)}
-                        placeholder={t("result.nicknamePlaceholder")}
-                        className="paper-register-input"
-                        maxLength={15}
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="paper-register-btn"
-                    >
-                      {isSaving ? t("result.submitting") : t("result.submit")}
-                    </button>
-
-                    {saveError && (
-                      <p className="paper-register-error">{saveError}</p>
-                    )}
-                  </div>
-
-                  <div className="paper-browse-links">
-                    <Link href="/browse" className="paper-browse-btn">
-                      {t("result.browseOthers")}
-                    </Link>
-                    <Link href="/ranking" className="paper-browse-btn paper-browse-btn-sub">
-                      {t("result.viewRanking")}
-                    </Link>
-                  </div>
-                </div>
+      {phase === "result" && result && !result.exists && result.kojienEntry && (
+        /* ── 検索ヒット（新語）── */
+        <div className="h-scroll" ref={hScrollRef}>
+          {/* 検索フォーム列（最右） */}
+          <div className="result-search-col fade-in-rtl">
+            <span className="result-hit-count">該当　・　1 件</span>
+            <form onSubmit={handleSearch} className="tategaki-search-form">
+              <span className="tategaki-search-label">読み（ひらがな）</span>
+              <div className="tategaki-search-input-wrap">
+                <input type="text" value={word} onChange={(e) => setWord(e.target.value)} className="tategaki-search-input" maxLength={20} />
+                <button type="submit" className="tategaki-search-button" disabled={!word.trim()}>引く</button>
               </div>
-            ) : null}
+            </form>
+            <span className="tategaki-search-note" style={{ position: "static" }}>{t("home.note")}</span>
+          </div>
+
+          {/* 本文列 */}
+          <div className="result-body-col fade-in-rtl">
+            <span className="result-reading">{result.kojienEntry.reading}</span>
+            <span className="result-headword">
+              <span className="result-headword-bracket">【</span>
+              {result.kojienEntry.word}
+              <span className="result-headword-bracket">】</span>
+            </span>
+            <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
+            <p className="result-definition">
+              <span className="result-def-number">①</span>{" "}
+              {editing ? editDef : result.kojienEntry.definition}
+              {(result.kojienEntry.example || editing) && (
+                <>
+                  {" "}<span className="result-example-badge">例</span>{" "}
+                  「{editing ? editExample : result.kojienEntry.example}」
+                </>
+              )}
+            </p>
+          </div>
+
+          {/* 掲載フォーム列 */}
+          <div className="result-register-col fade-in-rtl">
+            <span className="result-unpublished-badge">未掲載</span>
+            <span className="result-register-heading">この言葉を辞典に掲載しますか？</span>
+
+            <div className="result-register-field">
+              <span className="result-register-label">読み</span>
+              <input
+                type="text" value={reading}
+                onChange={(e) => setReading(toHiragana(e.target.value))}
+                placeholder="ひらがなで入力"
+                className="result-register-input" maxLength={30}
+              />
+            </div>
+            <div className="result-register-field">
+              <span className="result-register-label">掲載者名</span>
+              <input
+                type="text" value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="ニックネーム"
+                className="result-register-input" maxLength={15}
+              />
+            </div>
+
+            <button onClick={handleSave} disabled={isSaving} className="result-cta-button">
+              {isSaving ? "掲載中…" : "この言葉を掲載する"}
+            </button>
+
+            {saveError && <span className="result-error">{saveError}</span>}
+          </div>
+
+          {/* 編集エリア */}
+          <div className="reject-retry-col fade-in-rtl" style={{ borderLeft: `1px solid var(--rule)` }}>
+            <button onClick={() => setEditing(!editing)} className="result-edit-btn">
+              {editing ? "編集を終了" : "内容を編集する"}
+            </button>
           </div>
         </div>
       )}
