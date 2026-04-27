@@ -2252,15 +2252,22 @@ a:hover { color: var(--text-primary); }
 /* ===== Tategaki (Vertical Writing) Search ===== */
 .tategaki-search-section {
   display: flex;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 52px);
   position: relative;
   z-index: 1;
-  padding: 3rem 0;
+  padding: 3rem 2rem;
+}
+
+.tategaki-search-inner {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
   gap: 2.5rem;
+  align-items: center;
+  height: 60vh;
+  max-height: 600px;
 }
 
 .tategaki-search-hero-title {
@@ -2270,6 +2277,7 @@ a:hover { color: var(--text-primary); }
   color: var(--text-primary);
   letter-spacing: 0.15em;
   line-height: 1.4;
+  white-space: nowrap;
 }
 
 .tategaki-search-hero-sub {
@@ -2282,13 +2290,6 @@ a:hover { color: var(--text-primary); }
 
 .tategaki-search-form {
   display: flex;
-  writing-mode: vertical-rl;
-  align-items: center;
-  gap: 0;
-}
-
-.tategaki-search-strip {
-  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0;
@@ -2299,7 +2300,6 @@ a:hover { color: var(--text-primary); }
   font-size: 0.6875rem;
   color: var(--text-sub);
   letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
 }
 
 .tategaki-search-input {
@@ -2524,7 +2524,8 @@ a:hover { color: var(--text-primary); }
 @media (max-width: 768px) {
   .page-wrapper { padding: 0 1.25rem; }
 
-  .tategaki-search-section { gap: 1.5rem; padding: 2rem 0; min-height: auto; }
+  .tategaki-search-section { padding: 2rem 1rem; }
+  .tategaki-search-inner { gap: 1.5rem; height: 50vh; }
   .tategaki-search-hero-title { font-size: 2rem; }
   .tategaki-search-hero-sub { font-size: 0.8125rem; }
   .tategaki-search-input { height: 14rem; }

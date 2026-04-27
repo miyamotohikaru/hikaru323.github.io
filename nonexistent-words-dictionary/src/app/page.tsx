@@ -187,17 +187,17 @@ export default function Home() {
     <main className="main-content" style={{ position: "relative" }}>
       <FallingWords />
 
-      {/* メイン: タイトル + 説明 + 検索（縦書き横並び） */}
+      {/* メイン: タイトル + 説明 + 検索（縦書き・右から左に配置） */}
       {(phase === "idle" || phase === "loading") && (
         <div className="tategaki-search-section">
-          <h1 className="tategaki-search-hero-title">{t("home.title")}</h1>
-          <p className="tategaki-search-hero-sub">
-            {t("home.subtitle").split("\n").map((line, i) => (
-              <span key={i}>{line}</span>
-            ))}
-          </p>
-          <form onSubmit={handleSearch} className="tategaki-search-form">
-            <div className="tategaki-search-strip">
+          <div className="tategaki-search-inner">
+            <h1 className="tategaki-search-hero-title">{t("home.title")}</h1>
+            <p className="tategaki-search-hero-sub">
+              {t("home.subtitle").split("\n").map((line, i) => (
+                <span key={i}>{line}</span>
+              ))}
+            </p>
+            <form onSubmit={handleSearch} className="tategaki-search-form">
               <span className="tategaki-search-label">読み（ひらがな）</span>
               <input
                 type="text"
@@ -215,9 +215,9 @@ export default function Home() {
               >
                 引く
               </button>
-            </div>
-          </form>
-          <p className="tategaki-search-note">{t("home.note")}</p>
+            </form>
+            <p className="tategaki-search-note">{t("home.note")}</p>
+          </div>
         </div>
       )}
 
