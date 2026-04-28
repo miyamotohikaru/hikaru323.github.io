@@ -41,10 +41,7 @@ export default function ViewScreen({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const humanCanvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const expandedCache = useRef<Map<string, string>>(new Map());
-
   const [processing, setProcessing] = useState(false);
-  const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const [shareOk, setShareOk] = useState(false);
   const [mediaSrc, setMediaSrc] = useState("");
@@ -58,8 +55,6 @@ export default function ViewScreen({
   useEffect(() => {
     const url = URL.createObjectURL(mediaFile);
     setMediaSrc(url);
-    expandedCache.current.forEach((u) => URL.revokeObjectURL(u));
-    expandedCache.current.clear();
     return () => URL.revokeObjectURL(url);
   }, [mediaFile]);
 
@@ -126,9 +121,9 @@ export default function ViewScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
-  // Main render function: AI expansion for wide FOV, Canvas fallback
+  // Main render function
   const renderCreature = useCallback(
-    async (
+    (
       creatureId: string,
       img: HTMLImageElement,
       w: number,
@@ -141,76 +136,9 @@ export default function ViewScreen({
       const fov = FOV_DATA[creatureId];
       const exp = fov?.expansion ?? 1.0;
 
-      if (exp > 1.0) {
-        // Check cache
-        const cached = expandedCache.current.get(creatureId);
-        if (cached) {
-          const cachedImg = new Image();
-          cachedImg.onload = () => {
-            ctx.drawImage(cachedImg, 0, 0, w, h);
-            applyFilter(ctx, w, h, c.filterType, c.fp);
-          };
-          cachedImg.src = cached;
-          return;
-        }
-
-        // Try AI expansion with gpt-image-2
-        setIsLoadingAI(true);
-        setProcessing(true);
-
-        // Show canvas fallback immediately while AI loads
-        applyCreatureVision(ctx, w, h, img, c, exp);
-
-        try {
-          const maxSize = 512;
-          const scale = Math.min(1, maxSize / Math.max(w, h));
-          const apiW = Math.round(w * scale);
-          const apiH = Math.round(h * scale);
-          const tmpCanvas = document.createElement("canvas");
-          tmpCanvas.width = apiW;
-          tmpCanvas.height = apiH;
-          tmpCanvas.getContext("2d")!.drawImage(img, 0, 0, apiW, apiH);
-          const blob = await new Promise<Blob>((resolve, reject) => {
-            tmpCanvas.toBlob(
-              (b) => (b ? resolve(b) : reject(new Error("blob failed"))),
-              "image/png"
-            );
-          });
-
-          const form = new FormData();
-          form.append("image", blob, "image.png");
-          form.append("expansion", String(exp));
-
-          const res = await fetch("/api/expand", { method: "POST", body: form });
-          if (!res.ok) throw new Error("API failed");
-
-          const resultBlob = await res.blob();
-          const url = URL.createObjectURL(resultBlob);
-          expandedCache.current.set(creatureId, url);
-
-          // Only update if still viewing this creature
-          const aiImg = new Image();
-          aiImg.onload = () => {
-            if (canvasRef.current) {
-              const currentCtx = canvasRef.current.getContext("2d")!;
-              currentCtx.drawImage(aiImg, 0, 0, w, h);
-              applyFilter(currentCtx, w, h, c.filterType, c.fp);
-            }
-            setIsLoadingAI(false);
-            setProcessing(false);
-          };
-          aiImg.src = url;
-        } catch (e) {
-          console.error("AI expand failed, using canvas fallback:", e);
-          // Canvas fallback already shown
-          setIsLoadingAI(false);
-          setProcessing(false);
-        }
-      } else {
-        setProcessing(true);
-        applyCreatureVision(ctx, w, h, img, c, exp);
-        setTimeout(() => setProcessing(false), 300);
-      }
+      setProcessing(true);
+      applyCreatureVision(ctx, w, h, img, c, exp);
+      setTimeout(() => setProcessing(false), 300);
     },
     [creatures, applyCreatureVision]
   );
@@ -353,42 +281,8 @@ export default function ViewScreen({
           {isHolding ? "👁 人間のめ" : `${creature.name}のめ`}
         </div>
 
-        {/* AI Loading overlay */}
-        {isLoadingAI && (
-          <div style={{
-            position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            background: "rgba(255,249,242,0.92)", zIndex: 20, borderRadius: 18,
-          }}>
-            <div style={{ width: 80, height: 40, position: "relative", marginBottom: 16 }}>
-              <div style={{
-                width: 80, height: 40, borderRadius: "50%", background: "#fff",
-                border: "2.5px solid #2D2D2D", position: "relative", overflow: "hidden",
-              }}>
-                <div style={{
-                  width: 24, height: 24, borderRadius: "50%",
-                  background: catColor?.accent ?? "#F5A623",
-                  position: "absolute", top: "50%", left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#1A1A1A" }} />
-                </div>
-                <div style={{
-                  position: "absolute", top: 0, left: -2, right: -2, height: "100%",
-                  background: "#FFF9F2", borderBottom: "2px solid #2D2D2D",
-                  transformOrigin: "top center", animation: "eyeOpen 2s ease-in-out infinite",
-                }} />
-              </div>
-            </div>
-            <p style={{ fontSize: 16, fontWeight: 900, color: "#2D2D2D" }}>
-              {creature.name}に転生中...
-            </p>
-          </div>
-        )}
-
         {/* Processing overlay */}
-        {processing && !isLoadingAI && (
+        {processing && (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center"
             style={{ background: "rgba(255,255,255,0.7)" }}
