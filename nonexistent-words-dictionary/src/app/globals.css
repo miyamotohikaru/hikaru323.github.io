@@ -2563,7 +2563,7 @@ a:hover { color: var(--text-primary); }
   padding: 40px 24px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
   border-left: 1px solid var(--rule);
   height: 100%;
@@ -2656,7 +2656,7 @@ a:hover { color: var(--text-primary); }
   padding: 40px 32px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 24px;
   min-width: 280px;
   border-left: 1px solid var(--rule);
@@ -2842,7 +2842,7 @@ a:hover { color: var(--text-primary); }
   text-orientation: mixed;
   padding: 48px 24px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .reject-retry-btn {
