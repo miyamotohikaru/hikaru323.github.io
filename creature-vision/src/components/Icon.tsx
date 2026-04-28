@@ -14,6 +14,19 @@ export default function Icon({ id, name, cat, size = 60 }: IconProps) {
   const svg = ICONS[id];
   const color = CATEGORY_COLORS[cat]?.accent ?? "#999";
 
+  if (id === "kosukuma") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src="/kosukuma.png"
+        alt="こすくまくん"
+        width={size}
+        height={size}
+        style={{ display: "block", objectFit: "contain" }}
+      />
+    );
+  }
+
   if (svg) {
     return (
       <svg
