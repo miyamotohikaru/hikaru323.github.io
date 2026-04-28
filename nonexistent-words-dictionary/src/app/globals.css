@@ -2275,7 +2275,7 @@ a:hover { color: var(--text-primary); }
 .tategaki-search-inner {
   display: flex;
   flex-direction: row-reverse;
-  align-items: center;
+  align-items: flex-start;
   gap: 44px;
 }
 
@@ -2380,7 +2380,7 @@ a:hover { color: var(--text-primary); }
   color: var(--textMute);
   letter-spacing: 0.2em;
   position: absolute;
-  right: 56px;
+  left: 56px;
   bottom: 20px;
 }
 
@@ -2891,18 +2891,19 @@ a:hover { color: var(--text-primary); }
 @media (max-width: 768px) {
   .page-wrapper { padding: 0 1.25rem; }
 
-  /* ── Hero section ── */
+  /* ── Hero section (mobile: 縦レイアウト) ── */
   .tategaki-search-section { padding: 24px 16px; min-height: calc(100vh - 56px - 80px); }
   .tategaki-search-inner {
-    gap: 20px;
     flex-direction: column;
     align-items: center;
+    gap: 24px;
   }
   .tategaki-search-hero-title {
     writing-mode: horizontal-tb;
-    font-size: 24px;
+    font-size: 22px;
     letter-spacing: 0.1em;
     text-align: center;
+    white-space: normal;
   }
   .tategaki-search-hero-sub {
     writing-mode: horizontal-tb;
@@ -2911,23 +2912,14 @@ a:hover { color: var(--text-primary); }
     line-height: 1.9;
     letter-spacing: 0.05em;
   }
-  .tategaki-search-rule { width: 80px; height: 1px; }
-  .tategaki-search-form {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-  .tategaki-search-label {
-    writing-mode: horizontal-tb;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-  }
+  .tategaki-search-rule { width: 60px; height: 1px; }
+  .tategaki-search-form { flex-direction: column; align-items: center; gap: 8px; }
+  .tategaki-search-label { writing-mode: horizontal-tb; font-size: 11px; letter-spacing: 0.1em; }
   .tategaki-search-input-wrap {
     width: 100%;
-    max-width: 320px;
+    max-width: 300px;
     height: auto;
     flex-direction: row;
-    border: 1px solid var(--textSoft);
   }
   .tategaki-search-input {
     writing-mode: horizontal-tb;
@@ -2950,8 +2942,65 @@ a:hover { color: var(--text-primary); }
     position: static;
     text-align: center;
     font-size: 10px;
-    margin-top: 16px;
+    margin-top: 12px;
   }
+
+  /* ── Result page (mobile: 縦スクロール) ── */
+  .h-scroll {
+    flex-direction: column;
+    direction: ltr;
+    height: auto;
+    overflow-x: visible;
+    overflow-y: auto;
+  }
+  .h-scroll > * { direction: ltr; }
+  .result-search-col {
+    writing-mode: horizontal-tb;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 16px;
+    border-left: none;
+    border-bottom: 1px solid var(--rule);
+    gap: 12px;
+  }
+  .result-search-col .tategaki-search-input-wrap {
+    width: auto; height: auto; flex-direction: row; flex: 1; min-width: 200px;
+  }
+  .result-search-col .tategaki-search-input { writing-mode: horizontal-tb; font-size: 16px; padding: 10px 12px; }
+  .result-search-col .tategaki-search-button { writing-mode: horizontal-tb; width: auto; padding: 10px 16px; border-top: none; border-left: 1px solid var(--textSoft); }
+  .result-search-col .tategaki-search-label { writing-mode: horizontal-tb; }
+  .result-hit-count { writing-mode: horizontal-tb; }
+  .result-body-col {
+    writing-mode: horizontal-tb;
+    column-width: auto;
+    padding: 24px 16px;
+    font-size: 16px;
+  }
+  .result-reading { font-size: 36px; margin-left: 0; margin-bottom: 8px; display: block; }
+  .result-headword { font-size: 28px; margin-left: 0; margin-bottom: 8px; display: block; }
+  .result-pos-label { margin-left: 0; margin-bottom: 12px; display: inline-block; }
+  .result-definition { margin-left: 0; font-size: 15px; }
+  .result-register-col {
+    writing-mode: horizontal-tb;
+    padding: 24px 16px;
+    min-width: auto;
+    border-left: none;
+    border-top: 1px solid var(--rule);
+    flex-direction: column;
+    gap: 16px;
+  }
+  .result-register-input { writing-mode: horizontal-tb; border-right: none; border-bottom: 1px solid var(--rule); padding: 8px 0; }
+  .result-register-textarea { writing-mode: horizontal-tb; border-right: none; border-bottom: 1px solid var(--rule); }
+  .result-cta-button { writing-mode: horizontal-tb; width: 100%; height: auto; padding: 16px; letter-spacing: 0.2em; }
+  .reject-headword-col { writing-mode: horizontal-tb; padding: 24px 16px; }
+  .reject-headword-col .result-reading { writing-mode: horizontal-tb; }
+  .stamp-unavailable { writing-mode: horizontal-tb; font-size: 16px; padding: 8px 16px; }
+  .reject-message-col { writing-mode: horizontal-tb; padding: 24px 16px; font-size: 18px; }
+  .reject-existing-col { writing-mode: horizontal-tb; padding: 24px 16px; border-left: none; border-top: 1px solid var(--rule); max-width: none; font-size: 14px; }
+  .reject-retry-col { writing-mode: horizontal-tb; padding: 16px; }
+  .reject-retry-btn { writing-mode: horizontal-tb; padding: 12px 24px; width: 100%; text-align: center; }
 
   /* ── Header ── */
   .header-inner { padding: 10px 16px; }
