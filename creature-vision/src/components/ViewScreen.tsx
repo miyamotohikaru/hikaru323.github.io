@@ -58,7 +58,7 @@ export default function ViewScreen({
     return () => URL.revokeObjectURL(url);
   }, [mediaFile]);
 
-  // Helper: apply creature vision to canvas (FOV expansion + filter)
+  // Helper: apply creature vision to canvas
   const applyCreatureVision = useCallback(
     (
       ctx: CanvasRenderingContext2D,
@@ -68,17 +68,31 @@ export default function ViewScreen({
       creatureData: Creature,
       exp: number
     ) => {
-      if (exp > 1.0) {
-        // Wide FOV: canvas mirror+blur expansion
-        expandFOV(ctx, w, h, sourceImg, exp);
-      } else if (exp > 0 && exp < 1.0) {
-        // Narrow FOV: zoom in
-        expandFOV(ctx, w, h, sourceImg, exp);
-      } else {
-        // Normal (1.0) or blind (0): draw as-is
-        ctx.drawImage(sourceImg, 0, 0, w, h);
-      }
+      // Draw original image first
+      ctx.drawImage(sourceImg, 0, 0, w, h);
+      // Apply creature filter
       applyFilter(ctx, w, h, creatureData.filterType, creatureData.fp);
+      // Apply FOV zoom (narrow only, wide FOV is expressed by the filter itself)
+      if (exp > 0 && exp < 1.0) {
+        // Save filtered result
+        const filtered = document.createElement("canvas");
+        filtered.width = w;
+        filtered.height = h;
+        filtered.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
+        // Zoom into center of filtered image
+        const cropW = w * exp;
+        const cropH = h * exp;
+        const sx = (w - cropW) / 2;
+        const sy = (h - cropH) / 2;
+        ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
+        // Darken periphery
+        const darkness = Math.max(0, 1 - exp) * 0.8;
+        const vg = ctx.createRadialGradient(w / 2, h / 2, w * exp * 0.3, w / 2, h / 2, w * 0.6);
+        vg.addColorStop(0, "rgba(0,0,0,0)");
+        vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, w, h);
+      }
     },
     []
   );
