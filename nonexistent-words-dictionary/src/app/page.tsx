@@ -219,7 +219,7 @@ export default function Home() {
                   type="text"
                   value={word}
                   onChange={(e) => setWord(e.target.value)}
-                  placeholder={"こ　と　ば　を　引　く"}
+                  placeholder={"ことばを引く"}
                   className="tategaki-search-input"
                   maxLength={20}
                   disabled={phase === "loading"}
