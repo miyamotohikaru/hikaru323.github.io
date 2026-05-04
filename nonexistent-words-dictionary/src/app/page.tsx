@@ -204,7 +204,7 @@ export default function Home() {
 
   return (
     <main className="main-content" style={{ position: "relative" }}>
-      <FallingWords />
+      {phase === "idle" && <FallingWords />}
 
       {/* ヒーロー: タイトル + 説明 + 罫線 + 検索フォーム */}
       {(phase === "idle" || phase === "loading") && (
