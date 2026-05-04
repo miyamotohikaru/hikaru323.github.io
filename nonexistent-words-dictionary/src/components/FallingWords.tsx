@@ -7,7 +7,7 @@ const MAX_PARTICLES = 15;
 const SPAWN_INTERVAL_MIN = 1500; // ms
 const SPAWN_INTERVAL_MAX = 2500; // ms
 
-// ── Horizontal speed (right to left) ──
+// ── Vertical speed (top to bottom) ──
 const DURATION_MIN = 20; // seconds
 const DURATION_MAX = 28; // seconds
 
@@ -121,19 +121,18 @@ export default function FallingWords() {
           const cw = window.innerWidth;
           const ch = window.innerHeight;
           const duration = rand(DURATION_MIN, DURATION_MAX);
-          // speed = total horizontal distance / (duration * 60fps)
-          // distance = screen width + colWidth + buffer
-          const speed = (cw + colWidth + 100) / (duration * 60);
+          // speed = total vertical distance / (duration * 60fps)
+          const speed = (ch + colHeight + 100) / (duration * 60);
 
-          // Vertical position: random, but keep the column on screen
-          const margin = colHeight / 2 + 20;
-          const yPos = margin + Math.random() * Math.max(ch - margin * 2, 0);
+          // Horizontal position: random, keep column on screen
+          const margin = colWidth / 2 + 20;
+          const xPos = margin + Math.random() * Math.max(cw - margin * 2, 0);
 
           particlesRef.current.push({
             type: "word",
             word,
-            x: cw + colWidth, // start just off the right edge
-            y: yPos,
+            x: xPos,
+            y: -colHeight, // start just above the top edge
             speed,
             colWidth,
             colHeight,
@@ -165,13 +164,13 @@ export default function FallingWords() {
           const cw = window.innerWidth;
           const ch = window.innerHeight;
           const duration = rand(DURATION_MIN, DURATION_MAX);
-          const speed = (cw + iconW + 100) / (duration * 60);
+          const speed = (ch + iconH + 100) / (duration * 60);
 
           particlesRef.current.push({
             type: "icon",
             word: "",
-            x: cw + iconW, // start off the right edge
-            y: rand(iconH, ch - iconH),
+            x: rand(iconW, cw - iconW),
+            y: -iconH, // start above the top edge
             speed,
             colWidth: iconW,
             colHeight: iconH,
@@ -199,10 +198,10 @@ export default function FallingWords() {
       // Update & draw
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.x -= p.speed; // move left
+        p.y += p.speed; // move down
 
-        // Remove if fully off the left edge
-        if (p.x < -p.colWidth - 50) {
+        // Remove if fully off the bottom edge
+        if (p.y > ch + p.colHeight + 50) {
           particles.splice(i, 1);
           continue;
         }
@@ -220,7 +219,7 @@ export default function FallingWords() {
 
           // Draw each character vertically, stacked top to bottom
           const charStep = p.fontSize * CHAR_SPACING;
-          const startY = p.y - (p.colHeight / 2) + charStep / 2;
+          const startY = p.y;
           for (let ci = 0; ci < p.word.length; ci++) {
             ctx.fillText(p.word[ci], p.x, startY + ci * charStep);
           }
