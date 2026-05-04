@@ -234,13 +234,13 @@ export default function BrowsePage() {
             className={`index-mode-btn ${indexMode === "ja" ? "active" : ""}`}
             onClick={() => { setIndexMode("ja"); setActiveLetter(null); }}
           >
-            {t("lang.indexTitle.ja")}
+            日本語
           </button>
           <button
             className={`index-mode-btn ${indexMode === "en" ? "active" : ""}`}
             onClick={() => { setIndexMode("en"); setActiveRow(null); }}
           >
-            {t("lang.indexTitle.en")}
+            English
           </button>
         </div>
       </div>
