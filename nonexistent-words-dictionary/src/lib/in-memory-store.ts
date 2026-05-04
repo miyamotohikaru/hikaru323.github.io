@@ -16,6 +16,7 @@ export interface WordDoc {
   viewCount: number;
   isVisible: boolean;
   source: string;
+  language: string;
   createdAt: string;
 }
 
@@ -38,15 +39,16 @@ export function getWord(id: string): WordDoc | null {
   return words.get(id) || null;
 }
 
-export function findByWord(word: string): WordDoc | null {
+export function findByWord(word: string, language?: string): WordDoc | null {
   for (const doc of words.values()) {
-    if (doc.word === word) return doc;
+    if (doc.word === word && (!language || doc.language === language)) return doc;
   }
   return null;
 }
 
 export function listWords(options: {
   kana?: string | null;
+  letter?: string | null;
   sort?: string;
   limit?: number;
   cursor?: string | null;
@@ -56,6 +58,11 @@ export function listWords(options: {
   if (options.kana) {
     const kana = options.kana;
     result = result.filter((w) => w.reading >= kana && w.reading < String.fromCharCode(kana.charCodeAt(0) + 1));
+  }
+
+  if (options.letter) {
+    const letter = options.letter.toUpperCase();
+    result = result.filter((w) => (w.language === "en") && w.word.charAt(0).toUpperCase() === letter);
   }
 
   if (options.sort === "popular") {

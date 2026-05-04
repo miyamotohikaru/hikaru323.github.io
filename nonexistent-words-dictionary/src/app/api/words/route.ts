@@ -5,6 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { checkAllFieldsForNG } from "@/lib/ng-words";
 
 const HIRAGANA_REGEX = /^[ぁ-ゖー]+$/;
+const EN_WORD_REGEX = /^[a-zA-Z][a-zA-Z\s\-']*$/;
 
 export async function POST(request: NextRequest) {
   const ip =
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const word = body.word?.trim();
-    const reading = body.reading?.trim();
+    const reading = body.reading?.trim() || "";
     const partOfSpeech = body.partOfSpeech?.trim();
     const definition = body.definition?.trim();
     const etymology = body.etymology?.trim() || "";
@@ -34,45 +35,62 @@ export async function POST(request: NextRequest) {
     const nickname = body.nickname?.trim();
     const kojienFormatted = body.kojienFormatted?.trim() || "";
     const authorToken = body.authorToken?.trim() || "";
+    const language = body.language === "en" ? "en" : "ja";
 
-    // Validation
-    if (!word || !reading || !partOfSpeech || !definition || !nickname) {
+    // Validation — common
+    if (!word || !partOfSpeech || !definition || !nickname) {
       return NextResponse.json(
-        { error: "必須項目をすべて入力してください。" },
+        { error: language === "en" ? "Please fill in all required fields." : "必須項目をすべて入力してください。" },
         { status: 400 }
       );
     }
 
     if (word.length > 20) {
-      return NextResponse.json({ error: "言葉は20文字以内で入力してください。" }, { status: 400 });
-    }
-    if (reading.length > 30) {
-      return NextResponse.json({ error: "読みは30文字以内で入力してください。" }, { status: 400 });
-    }
-    if (!HIRAGANA_REGEX.test(reading)) {
-      return NextResponse.json({ error: "読みはひらがなで入力してください。" }, { status: 400 });
+      return NextResponse.json({ error: language === "en" ? "Word must be 20 characters or less." : "言葉は20文字以内で入力してください。" }, { status: 400 });
     }
     if (definition.length > 200) {
-      return NextResponse.json({ error: "定義文は200文字以内で入力してください。" }, { status: 400 });
+      return NextResponse.json({ error: language === "en" ? "Definition must be 200 characters or less." : "定義文は200文字以内で入力してください。" }, { status: 400 });
     }
     if (nickname.length > 15) {
-      return NextResponse.json({ error: "ニックネームは15文字以内で入力してください。" }, { status: 400 });
+      return NextResponse.json({ error: language === "en" ? "Nickname must be 15 characters or less." : "ニックネームは15文字以内で入力してください。" }, { status: 400 });
     }
     if (etymology.length > 200) {
-      return NextResponse.json({ error: "語源は200文字以内で入力してください。" }, { status: 400 });
+      return NextResponse.json({ error: language === "en" ? "Etymology must be 200 characters or less." : "語源は200文字以内で入力してください。" }, { status: 400 });
     }
     for (const ex of examples) {
       if (ex.length > 100) {
-        return NextResponse.json({ error: "例文は100文字以内で入力してください。" }, { status: 400 });
+        return NextResponse.json({ error: language === "en" ? "Each example must be 100 characters or less." : "例文は100文字以内で入力してください。" }, { status: 400 });
       }
     }
     if (synonyms.length > 30) {
-      return NextResponse.json({ error: "類義語は30文字以内で入力してください。" }, { status: 400 });
+      return NextResponse.json({ error: language === "en" ? "Synonyms must be 30 characters or less." : "類義語は30文字以内で入力してください。" }, { status: 400 });
+    }
+
+    // Validation — language-specific
+    if (language === "ja") {
+      if (!reading) {
+        return NextResponse.json({ error: "読みを入力してください。" }, { status: 400 });
+      }
+      if (reading.length > 30) {
+        return NextResponse.json({ error: "読みは30文字以内で入力してください。" }, { status: 400 });
+      }
+      if (!HIRAGANA_REGEX.test(reading)) {
+        return NextResponse.json({ error: "読みはひらがなで入力してください。" }, { status: 400 });
+      }
+    } else {
+      // English: word must be alphabetic
+      if (!EN_WORD_REGEX.test(word)) {
+        return NextResponse.json({ error: "Word must contain only letters, hyphens, and apostrophes." }, { status: 400 });
+      }
+      // reading (pronunciation) is optional for English
+      if (reading && reading.length > 50) {
+        return NextResponse.json({ error: "Pronunciation must be 50 characters or less." }, { status: 400 });
+      }
     }
 
     // NG word check
     if (checkAllFieldsForNG({ word, reading, definition, etymology, synonyms, nickname, examples })) {
-      return NextResponse.json({ error: "不適切な表現が含まれています。" }, { status: 400 });
+      return NextResponse.json({ error: language === "en" ? "Inappropriate content detected." : "不適切な表現が含まれています。" }, { status: 400 });
     }
 
     // Firebase が使える場合はFirestoreに保存
@@ -81,16 +99,18 @@ export async function POST(request: NextRequest) {
         const db = await getDb();
         const FieldValue = await getFieldValue();
 
+        // Duplicate check: same word + same language
         const existing = await db
           .collection("words")
           .where("word", "==", word)
+          .where("language", "==", language)
           .limit(1)
           .get();
 
         if (!existing.empty) {
           const existingDoc = existing.docs[0];
           return NextResponse.json(
-            { error: "この言葉はすでに掲載されています。", existingId: existingDoc.id },
+            { error: language === "en" ? "This word is already registered." : "この言葉はすでに掲載されています。", existingId: existingDoc.id },
             { status: 409 }
           );
         }
@@ -99,21 +119,21 @@ export async function POST(request: NextRequest) {
           word, reading, partOfSpeech, definition, etymology,
           examples, synonyms, nickname, kojienFormatted, authorToken,
           likes: 0, viewCount: 0, isVisible: true, source: "user",
+          language,
           createdAt: FieldValue.serverTimestamp(),
         });
 
         return NextResponse.json({ success: true, id: docRef.id });
       } catch (fbError) {
         console.error("Firebase error, falling back to in-memory:", fbError);
-        // Firebase失敗 → インメモリにフォールバック
       }
     }
 
     // インメモリモード
-    const existing = findByWord(word);
+    const existing = findByWord(word, language);
     if (existing) {
       return NextResponse.json(
-        { error: "この言葉はすでに掲載されています。", existingId: existing.id },
+        { error: language === "en" ? "This word is already registered." : "この言葉はすでに掲載されています。", existingId: existing.id },
         { status: 409 }
       );
     }
@@ -122,6 +142,7 @@ export async function POST(request: NextRequest) {
       word, reading, partOfSpeech, definition, etymology,
       examples, synonyms, nickname, kojienFormatted, authorToken,
       likes: 0, viewCount: 0, isVisible: true, source: "user",
+      language,
     });
 
     return NextResponse.json({ success: true, id });
@@ -138,6 +159,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const kana = searchParams.get("kana");
+    const letter = searchParams.get("letter");
     const sort = searchParams.get("sort") || "newest";
     const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
     const cursor = searchParams.get("cursor");
@@ -172,7 +194,7 @@ export async function GET(request: NextRequest) {
         }
 
         const snapshot = await query.get();
-        const words = snapshot.docs.map((doc) => {
+        let words = snapshot.docs.map((doc) => {
           const data = doc.data();
           return {
             id: doc.id,
@@ -189,9 +211,16 @@ export async function GET(request: NextRequest) {
             viewCount: data.viewCount || 0,
             isVisible: true,
             source: data.source || "user",
+            language: data.language || "ja",
             createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
           };
         });
+
+        // Client-side filter for letter (A-Z) since Firestore doesn't support range on word easily
+        if (letter) {
+          const upperLetter = letter.toUpperCase();
+          words = words.filter((w) => (w.language === "en") && w.word.charAt(0).toUpperCase() === upperLetter);
+        }
 
         return NextResponse.json({ words });
       } catch (fbError) {
@@ -200,7 +229,7 @@ export async function GET(request: NextRequest) {
     }
 
     // インメモリモード
-    const rawWords = listWords({ kana, sort, limit, cursor });
+    const rawWords = listWords({ kana, letter, sort, limit, cursor });
     const words = rawWords.map(({ authorToken: _at, ...rest }) => rest);
     return NextResponse.json({ words });
   } catch (error) {

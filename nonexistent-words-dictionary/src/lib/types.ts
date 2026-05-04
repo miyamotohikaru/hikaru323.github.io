@@ -1,3 +1,5 @@
+export type WordLanguage = "ja" | "en";
+
 export interface WordEntry {
   id: string;
   word: string;
@@ -14,6 +16,7 @@ export interface WordEntry {
   source: "user" | "ai";
   kojienFormatted: string;
   authorToken: string;
+  language: WordLanguage;
   featuredDate?: string | null;
   createdAt?: string | null;
 }
@@ -27,6 +30,7 @@ export interface WordFormData {
   examples?: string[];
   synonyms?: string;
   nickname: string;
+  language?: WordLanguage;
 }
 
 export const PARTS_OF_SPEECH = [
@@ -58,3 +62,16 @@ export const GOJUON_ROWS = [
   { label: "ば行", kana: ["ば", "び", "ぶ", "べ", "ぼ"] },
   { label: "ぱ行", kana: ["ぱ", "ぴ", "ぷ", "ぺ", "ぽ"] },
 ];
+
+export const PARTS_OF_SPEECH_EN = [
+  "noun",
+  "verb",
+  "adjective",
+  "adverb",
+  "interjection",
+  "preposition",
+  "conjunction",
+  "other",
+] as const;
+
+export const ALPHABET_INDEX = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");

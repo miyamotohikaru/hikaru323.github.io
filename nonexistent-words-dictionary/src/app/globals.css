@@ -3005,6 +3005,152 @@ a:hover { color: var(--text-primary); }
 .mobile-lang-item:hover { color: var(--text); }
 .mobile-lang-item.active { color: var(--text); font-weight: 500; }
 
+/* ===== Language Badge ===== */
+.lang-badge {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  color: var(--text-sub);
+  border: 1px solid var(--text-sub);
+  padding: 0.0625rem 0.3rem;
+  border-radius: 2px;
+  margin-right: 0.375rem;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* ===== English Word Styles ===== */
+.dictionary-page--en {
+  writing-mode: horizontal-tb;
+  text-orientation: initial;
+  font-family: var(--font-english), var(--font-main);
+  padding: 2.5rem 3rem;
+  line-height: 1.8;
+}
+
+.dict-entry-en {
+  margin-bottom: 0.75rem;
+}
+
+.dict-headword-en {
+  font-family: var(--font-english);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1610;
+  border-bottom: 2px solid var(--accent-garnet);
+  padding-bottom: 0.25rem;
+  display: inline;
+  margin-right: 0.75rem;
+}
+
+.dict-reading-en {
+  font-family: var(--font-english);
+  font-size: 0.875rem;
+  color: #585538;
+  margin-right: 0.5rem;
+}
+
+.dict-pos-en {
+  font-family: var(--font-english);
+  font-size: 0.8125rem;
+  color: #585538;
+  font-style: italic;
+}
+
+.dict-definition-en {
+  font-family: var(--font-english), var(--font-body);
+  font-size: 1rem;
+  color: #2e2818;
+  line-height: 1.8;
+}
+
+.dict-example-en {
+  font-family: var(--font-english), var(--font-body);
+  font-size: 0.875rem;
+  color: #4a4530;
+  font-style: italic;
+}
+
+.dict-author-en {
+  font-family: var(--font-english);
+  font-size: 0.75rem;
+  color: #585538;
+}
+
+/* ===== English mode search input ===== */
+.tategaki-search-input-wrap.en-mode {
+  flex-direction: row;
+  width: auto;
+  height: auto;
+}
+
+.tategaki-search-input.en-mode {
+  writing-mode: horizontal-tb;
+  text-orientation: initial;
+  width: auto;
+  height: auto;
+  min-width: 240px;
+  padding: 12px 16px;
+  font-family: var(--font-english), var(--font-main);
+  font-size: 16px;
+}
+
+.tategaki-search-input-wrap.en-mode .tategaki-search-button {
+  writing-mode: horizontal-tb;
+  text-orientation: initial;
+  width: auto;
+  padding: 12px 20px;
+  border-top: none;
+  border-left: 1px solid var(--textSoft);
+}
+
+/* ===== Index Mode Toggle ===== */
+.index-mode-toggle {
+  display: flex;
+  gap: 0;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--base-border);
+  display: inline-flex;
+}
+
+.index-mode-btn {
+  padding: 0.5rem 1.25rem;
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+}
+
+.index-mode-btn:not(:last-child) {
+  border-right: 1px solid var(--base-border);
+}
+
+.index-mode-btn.active {
+  background: var(--text-primary);
+  color: var(--base-bg);
+}
+
+.index-mode-btn:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+/* A-Z sidebar compact */
+.az-sidebar {
+  flex-wrap: wrap;
+}
+
+/* ===== Word Language Classes ===== */
+.word-lang-en .kojien-entry-text {
+  font-family: var(--font-english), var(--font-body);
+}
+
 /* ===== Falling Words (Canvas-based) ===== */
 
 /* ===== Animation ===== */

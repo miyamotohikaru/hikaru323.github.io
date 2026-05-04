@@ -18,21 +18,35 @@ export default function KojienEntry({ entry, showMeta = false }: KojienEntryProp
     ? `${window.location.origin}/word/${entry.id}`
     : `/word/${entry.id}`;
 
+  const wordLang = (entry as { language?: string }).language || "ja";
+
   return (
-    <article className="kojien-entry">
+    <article className={`kojien-entry word-lang-${wordLang}`}>
       <div className="kojien-entry-inner">
         <button
           className="kojien-entry-link kojien-entry-button"
           onClick={() => setExpanded(!expanded)}
         >
+          <span className="lang-badge">{wordLang === "en" ? "EN" : "JA"}</span>
           {formatted ? (
             <p className="kojien-entry-text">{formatted}</p>
           ) : (
             <p className="kojien-entry-text">
               <span className="kojien-word">{entry.word}</span>
-              【{entry.reading}】（{entry.partOfSpeech}）{entry.definition}
-              {entry.examples && entry.examples.length > 0 && entry.examples[0] && (
-                <>。▽用例「{entry.examples[0]}」</>
+              {wordLang === "ja" ? (
+                <>
+                  【{entry.reading}】（{entry.partOfSpeech}）{entry.definition}
+                  {entry.examples && entry.examples.length > 0 && entry.examples[0] && (
+                    <>。▽用例「{entry.examples[0]}」</>
+                  )}
+                </>
+              ) : (
+                <>
+                  {entry.reading && <> /{entry.reading}/ </>}({entry.partOfSpeech}) — {entry.definition}
+                  {entry.examples && entry.examples.length > 0 && entry.examples[0] && (
+                    <>. Example: &ldquo;{entry.examples[0]}&rdquo;</>
+                  )}
+                </>
               )}
             </p>
           )}

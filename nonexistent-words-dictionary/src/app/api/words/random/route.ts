@@ -61,6 +61,7 @@ export async function GET() {
             examples: data.examples || [],
             nickname: data.nickname || "",
             likes: data.likes || 0,
+            language: data.language || "ja",
             wordNumber,
             totalCount,
           });
@@ -86,6 +87,7 @@ export async function GET() {
         examples: w.examples || [],
         nickname: w.nickname,
         likes: w.likes || 0,
+        language: (w as { language?: string }).language || "ja",
         wordNumber,
         totalCount: allWords.length,
       });

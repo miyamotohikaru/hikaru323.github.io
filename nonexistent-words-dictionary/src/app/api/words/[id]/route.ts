@@ -38,6 +38,7 @@ export async function GET(
           viewCount: data.viewCount || 0,
           isVisible: true,
           source: data.source || "user",
+          language: data.language || "ja",
           createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
         });
       } catch (fbError) {

@@ -42,7 +42,9 @@ interface SavedWordData {
 type Phase = "idle" | "loading" | "result" | "shared";
 
 export default function Home() {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
+  const wordLanguage = lang === "en" ? "en" : "ja";
+  const isEnMode = wordLanguage === "en";
   const [word, setWord] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<SubmitResult | null>(null);
@@ -91,7 +93,7 @@ export default function Home() {
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ word: trimmed }),
+        body: JSON.stringify({ word: trimmed, language: wordLanguage }),
       });
       const data = await res.json();
 
@@ -104,7 +106,7 @@ export default function Home() {
       if (data.kojienEntry) {
         setEditDef(data.kojienEntry.definition);
         setEditExample(data.kojienEntry.example || "");
-        setReading(toHiragana(data.kojienEntry.reading || ""));
+        setReading(isEnMode ? (data.kojienEntry.reading || "") : toHiragana(data.kojienEntry.reading || ""));
       }
       setPhase("result");
     } catch {
@@ -125,8 +127,8 @@ export default function Home() {
     if (!result?.kojienEntry || isSaving) return;
     const trimmedNickname = nickname.trim();
     const trimmedReading = reading.trim();
-    if (!trimmedReading) { setSaveError("読み（ひらがな）を入力してください。"); return; }
-    if (!trimmedNickname) { setSaveError("掲載者名を入力してください。"); return; }
+    if (!isEnMode && !trimmedReading) { setSaveError("読み（ひらがな）を入力してください。"); return; }
+    if (!trimmedNickname) { setSaveError(isEnMode ? "Please enter a nickname." : "掲載者名を入力してください。"); return; }
 
     setIsSaving(true);
     setSaveError(null);
@@ -141,7 +143,9 @@ export default function Home() {
     const def = editing ? editDef : entry.definition;
     const example = editing ? editExample : entry.example;
     const partOfSpeech = entry.partOfSpeech;
-    const formatted = `${entry.word}【${trimmedReading}】（${partOfSpeech}）${def}。▽用例「${example}」`;
+    const formatted = isEnMode
+      ? `${entry.word} (${partOfSpeech}) — ${def}${example ? `. Example: "${example}"` : ""}`
+      : `${entry.word}【${trimmedReading}】（${partOfSpeech}）${def}。▽用例「${example}」`;
 
     try {
       const res = await fetch("/api/words", {
@@ -159,6 +163,7 @@ export default function Home() {
           source: "user",
           kojienFormatted: formatted,
           authorToken,
+          language: wordLanguage,
         }),
       });
 
@@ -213,14 +218,14 @@ export default function Home() {
             </p>
             <div className="tategaki-search-rule" />
             <form onSubmit={handleSearch} className="tategaki-search-form">
-              <span className="tategaki-search-label">読み（ひらがな）</span>
-              <div className="tategaki-search-input-wrap">
+              <span className="tategaki-search-label">{isEnMode ? "Word" : "読み（ひらがな）"}</span>
+              <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""}`}>
                 <input
                   type="text"
                   value={word}
                   onChange={(e) => setWord(e.target.value)}
-                  placeholder={"ことばを引く"}
-                  className="tategaki-search-input"
+                  placeholder={isEnMode ? "look up a word" : "ことばを引く"}
+                  className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
                   maxLength={20}
                   disabled={phase === "loading"}
                 />
@@ -412,30 +417,30 @@ export default function Home() {
 
           {/* 掲載フォーム列 */}
           <div className="result-register-col fade-in-rtl">
-            <span className="result-unpublished-badge">未掲載</span>
-            <span className="result-register-heading">この言葉を辞典に掲載しますか？</span>
+            <span className="result-unpublished-badge">{isEnMode ? "Unregistered" : "未掲載"}</span>
+            <span className="result-register-heading">{t("result.registerHeading")}</span>
 
             <div className="result-register-field">
-              <span className="result-register-label">読み</span>
+              <span className="result-register-label">{isEnMode ? t("result.pronunciationLabel") : t("result.readingLabel")}</span>
               <input
                 type="text" value={reading}
-                onChange={(e) => setReading(toHiragana(e.target.value))}
-                placeholder="ひらがなで入力"
-                className="result-register-input" maxLength={30}
+                onChange={(e) => setReading(isEnMode ? e.target.value : toHiragana(e.target.value))}
+                placeholder={isEnMode ? t("result.pronunciationPlaceholder") : t("result.readingPlaceholder")}
+                className="result-register-input" maxLength={isEnMode ? 50 : 30}
               />
             </div>
             <div className="result-register-field">
-              <span className="result-register-label">掲載者名</span>
+              <span className="result-register-label">{t("result.nicknameLabel")}</span>
               <input
                 type="text" value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="ニックネーム"
+                placeholder={t("result.nicknamePlaceholder")}
                 className="result-register-input" maxLength={15}
               />
             </div>
 
             <button onClick={handleSave} disabled={isSaving} className="result-cta-button">
-              {isSaving ? "掲載中…" : "この言葉を掲載する"}
+              {isSaving ? t("result.submitting") : t("result.submit")}
             </button>
 
             {saveError && <span className="result-error">{saveError}</span>}
