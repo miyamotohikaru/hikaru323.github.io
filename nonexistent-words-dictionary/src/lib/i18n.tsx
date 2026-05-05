@@ -560,8 +560,4 @@ export function useI18n() {
 export const SUPPORTED_LANGS: { code: Lang; label: string }[] = [
   { code: "ja", label: "日本語" },
   { code: "en", label: "English" },
-  { code: "zh", label: "中文" },
-  { code: "ko", label: "한국어" },
-  { code: "es", label: "Español" },
-  { code: "fr", label: "Français" },
 ];
