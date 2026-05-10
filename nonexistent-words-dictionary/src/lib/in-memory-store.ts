@@ -92,3 +92,10 @@ export function incrementView(id: string): void {
   const doc = words.get(id);
   if (doc) doc.viewCount++;
 }
+
+export function updateWord(id: string, fields: Record<string, unknown>): boolean {
+  const doc = words.get(id);
+  if (!doc) return false;
+  Object.assign(doc, fields);
+  return true;
+}

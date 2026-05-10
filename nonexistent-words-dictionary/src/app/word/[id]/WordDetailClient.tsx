@@ -27,12 +27,74 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
   const { t } = useI18n();
   const justPosted = searchParams.get("just_posted") === "1";
   const [showSharePage, setShowSharePage] = useState(justPosted);
+  const [isOwner, setIsOwner] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editDef, setEditDef] = useState("");
+  const [editExample, setEditExample] = useState("");
+  const [editReading, setEditReading] = useState("");
+  const [currentDef, setCurrentDef] = useState("");
+  const [currentExample, setCurrentExample] = useState("");
+  const [currentReading, setCurrentReading] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!word) {
       router.replace("/");
+      return;
+    }
+    setCurrentDef(word.definition);
+    setCurrentExample(word.examples?.[0] || "");
+    setCurrentReading(word.reading);
+    setEditDef(word.definition);
+    setEditExample(word.examples?.[0] || "");
+    setEditReading(word.reading);
+
+    // APIから authorToken を取得してオーナー判定
+    const token = localStorage.getItem("fictionary_author_token");
+    if (token) {
+      fetch(`/api/words/${word.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.authorToken === token) setIsOwner(true);
+        })
+        .catch(() => {});
     }
   }, [word, router]);
+
+  const handleSaveEdit = async () => {
+    if (!word || isSaving) return;
+    setIsSaving(true);
+    setSaveMsg(null);
+    const token = localStorage.getItem("fictionary_author_token");
+    try {
+      const res = await fetch(`/api/words/${word.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          authorToken: token,
+          definition: editDef,
+          example: editExample,
+          reading: editReading,
+        }),
+      });
+      if (res.ok) {
+        setCurrentDef(editDef);
+        setCurrentExample(editExample);
+        setCurrentReading(editReading);
+        setEditing(false);
+        setSaveMsg("更新しました");
+        setTimeout(() => setSaveMsg(null), 3000);
+      } else {
+        const data = await res.json();
+        setSaveMsg(data.error || "更新に失敗しました");
+      }
+    } catch {
+      setSaveMsg("通信に失敗しました");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!word) {
     return null;
@@ -131,25 +193,63 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
         </Link>
       </div>
 
-      {isEn ? (
+      {editing ? (
+        /* 編集モード */
+        <div className="word-edit-form fade-in" style={{ maxWidth: 800, margin: "2rem auto" }}>
+          <h2 style={{ fontSize: "1.25rem", color: "var(--text)", marginBottom: "1rem" }}>「{word.word}」を編集</h2>
+          <div className="result-edit-fields">
+            <label className="result-edit-label">{isEn ? "Reading" : "読み"}</label>
+            <input
+              type="text"
+              value={editReading}
+              onChange={(e) => setEditReading(e.target.value)}
+              className="result-edit-textarea"
+              style={{ height: "auto", padding: "8px 10px" }}
+            />
+            <label className="result-edit-label">{isEn ? "Definition" : "定義"}</label>
+            <textarea
+              value={editDef}
+              onChange={(e) => setEditDef(e.target.value)}
+              className="result-edit-textarea"
+              rows={4}
+            />
+            <label className="result-edit-label">{isEn ? "Example" : "用例"}</label>
+            <textarea
+              value={editExample}
+              onChange={(e) => setEditExample(e.target.value)}
+              className="result-edit-textarea"
+              rows={2}
+            />
+          </div>
+          <div style={{ display: "flex", gap: "12px", marginTop: "1rem" }}>
+            <button onClick={handleSaveEdit} disabled={isSaving} className="result-cta-button">
+              {isSaving ? "更新中…" : "保存する"}
+            </button>
+            <button onClick={() => { setEditing(false); setEditDef(currentDef); setEditExample(currentExample); setEditReading(currentReading); }} className="result-edit-btn">
+              キャンセル
+            </button>
+          </div>
+          {saveMsg && <p style={{ marginTop: "8px", fontSize: "13px", color: "var(--textSoft)" }}>{saveMsg}</p>}
+        </div>
+      ) : isEn ? (
         /* English word detail - horizontal layout */
         <div className="dictionary-page dictionary-page--en fade-in" style={{ maxWidth: 800, margin: "2rem auto" }}>
           <div className="dict-entry-en">
             <span className="dict-headword-en" style={{ fontSize: "1.75rem" }}>{word.word}</span>
-            {word.reading && <span className="dict-reading-en">/{word.reading}/</span>}
+            {currentReading && <span className="dict-reading-en">/{currentReading}/</span>}
             <span className="dict-pos-en">({word.partOfSpeech})</span>
           </div>
           <div className="dict-entry-en">
-            <p className="dict-definition-en">{word.definition}</p>
+            <p className="dict-definition-en">{currentDef}</p>
           </div>
           {word.etymology && (
             <div className="dict-entry-en" style={{ borderLeft: "2px solid rgba(100,85,60,0.2)", paddingLeft: "0.75rem" }}>
               <p style={{ fontSize: "0.875rem", color: "#585538" }}>Etymology: {word.etymology}</p>
             </div>
           )}
-          {word.examples && word.examples.length > 0 && word.examples[0] && (
+          {currentExample && (
             <div className="dict-entry-en">
-              <p className="dict-example-en">Example: &ldquo;{word.examples[0]}&rdquo;</p>
+              <p className="dict-example-en">Example: &ldquo;{currentExample}&rdquo;</p>
             </div>
           )}
         </div>
@@ -160,20 +260,20 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
             <span className="dict-headword" style={{ fontSize: "1.75rem" }}>{word.word}</span>
           </div>
           <div className="dict-entry">
-            <span className="dict-reading">【{word.reading}】</span>
+            <span className="dict-reading">【{currentReading}】</span>
             <span className="dict-pos">{posMap[word.partOfSpeech] || `〘${word.partOfSpeech}〙`}</span>
           </div>
           <div className="dict-entry">
-            <p className="dict-definition">{word.definition}</p>
+            <p className="dict-definition">{currentDef}</p>
           </div>
           {word.etymology && (
             <div className="dict-entry" style={{ borderRight: "1px solid rgba(100,85,60,0.2)", paddingRight: "0.5rem" }}>
               <p style={{ fontSize: "0.8125rem", color: "#585538" }}>▷ {word.etymology}</p>
             </div>
           )}
-          {word.examples && word.examples.length > 0 && word.examples[0] && (
+          {currentExample && (
             <div className="dict-entry">
-              <p className="dict-example">▽「{word.examples[0]}」</p>
+              <p className="dict-example">▽「{currentExample}」</p>
             </div>
           )}
         </div>
@@ -191,7 +291,13 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
         <div className="word-actions">
           <LikeButton wordId={word.id} initialLikes={word.likes} />
           <ShareButtons word={word.word} url={shareUrl} />
+          {isOwner && !editing && (
+            <button onClick={() => setEditing(true)} className="result-edit-btn" style={{ marginLeft: "auto" }}>
+              {isEn ? "Edit" : "編集する"}
+            </button>
+          )}
         </div>
+        {saveMsg && !editing && <p style={{ fontSize: "13px", color: "var(--accent)", marginTop: "4px" }}>{saveMsg}</p>}
       </div>
 
       <AdSense slot="word-detail-1" />

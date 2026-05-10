@@ -27,6 +27,7 @@ async function getWord(id: string): Promise<WordEntry | null> {
         nickname: data.nickname || "",
         kojienFormatted: data.kojienFormatted || "",
         authorToken: "",
+        language: (data.language || "ja") as "ja" | "en",
         likes: data.likes || 0,
         viewCount: data.viewCount || 0,
         isVisible: data.isVisible ?? true,
@@ -53,6 +54,7 @@ async function getWord(id: string): Promise<WordEntry | null> {
     nickname: doc.nickname,
     kojienFormatted: doc.kojienFormatted || "",
     authorToken: "",
+    language: (doc.language || "ja") as "ja" | "en",
     likes: doc.likes,
     viewCount: doc.viewCount,
     isVisible: doc.isVisible,
@@ -89,6 +91,7 @@ async function getRelatedWords(word: WordEntry): Promise<WordEntry[]> {
             nickname: data.nickname || "",
             kojienFormatted: data.kojienFormatted || "",
             authorToken: "",
+            language: (data.language || "ja") as "ja" | "en",
             likes: data.likes || 0,
             viewCount: data.viewCount || 0,
             isVisible: true,
@@ -110,6 +113,7 @@ async function getRelatedWords(word: WordEntry): Promise<WordEntry[]> {
       ...w,
       kojienFormatted: w.kojienFormatted || "",
       authorToken: "",
+      language: (w.language || "ja") as "ja" | "en",
       source: w.source as "user" | "ai",
     }));
 }

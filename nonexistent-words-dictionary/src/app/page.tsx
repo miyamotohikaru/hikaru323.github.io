@@ -227,12 +227,11 @@ export default function Home() {
                   placeholder={isEnMode ? "look up a word" : "ことばを引く"}
                   className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
                   maxLength={20}
-                  disabled={phase === "loading"}
                 />
                 <button
                   type="submit"
                   className="tategaki-search-button"
-                  disabled={phase === "loading" || !word.trim()}
+                  disabled={!word.trim()}
                 >
                   引く
                 </button>
@@ -403,16 +402,35 @@ export default function Home() {
               <span className="result-headword-bracket">】</span>
             </span>
             <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
-            <p className="result-definition">
-              <span className="result-def-number">①</span>{" "}
-              {editing ? editDef : result.kojienEntry.definition}
-              {(result.kojienEntry.example || editing) && (
-                <>
-                  {" "}<span className="result-example-badge">例</span>{" "}
-                  「{editing ? editExample : result.kojienEntry.example}」
-                </>
-              )}
-            </p>
+            {editing ? (
+              <div className="result-edit-fields">
+                <label className="result-edit-label">定義</label>
+                <textarea
+                  value={editDef}
+                  onChange={(e) => setEditDef(e.target.value)}
+                  className="result-edit-textarea"
+                  rows={4}
+                />
+                <label className="result-edit-label">用例</label>
+                <textarea
+                  value={editExample}
+                  onChange={(e) => setEditExample(e.target.value)}
+                  className="result-edit-textarea"
+                  rows={2}
+                />
+              </div>
+            ) : (
+              <p className="result-definition">
+                <span className="result-def-number">①</span>{" "}
+                {editDef || result.kojienEntry.definition}
+                {(result.kojienEntry.example || editExample) && (
+                  <>
+                    {" "}<span className="result-example-badge">例</span>{" "}
+                    「{editExample || result.kojienEntry.example}」
+                  </>
+                )}
+              </p>
+            )}
           </div>
 
           {/* 掲載フォーム列 */}
