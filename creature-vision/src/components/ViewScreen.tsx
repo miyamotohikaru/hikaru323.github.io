@@ -205,6 +205,7 @@ export default function ViewScreen({
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [shareFeedback, setShareFeedback] = useState(false);
   const [mediaSrc, setMediaSrc] = useState("");
+  const [canvasRatio, setCanvasRatio] = useState<number | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
@@ -278,6 +279,7 @@ export default function ViewScreen({
       const h = Math.floor(img.height * scale);
       canvas.width = w;
       canvas.height = h;
+      setCanvasRatio(w / h);
 
       if (humanCanvas) {
         humanCanvas.width = w;
@@ -449,11 +451,17 @@ export default function ViewScreen({
         onTouchEnd={() => setIsHolding(false)}
         onTouchCancel={() => setIsHolding(false)}
       >
-        <canvas ref={canvasRef} className="block w-full" />
+        <canvas
+          ref={canvasRef}
+          className="block w-full"
+          style={{ height: "auto", aspectRatio: canvasRatio ?? undefined }}
+        />
         <canvas
           ref={humanCanvasRef}
           className="absolute top-0 left-0 block w-full"
           style={{
+            height: "auto",
+            aspectRatio: canvasRatio ?? undefined,
             opacity: isHolding ? 1 : 0,
             transition: "opacity 0.3s ease",
             pointerEvents: "none",
