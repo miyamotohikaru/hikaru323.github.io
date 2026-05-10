@@ -207,7 +207,7 @@ export default function Home() {
       {phase === "idle" && <FallingWords />}
 
       {/* ヒーロー: タイトル + 説明 + 罫線 + 検索フォーム */}
-      {(phase === "idle" || phase === "loading") && (
+      {phase === "idle" && (
         <div className="tategaki-search-section">
           <div className="tategaki-search-inner">
             <h1 className="tategaki-search-hero-title">{t("home.title")}</h1>
