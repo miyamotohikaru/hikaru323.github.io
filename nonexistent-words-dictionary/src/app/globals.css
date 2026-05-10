@@ -2397,6 +2397,8 @@ a:hover { color: var(--text-primary); }
   box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.15);
   line-height: 1.9;
   letter-spacing: 0.05em;
+  display: flex;
+  align-items: flex-start;
 }
 
 .dictionary-page--rejection {
@@ -2424,6 +2426,8 @@ a:hover { color: var(--text-primary); }
 
 .dict-entry {
   margin-left: 0.75rem;
+  vertical-align: top;
+  align-self: flex-start;
 }
 
 .dict-headword {
