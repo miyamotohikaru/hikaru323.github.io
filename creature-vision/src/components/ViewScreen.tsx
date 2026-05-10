@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import Icon from "./Icon";
 import { applyFilter, expandFOV, FOV_DATA } from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
+import { SHARE_TEXTS } from "@/data/shareTexts";
 
 interface Creature {
   id: string;
@@ -29,6 +30,164 @@ interface Props {
 
 const MAX_W = 900;
 
+/* ── SVG Icons ── */
+
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+        fill={filled ? "#FF6B6B" : "none"}
+        stroke={filled ? "#FF6B6B" : "#999"}
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 3L12 16"
+        stroke="#555"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M7 8L12 3L17 8"
+        stroke="#555"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4 14V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V14"
+        stroke="#555"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="24" height="24" rx="6" fill="#000" />
+      <path d="M13.544 10.456L17.88 5.5H16.68L13.008 9.672L10.068 5.5H6.5L11.04 12.78L6.5 18H7.7L11.58 13.564L14.68 18H18.248L13.544 10.456ZM12.196 12.852L11.656 12.076L8.136 6.412H9.492L12.676 10.416L13.216 11.192L16.68 17.636H15.324L12.196 12.852Z" fill="white"/>
+    </svg>
+  );
+}
+
+function LineIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="24" height="24" rx="6" fill="#06C755" />
+      <path d="M19.5 10.6c0-3.42-3.36-6.2-7.5-6.2s-7.5 2.78-7.5 6.2c0 3.07 2.66 5.63 6.25 6.12.24.05.57.16.66.37.07.18.05.47.02.66l-.1.64c-.03.2-.15.77.66.42.82-.35 4.4-2.66 6-4.56C19.06 13.08 19.5 11.92 19.5 10.6z" fill="white"/>
+      <path d="M10.25 8.8H9.5a.3.3 0 0 0-.3.3v3.3a.3.3 0 0 0 .3.3h.75a.3.3 0 0 0 .3-.3V9.1a.3.3 0 0 0-.3-.3z" fill="#06C755"/>
+      <path d="M14.75 8.8H14a.3.3 0 0 0-.3.3v1.96l-1.44-2.1a.3.3 0 0 0-.26-.16h-.75a.3.3 0 0 0-.3.3v3.3a.3.3 0 0 0 .3.3h.75a.3.3 0 0 0 .3-.3v-1.96l1.44 2.1a.3.3 0 0 0 .26.16h.75a.3.3 0 0 0 .3-.3V9.1a.3.3 0 0 0-.3-.3z" fill="#06C755"/>
+      <path d="M8.5 11.35H7.2V9.1a.3.3 0 0 0-.3-.3h-.75a.3.3 0 0 0-.3.3v3.3a.3.3 0 0 0 .3.3H8.5a.3.3 0 0 0 .3-.3v-.75a.3.3 0 0 0-.3-.3z" fill="#06C755"/>
+      <path d="M18.15 9.85a.3.3 0 0 0 .3-.3V8.8a.3.3 0 0 0-.3-.3h-2.4a.3.3 0 0 0-.3.3v3.3a.3.3 0 0 0 .3.3h2.4a.3.3 0 0 0 .3-.3v-.75a.3.3 0 0 0-.3-.3H16.5v-.5h1.65a.3.3 0 0 0 .3-.3v-.75a.3.3 0 0 0-.3-.3H16.5v-.5h1.65z" fill="#06C755"/>
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="24" height="24" rx="6" fill="#1877F2" />
+      <path d="M16.5 12.5l.5-3h-3V8c0-.83.4-1.63 1.7-1.63H17V3.88S15.82 3.5 14.7 3.5c-2.33 0-3.86 1.41-3.86 3.97V9.5H8v3h2.84V21h3.5V12.5H16.5z" fill="white"/>
+    </svg>
+  );
+}
+
+/* ── Share image generation ── */
+
+async function generateShareImage(
+  creatureCanvas: HTMLCanvasElement,
+  humanCanvas: HTMLCanvasElement,
+  creature: Creature
+): Promise<Blob> {
+  const srcW = creatureCanvas.width;
+  const srcH = creatureCanvas.height;
+
+  const padding = 20;
+  const halfW = Math.round(srcW / 2);
+  const gap = 4;
+  const totalW = srcW + padding * 2;
+  const footerH = 100;
+  const totalH = srcH + footerH + padding * 2;
+
+  const cv = document.createElement("canvas");
+  cv.width = totalW;
+  cv.height = totalH;
+  const ctx = cv.getContext("2d")!;
+
+  // Background
+  ctx.fillStyle = "#FFF9F2";
+  ctx.fillRect(0, 0, totalW, totalH);
+
+  // Left half: creature vision
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(padding, padding, halfW - gap / 2, srcH, [12, 0, 0, 12]);
+  ctx.clip();
+  ctx.drawImage(creatureCanvas, 0, 0, srcW, srcH, padding, padding, halfW - gap / 2, srcH);
+  ctx.restore();
+
+  // Right half: human vision
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(padding + halfW + gap / 2, padding, halfW - gap / 2, srcH, [0, 12, 12, 0]);
+  ctx.clip();
+  ctx.drawImage(humanCanvas, srcW / 4, 0, srcW / 2, srcH, padding + halfW + gap / 2, padding, halfW - gap / 2, srcH);
+  ctx.restore();
+
+  // Center divider
+  ctx.strokeStyle = "rgba(255,255,255,0.8)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(padding + halfW, padding);
+  ctx.lineTo(padding + halfW, padding + srcH);
+  ctx.stroke();
+
+  // Left label
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillRect(padding + 8, padding + 8, 80, 26);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 12px sans-serif";
+  ctx.fillText(`${creature.name}のめ`, padding + 14, padding + 25);
+
+  // Right label
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillRect(padding + halfW + gap / 2 + 8, padding + 8, 80, 26);
+  ctx.fillStyle = "#fff";
+  ctx.fillText("👁 人間のめ", padding + halfW + gap / 2 + 14, padding + 25);
+
+  // Footer
+  const footerY = padding + srcH + 16;
+  ctx.fillStyle = "#2D2D2D";
+  ctx.font = "bold 16px sans-serif";
+  ctx.fillText(`${creature.name}の目で見た世界`, padding, footerY + 20);
+
+  ctx.fillStyle = "#888";
+  ctx.font = "13px sans-serif";
+  const shareText = SHARE_TEXTS[creature.id] || "";
+  ctx.fillText(shareText, padding, footerY + 42);
+
+  ctx.fillStyle = "#bbb";
+  ctx.font = "11px sans-serif";
+  ctx.fillText("👁 生き物の目で世界を見よう — creature-vision.vercel.app", padding, footerY + 68);
+
+  return new Promise((resolve) => {
+    cv.toBlob((blob) => resolve(blob!), "image/png", 0.92);
+  });
+}
+
+/* ── Main component ── */
+
 export default function ViewScreen({
   creatures,
   selectedId,
@@ -43,13 +202,27 @@ export default function ViewScreen({
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [processing, setProcessing] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
-  const [shareOk, setShareOk] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState(false);
   const [mediaSrc, setMediaSrc] = useState("");
+  const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
   const fovData = FOV_DATA[creature.id];
   const expansion = fovData?.expansion ?? 1.0;
+
+  // Close share menu on outside click
+  useEffect(() => {
+    if (!showShareMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+        setShowShareMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showShareMenu]);
 
   // Load media
   useEffect(() => {
@@ -68,24 +241,18 @@ export default function ViewScreen({
       creatureData: Creature,
       exp: number
     ) => {
-      // Draw original image first
       ctx.drawImage(sourceImg, 0, 0, w, h);
-      // Apply creature filter
       applyFilter(ctx, w, h, creatureData.filterType, creatureData.fp);
-      // Apply FOV zoom (narrow only, wide FOV is expressed by the filter itself)
       if (exp > 0 && exp < 1.0) {
-        // Save filtered result
         const filtered = document.createElement("canvas");
         filtered.width = w;
         filtered.height = h;
         filtered.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
-        // Zoom into center of filtered image
         const cropW = w * exp;
         const cropH = h * exp;
         const sx = (w - cropW) / 2;
         const sy = (h - cropH) / 2;
         ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
-        // Darken periphery
         const darkness = Math.max(0, 1 - exp) * 0.8;
         const vg = ctx.createRadialGradient(w / 2, h / 2, w * exp * 0.3, w / 2, h / 2, w * 0.6);
         vg.addColorStop(0, "rgba(0,0,0,0)");
@@ -112,14 +279,12 @@ export default function ViewScreen({
       canvas.width = w;
       canvas.height = h;
 
-      // Human canvas (always original)
       if (humanCanvas) {
         humanCanvas.width = w;
         humanCanvas.height = h;
         humanCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
       }
 
-      // Apply creature vision
       renderCreature(selectedId, img, w, h);
     };
     img.src = mediaSrc;
@@ -135,14 +300,8 @@ export default function ViewScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
-  // Main render function
   const renderCreature = useCallback(
-    (
-      creatureId: string,
-      img: HTMLImageElement,
-      w: number,
-      h: number
-    ) => {
+    (creatureId: string, img: HTMLImageElement, w: number, h: number) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d")!;
@@ -157,12 +316,45 @@ export default function ViewScreen({
     [creatures, applyCreatureVision]
   );
 
-  const share = useCallback(() => {
-    const text = `🔬 Creature Vision Lab\n\n${creature.name}（${creature.en}）の視覚\n🧬 ${creature.bio}\n\n#CreatureVision`;
-    navigator.clipboard.writeText(text);
-    setShareOk(true);
-    setTimeout(() => setShareOk(false), 2000);
-  }, [creature]);
+  // Share to specific SNS
+  const shareToSns = useCallback(
+    async (sns: "x" | "line" | "facebook") => {
+      const shareText = SHARE_TEXTS[creature.id] || "";
+      const fullText = `${shareText}\n\n👁 生き物の目で世界を見よう`;
+      const url = "https://creature-vision.vercel.app";
+
+      // Generate comparison image for download
+      const creatureCanvas = canvasRef.current;
+      const humanCanvas = humanCanvasRef.current;
+      if (creatureCanvas && humanCanvas) {
+        const blob = await generateShareImage(creatureCanvas, humanCanvas, creature);
+        const dlUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = dlUrl;
+        a.download = `creature-vision-${creature.id}.png`;
+        a.click();
+        URL.revokeObjectURL(dlUrl);
+      }
+
+      // Open SNS share URL
+      const encoded = encodeURIComponent(fullText + "\n" + url);
+      let shareUrl = "";
+      switch (sns) {
+        case "x":
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}&url=${encodeURIComponent(url)}`;
+          break;
+        case "line":
+          shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(fullText)}`;
+          break;
+        case "facebook":
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(fullText)}`;
+          break;
+      }
+      window.open(shareUrl, "_blank", "noopener,noreferrer");
+      setShowShareMenu(false);
+    },
+    [creature]
+  );
 
   const isFav = favs.includes(selectedId);
 
@@ -171,7 +363,7 @@ export default function ViewScreen({
       className="min-h-screen px-4 py-6 mx-auto"
       style={{ maxWidth: 960, animation: "fadeUp 0.4s ease-out" }}
     >
-      {/* Top bar - only back, fav, share */}
+      {/* Top bar — back + fav only */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <button onClick={onBack} className="pill-btn">
           ← もどる
@@ -180,11 +372,9 @@ export default function ViewScreen({
         <button
           onClick={() => onToggleFav(selectedId)}
           className="pill-btn"
+          style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          {isFav ? "❤️" : "🤍"}
-        </button>
-        <button onClick={share} className="pill-btn">
-          {shareOk ? "✅" : "📤"}
+          <HeartIcon filled={isFav} />
         </button>
       </div>
 
@@ -259,10 +449,7 @@ export default function ViewScreen({
         onTouchEnd={() => setIsHolding(false)}
         onTouchCancel={() => setIsHolding(false)}
       >
-        {/* Creature canvas (bottom layer) */}
         <canvas ref={canvasRef} className="block w-full" />
-
-        {/* Human canvas (top layer, shown on hold) */}
         <canvas
           ref={humanCanvasRef}
           className="absolute top-0 left-0 block w-full"
@@ -272,8 +459,6 @@ export default function ViewScreen({
             pointerEvents: "none",
           }}
         />
-
-        {/* View mode label */}
         <div
           style={{
             position: "absolute",
@@ -294,8 +479,6 @@ export default function ViewScreen({
         >
           {isHolding ? "👁 人間のめ" : `${creature.name}のめ`}
         </div>
-
-        {/* Processing overlay */}
         {processing && (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center"
@@ -319,7 +502,7 @@ export default function ViewScreen({
         )}
       </div>
 
-      {/* Hint + FOV + error */}
+      {/* Hint + FOV */}
       {creature.id === "human" ? (
         <p
           className="mt-3 text-center"
@@ -354,6 +537,134 @@ export default function ViewScreen({
             : `${fovData.fov}°（人間は120°）`}
         </p>
       )}
+
+      {/* Share button + popup */}
+      <div className="relative flex justify-center" ref={shareMenuRef}>
+        {/* SNS popup */}
+        {showShareMenu && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "100%",
+              marginBottom: 12,
+              background: "#fff",
+              borderRadius: 16,
+              padding: "16px 24px",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
+              animation: "fadeUp 0.2s ease-out",
+              zIndex: 10,
+            }}
+          >
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>
+              シェアする
+            </p>
+            <div className="flex gap-5">
+              <button
+                onClick={() => shareToSns("x")}
+                className="flex flex-col items-center gap-1 cursor-pointer"
+                style={{ background: "none", border: "none", padding: 0 }}
+              >
+                <div
+                  className="flex items-center justify-center"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    background: "#f0f0f0",
+                    transition: "transform 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  <XIcon />
+                </div>
+                <span style={{ fontSize: 10, color: "#999" }}>X</span>
+              </button>
+              <button
+                onClick={() => shareToSns("line")}
+                className="flex flex-col items-center gap-1 cursor-pointer"
+                style={{ background: "none", border: "none", padding: 0 }}
+              >
+                <div
+                  className="flex items-center justify-center"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    background: "#f0f0f0",
+                    transition: "transform 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  <LineIcon />
+                </div>
+                <span style={{ fontSize: 10, color: "#999" }}>LINE</span>
+              </button>
+              <button
+                onClick={() => shareToSns("facebook")}
+                className="flex flex-col items-center gap-1 cursor-pointer"
+                style={{ background: "none", border: "none", padding: 0 }}
+              >
+                <div
+                  className="flex items-center justify-center"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    background: "#f0f0f0",
+                    transition: "transform 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  <FacebookIcon />
+                </div>
+                <span style={{ fontSize: 10, color: "#999" }}>Facebook</span>
+              </button>
+            </div>
+            {/* Triangle pointer */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: -8,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 0,
+                height: 0,
+                borderLeft: "8px solid transparent",
+                borderRight: "8px solid transparent",
+                borderTop: "8px solid #fff",
+              }}
+            />
+          </div>
+        )}
+
+        <button
+          onClick={() => setShowShareMenu((v) => !v)}
+          style={{
+            width: "100%",
+            padding: "14px 20px",
+            borderRadius: 16,
+            border: "2px solid rgba(0,0,0,0.06)",
+            background: shareFeedback ? "#f0fff0" : "#fff",
+            color: "#333",
+            fontSize: 15,
+            fontWeight: 900,
+            fontFamily: "inherit",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            marginTop: 12,
+            transition: "all 0.2s",
+          }}
+        >
+          <ShareIcon />
+          {shareFeedback ? "✅ 画像を保存しました！" : "この見え方をシェアする"}
+        </button>
+      </div>
 
       {/* Bio panel */}
       <div className="mt-6">
