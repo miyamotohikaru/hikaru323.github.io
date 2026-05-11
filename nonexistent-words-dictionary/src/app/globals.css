@@ -3409,12 +3409,13 @@ a:hover { color: var(--text-primary); }
 
   /* ===== 4. 辞書紙面（縦書き維持） ===== */
   .dictionary-page {
-    height: auto;
-    min-height: 60vh;
-    padding: 1.5rem 1rem;
+    height: 55vh;
+    max-height: 420px;
+    padding: 1.25rem 1rem;
     min-width: unset;
     width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     font-size: 0.8125rem;
   }
