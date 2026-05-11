@@ -6,15 +6,15 @@ export default function MobileScrollConverter() {
   useEffect(() => {
     if (window.innerWidth > 640) return;
 
-    document.body.style.overflowY = "hidden";
-    document.body.style.overflowX = "auto";
-    document.body.style.height = "100vh";
-
     let touchStartY = 0;
     let scrollStartX = 0;
+    let activeContainer: HTMLElement | null = null;
 
-    const shouldIgnore = (e: TouchEvent) => {
-      const target = e.target as HTMLElement;
+    const findScrollContainer = (target: HTMLElement): HTMLElement | null => {
+      return target.closest(".h-scroll, .dictionary-page") as HTMLElement | null;
+    };
+
+    const shouldIgnore = (target: HTMLElement) => {
       return (
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
@@ -24,28 +24,43 @@ export default function MobileScrollConverter() {
     };
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (shouldIgnore(e)) return;
+      const target = e.target as HTMLElement;
+      if (shouldIgnore(target)) return;
+
+      const container = findScrollContainer(target);
+      if (!container) return;
+
+      activeContainer = container;
       touchStartY = e.touches[0].clientY;
-      scrollStartX = window.scrollX;
+      scrollStartX = container.scrollLeft;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (shouldIgnore(e)) return;
+      const target = e.target as HTMLElement;
+      if (shouldIgnore(target) || !activeContainer) return;
+
       const currentY = e.touches[0].clientY;
       const deltaY = touchStartY - currentY;
-      window.scrollTo({ left: scrollStartX + deltaY * 1.5, behavior: "auto" });
+
+      // 縦の動きを横スクロールに変換（h-scrollはdirection:rtlなので符号反転）
+      const isRtl = getComputedStyle(activeContainer).direction === "rtl";
+      activeContainer.scrollLeft = scrollStartX + (isRtl ? -deltaY : deltaY) * 1.5;
+
       e.preventDefault();
     };
 
-    window.addEventListener("touchstart", handleTouchStart, { passive: false });
+    const handleTouchEnd = () => {
+      activeContainer = null;
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
     window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd);
 
     return () => {
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
-      document.body.style.overflowY = "";
-      document.body.style.overflowX = "";
-      document.body.style.height = "";
+      window.removeEventListener("touchend", handleTouchEnd);
     };
   }, []);
 
