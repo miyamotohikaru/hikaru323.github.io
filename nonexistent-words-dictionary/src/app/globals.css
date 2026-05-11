@@ -2390,15 +2390,13 @@ a:hover { color: var(--text-primary); }
   background: var(--page-bg);
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  padding: 2.5rem 3rem;
+  padding: 2rem 2.5rem;
   min-height: 400px;
   overflow-x: auto;
   position: relative;
   box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.15);
   line-height: 1.9;
   letter-spacing: 0.05em;
-  display: flex;
-  align-items: flex-start;
 }
 
 .dictionary-page--rejection {
@@ -2425,9 +2423,7 @@ a:hover { color: var(--text-primary); }
 }
 
 .dict-entry {
-  margin-left: 0.75rem;
-  vertical-align: top;
-  align-self: flex-start;
+  margin-left: 0.5rem;
 }
 
 .dict-headword {
@@ -3413,14 +3409,13 @@ a:hover { color: var(--text-primary); }
 
   /* ===== 4. 辞書紙面（縦書き維持） ===== */
   .dictionary-page {
-    height: calc(100vh - 48px);
-    padding: 1.5rem 1.25rem;
+    height: auto;
+    min-height: 60vh;
+    padding: 1.5rem 1rem;
     min-width: unset;
-    width: 100vw;
-    gap: 1rem;
+    width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    min-height: 250px;
     font-size: 0.8125rem;
   }
   .dict-headword { font-size: 1.25rem; }
