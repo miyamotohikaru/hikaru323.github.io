@@ -419,33 +419,40 @@ export default function Home() {
                   value={editDef}
                   onChange={(e) => setEditDef(e.target.value)}
                   className="result-edit-textarea"
-                  rows={4}
+                  rows={6}
                 />
                 <label className="result-edit-label">用例</label>
                 <textarea
                   value={editExample}
                   onChange={(e) => setEditExample(e.target.value)}
                   className="result-edit-textarea"
-                  rows={2}
+                  rows={4}
                 />
+                <button onClick={() => setEditing(false)} className="result-edit-btn" style={{ marginTop: "8px" }}>
+                  編集を終了
+                </button>
               </div>
             ) : (
-              <p className="result-definition">
-                <span className="result-def-number">①</span>{" "}
-                {editDef || result.kojienEntry.definition}
-                {(result.kojienEntry.example || editExample) && (
-                  <>
-                    {" "}<span className="result-example-badge">例</span>{" "}
-                    「{editExample || result.kojienEntry.example}」
-                  </>
-                )}
-              </p>
+              <>
+                <p className="result-definition">
+                  <span className="result-def-number">①</span>{" "}
+                  {editDef || result.kojienEntry.definition}
+                  {(result.kojienEntry.example || editExample) && (
+                    <>
+                      {" "}<span className="result-example-badge">例</span>{" "}
+                      「{editExample || result.kojienEntry.example}」
+                    </>
+                  )}
+                </p>
+                <button onClick={() => setEditing(true)} className="result-edit-btn" style={{ marginTop: "auto" }}>
+                  内容を編集する
+                </button>
+              </>
             )}
           </div>
 
           {/* 掲載フォーム列 */}
           <div className="result-register-col fade-in-rtl">
-            <span className="result-unpublished-badge">{isEnMode ? "New Word!" : "この言葉は実在しません"}</span>
             <span className="result-register-heading">{isEnMode ? "Register this word" : "存在しない言葉辞典に掲載できます"}</span>
 
             <div className="result-register-field">
@@ -474,10 +481,10 @@ export default function Home() {
             {saveError && <span className="result-error">{saveError}</span>}
           </div>
 
-          {/* 編集エリア */}
+          {/* TOPに戻るボタン */}
           <div className="reject-retry-col fade-in-rtl" style={{ borderLeft: `1px solid var(--rule)` }}>
-            <button onClick={() => setEditing(!editing)} className="result-edit-btn">
-              {editing ? "編集を終了" : "内容を編集する"}
+            <button onClick={handleReset} className="reject-retry-btn">
+              別の言葉を引く
             </button>
           </div>
         </div>

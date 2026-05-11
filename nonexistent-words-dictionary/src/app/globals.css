@@ -2837,13 +2837,15 @@ a:hover { color: var(--text-primary); }
 }
 .result-edit-textarea {
   width: 100%;
+  min-width: 280px;
+  min-height: 120px;
   background: transparent;
   border: 1px solid var(--rule);
   color: var(--text);
   font-family: var(--font-main);
   font-size: 14px;
   line-height: 1.8;
-  padding: 8px 10px;
+  padding: 10px 12px;
   resize: vertical;
   outline: none;
 }
@@ -3375,6 +3377,9 @@ a:hover { color: var(--text-primary); }
     -webkit-overflow-scrolling: touch;
     z-index: 50;
     background: var(--bg);
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule);
   }
   .h-scroll > * { direction: ltr; flex-shrink: 0; }
 
