@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, FormEvent } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
 import FallingWords from "@/components/FallingWords";
+import { EmptyWordNotice } from "@/components/EmptyWordNotice";
 import { useI18n } from "@/lib/i18n";
+import { useFooterVisibility } from "@/components/ClientProviders";
 
 // カタカナをひらがなに変換
 function toHiragana(str: string): string {
@@ -43,6 +45,7 @@ type Phase = "idle" | "loading" | "result" | "shared";
 
 export default function Home() {
   const { lang, t } = useI18n();
+  const { setMobileVisible } = useFooterVisibility();
   const wordLanguage = lang === "en" ? "en" : "ja";
   const isEnMode = wordLanguage === "en";
   const [word, setWord] = useState("");
@@ -72,6 +75,12 @@ export default function Home() {
     el.addEventListener("wheel", handler, { passive: false });
     return () => el.removeEventListener("wheel", handler);
   });
+
+  // フッター表示制御: idleの時だけモバイルフッターを表示
+  useEffect(() => {
+    setMobileVisible(phase === "idle");
+    return () => setMobileVisible(false);
+  }, [phase, setMobileVisible]);
 
   useEffect(() => {
     const saved = localStorage.getItem("fictionary_nickname");
@@ -392,6 +401,9 @@ export default function Home() {
             </form>
             <span className="tategaki-search-note" style={{ position: "static" }}>{t("home.note")}</span>
           </div>
+
+          {/* 蔵書印スタイル通知 */}
+          <EmptyWordNotice />
 
           {/* 本文列 */}
           <div className="result-body-col fade-in-rtl">

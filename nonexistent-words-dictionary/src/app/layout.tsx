@@ -4,6 +4,7 @@ import Script from "next/script";
 import ClientProviders from "@/components/ClientProviders";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import MobileScrollConverter from "@/components/MobileScrollConverter";
 
 export const metadata: Metadata = {
   title: "存在しない言葉辞典",
@@ -63,6 +64,7 @@ export default function RootLayout({
             {children}
           </div>
           <Footer />
+          <MobileScrollConverter />
         </ClientProviders>
       </body>
     </html>

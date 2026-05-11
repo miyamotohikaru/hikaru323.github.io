@@ -95,7 +95,7 @@ export default function Header() {
       )}
 
       {/* Mobile slide-down menu */}
-      <div className={`mobile-menu ${menuOpen ? "mobile-menu--open" : ""}`}>
+      <div data-no-scroll-convert className={`mobile-menu ${menuOpen ? "mobile-menu--open" : ""}`}>
         <div className="mobile-menu-header">
           <span className="header-logo">{t("home.title")}</span>
           <button

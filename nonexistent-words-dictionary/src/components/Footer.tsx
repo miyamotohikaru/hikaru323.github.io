@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
+import { useFooterVisibility } from "@/components/ClientProviders";
 
 export default function Footer() {
   const { t } = useI18n();
+  const { mobileVisible } = useFooterVisibility();
 
   return (
-    <footer className="site-footer">
+    <footer className={`site-footer ${mobileVisible ? "" : "footer-mobile-hidden"}`}>
       <div className="footer-inner">
         <p className="footer-title">
           {t("footer.title")} —{" "}
