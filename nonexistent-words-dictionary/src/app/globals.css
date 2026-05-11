@@ -3360,15 +3360,21 @@ a:hover { color: var(--text-primary); }
     letter-spacing: 0.1em;
   }
 
-  /* ===== 3. 検索結果（横スクロール→縦スクロール） ===== */
-  /* ===== 結果ページ（モバイル：縦書き維持） ===== */
+  /* ===== 3. 検索結果（モバイル：フル画面横スクロール） ===== */
   .h-scroll {
     direction: rtl;
-    height: 55vh;
-    max-height: 420px;
+    position: fixed;
+    top: 48px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: auto;
+    max-height: none;
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    z-index: 50;
+    background: var(--bg);
   }
   .h-scroll > * { direction: ltr; flex-shrink: 0; }
 
