@@ -3373,8 +3373,7 @@ a:hover { color: var(--text-primary); }
 
   /* ===== 4. 辞書紙面（縦書き維持） ===== */
   .dictionary-page {
-    height: 55vh;
-    max-height: 420px;
+    height: 350px;
     padding: 1.25rem 1rem;
     min-width: unset;
     width: 100%;
