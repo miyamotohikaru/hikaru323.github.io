@@ -435,8 +435,8 @@ export default function Home() {
 
           {/* 掲載フォーム列 */}
           <div className="result-register-col fade-in-rtl">
-            <span className="result-unpublished-badge">{isEnMode ? "Unregistered" : "未掲載"}</span>
-            <span className="result-register-heading">{t("result.registerHeading")}</span>
+            <span className="result-unpublished-badge">{isEnMode ? "New Word!" : "辞典に存在しません"}</span>
+            <span className="result-register-heading">{isEnMode ? "Register this word" : "この言葉を辞典に掲載できます"}</span>
 
             <div className="result-register-field">
               <span className="result-register-label">{isEnMode ? t("result.pronunciationLabel") : t("result.readingLabel")}</span>

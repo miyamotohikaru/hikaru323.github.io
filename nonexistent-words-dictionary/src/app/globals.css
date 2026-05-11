@@ -2659,24 +2659,26 @@ a:hover { color: var(--text-primary); }
   flex-direction: column;
   align-items: flex-start;
   gap: 24px;
-  min-width: 280px;
-  border-left: 1px solid var(--rule);
+  min-width: 300px;
+  border-left: 2px solid var(--accent);
+  background: rgba(121, 46, 41, 0.06);
 }
 
 .result-unpublished-badge {
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-size: 13px;
-  padding: 6px 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  padding: 8px 14px;
   letter-spacing: 0.3em;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .result-register-heading {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--text);
   letter-spacing: 0.15em;
+  line-height: 1.8;
 }
 
 .result-register-field {
@@ -2729,14 +2731,15 @@ a:hover { color: var(--text-primary); }
   color: #fff;
   border: none;
   font-family: var(--font-main);
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   letter-spacing: 0.4em;
-  padding: 24px 20px;
+  padding: 28px 24px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
   height: 80%;
-  width: 80px;
+  width: 85px;
+  box-shadow: 2px 2px 12px rgba(121, 46, 41, 0.3);
 }
 .result-cta-button:hover:not(:disabled) { background: var(--accentDim); }
 .result-cta-button:disabled { opacity: 0.5; cursor: not-allowed; }
