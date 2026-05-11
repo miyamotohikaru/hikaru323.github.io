@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, getFieldValue } from "@/lib/firebase";
+import { getDb, getFieldValue, isFirebaseAvailable } from "@/lib/firebase";
+import { getWord } from "@/lib/in-memory-store";
+
+// インメモリ通報カウント（Firebase未設定時のフォールバック）
+const inMemoryReports = new Map<string, number>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,32 +15,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "wordIdが必要です。" }, { status: 400 });
     }
 
-    const db = await getDb();
-    const FieldValue = await getFieldValue();
+    if (isFirebaseAvailable()) {
+      const db = await getDb();
+      const FieldValue = await getFieldValue();
 
-    // Check if the word exists
-    const wordDoc = await db.collection("words").doc(wordId).get();
-    if (!wordDoc.exists) {
+      const wordDoc = await db.collection("words").doc(wordId).get();
+      if (!wordDoc.exists) {
+        return NextResponse.json({ error: "語が見つかりません。" }, { status: 404 });
+      }
+
+      await db.collection("reports").add({
+        wordId,
+        reason,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+      const reportsSnapshot = await db
+        .collection("reports")
+        .where("wordId", "==", wordId)
+        .get();
+
+      if (reportsSnapshot.size >= 3) {
+        await db.collection("words").doc(wordId).update({ isVisible: false });
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
+    // インメモリフォールバック
+    const doc = getWord(wordId);
+    if (!doc) {
       return NextResponse.json({ error: "語が見つかりません。" }, { status: 404 });
     }
 
-    // Save report
-    await db.collection("reports").add({
-      wordId,
-      reason,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-
-    // Count reports for this word
-    const reportsSnapshot = await db
-      .collection("reports")
-      .where("wordId", "==", wordId)
-      .get();
-
-    // Auto-hide if 3+ reports
-    if (reportsSnapshot.size >= 3) {
-      await db.collection("words").doc(wordId).update({ isVisible: false });
-    }
+    const count = (inMemoryReports.get(wordId) || 0) + 1;
+    inMemoryReports.set(wordId, count);
 
     return NextResponse.json({ success: true });
   } catch (error) {

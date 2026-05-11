@@ -10,7 +10,10 @@ export default function RecentWords() {
 
   useEffect(() => {
     fetch("/api/words?limit=5&sort=newest")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
       .then((data) => setWords(data.words || []))
       .catch(() => setWords([]))
       .finally(() => setLoading(false));

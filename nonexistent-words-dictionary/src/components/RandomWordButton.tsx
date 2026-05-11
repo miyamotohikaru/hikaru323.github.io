@@ -23,6 +23,7 @@ export default function RandomWordButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [word, setWord] = useState<RandomWord | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -32,16 +33,22 @@ export default function RandomWordButton() {
   const handleClick = async () => {
     if (isLoading) return;
     setIsLoading(true);
+    setFetchError(false);
 
     try {
       const res = await fetch("/api/words/random");
+      if (!res.ok) throw new Error();
       const data = await res.json();
       if (data.id) {
         setWord(data);
         setShowModal(true);
+      } else {
+        setFetchError(true);
+        setTimeout(() => setFetchError(false), 3000);
       }
     } catch {
-      // silently fail
+      setFetchError(true);
+      setTimeout(() => setFetchError(false), 3000);
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +75,7 @@ export default function RandomWordButton() {
         onClick={handleClick}
         disabled={isLoading}
       >
-        {isLoading ? t("omikuji.pulling") : t("omikuji.button")}
+        {isLoading ? t("omikuji.pulling") : fetchError ? "取得失敗…" : t("omikuji.button")}
       </button>
 
       {showModal && word && portalTarget && createPortal(

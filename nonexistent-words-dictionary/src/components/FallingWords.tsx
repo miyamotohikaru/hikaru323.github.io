@@ -102,8 +102,10 @@ export default function FallingWords() {
     window.addEventListener("resize", resize);
 
     // ── Spawn word particles on interval ──
-    let wordTimer: ReturnType<typeof setTimeout>;
+    let wordTimer: ReturnType<typeof setTimeout> | null = null;
+    let disposed = false;
     const scheduleWord = () => {
+      if (disposed) return;
       const delay = rand(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX);
       wordTimer = setTimeout(() => {
         const words = wordsRef.current;
@@ -150,8 +152,9 @@ export default function FallingWords() {
     scheduleWord();
 
     // ── Spawn icon particles on interval ──
-    let iconTimer: ReturnType<typeof setTimeout>;
+    let iconTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleIcon = () => {
+      if (disposed) return;
       const delay = rand(ICON_SPAWN_MIN, ICON_SPAWN_MAX);
       iconTimer = setTimeout(() => {
         const img = iconRef.current;
@@ -242,10 +245,11 @@ export default function FallingWords() {
     rafRef.current = requestAnimationFrame(tick);
 
     return () => {
+      disposed = true;
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(rafRef.current);
-      clearTimeout(wordTimer);
-      clearTimeout(iconTimer);
+      if (wordTimer) clearTimeout(wordTimer);
+      if (iconTimer) clearTimeout(iconTimer);
     };
   }, []);
 

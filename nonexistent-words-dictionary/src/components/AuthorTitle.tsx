@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface AuthorTitleProps {
   className?: string;
@@ -34,11 +34,34 @@ function getTitle(postsCount: number, totalLikes: number): { title: string; read
 export default function AuthorTitle({ className }: AuthorTitleProps) {
   const [title, setTitle] = useState<{ title: string; reading: string } | null>(null);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     const postsCount = parseInt(localStorage.getItem("fictionary_posts_count") || "0", 10);
     const totalLikes = parseInt(localStorage.getItem("fictionary_total_likes") || "0", 10);
     setTitle(getTitle(postsCount, totalLikes));
   }, []);
+
+  useEffect(() => {
+    refresh();
+
+    // localStorage変更を検知（他タブ含む）
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "fictionary_posts_count" || e.key === "fictionary_total_likes") {
+        refresh();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    // 同タブ内の変更を検知（visibilitychange）
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [refresh]);
 
   if (!title) return null;
 

@@ -8,16 +8,38 @@ import LikeButton from "@/components/LikeButton";
 export default function DailyWord() {
   const [word, setWord] = useState<WordEntry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetch("/api/daily")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
       .then((data) => setWord(data.word || null))
-      .catch(() => setWord(null))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !word) return null;
+  if (loading) {
+    return (
+      <div className="daily-word">
+        <span className="daily-word-label">本日の見出し語</span>
+        <p className="loading-text" style={{ fontSize: "12px" }}>読み込み中…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="daily-word">
+        <span className="daily-word-label">本日の見出し語</span>
+        <p style={{ fontSize: "12px", color: "var(--textMute)" }}>取得できませんでした</p>
+      </div>
+    );
+  }
+
+  if (!word) return null;
 
   return (
     <div className="daily-word">

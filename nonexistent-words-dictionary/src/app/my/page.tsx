@@ -12,6 +12,7 @@ export default function MyPage() {
   const [myWords, setMyWords] = useState<WordEntry[]>([]);
   const [likedWords, setLikedWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [nickname, setNickname] = useState("");
   const [postsCount, setPostsCount] = useState(0);
 
@@ -35,7 +36,7 @@ export default function MyPage() {
         setMyWords(data.myWords || []);
         setLikedWords(data.likedWords || []);
       } catch {
-        // silently fail
+        setFetchError(true);
       } finally {
         setLoading(false);
       }
@@ -62,6 +63,8 @@ export default function MyPage() {
 
       {loading ? (
         <p className="loading-text">{t("loading.text")}</p>
+      ) : fetchError ? (
+        <p className="empty-text">データの取得に失敗しました。ページを再読み込みしてください。</p>
       ) : postsCount === 0 && likedWords.length === 0 ? (
         <div className="my-empty">
           <p className="empty-text">

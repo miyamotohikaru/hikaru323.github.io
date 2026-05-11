@@ -4125,6 +4125,74 @@ a:hover { color: var(--text-primary); }
 /* ===== Browse Page Redesign (辞書索引風) ===== */
 .browse-header { padding: 2rem 0 1rem; }
 
+/* 検索バー */
+.browse-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+}
+.browse-search-input {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 14px;
+  padding: 10px 14px;
+  outline: none;
+  letter-spacing: 0.05em;
+}
+.browse-search-input:focus {
+  border-color: var(--textSoft);
+}
+.browse-search-input::placeholder {
+  color: var(--textMute);
+}
+.browse-search-clear {
+  background: transparent;
+  border: none;
+  color: var(--textMute);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.browse-search-results {
+  margin-bottom: 2rem;
+}
+
+/* ページネーション */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+.pagination-btn {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--text);
+  font-size: 16px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--textSoft);
+}
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.pagination-info {
+  font-size: 13px;
+  color: var(--textMute);
+  letter-spacing: 0.1em;
+}
+
 /* 索引コンテナ：サイドバー＋コンテンツ */
 .dict-index-container {
   display: flex;

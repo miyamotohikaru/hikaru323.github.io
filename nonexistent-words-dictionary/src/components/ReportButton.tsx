@@ -10,8 +10,10 @@ export default function ReportButton({ wordId }: ReportButtonProps) {
   const [reported, setReported] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [reason, setReason] = useState("");
+  const [submitError, setSubmitError] = useState(false);
 
   const handleReport = async () => {
+    setSubmitError(false);
     try {
       const res = await fetch("/api/reports", {
         method: "POST",
@@ -21,9 +23,12 @@ export default function ReportButton({ wordId }: ReportButtonProps) {
       if (res.ok) {
         setReported(true);
         setShowForm(false);
+        setReason("");
+      } else {
+        setSubmitError(true);
       }
     } catch {
-      // silently fail
+      setSubmitError(true);
     }
   };
 
@@ -51,10 +56,11 @@ export default function ReportButton({ wordId }: ReportButtonProps) {
             <button className="report-submit" onClick={handleReport}>
               送信
             </button>
-            <button className="report-cancel" onClick={() => setShowForm(false)}>
+            <button className="report-cancel" onClick={() => { setShowForm(false); setReason(""); setSubmitError(false); }}>
               キャンセル
             </button>
           </div>
+          {submitError && <p style={{ fontSize: "11px", color: "var(--accent)", marginTop: "4px" }}>送信に失敗しました。</p>}
         </div>
       )}
     </div>

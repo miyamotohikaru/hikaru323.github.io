@@ -35,18 +35,23 @@ export default function RankingPage() {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>("popular");
   const [words, setWords] = useState<WordEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [selectedWord, setSelectedWord] = useState<WordEntry | null>(null);
   const bookRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLoading(true);
+    setFetchError(false);
     setSelectedWord(null);
     const sort = activeTab === "popular" ? "popular" : "newest";
     fetch(`/api/words?sort=${sort}&limit=20`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
       .then((data) => setWords(data.words || []))
-      .catch(() => setWords([]))
+      .catch(() => { setWords([]); setFetchError(true); })
       .finally(() => setLoading(false));
   }, [activeTab]);
 
@@ -91,6 +96,8 @@ export default function RankingPage() {
 
       {loading ? (
         <p className="loading-text">{t("loading.text")}</p>
+      ) : fetchError ? (
+        <p className="empty-text">データの取得に失敗しました。ページを再読み込みしてください。</p>
       ) : words.length === 0 ? (
         <p className="empty-text">{t("common.noPostsYet")}</p>
       ) : (

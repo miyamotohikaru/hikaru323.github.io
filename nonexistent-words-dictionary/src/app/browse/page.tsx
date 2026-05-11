@@ -10,20 +10,28 @@ const GOJUON_TABS = GOJUON_ROWS.slice(0, 10); // あ〜わ行のみ（清音）
 
 type IndexMode = "ja" | "en";
 
+const ITEMS_PER_PAGE = 20;
+
 export default function BrowsePage() {
   const { lang, t } = useI18n();
   const [allWords, setAllWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [activeRow, setActiveRow] = useState<string | null>(null);
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const [indexMode, setIndexMode] = useState<IndexMode>(lang === "en" ? "en" : "ja");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   useEffect(() => {
-    fetch("/api/words?limit=100&sort=newest")
-      .then((res) => res.json())
+    fetch("/api/words?limit=500&sort=newest")
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
       .then((data) => setAllWords(data.words || []))
-      .catch(() => setAllWords([]))
+      .catch(() => { setAllWords([]); setFetchError(true); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -100,6 +108,22 @@ export default function BrowsePage() {
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+
+  // 検索フィルタ
+  const query = searchQuery.trim().toLowerCase();
+  const searchResults = query
+    ? allWords.filter((w) =>
+        w.word.toLowerCase().includes(query) ||
+        w.reading.toLowerCase().includes(query) ||
+        w.definition.toLowerCase().includes(query)
+      )
+    : null;
+
+  // ページネーション（検索結果用）
+  const totalSearchPages = searchResults ? Math.ceil(searchResults.length / ITEMS_PER_PAGE) : 0;
+  const paginatedSearchResults = searchResults
+    ? searchResults.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+    : [];
 
   // Order: show primary index first based on UI language
   const showJaFirst = lang !== "en";
@@ -245,14 +269,67 @@ export default function BrowsePage() {
         </div>
       </div>
 
+      {/* 検索バー */}
+      <div className="browse-search-bar">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+          placeholder={lang === "en" ? "Search words..." : "言葉を検索…"}
+          className="browse-search-input"
+        />
+        {searchQuery && (
+          <button className="browse-search-clear" onClick={() => setSearchQuery("")}>×</button>
+        )}
+      </div>
+
       {loading ? (
         <p className="loading-text">{t("loading.text")}</p>
+      ) : fetchError ? (
+        <p className="empty-text">データの取得に失敗しました。ページを再読み込みしてください。</p>
       ) : allWords.length === 0 ? (
         <p className="empty-text">
           {t("browse.noWords").split("\n").map((line, i) => (
             <span key={i}>{line}{i < 1 && <br />}</span>
           ))}
         </p>
+      ) : searchResults ? (
+        /* 検索結果表示 */
+        <div className="browse-search-results">
+          <p className="page-subtitle">
+            {lang === "en" ? `${searchResults.length} results for "${searchQuery}"` : `「${searchQuery}」の検索結果: ${searchResults.length}件`}
+          </p>
+          {paginatedSearchResults.length === 0 ? (
+            <p className="empty-text">{lang === "en" ? "No words found." : "該当する言葉が見つかりませんでした。"}</p>
+          ) : (
+            <>
+              <div className="browse-row-entries">
+                {paginatedSearchResults.map((word) => (
+                  <KojienEntry key={word.id} entry={word} showMeta />
+                ))}
+              </div>
+              {totalSearchPages > 1 && (
+                <div className="pagination">
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                  >
+                    ←
+                  </button>
+                  <span className="pagination-info">{currentPage} / {totalSearchPages}</span>
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage >= totalSearchPages}
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       ) : (
         <>
           {indexMode === "ja" && jaSection}
