@@ -352,7 +352,6 @@ export default function Home() {
                 <button type="submit" className="tategaki-search-button" disabled={!word.trim()}>引く</button>
               </div>
             </form>
-            <span className="tategaki-search-note" style={{ position: "static" }}>{t("home.note")}</span>
           </div>
 
           {/* 見出し列 + スタンプ */}
@@ -399,7 +398,6 @@ export default function Home() {
                 <button type="submit" className="tategaki-search-button" disabled={!word.trim()}>引く</button>
               </div>
             </form>
-            <span className="tategaki-search-note" style={{ position: "static" }}>{t("home.note")}</span>
           </div>
 
           {/* 蔵書印スタイル通知 */}
@@ -447,8 +445,8 @@ export default function Home() {
 
           {/* 掲載フォーム列 */}
           <div className="result-register-col fade-in-rtl">
-            <span className="result-unpublished-badge">{isEnMode ? "New Word!" : "辞典に存在しません"}</span>
-            <span className="result-register-heading">{isEnMode ? "Register this word" : "この言葉を辞典に掲載できます"}</span>
+            <span className="result-unpublished-badge">{isEnMode ? "New Word!" : "この言葉は実在しません"}</span>
+            <span className="result-register-heading">{isEnMode ? "Register this word" : "存在しない言葉辞典に掲載できます"}</span>
 
             <div className="result-register-field">
               <span className="result-register-label">{isEnMode ? t("result.pronunciationLabel") : t("result.readingLabel")}</span>
