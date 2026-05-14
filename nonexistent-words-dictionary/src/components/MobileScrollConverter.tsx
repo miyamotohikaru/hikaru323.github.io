@@ -4,15 +4,22 @@ import { useEffect } from "react";
 
 export default function MobileScrollConverter() {
   useEffect(() => {
-    if (window.innerWidth > 640) return;
+    // PC: wheelイベントで縦スクロール→横スクロール変換
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement;
+      const container = target.closest(".h-scroll, .dictionary-page") as HTMLElement | null;
+      if (!container || e.deltaY === 0) return;
 
+      container.scrollLeft -= e.deltaY;
+      e.preventDefault();
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: false });
+
+    // モバイル: touchイベントで縦スワイプ→横スクロール変換
     let touchStartY = 0;
     let scrollStartX = 0;
     let activeContainer: HTMLElement | null = null;
-
-    const findScrollContainer = (target: HTMLElement): HTMLElement | null => {
-      return target.closest(".h-scroll, .dictionary-page") as HTMLElement | null;
-    };
 
     const shouldIgnore = (target: HTMLElement) => {
       return (
@@ -26,10 +33,8 @@ export default function MobileScrollConverter() {
     const handleTouchStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       if (shouldIgnore(target)) return;
-
-      const container = findScrollContainer(target);
+      const container = target.closest(".h-scroll, .dictionary-page") as HTMLElement | null;
       if (!container) return;
-
       activeContainer = container;
       touchStartY = e.touches[0].clientY;
       scrollStartX = container.scrollLeft;
@@ -38,14 +43,10 @@ export default function MobileScrollConverter() {
     const handleTouchMove = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       if (shouldIgnore(target) || !activeContainer) return;
-
       const currentY = e.touches[0].clientY;
       const deltaY = touchStartY - currentY;
-
-      // 縦の動きを横スクロールに変換（h-scrollはdirection:rtlなので符号反転）
       const isRtl = getComputedStyle(activeContainer).direction === "rtl";
       activeContainer.scrollLeft = scrollStartX + (isRtl ? -deltaY : deltaY) * 1.5;
-
       e.preventDefault();
     };
 
@@ -58,6 +59,7 @@ export default function MobileScrollConverter() {
     window.addEventListener("touchend", handleTouchEnd);
 
     return () => {
+      window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);

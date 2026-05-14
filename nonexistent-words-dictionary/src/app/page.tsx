@@ -63,19 +63,6 @@ export default function Home() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const hScrollRef = useRef<HTMLDivElement>(null);
 
-  // Wheel → horizontal scroll conversion
-  useEffect(() => {
-    const el = hScrollRef.current;
-    if (!el) return;
-    const handler = (e: WheelEvent) => {
-      if (e.deltaY === 0) return;
-      el.scrollLeft -= e.deltaY;
-      e.preventDefault();
-    };
-    el.addEventListener("wheel", handler, { passive: false });
-    return () => el.removeEventListener("wheel", handler);
-  });
-
   // フッター表示制御: idleの時だけモバイルフッターを表示
   useEffect(() => {
     setMobileVisible(phase === "idle");

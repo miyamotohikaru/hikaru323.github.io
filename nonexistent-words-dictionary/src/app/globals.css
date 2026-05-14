@@ -2595,7 +2595,13 @@ a:hover { color: var(--text-primary); }
   direction: rtl;
   overflow-x: auto;
   overflow-y: hidden;
-  height: calc(100vh - 68px);
+  position: fixed;
+  top: 68px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: var(--bg);
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
 }
