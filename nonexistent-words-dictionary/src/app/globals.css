@@ -72,7 +72,8 @@ a:hover { color: var(--text-primary); }
 
 .header-inner {
   margin: 0 auto;
-  padding: 18px 56px;
+  padding: 0 56px;
+  height: 64px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1776,6 +1777,8 @@ a:hover { color: var(--text-primary); }
   100% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
 }
 
+.footer-mobile-hidden { display: none; }
+
 /* ===== Footer ===== */
 .site-footer {
   border-top: 1px solid var(--rule);
@@ -2596,7 +2599,7 @@ a:hover { color: var(--text-primary); }
   overflow-x: auto;
   overflow-y: hidden;
   position: fixed;
-  top: 68px;
+  top: 64px;
   left: 0;
   right: 0;
   bottom: 0;
@@ -3532,7 +3535,6 @@ a:hover { color: var(--text-primary); }
 
   /* ===== 12. フッター ===== */
   .site-footer { padding: 20px 16px; }
-  .footer-mobile-hidden { display: none; }
   .footer-title { font-size: 11px; }
   .footer-sub { font-size: 10px; }
   .footer-nav { gap: 20px; }

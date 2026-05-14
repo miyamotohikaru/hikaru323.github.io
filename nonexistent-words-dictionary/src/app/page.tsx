@@ -63,11 +63,27 @@ export default function Home() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const hScrollRef = useRef<HTMLDivElement>(null);
 
-  // フッター表示制御: idleの時だけモバイルフッターを表示
+  // フッター表示制御: idleの時だけフッターを表示
   useEffect(() => {
     setMobileVisible(phase === "idle");
     return () => setMobileVisible(false);
   }, [phase, setMobileVisible]);
+
+  // loading/result時にbodyの縦スクロールを防止＆トップにリセット
+  useEffect(() => {
+    if (phase !== "idle") {
+      window.scrollTo(0, 0);
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [phase]);
 
   useEffect(() => {
     const saved = localStorage.getItem("fictionary_nickname");
