@@ -206,6 +206,8 @@ export default function ViewScreen({
   const [shareFeedback, setShareFeedback] = useState(false);
   const [mediaSrc, setMediaSrc] = useState("");
   const [canvasRatio, setCanvasRatio] = useState<number | null>(null);
+  const [expanding, setExpanding] = useState(false);
+  const expandCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
@@ -302,8 +304,63 @@ export default function ViewScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
+  // Call Gemini API to expand image for wide-FOV creatures
+  const fetchExpandedImage = useCallback(
+    async (creatureId: string, exp: number): Promise<HTMLImageElement | null> => {
+      // Check cache
+      const cacheKey = `${creatureId}-${exp}`;
+      if (expandCacheRef.current.has(cacheKey)) {
+        return expandCacheRef.current.get(cacheKey)!;
+      }
+
+      // Only expand for wide FOV (> 1.0)
+      if (exp <= 1.0) return null;
+
+      try {
+        setExpanding(true);
+
+        // Get original image as blob
+        const humanCanvas = humanCanvasRef.current;
+        if (!humanCanvas) return null;
+
+        const blob = await new Promise<Blob>((resolve) => {
+          humanCanvas.toBlob((b) => resolve(b!), "image/png");
+        });
+
+        const form = new FormData();
+        form.append("image", blob, "photo.png");
+        form.append("expansion", String(exp));
+
+        const res = await fetch("/api/expand", { method: "POST", body: form });
+        if (!res.ok) {
+          console.error("[expand] API error:", res.status);
+          return null;
+        }
+
+        const imgBlob = await res.blob();
+        const url = URL.createObjectURL(imgBlob);
+
+        return new Promise<HTMLImageElement>((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            expandCacheRef.current.set(cacheKey, img);
+            resolve(img);
+          };
+          img.onerror = () => resolve(null as unknown as HTMLImageElement);
+          img.src = url;
+        });
+      } catch (e) {
+        console.error("[expand] Error:", e);
+        return null;
+      } finally {
+        setExpanding(false);
+      }
+    },
+    []
+  );
+
   const renderCreature = useCallback(
-    (creatureId: string, img: HTMLImageElement, w: number, h: number) => {
+    async (creatureId: string, img: HTMLImageElement, w: number, h: number) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d")!;
@@ -312,10 +369,23 @@ export default function ViewScreen({
       const exp = fov?.expansion ?? 1.0;
 
       setProcessing(true);
+
+      // Try AI expansion for wide-FOV creatures
+      if (exp > 1.0) {
+        const expandedImg = await fetchExpandedImage(creatureId, exp);
+        if (expandedImg) {
+          // Draw expanded image and apply filter
+          applyCreatureVision(ctx, w, h, expandedImg, c, 1.0);
+          setProcessing(false);
+          return;
+        }
+      }
+
+      // Fallback: render normally
       applyCreatureVision(ctx, w, h, img, c, exp);
       setTimeout(() => setProcessing(false), 300);
     },
-    [creatures, applyCreatureVision]
+    [creatures, applyCreatureVision, fetchExpandedImage]
   );
 
   // Share to specific SNS
@@ -487,7 +557,7 @@ export default function ViewScreen({
         >
           {isHolding ? "👁 人間のめ" : `${creature.name}のめ`}
         </div>
-        {processing && (
+        {(processing || expanding) && (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center"
             style={{ background: "rgba(255,255,255,0.7)" }}
@@ -504,7 +574,7 @@ export default function ViewScreen({
               className="mt-2"
               style={{ fontWeight: 700, fontSize: 14, color: "#2D2D2D" }}
             >
-              へんかんちゅう...
+              {expanding ? "🔭 視界をひろげてるよ..." : "へんかんちゅう..."}
             </p>
           </div>
         )}

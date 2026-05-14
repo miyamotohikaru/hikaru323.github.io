@@ -1,7 +1,11 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: "OPENAI_API_KEY not configured" }), {
+    return new Response(JSON.stringify({ error: "GEMINI_API_KEY not configured" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
@@ -19,6 +23,11 @@ export async function POST(req: Request) {
       });
     }
 
+    // Convert file to base64
+    const arrayBuffer = await image.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const mimeType = image.type || "image/png";
+
     const fovDesc =
       expansion >= 3.0
         ? "a full 360-degree panoramic"
@@ -32,52 +41,54 @@ export async function POST(req: Request) {
       `the surroundings in all directions. Maintain the same lighting, style, colors, ` +
       `and time of day. The extension should be photorealistic and seamless.`;
 
-    const apiForm = new FormData();
-    apiForm.append("model", "gpt-image-2");
-    apiForm.append("image", image);
-    apiForm.append("prompt", prompt);
-    apiForm.append("size", "1536x1024");
-    apiForm.append("quality", "low");
-
-    const res = await fetch("https://api.openai.com/v1/images/edits", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: apiForm,
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp-image-generation",
+      generationConfig: {
+        // @ts-expect-error -- responseModalities is valid but not in the type definitions
+        responseModalities: ["Text", "Image"],
+      },
     });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("[expand API] OpenAI error:", res.status, errText);
-      return new Response(JSON.stringify({ error: errText }), {
-        status: res.status,
+    const result = await model.generateContent([
+      { text: prompt },
+      {
+        inlineData: {
+          mimeType,
+          data: base64,
+        },
+      },
+    ]);
+
+    const response = result.response;
+    const parts = response.candidates?.[0]?.content?.parts;
+
+    if (!parts) {
+      return new Response(JSON.stringify({ error: "No response from Gemini" }), {
+        status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    const data = await res.json();
-    const b64 = data.data?.[0]?.b64_json;
-    if (b64) {
-      const imgBuffer = Buffer.from(b64, "base64");
-      return new Response(imgBuffer, {
-        headers: { "Content-Type": "image/png" },
-      });
+    // Find image part in response
+    for (const part of parts) {
+      if (part.inlineData) {
+        const imgBuffer = Buffer.from(part.inlineData.data, "base64");
+        return new Response(imgBuffer, {
+          headers: {
+            "Content-Type": part.inlineData.mimeType || "image/png",
+            "Cache-Control": "no-store",
+          },
+        });
+      }
     }
 
-    const url = data.data?.[0]?.url;
-    if (url) {
-      const imgRes = await fetch(url);
-      const blob = await imgRes.blob();
-      return new Response(blob, {
-        headers: { "Content-Type": "image/png" },
-      });
-    }
-
-    return new Response(JSON.stringify({ error: "No image in response" }), {
+    return new Response(JSON.stringify({ error: "No image in Gemini response" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("[expand API] Error:", e);
+    console.error("[expand API] Gemini error:", e);
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
