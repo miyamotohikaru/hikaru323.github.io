@@ -3390,16 +3390,15 @@ a:hover { color: var(--text-primary); }
     padding: 0;
     border-top: 1px solid var(--rule);
   }
-  .h-scroll > * { direction: ltr; flex-shrink: 0; }
+  .h-scroll > * {
+    direction: ltr;
+    flex-shrink: 0;
+  }
 
   .result-search-col {
-    padding: 20px 12px;
-    min-width: 160px;
-    gap: 8px;
-    align-self: flex-start;
-  }
-  .h-scroll > * {
-    padding-top: 12px;
+    padding: 8px 8px;
+    min-width: 140px;
+    gap: 6px;
   }
   .result-search-col .tategaki-search-input-wrap {
     width: 36px; height: 200px;
@@ -3410,7 +3409,7 @@ a:hover { color: var(--text-primary); }
   .result-hit-count { font-size: 11px; }
 
   .result-body-col {
-    padding: 16px 12px;
+    padding: 8px 4px;
     font-size: 0.8125rem;
     line-height: 1.8;
   }
@@ -3548,9 +3547,9 @@ a:hover { color: var(--text-primary); }
   .empty-word-notice {
     min-width: 3.25rem;
     min-height: calc(100vh - 5rem);
-    padding: 1rem 0.625rem;
+    padding: 0.75rem 0.5rem;
     gap: 0.3125rem;
-    margin-right: -8px;
+    margin: 0;
   }
   .notice-line-1, .notice-line-2 { font-size: 0.9375rem; }
   .notice-line-3 { font-size: 0.8125rem; }
