@@ -2603,8 +2603,10 @@ a:hover { color: var(--text-primary); }
   left: 0;
   right: 0;
   bottom: 0;
+  padding-top: 16px;
   z-index: 50;
   background: var(--bg);
+  gap: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
 }
@@ -3387,18 +3389,20 @@ a:hover { color: var(--text-primary); }
     z-index: 50;
     background: var(--bg);
     margin: 0;
-    padding: 0;
+    padding: 8px 0 0 0;
     border-top: 1px solid var(--rule);
+    gap: 0;
   }
   .h-scroll > * {
     direction: ltr;
     flex-shrink: 0;
+    margin: 0;
   }
 
   .result-search-col {
-    padding: 8px 8px;
-    min-width: 140px;
-    gap: 6px;
+    padding: 4px 6px;
+    min-width: 130px;
+    gap: 4px;
   }
   .result-search-col .tategaki-search-input-wrap {
     width: 36px; height: 200px;
@@ -3409,7 +3413,7 @@ a:hover { color: var(--text-primary); }
   .result-hit-count { font-size: 11px; }
 
   .result-body-col {
-    padding: 8px 4px;
+    padding: 4px 2px;
     font-size: 0.8125rem;
     line-height: 1.8;
   }
