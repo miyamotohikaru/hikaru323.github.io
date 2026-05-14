@@ -368,22 +368,20 @@ export default function ViewScreen({
       const fov = FOV_DATA[creatureId];
       const exp = fov?.expansion ?? 1.0;
 
+      // Step 1: Apply creature filter first (shows "変換中")
       setProcessing(true);
+      applyCreatureVision(ctx, w, h, img, c, exp);
 
-      // Try AI expansion for wide-FOV creatures
+      // Step 2: If wide FOV, try AI expansion (shows "視界をひろげてるよ")
       if (exp > 1.0) {
+        setProcessing(false);
         const expandedImg = await fetchExpandedImage(creatureId, exp);
         if (expandedImg) {
-          // Draw expanded image and apply filter
           applyCreatureVision(ctx, w, h, expandedImg, c, 1.0);
-          setProcessing(false);
-          return;
         }
+      } else {
+        setTimeout(() => setProcessing(false), 300);
       }
-
-      // Fallback: render normally
-      applyCreatureVision(ctx, w, h, img, c, exp);
-      setTimeout(() => setProcessing(false), 300);
     },
     [creatures, applyCreatureVision, fetchExpandedImage]
   );
@@ -574,7 +572,9 @@ export default function ViewScreen({
               className="mt-2"
               style={{ fontWeight: 700, fontSize: 14, color: "#2D2D2D" }}
             >
-              {expanding ? "🔭 視界をひろげてるよ..." : "へんかんちゅう..."}
+              {expanding
+                ? "🔭 視界をひろげてるよ..."
+                : `${creature.name}の視点に変換中...`}
             </p>
           </div>
         )}
