@@ -368,21 +368,25 @@ export default function ViewScreen({
       const fov = FOV_DATA[creatureId];
       const exp = fov?.expansion ?? 1.0;
 
-      // Step 1: Apply creature filter first (shows "変換中")
+      // Step 1: Show "変換中" then apply filter
       setProcessing(true);
-      applyCreatureVision(ctx, w, h, img, c, exp);
 
-      // Step 2: If wide FOV, try AI expansion (shows "視界をひろげてるよ")
       if (exp > 1.0) {
+        // Wide FOV: show "変換中" briefly, then switch to "視界をひろげてるよ"
+        await new Promise((r) => setTimeout(r, 500));
         setProcessing(false);
+        // Step 2: AI expansion (shows "視界をひろげてるよ")
         const expandedImg = await fetchExpandedImage(creatureId, exp);
         if (expandedImg) {
           applyCreatureVision(ctx, w, h, expandedImg, c, 1.0);
-          // Apply fisheye distortion — stronger for wider FOV
           const fisheyeStrength = Math.min(1.0, (exp - 1.0) / 2.0);
           applyFisheye(ctx, w, h, fisheyeStrength);
+        } else {
+          // Fallback: normal render
+          applyCreatureVision(ctx, w, h, img, c, exp);
         }
       } else {
+        applyCreatureVision(ctx, w, h, img, c, exp);
         setTimeout(() => setProcessing(false), 300);
       }
     },
