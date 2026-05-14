@@ -1592,3 +1592,70 @@ export function applyFilter(
 
   ctx.putImageData(imageData, 0, 0);
 }
+
+// ---------------------------------------------------------------------------
+// Fisheye (barrel distortion) for wide-FOV creatures
+// ---------------------------------------------------------------------------
+
+export function applyFisheye(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  strength: number // 0.0 = no distortion, 1.0 = strong fisheye
+): void {
+  const src = ctx.getImageData(0, 0, w, h);
+  const dst = ctx.createImageData(w, h);
+  const sd = src.data;
+  const dd = dst.data;
+
+  const cx = w / 2;
+  const cy = h / 2;
+  const maxR = Math.sqrt(cx * cx + cy * cy);
+  const k = strength * 0.8; // distortion coefficient
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      // Normalize coordinates to [-1, 1]
+      const nx = (x - cx) / cx;
+      const ny = (y - cy) / cy;
+      const r = Math.sqrt(nx * nx + ny * ny);
+
+      // Barrel distortion: push pixels outward from center
+      let nr: number;
+      if (r === 0) {
+        nr = 0;
+      } else {
+        nr = r * (1 + k * r * r);
+      }
+
+      // Map back to source pixel
+      const srcX = Math.round(cx + (nx / r) * nr * cx);
+      const srcY = Math.round(cy + (ny / r) * nr * cy);
+
+      const di = (y * w + x) * 4;
+
+      if (srcX >= 0 && srcX < w && srcY >= 0 && srcY < h) {
+        const si = (srcY * w + srcX) * 4;
+        dd[di] = sd[si];
+        dd[di + 1] = sd[si + 1];
+        dd[di + 2] = sd[si + 2];
+        dd[di + 3] = sd[si + 3];
+      } else {
+        // Out of bounds — black
+        dd[di] = 0;
+        dd[di + 1] = 0;
+        dd[di + 2] = 0;
+        dd[di + 3] = 255;
+      }
+    }
+  }
+
+  ctx.putImageData(dst, 0, 0);
+
+  // Subtle vignette for fisheye realism
+  const vg = ctx.createRadialGradient(cx, cy, maxR * 0.5, cx, cy, maxR * 0.95);
+  vg.addColorStop(0, "rgba(0,0,0,0)");
+  vg.addColorStop(1, "rgba(0,0,0,0.3)");
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, w, h);
+}

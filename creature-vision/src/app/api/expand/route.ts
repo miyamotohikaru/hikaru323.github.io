@@ -30,16 +30,18 @@ export async function POST(req: Request) {
 
     const fovDesc =
       expansion >= 3.0
-        ? "a full 360-degree panoramic"
+        ? "a full 360-degree ultra-wide panoramic"
         : expansion >= 2.5
           ? "an extremely wide panoramic"
           : "a wider panoramic";
 
     const prompt =
-      `Extend this photograph to show ${fovDesc} field of view. ` +
-      `Keep the original scene content recognizable in the center and naturally extend ` +
-      `the surroundings in all directions. Maintain the same lighting, style, colors, ` +
-      `and time of day. The extension should be photorealistic and seamless.`;
+      `Extend this photograph HORIZONTALLY to the LEFT and RIGHT to create ${fovDesc} view. ` +
+      `The original image content must remain in the center, exactly as-is. ` +
+      `Generate new scenery on the left and right sides that naturally continues the scene. ` +
+      `The final image should be much wider than tall, like a panoramic photo. ` +
+      `Maintain the same lighting, style, colors, perspective, and time of day. ` +
+      `The extension must be photorealistic and seamlessly blend with the original.`;
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({

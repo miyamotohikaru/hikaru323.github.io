@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Icon from "./Icon";
-import { applyFilter, expandFOV, FOV_DATA } from "./FilterEngine";
+import { applyFilter, expandFOV, FOV_DATA, applyFisheye } from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
 import { SHARE_TEXTS } from "@/data/shareTexts";
 
@@ -378,6 +378,9 @@ export default function ViewScreen({
         const expandedImg = await fetchExpandedImage(creatureId, exp);
         if (expandedImg) {
           applyCreatureVision(ctx, w, h, expandedImg, c, 1.0);
+          // Apply fisheye distortion — stronger for wider FOV
+          const fisheyeStrength = Math.min(1.0, (exp - 1.0) / 2.0);
+          applyFisheye(ctx, w, h, fisheyeStrength);
         }
       } else {
         setTimeout(() => setProcessing(false), 300);
