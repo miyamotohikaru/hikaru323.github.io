@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Icon from "./Icon";
-import { applyFilter, expandFOV, FOV_DATA, applyFisheye } from "./FilterEngine";
+import { applyFilter, FOV_DATA, applyFisheye } from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
 import { SHARE_TEXTS } from "@/data/shareTexts";
 
@@ -48,26 +48,9 @@ function HeartIcon({ filled }: { filled: boolean }) {
 function ShareIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M12 3L12 16"
-        stroke="#555"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M7 8L12 3L17 8"
-        stroke="#555"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4 14V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V14"
-        stroke="#555"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M12 3L12 16" stroke="#555" strokeWidth="2" strokeLinecap="round" />
+      <path d="M7 8L12 3L17 8" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 14V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V14" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -125,11 +108,9 @@ async function generateShareImage(
   cv.height = totalH;
   const ctx = cv.getContext("2d")!;
 
-  // Background
   ctx.fillStyle = "#FFF9F2";
   ctx.fillRect(0, 0, totalW, totalH);
 
-  // Left half: creature vision
   ctx.save();
   ctx.beginPath();
   ctx.roundRect(padding, padding, halfW - gap / 2, srcH, [12, 0, 0, 12]);
@@ -137,7 +118,6 @@ async function generateShareImage(
   ctx.drawImage(creatureCanvas, 0, 0, srcW, srcH, padding, padding, halfW - gap / 2, srcH);
   ctx.restore();
 
-  // Right half: human vision
   ctx.save();
   ctx.beginPath();
   ctx.roundRect(padding + halfW + gap / 2, padding, halfW - gap / 2, srcH, [0, 12, 12, 0]);
@@ -145,7 +125,6 @@ async function generateShareImage(
   ctx.drawImage(humanCanvas, srcW / 4, 0, srcW / 2, srcH, padding + halfW + gap / 2, padding, halfW - gap / 2, srcH);
   ctx.restore();
 
-  // Center divider
   ctx.strokeStyle = "rgba(255,255,255,0.8)";
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -153,20 +132,17 @@ async function generateShareImage(
   ctx.lineTo(padding + halfW, padding + srcH);
   ctx.stroke();
 
-  // Left label
   ctx.fillStyle = "rgba(0,0,0,0.5)";
   ctx.fillRect(padding + 8, padding + 8, 80, 26);
   ctx.fillStyle = "#fff";
   ctx.font = "bold 12px sans-serif";
   ctx.fillText(`${creature.name}のめ`, padding + 14, padding + 25);
 
-  // Right label
   ctx.fillStyle = "rgba(0,0,0,0.5)";
   ctx.fillRect(padding + halfW + gap / 2 + 8, padding + 8, 80, 26);
   ctx.fillStyle = "#fff";
   ctx.fillText("👁 人間のめ", padding + halfW + gap / 2 + 14, padding + 25);
 
-  // Footer
   const footerY = padding + srcH + 16;
   ctx.fillStyle = "#2D2D2D";
   ctx.font = "bold 16px sans-serif";
@@ -174,8 +150,7 @@ async function generateShareImage(
 
   ctx.fillStyle = "#888";
   ctx.font = "13px sans-serif";
-  const shareText = SHARE_TEXTS[creature.id] || "";
-  ctx.fillText(shareText, padding, footerY + 42);
+  ctx.fillText(SHARE_TEXTS[creature.id] || "", padding, footerY + 42);
 
   ctx.fillStyle = "#bbb";
   ctx.font = "11px sans-serif";
@@ -183,6 +158,55 @@ async function generateShareImage(
 
   return new Promise((resolve) => {
     cv.toBlob((blob) => resolve(blob!), "image/png", 0.92);
+  });
+}
+
+/* ── Expand API call ── */
+
+async function callExpandAPI(
+  imageBlob: Blob,
+  expansion: number
+): Promise<HTMLImageElement | null> {
+  console.log("=== API EXPAND START ===", "expansion:", expansion);
+
+  const formData = new FormData();
+  formData.append("image", imageBlob, "photo.png");
+  formData.append("expansion", String(expansion));
+
+  // Detect orientation
+  const bitmap = await createImageBitmap(imageBlob);
+  const direction = bitmap.height > bitmap.width ? "vertical" : "horizontal";
+  formData.append("direction", direction);
+  console.log("Image direction:", direction, bitmap.width, "x", bitmap.height);
+
+  const res = await fetch("/api/expand", { method: "POST", body: formData });
+  console.log("=== API EXPAND RESPONSE ===", res.status);
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("[expand] API error:", res.status, errText);
+    return null;
+  }
+
+  const blob = await res.blob();
+  console.log("=== EXPANDED IMAGE BLOB ===", blob.size, blob.type);
+
+  if (blob.size < 1000) {
+    console.error("[expand] API returned tiny blob:", blob.size);
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      console.log("=== EXPANDED IMAGE LOADED ===", img.width, "x", img.height);
+      resolve(img);
+    };
+    img.onerror = () => {
+      console.error("[expand] Failed to load expanded image");
+      resolve(null);
+    };
+    img.src = URL.createObjectURL(blob);
   });
 }
 
@@ -207,13 +231,13 @@ export default function ViewScreen({
   const [mediaSrc, setMediaSrc] = useState("");
   const [canvasRatio, setCanvasRatio] = useState<number | null>(null);
   const [expanding, setExpanding] = useState(false);
+  const [loadingText, setLoadingText] = useState("");
   const expandCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
   const fovData = FOV_DATA[creature.id];
-  const expansion = fovData?.expansion ?? 1.0;
 
   // Close share menu on outside click
   useEffect(() => {
@@ -233,39 +257,6 @@ export default function ViewScreen({
     setMediaSrc(url);
     return () => URL.revokeObjectURL(url);
   }, [mediaFile]);
-
-  // Helper: apply creature vision to canvas
-  const applyCreatureVision = useCallback(
-    (
-      ctx: CanvasRenderingContext2D,
-      w: number,
-      h: number,
-      sourceImg: CanvasImageSource,
-      creatureData: Creature,
-      exp: number
-    ) => {
-      ctx.drawImage(sourceImg, 0, 0, w, h);
-      applyFilter(ctx, w, h, creatureData.filterType, creatureData.fp);
-      if (exp > 0 && exp < 1.0) {
-        const filtered = document.createElement("canvas");
-        filtered.width = w;
-        filtered.height = h;
-        filtered.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
-        const cropW = w * exp;
-        const cropH = h * exp;
-        const sx = (w - cropW) / 2;
-        const sy = (h - cropH) / 2;
-        ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
-        const darkness = Math.max(0, 1 - exp) * 0.8;
-        const vg = ctx.createRadialGradient(w / 2, h / 2, w * exp * 0.3, w / 2, h / 2, w * 0.6);
-        vg.addColorStop(0, "rgba(0,0,0,0)");
-        vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
-        ctx.fillStyle = vg;
-        ctx.fillRect(0, 0, w, h);
-      }
-    },
-    []
-  );
 
   // Load image and initial render
   useEffect(() => {
@@ -289,7 +280,7 @@ export default function ViewScreen({
         humanCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
       }
 
-      renderCreature(selectedId, img, w, h);
+      handleCreatureChange(selectedId, img, w, h);
     };
     img.src = mediaSrc;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -300,67 +291,13 @@ export default function ViewScreen({
     if (!imgRef.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    renderCreature(selectedId, imgRef.current, canvas.width, canvas.height);
+    handleCreatureChange(selectedId, imgRef.current, canvas.width, canvas.height);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
-  // Call Gemini API to expand image for wide-FOV creatures
-  const fetchExpandedImage = useCallback(
-    async (creatureId: string, exp: number): Promise<HTMLImageElement | null> => {
-      // Check cache
-      const cacheKey = `${creatureId}-${exp}`;
-      if (expandCacheRef.current.has(cacheKey)) {
-        return expandCacheRef.current.get(cacheKey)!;
-      }
-
-      // Only expand for wide FOV (> 1.0)
-      if (exp <= 1.0) return null;
-
-      try {
-        setExpanding(true);
-
-        // Get original image as blob
-        const humanCanvas = humanCanvasRef.current;
-        if (!humanCanvas) return null;
-
-        const blob = await new Promise<Blob>((resolve) => {
-          humanCanvas.toBlob((b) => resolve(b!), "image/png");
-        });
-
-        const form = new FormData();
-        form.append("image", blob, "photo.png");
-        form.append("expansion", String(exp));
-
-        const res = await fetch("/api/expand", { method: "POST", body: form });
-        if (!res.ok) {
-          console.error("[expand] API error:", res.status);
-          return null;
-        }
-
-        const imgBlob = await res.blob();
-        const url = URL.createObjectURL(imgBlob);
-
-        return new Promise<HTMLImageElement>((resolve) => {
-          const img = new Image();
-          img.onload = () => {
-            expandCacheRef.current.set(cacheKey, img);
-            resolve(img);
-          };
-          img.onerror = () => resolve(null as unknown as HTMLImageElement);
-          img.src = url;
-        });
-      } catch (e) {
-        console.error("[expand] Error:", e);
-        return null;
-      } finally {
-        setExpanding(false);
-      }
-    },
-    []
-  );
-
-  const renderCreature = useCallback(
-    async (creatureId: string, img: HTMLImageElement, w: number, h: number) => {
+  // Main rendering function
+  const handleCreatureChange = useCallback(
+    async (creatureId: string, originalImage: HTMLImageElement, w: number, h: number) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d")!;
@@ -368,29 +305,80 @@ export default function ViewScreen({
       const fov = FOV_DATA[creatureId];
       const exp = fov?.expansion ?? 1.0;
 
-      // Step 1: Show "変換中" then apply filter
+      console.log("=== CREATURE CHANGE ===", creatureId, "expansion:", exp);
+
+      // --- STEP 1: Loading ---
+      setLoadingText(`${c.name}に転生中...`);
       setProcessing(true);
 
+      // --- STEP 2: Determine image source ---
+      let sourceImg: CanvasImageSource = originalImage;
+
       if (exp > 1.0) {
-        // Wide FOV: show "変換中" briefly, then switch to "視界をひろげてるよ"
-        await new Promise((r) => setTimeout(r, 500));
-        setProcessing(false);
-        // Step 2: AI expansion (shows "視界をひろげてるよ")
-        const expandedImg = await fetchExpandedImage(creatureId, exp);
-        if (expandedImg) {
-          applyCreatureVision(ctx, w, h, expandedImg, c, 1.0);
-          const fisheyeStrength = Math.min(1.0, (exp - 1.0) / 2.0);
-          applyFisheye(ctx, w, h, fisheyeStrength);
+        // Check cache first
+        const cached = expandCacheRef.current.get(creatureId);
+        if (cached) {
+          console.log("[expand] Using cached image for", creatureId);
+          sourceImg = cached;
         } else {
-          // Fallback: normal render
-          applyCreatureVision(ctx, w, h, img, c, exp);
+          // AI expansion
+          setLoadingText("🔭 視界をひろげてるよ...");
+          setExpanding(true);
+          try {
+            const expandedImg = await callExpandAPI(mediaFile, exp);
+            if (expandedImg) {
+              expandCacheRef.current.set(creatureId, expandedImg);
+              sourceImg = expandedImg;
+            } else {
+              console.warn("[expand] AI expand returned null, using original");
+            }
+          } catch (e) {
+            console.error("[expand] AI expand failed, using original:", e);
+          }
+          setExpanding(false);
         }
-      } else {
-        applyCreatureVision(ctx, w, h, img, c, exp);
-        setTimeout(() => setProcessing(false), 300);
       }
+
+      // --- STEP 3: Draw source image ---
+      ctx.drawImage(sourceImg, 0, 0, w, h);
+
+      // --- STEP 4: Apply creature filter ---
+      applyFilter(ctx, w, h, c.filterType, c.fp);
+
+      // --- STEP 5: Narrow FOV zoom + vignette (expansion < 1.0) ---
+      if (exp > 0 && exp < 1.0) {
+        const filtered = document.createElement("canvas");
+        filtered.width = w;
+        filtered.height = h;
+        filtered.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
+        const cropW = w * exp;
+        const cropH = h * exp;
+        const sx = (w - cropW) / 2;
+        const sy = (h - cropH) / 2;
+        ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
+
+        const darkness = Math.max(0, 1 - exp) * 0.8;
+        const vg = ctx.createRadialGradient(
+          w / 2, h / 2, w * exp * 0.3,
+          w / 2, h / 2, w * 0.6
+        );
+        vg.addColorStop(0, "rgba(0,0,0,0)");
+        vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      // --- STEP 6: Fisheye for wide FOV (expansion > 1.0) ---
+      if (exp > 1.0) {
+        const fisheyeStrength = Math.min(1.0, (exp - 1.0) / 2.0);
+        applyFisheye(ctx, w, h, fisheyeStrength);
+      }
+
+      // --- STEP 7: Done ---
+      setProcessing(false);
+      setLoadingText("");
     },
-    [creatures, applyCreatureVision, fetchExpandedImage]
+    [creatures, mediaFile]
   );
 
   // Share to specific SNS
@@ -400,7 +388,6 @@ export default function ViewScreen({
       const fullText = `${shareText}\n\n👁 生き物の目で世界を見よう`;
       const url = "https://creature-vision.vercel.app";
 
-      // Generate comparison image for download
       const creatureCanvas = canvasRef.current;
       const humanCanvas = humanCanvasRef.current;
       if (creatureCanvas && humanCanvas) {
@@ -413,8 +400,6 @@ export default function ViewScreen({
         URL.revokeObjectURL(dlUrl);
       }
 
-      // Open SNS share URL
-      const encoded = encodeURIComponent(fullText + "\n" + url);
       let shareUrl = "";
       switch (sns) {
         case "x":
@@ -440,7 +425,7 @@ export default function ViewScreen({
       className="min-h-screen px-4 py-6 mx-auto"
       style={{ maxWidth: 960, animation: "fadeUp 0.4s ease-out" }}
     >
-      {/* Top bar — back + fav only */}
+      {/* Top bar */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <button onClick={onBack} className="pill-btn">
           ← もどる
@@ -487,42 +472,29 @@ export default function ViewScreen({
         <div
           className="flex items-center justify-center"
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: 14,
+            width: 48, height: 48, borderRadius: 14,
             background: catColor?.bg ?? "#f5f5f5",
           }}
         >
-          <Icon
-            id={creature.id}
-            name={creature.name}
-            cat={creature.cat}
-            size={36}
-          />
+          <Icon id={creature.id} name={creature.name} cat={creature.cat} size={36} />
         </div>
         <div>
-          <span style={{ fontSize: 20, fontWeight: 900 }}>
-            {creature.name}のめ
-          </span>
+          <span style={{ fontSize: 20, fontWeight: 900 }}>{creature.name}のめ</span>
           <div style={{ fontSize: 13, color: "#999" }}>{creature.en}</div>
         </div>
       </div>
 
-      {/* Canvas area with tap-hold */}
+      {/* Canvas area */}
       <div
         className="relative"
         style={{
-          borderRadius: 18,
-          overflow: "hidden",
+          borderRadius: 18, overflow: "hidden",
           boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
         }}
         onMouseDown={() => setIsHolding(true)}
         onMouseUp={() => setIsHolding(false)}
         onMouseLeave={() => setIsHolding(false)}
-        onTouchStart={(e) => {
-          e.preventDefault();
-          setIsHolding(true);
-        }}
+        onTouchStart={(e) => { e.preventDefault(); setIsHolding(true); }}
         onTouchEnd={() => setIsHolding(false)}
         onTouchCancel={() => setIsHolding(false)}
       >
@@ -535,53 +507,36 @@ export default function ViewScreen({
           ref={humanCanvasRef}
           className="absolute top-0 left-0 block w-full"
           style={{
-            height: "auto",
-            aspectRatio: canvasRatio ?? undefined,
+            height: "auto", aspectRatio: canvasRatio ?? undefined,
             opacity: isHolding ? 1 : 0,
-            transition: "opacity 0.3s ease",
-            pointerEvents: "none",
+            transition: "opacity 0.3s ease", pointerEvents: "none",
           }}
         />
         <div
           style={{
-            position: "absolute",
-            top: 12,
-            left: "50%",
-            transform: "translateX(-50%)",
-            padding: "6px 16px",
+            position: "absolute", top: 12, left: "50%",
+            transform: "translateX(-50%)", padding: "6px 16px",
             borderRadius: 100,
-            background: isHolding
-              ? "rgba(255,255,255,0.9)"
-              : `${catColor?.accent ?? "#999"}ee`,
+            background: isHolding ? "rgba(255,255,255,0.9)" : `${catColor?.accent ?? "#999"}ee`,
             color: isHolding ? "#333" : "#fff",
-            fontSize: 12,
-            fontWeight: 900,
-            transition: "all 0.3s ease",
-            pointerEvents: "none",
+            fontSize: 12, fontWeight: 900,
+            transition: "all 0.3s ease", pointerEvents: "none",
           }}
         >
           {isHolding ? "👁 人間のめ" : `${creature.name}のめ`}
         </div>
+
+        {/* Loading overlay */}
         {(processing || expanding) && (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center"
             style={{ background: "rgba(255,255,255,0.7)" }}
           >
-            <div style={{ animation: "pulse 1s ease-in-out infinite" }}>
-              <Icon
-                id={creature.id}
-                name={creature.name}
-                cat={creature.cat}
-                size={60}
-              />
+            <div style={{ animation: "eyeOpen 2s ease-in-out infinite" }}>
+              <Icon id={creature.id} name={creature.name} cat={creature.cat} size={60} />
             </div>
-            <p
-              className="mt-2"
-              style={{ fontWeight: 700, fontSize: 14, color: "#2D2D2D" }}
-            >
-              {expanding
-                ? "🔭 視界をひろげてるよ..."
-                : `${creature.name}の視点に変換中...`}
+            <p className="mt-2" style={{ fontWeight: 700, fontSize: 14, color: "#2D2D2D" }}>
+              {loadingText}
             </p>
           </div>
         )}
@@ -589,161 +544,66 @@ export default function ViewScreen({
 
       {/* Hint + FOV */}
       {creature.id === "human" ? (
-        <p
-          className="mt-3 text-center"
-          style={{
-            fontSize: 13,
-            color: "#999",
-            fontWeight: 500,
-            lineHeight: 1.8,
-          }}
-        >
+        <p className="mt-3 text-center" style={{ fontSize: 13, color: "#999", fontWeight: 500, lineHeight: 1.8 }}>
           これがあなたの世界。でも電磁スペクトルのたった0.0035%しか見えていません。
-          <br />
-          他の生き物をタップして、別の世界を覗いてみよう。
+          <br />他の生き物をタップして、別の世界を覗いてみよう。
         </p>
       ) : (
-        <p
-          className="mt-2 text-center"
-          style={{ fontSize: 12, color: "#bbb", fontWeight: 700 }}
-        >
+        <p className="mt-2 text-center" style={{ fontSize: 12, color: "#bbb", fontWeight: 700 }}>
           👆 長押しで人間の目に戻る
         </p>
       )}
 
       {fovData && (
-        <p
-          className="mt-1 text-center"
-          style={{ fontSize: 13, fontWeight: 700, color: "#999" }}
-        >
-          🔭 視野角:{" "}
-          {fovData.fov === 0
-            ? "なし（目が退化）"
-            : `${fovData.fov}°（人間は120°）`}
+        <p className="mt-1 text-center" style={{ fontSize: 13, fontWeight: 700, color: "#999" }}>
+          🔭 視野角: {fovData.fov === 0 ? "なし（目が退化）" : `${fovData.fov}°（人間は120°）`}
         </p>
       )}
 
       {/* Share button + popup */}
       <div className="relative flex justify-center" ref={shareMenuRef}>
-        {/* SNS popup */}
         {showShareMenu && (
           <div
             style={{
-              position: "absolute",
-              bottom: "100%",
-              marginBottom: 12,
-              background: "#fff",
-              borderRadius: 16,
-              padding: "16px 24px",
+              position: "absolute", bottom: "100%", marginBottom: 12,
+              background: "#fff", borderRadius: 16, padding: "16px 24px",
               boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
-              animation: "fadeUp 0.2s ease-out",
-              zIndex: 10,
+              animation: "fadeUp 0.2s ease-out", zIndex: 10,
             }}
           >
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>
-              シェアする
-            </p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>シェアする</p>
             <div className="flex gap-5">
-              <button
-                onClick={() => shareToSns("x")}
-                className="flex flex-col items-center gap-1 cursor-pointer"
-                style={{ background: "none", border: "none", padding: 0 }}
-              >
-                <div
-                  className="flex items-center justify-center"
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 14,
-                    background: "#f0f0f0",
-                    transition: "transform 0.15s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              {([["x", <XIcon key="x" />, "X"], ["line", <LineIcon key="l" />, "LINE"], ["facebook", <FacebookIcon key="f" />, "Facebook"]] as const).map(([sns, icon, label]) => (
+                <button
+                  key={sns}
+                  onClick={() => shareToSns(sns)}
+                  className="flex flex-col items-center gap-1 cursor-pointer"
+                  style={{ background: "none", border: "none", padding: 0 }}
                 >
-                  <XIcon />
-                </div>
-                <span style={{ fontSize: 10, color: "#999" }}>X</span>
-              </button>
-              <button
-                onClick={() => shareToSns("line")}
-                className="flex flex-col items-center gap-1 cursor-pointer"
-                style={{ background: "none", border: "none", padding: 0 }}
-              >
-                <div
-                  className="flex items-center justify-center"
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 14,
-                    background: "#f0f0f0",
-                    transition: "transform 0.15s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                >
-                  <LineIcon />
-                </div>
-                <span style={{ fontSize: 10, color: "#999" }}>LINE</span>
-              </button>
-              <button
-                onClick={() => shareToSns("facebook")}
-                className="flex flex-col items-center gap-1 cursor-pointer"
-                style={{ background: "none", border: "none", padding: 0 }}
-              >
-                <div
-                  className="flex items-center justify-center"
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 14,
-                    background: "#f0f0f0",
-                    transition: "transform 0.15s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                >
-                  <FacebookIcon />
-                </div>
-                <span style={{ fontSize: 10, color: "#999" }}>Facebook</span>
-              </button>
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ width: 48, height: 48, borderRadius: 14, background: "#f0f0f0", transition: "transform 0.15s" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  >
+                    {icon}
+                  </div>
+                  <span style={{ fontSize: 10, color: "#999" }}>{label}</span>
+                </button>
+              ))}
             </div>
-            {/* Triangle pointer */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: -8,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: 0,
-                height: 0,
-                borderLeft: "8px solid transparent",
-                borderRight: "8px solid transparent",
-                borderTop: "8px solid #fff",
-              }}
-            />
+            <div style={{ position: "absolute", bottom: -8, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "8px solid transparent", borderRight: "8px solid transparent", borderTop: "8px solid #fff" }} />
           </div>
         )}
-
         <button
           onClick={() => setShowShareMenu((v) => !v)}
           style={{
-            width: "100%",
-            padding: "14px 20px",
-            borderRadius: 16,
+            width: "100%", padding: "14px 20px", borderRadius: 16,
             border: "2px solid rgba(0,0,0,0.06)",
             background: shareFeedback ? "#f0fff0" : "#fff",
-            color: "#333",
-            fontSize: 15,
-            fontWeight: 900,
-            fontFamily: "inherit",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            marginTop: 12,
-            transition: "all 0.2s",
+            color: "#333", fontSize: 15, fontWeight: 900, fontFamily: "inherit",
+            cursor: "pointer", display: "flex", alignItems: "center",
+            justifyContent: "center", gap: 8, marginTop: 12, transition: "all 0.2s",
           }}
         >
           <ShareIcon />
@@ -753,25 +613,9 @@ export default function ViewScreen({
 
       {/* Bio panel */}
       <div className="mt-6">
-        <div
-          style={{
-            padding: 20,
-            borderRadius: 18,
-            background: catColor?.bg ?? "#f5f5f5",
-          }}
-        >
-          <div style={{ fontSize: 15, fontWeight: 900 }}>
-            🧬 なんでこうなの？
-          </div>
-          <p
-            className="mt-2"
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              lineHeight: 1.8,
-              color: "#555",
-            }}
-          >
+        <div style={{ padding: 20, borderRadius: 18, background: catColor?.bg ?? "#f5f5f5" }}>
+          <div style={{ fontSize: 15, fontWeight: 900 }}>🧬 なんでこうなの？</div>
+          <p className="mt-2" style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.8, color: "#555" }}>
             {creature.bio}
           </p>
         </div>
@@ -779,21 +623,12 @@ export default function ViewScreen({
 
       <style>{`
         .pill-btn {
-          background: #fff;
-          border: 2px solid rgba(0,0,0,0.07);
-          border-radius: 100px;
-          padding: 8px 16px;
-          font-weight: 700;
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-family: inherit;
-          color: #2D2D2D;
+          background: #fff; border: 2px solid rgba(0,0,0,0.07);
+          border-radius: 100px; padding: 8px 16px;
+          font-weight: 700; font-size: 14px; cursor: pointer;
+          transition: all 0.2s; font-family: inherit; color: #2D2D2D;
         }
-        .pill-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
+        .pill-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes eyeOpen {
