@@ -161,6 +161,20 @@ async function generateShareImage(
   });
 }
 
+/* ── Resize before sending to API ── */
+
+async function resizeForAPI(imageBlob: Blob, maxDim: number = 1024): Promise<Blob> {
+  const bitmap = await createImageBitmap(imageBlob);
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  if (scale >= 1) return imageBlob; // already small enough
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  const canvas = new OffscreenCanvas(w, h);
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  return canvas.convertToBlob({ type: "image/jpeg", quality: 0.85 });
+}
+
 /* ── Expand API call ── */
 
 async function callExpandAPI(
@@ -169,12 +183,16 @@ async function callExpandAPI(
 ): Promise<HTMLImageElement | null> {
   console.log("=== API EXPAND START ===", "expansion:", expansion);
 
+  // Resize before sending (large images can cause API timeouts)
+  const resized = await resizeForAPI(imageBlob, 1024);
+  console.log("Resized blob:", resized.size, "bytes (original:", imageBlob.size, ")");
+
   const formData = new FormData();
-  formData.append("image", imageBlob, "photo.png");
+  formData.append("image", resized, "photo.jpg");
   formData.append("expansion", String(expansion));
 
   // Detect orientation
-  const bitmap = await createImageBitmap(imageBlob);
+  const bitmap = await createImageBitmap(resized);
   const direction = bitmap.height > bitmap.width ? "vertical" : "horizontal";
   formData.append("direction", direction);
   console.log("Image direction:", direction, bitmap.width, "x", bitmap.height);
@@ -313,6 +331,7 @@ export default function ViewScreen({
 
       // --- STEP 2: Determine image source ---
       let sourceImg: CanvasImageSource = originalImage;
+      let aiExpandSucceeded = false;
 
       if (exp > 1.0) {
         // Check cache first
@@ -320,6 +339,7 @@ export default function ViewScreen({
         if (cached) {
           console.log("[expand] Using cached image for", creatureId);
           sourceImg = cached;
+          aiExpandSucceeded = true;
         } else {
           // AI expansion
           setLoadingText("🔭 視界をひろげてるよ...");
@@ -329,6 +349,7 @@ export default function ViewScreen({
             if (expandedImg) {
               expandCacheRef.current.set(creatureId, expandedImg);
               sourceImg = expandedImg;
+              aiExpandSucceeded = true;
             } else {
               console.warn("[expand] AI expand returned null, using original");
             }
@@ -368,10 +389,13 @@ export default function ViewScreen({
         ctx.fillRect(0, 0, w, h);
       }
 
-      // --- STEP 6: Fisheye for wide FOV (expansion > 1.0) ---
-      if (exp > 1.0) {
+      // --- STEP 6: Fisheye ONLY when AI expansion succeeded ---
+      if (aiExpandSucceeded) {
         const fisheyeStrength = Math.min(1.0, (exp - 1.0) / 2.0);
         applyFisheye(ctx, w, h, fisheyeStrength);
+        console.log("[fisheye] Applied with strength:", fisheyeStrength);
+      } else if (exp > 1.0) {
+        console.log("[fisheye] Skipped — AI expansion failed, no fisheye to avoid black borders");
       }
 
       // --- STEP 7: Done ---
