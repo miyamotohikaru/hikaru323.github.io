@@ -239,16 +239,15 @@ export default function ViewScreen({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const humanCanvasRef = useRef<HTMLCanvasElement>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  const bmpRef = useRef<ImageBitmap | null>(null);
   const [processing, setProcessing] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [shareFeedback, setShareFeedback] = useState(false);
-  const [mediaSrc, setMediaSrc] = useState("");
   const [canvasRatio, setCanvasRatio] = useState<number | null>(null);
   const [expanding, setExpanding] = useState(false);
   const [loadingText, setLoadingText] = useState("");
-  const expandCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const expandCacheRef = useRef<Map<string, CanvasImageSource>>(new Map());
   const normalizedBlobRef = useRef<Blob | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
@@ -277,29 +276,17 @@ export default function ViewScreen({
     return () => { cancelled = true; };
   }, [mediaFile]);
 
-  // Load media
+  // Load image and initial render (use File directly — no fetch/blob URL needed)
   useEffect(() => {
-    const url = URL.createObjectURL(mediaFile);
-    setMediaSrc(url);
-    return () => URL.revokeObjectURL(url);
-  }, [mediaFile]);
-
-  // Load image and initial render
-  useEffect(() => {
-    if (!mediaSrc) return;
     let cancelled = false;
 
     (async () => {
       try {
-        const bmp = await createImageBitmap(await (await fetch(mediaSrc)).blob());
+        // createImageBitmap accepts File directly — works reliably on all browsers
+        const bmp = await createImageBitmap(mediaFile);
         if (cancelled) return;
 
-        const img = new Image();
-        img.src = mediaSrc;
-        await img.decode().catch(() => {});
-        if (cancelled) return;
-
-        imgRef.current = img;
+        bmpRef.current = bmp;
         const canvas = canvasRef.current;
         const humanCanvas = humanCanvasRef.current;
         if (!canvas) return;
@@ -318,7 +305,7 @@ export default function ViewScreen({
         }
 
         console.log("[load] Image ready:", bmp.width, "x", bmp.height, "→ canvas:", w, "x", h);
-        handleCreatureChange(selectedId, img, w, h);
+        handleCreatureChange(selectedId, bmp, w, h);
       } catch (e) {
         console.error("[load] Failed to load image:", e);
       }
@@ -326,20 +313,20 @@ export default function ViewScreen({
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaSrc]);
+  }, [mediaFile]);
 
   // Re-render when creature changes
   useEffect(() => {
-    if (!imgRef.current) return;
+    if (!bmpRef.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    handleCreatureChange(selectedId, imgRef.current, canvas.width, canvas.height);
+    handleCreatureChange(selectedId, bmpRef.current, canvas.width, canvas.height);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
   // Main rendering function
   const handleCreatureChange = useCallback(
-    async (creatureId: string, originalImage: HTMLImageElement, w: number, h: number) => {
+    async (creatureId: string, originalImage: CanvasImageSource, w: number, h: number) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d")!;
