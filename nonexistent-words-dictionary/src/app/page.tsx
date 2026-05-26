@@ -224,8 +224,8 @@ export default function Home() {
           <div className="tategaki-search-inner">
             <h1 className="tategaki-search-hero-title">{t("home.title")}</h1>
             <p className="tategaki-search-hero-sub">
-              {t("home.subtitle").split("\n").map((line, i) => (
-                <span key={i}>{line}</span>
+              {t("home.subtitle").split("\n").map((line, i, arr) => (
+                <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
               ))}
             </p>
             <div className="tategaki-search-rule" />
@@ -344,19 +344,7 @@ export default function Home() {
       {/* ===== 結果表示 ===== */}
       {phase === "result" && result && result.exists && (
         /* ── 既存語（実在語）── */
-        <div className="h-scroll" ref={hScrollRef}>
-          {/* 検索フォーム列（最右） */}
-          <div className="result-search-col fade-in-rtl">
-            <span className="result-hit-count">該当　0 件（既存語）</span>
-            <form onSubmit={handleSearch} className="tategaki-search-form">
-              <span className="tategaki-search-label">読み（ひらがな）</span>
-              <div className="tategaki-search-input-wrap">
-                <input type="text" value={word} onChange={(e) => setWord(e.target.value)} className="tategaki-search-input" maxLength={20} />
-                <button type="submit" className="tategaki-search-button" disabled={!word.trim()}>引く</button>
-              </div>
-            </form>
-          </div>
-
+        <div className="h-scroll is-rejected" ref={hScrollRef}>
           {/* 見出し列 + スタンプ */}
           <div className="reject-headword-col fade-in-rtl">
             <span className="result-reading">{result.word}</span>
