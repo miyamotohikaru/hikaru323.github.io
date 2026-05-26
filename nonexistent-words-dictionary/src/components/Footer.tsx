@@ -17,8 +17,6 @@ export default function Footer() {
         </p>
         <p className="footer-sub">{t("footer.sub")}</p>
         <nav className="footer-nav">
-          <Link href="/about">{t("footer.about")}</Link>
-          <Link href="/privacy">{t("footer.privacy")}</Link>
         </nav>
       </div>
     </footer>
