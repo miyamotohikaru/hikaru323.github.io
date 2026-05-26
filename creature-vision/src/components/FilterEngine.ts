@@ -802,84 +802,128 @@ function filterTetra(
 // Context-based filter implementations (need ctx for compositing)
 // ---------------------------------------------------------------------------
 
-// 2. Kosukuma - hyper saturation + glitch + abstract vision
+// 2. Kosukuma - ultra hyper saturation + glitch + melt vision
 const filterKosukuma: CtxFilter = (ctx, w, h, fp) => {
-  const d = ctx.getImageData(0, 0, w, h), px = d.data;
+  // 1. 彩度4.5倍 + ポスタリゼーション5段階 + マゼンタ/シアン/イエローシフト
+  let d = ctx.getImageData(0, 0, w, h);
+  let px = d.data;
+  const levels = 5;
   for (let i = 0; i < px.length; i += 4) {
     let r = px[i], g = px[i+1], b = px[i+2];
     const l = 0.299*r + 0.587*g + 0.114*b;
-
-    // 1. 彩度を爆上げ（2.8倍）
-    r = l + (r - l) * 2.8;
-    g = l + (g - l) * 2.8;
-    b = l + (b - l) * 2.8;
-
-    // 2. 色相シフト（ピンク/マゼンタ寄り）
-    const shiftedR = Math.min(255, r * 1.15 + b * 0.1);
-    const shiftedG = Math.min(255, g * 0.95 + r * 0.05);
-    const shiftedB = Math.min(255, b * 1.1 + r * 0.05);
-
-    // 3. ハイライトをネオン化
-    if (l > 180) {
-      const boost = (l - 180) / 75;
-      r = Math.min(255, shiftedR + boost * 50);
-      g = Math.min(255, shiftedG + boost * 30);
-      b = Math.min(255, shiftedB + boost * 60);
-    } else {
-      r = shiftedR;
-      g = shiftedG;
-      b = shiftedB;
-    }
-
-    // 4. クランプ
-    px[i]   = Math.min(255, Math.max(0, r));
-    px[i+1] = Math.min(255, Math.max(0, g));
-    px[i+2] = Math.min(255, Math.max(0, b));
+    r = Math.min(255, Math.max(0, l + (r - l) * 4.5));
+    g = Math.min(255, Math.max(0, l + (g - l) * 4.5));
+    b = Math.min(255, Math.max(0, l + (b - l) * 4.5));
+    r = Math.round(r / 255 * (levels - 1)) / (levels - 1) * 255;
+    g = Math.round(g / 255 * (levels - 1)) / (levels - 1) * 255;
+    b = Math.round(b / 255 * (levels - 1)) / (levels - 1) * 255;
+    px[i]   = Math.min(255, r * 1.2 + b * 0.15);
+    px[i+1] = Math.min(255, g * 0.9 + r * 0.1);
+    px[i+2] = Math.min(255, b * 1.25 + r * 0.1);
+    px[i+3] = 255;
   }
   ctx.putImageData(d, 0, 0);
 
-  // 5. グリッチ風の色ずれ（RGBシフト）
+  // 2. 強烈なRGBずれ（7px）
   const tempData = ctx.getImageData(0, 0, w, h);
   const out = ctx.createImageData(w, h);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const idx = (y * w + x) * 4;
-      const rx = Math.max(0, x - 2);
-      const ridx = (y * w + rx) * 4;
-      out.data[idx] = tempData.data[ridx];
+      const rx = Math.max(0, x - 7);
+      const bx = Math.min(w - 1, x + 7);
+      out.data[idx]     = tempData.data[(y * w + rx) * 4];
       out.data[idx + 1] = tempData.data[idx + 1];
-      const bx = Math.min(w - 1, x + 2);
-      const bidx = (y * w + bx) * 4;
-      out.data[idx + 2] = tempData.data[bidx + 2];
+      out.data[idx + 2] = tempData.data[(y * w + bx) * 4 + 2];
       out.data[idx + 3] = 255;
     }
   }
   ctx.putImageData(out, 0, 0);
 
-  // 6. 抽象化（ソフトな大きいブラー）
-  ctx.globalAlpha = 0.25;
-  ctx.drawImage(ctx.canvas, -4, -4, w+8, h+8);
-  ctx.drawImage(ctx.canvas, 4, 4, w-8, h-8);
-  ctx.drawImage(ctx.canvas, -3, 2, w+6, h-4);
-  ctx.drawImage(ctx.canvas, 3, -2, w-6, h+4);
+  // 3. データモッシュ風 水平バンドずれ
+  const bandCanvas = document.createElement("canvas");
+  bandCanvas.width = w;
+  bandCanvas.height = h;
+  const bandCtx = bandCanvas.getContext("2d")!;
+  bandCtx.drawImage(ctx.canvas, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  let cy = 0;
+  while (cy < h) {
+    const bandH = 6 + Math.floor(Math.random() * 18);
+    const shift = (Math.random() - 0.5) * 30;
+    ctx.drawImage(bandCanvas, 0, cy, w, bandH, shift, cy, w, bandH);
+    cy += bandH;
+  }
+
+  // 4. 強ブラー（抽象化）
+  ctx.globalAlpha = 0.3;
+  for (let dx = -6; dx <= 6; dx += 3) {
+    for (let dy = -6; dy <= 6; dy += 3) {
+      ctx.drawImage(ctx.canvas, dx, dy, w, h);
+    }
+  }
   ctx.globalAlpha = 1;
 
-  // 7. ネオンオーバーレイ（ピンク〜シアン〜マゼンタ）
+  // 5. 発光ハロー（明るい部分を光らせる）
+  const glowData = ctx.getImageData(0, 0, w, h);
+  const glow = document.createElement("canvas");
+  glow.width = w;
+  glow.height = h;
+  const glowCtx = glow.getContext("2d")!;
+  const glowImg = glowCtx.createImageData(w, h);
+  for (let i = 0; i < glowData.data.length; i += 4) {
+    const l = 0.299*glowData.data[i] + 0.587*glowData.data[i+1] + 0.114*glowData.data[i+2];
+    if (l > 150) {
+      glowImg.data[i]     = glowData.data[i];
+      glowImg.data[i + 1] = glowData.data[i + 1];
+      glowImg.data[i + 2] = glowData.data[i + 2];
+      glowImg.data[i + 3] = 255;
+    } else {
+      glowImg.data[i + 3] = 0;
+    }
+  }
+  glowCtx.putImageData(glowImg, 0, 0);
   ctx.globalCompositeOperation = "screen";
-  ctx.globalAlpha = 0.08;
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, "#FF1493");
-  grad.addColorStop(0.5, "#00FFFF");
-  grad.addColorStop(1, "#FF00FF");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 0.4;
+  for (let blur = 4; blur <= 16; blur += 4) {
+    ctx.drawImage(glow, -blur, 0, w + blur*2, h);
+    ctx.drawImage(glow, blur, 0, w - blur*2, h);
+    ctx.drawImage(glow, 0, -blur, w, h + blur*2);
+    ctx.drawImage(glow, 0, blur, w, h - blur*2);
+  }
   ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
 
-  // 8. ビネット（紫黒）
-  const vg = ctx.createRadialGradient(w/2, h/2, w*0.3, w/2, h/2, w*0.8);
+  // 6. ダブルレインボーオーバーレイ（強め35%）
+  ctx.globalCompositeOperation = "overlay";
+  ctx.globalAlpha = 0.35;
+  const grad1 = ctx.createLinearGradient(0, 0, w, h);
+  grad1.addColorStop(0,    "#FF1493");
+  grad1.addColorStop(0.25, "#00FFFF");
+  grad1.addColorStop(0.5,  "#FF00FF");
+  grad1.addColorStop(0.75, "#FFFF00");
+  grad1.addColorStop(1,    "#FF1493");
+  ctx.fillStyle = grad1;
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+
+  // 7. 最終仕上げ彩度1.5倍
+  d = ctx.getImageData(0, 0, w, h);
+  px = d.data;
+  for (let i = 0; i < px.length; i += 4) {
+    let r = px[i], g = px[i+1], b = px[i+2];
+    const l = 0.299*r + 0.587*g + 0.114*b;
+    px[i]   = Math.min(255, Math.max(0, l + (r - l) * 1.5));
+    px[i+1] = Math.min(255, Math.max(0, l + (g - l) * 1.5));
+    px[i+2] = Math.min(255, Math.max(0, l + (b - l) * 1.5));
+  }
+  ctx.putImageData(d, 0, 0);
+
+  // 8. ビネット（紫黒の縁）
+  const vg = ctx.createRadialGradient(w/2, h/2, w*0.35, w/2, h/2, w*0.85);
   vg.addColorStop(0, "rgba(0,0,0,0)");
-  vg.addColorStop(1, "rgba(20,0,30,0.25)");
+  vg.addColorStop(1, "rgba(30,0,50,0.45)");
   ctx.fillStyle = vg;
   ctx.fillRect(0, 0, w, h);
 };
