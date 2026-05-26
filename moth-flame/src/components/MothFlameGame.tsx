@@ -120,44 +120,55 @@ function initFireSound() {
   brownSrc.connect(fireLp).connect(fireGain).connect(master);
   brownSrc.start();
 
-  // ──── 2. Dynamic crackle pops (main — individual one-shot bursts) ────
+  // ──── 2. Soft crackle pops (irregular timing with burst clusters) ────
   function crackle() {
     const now = ac.currentTime;
-    const dur = 0.01 + Math.random() * 0.03; // 10-40ms
+    const dur = 0.005 + Math.random() * 0.02; // 5-25ms — short soft pops
     const samples = Math.floor(sr * dur);
 
     const buf = ac.createBuffer(1, samples, sr);
     const d = buf.getChannelData(0);
     for (let i = 0; i < samples; i++) {
-      const env = Math.exp((-i / samples) * 6); // fast decay
+      const env = Math.exp((-i / samples) * 8); // faster decay = softer
       d[i] = (Math.random() * 2 - 1) * env;
     }
 
     const src = ac.createBufferSource();
     src.buffer = buf;
 
-    // Random bandpass pitch per pop
-    const bp = ac.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.value = 400 + Math.random() * 2500; // 400-2900Hz
-    bp.Q.value = 1 + Math.random() * 3;
+    // Lowpass filter — removes hard clicking, keeps soft crackle
+    const lp = ac.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 800 + Math.random() * 1200; // 800-2000Hz
+    lp.Q.value = 0.5 + Math.random() * 0.5;
 
-    // Random volume envelope
     const vol = ac.createGain();
-    const v = 0.03 + Math.random() * 0.12;
+    const v = 0.02 + Math.random() * 0.10;
     vol.gain.setValueAtTime(v, now);
-    vol.gain.exponentialRampToValueAtTime(0.001, now + dur + 0.05);
+    vol.gain.exponentialRampToValueAtTime(0.001, now + dur + 0.04);
 
-    src.connect(bp).connect(vol).connect(master);
+    src.connect(lp).connect(vol).connect(master);
     src.start(now);
-    src.stop(now + dur + 0.06);
+    src.stop(now + dur + 0.05);
 
-    // Next crackle at random interval (100-900ms, Poisson-like)
-    setTimeout(crackle, (0.1 + Math.random() * 0.8) * 1000);
+    // Irregular timing: occasional burst clusters + longer pauses
+    let next: number;
+    if (Math.random() < 0.25) {
+      // Burst: rapid 2-4 pops close together
+      next = 30 + Math.random() * 80; // 30-110ms
+    } else if (Math.random() < 0.3) {
+      // Long pause: quiet moment
+      next = 1200 + Math.random() * 2000; // 1.2-3.2s
+    } else {
+      // Normal: varied spacing
+      next = 200 + Math.random() * 800; // 200-1000ms
+    }
+    setTimeout(crackle, next);
   }
-  // Two independent streams for natural density
-  setTimeout(crackle, 500);
-  setTimeout(crackle, 800);
+  // Three independent streams for natural density variation
+  setTimeout(crackle, 400);
+  setTimeout(crackle, 900);
+  setTimeout(crackle, 1500);
 
   return ac;
 }
