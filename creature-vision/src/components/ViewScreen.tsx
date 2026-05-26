@@ -161,13 +161,42 @@ async function generateShareImage(
   });
 }
 
+/* ── Decode image file to ImageBitmap (with HEIC fallback) ── */
+
+async function decodeImageFile(file: File): Promise<ImageBitmap> {
+  // Try createImageBitmap directly first (works for JPEG/PNG/WebP on all browsers)
+  try {
+    return await createImageBitmap(file);
+  } catch {
+    // Fallback: use <img> + object URL (handles HEIC on Safari, etc.)
+    console.warn("[decode] createImageBitmap failed, trying <img> fallback for:", file.type);
+  }
+
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error(`Failed to decode image: ${file.name} (${file.type})`));
+    });
+    // Convert loaded <img> to ImageBitmap for consistent API
+    return await createImageBitmap(img);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 /* ── Normalize image for API (max 1024px, JPEG 85%) ── */
 
 async function normalizeImage(
   inputBlob: Blob,
   maxDim: number = 1024
 ): Promise<{ blob: Blob; width: number; height: number; orientation: "landscape" | "portrait" | "square" }> {
-  const bitmap = await createImageBitmap(inputBlob);
+  // Use decodeImageFile if input is a File (handles HEIC), otherwise createImageBitmap
+  const bitmap = inputBlob instanceof File
+    ? await decodeImageFile(inputBlob)
+    : await createImageBitmap(inputBlob);
   const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * scale);
   const h = Math.round(bitmap.height * scale);
@@ -313,8 +342,8 @@ export default function ViewScreen({
 
     (async () => {
       try {
-        // createImageBitmap accepts File directly — works reliably on all browsers
-        const bmp = await createImageBitmap(mediaFile);
+        // decodeImageFile handles HEIC and other formats via fallback
+        const bmp = await decodeImageFile(mediaFile);
         if (cancelled) return;
 
         bmpRef.current = bmp;
