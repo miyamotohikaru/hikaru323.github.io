@@ -3339,7 +3339,7 @@ a:hover { color: var(--text-primary); }
     writing-mode: vertical-rl;
     text-orientation: mixed;
     width: 2.75rem;
-    height: calc(9rem + 5px);
+    height: calc(9rem + 15px);
     font-size: 1rem;
     border: none;
     background: rgba(217, 212, 200, 0.03);
@@ -3356,7 +3356,7 @@ a:hover { color: var(--text-primary); }
     padding: 0;
     font-size: 0.9375rem;
     width: 2.75rem;
-    height: calc(9rem + 5px);
+    height: calc(9rem + 15px);
     border: none;
     border-right: 1px solid var(--textSoft);
     letter-spacing: 0.3em;
