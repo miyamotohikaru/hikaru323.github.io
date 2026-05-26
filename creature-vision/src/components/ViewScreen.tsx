@@ -242,6 +242,61 @@ async function createOutpaintCanvas(
   return { blob, direction, innerRect };
 }
 
+/* ── Composite: paste original back onto AI result (pxbee-style) ── */
+
+async function compositeOriginalBack(
+  aiBlob: Blob,
+  originalBlob: Blob,
+  innerRect: string
+): Promise<Blob> {
+  const [ox, oy, ow, oh] = innerRect.split(",").map(Number);
+  const aiBmp = await createImageBitmap(aiBlob);
+  const origBmp = await createImageBitmap(originalBlob);
+
+  // Use the AI image as base, then stamp original back into center
+  const canvas = new OffscreenCanvas(aiBmp.width, aiBmp.height);
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(aiBmp, 0, 0);
+
+  // Scale innerRect proportionally if AI output is different size than input
+  const scaleX = aiBmp.width / aiBmp.width; // AI output should match input size
+  const scaleY = aiBmp.height / aiBmp.height;
+
+  // Feathered blend: draw original with soft edge to avoid hard seams
+  // First draw original at full opacity in the center (slightly inset)
+  const feather = 8; // pixels of feathering at the edge
+  const cx = Math.round(ox * scaleX);
+  const cy = Math.round(oy * scaleY);
+  const cw = Math.round(ow * scaleX);
+  const ch = Math.round(oh * scaleY);
+
+  // Create a temp canvas with the original + feathered alpha mask
+  const tmpCanvas = new OffscreenCanvas(cw, ch);
+  const tmpCtx = tmpCanvas.getContext("2d")!;
+  tmpCtx.drawImage(origBmp, 0, 0, cw, ch);
+
+  // Apply feathered edge mask
+  const imgData = tmpCtx.getImageData(0, 0, cw, ch);
+  const d = imgData.data;
+  for (let y = 0; y < ch; y++) {
+    for (let x = 0; x < cw; x++) {
+      const distFromEdge = Math.min(x, y, cw - 1 - x, ch - 1 - y);
+      if (distFromEdge < feather) {
+        const alpha = distFromEdge / feather;
+        const i = (y * cw + x) * 4;
+        d[i + 3] = Math.round(d[i + 3] * alpha);
+      }
+    }
+  }
+  tmpCtx.putImageData(imgData, 0, 0);
+
+  // Stamp feathered original onto AI result
+  ctx.drawImage(tmpCanvas, cx, cy);
+
+  console.log(`[composite] AI=${aiBmp.width}x${aiBmp.height} original@${cx},${cy},${cw}x${ch} feather=${feather}px`);
+  return canvas.convertToBlob({ type: "image/png" });
+}
+
 /* ── Expand API call (outpainting approach) ── */
 
 async function callExpandAPI(
@@ -269,17 +324,20 @@ async function callExpandAPI(
     return null;
   }
 
-  const blob = await res.blob();
-  console.log("=== EXPANDED IMAGE BLOB ===", blob.size, blob.type);
+  const aiBlob = await res.blob();
+  console.log("=== EXPANDED IMAGE BLOB ===", aiBlob.size, aiBlob.type);
 
-  if (blob.size < 1000) {
-    console.error("[expand] API returned tiny blob:", blob.size);
+  if (aiBlob.size < 1000) {
+    console.error("[expand] API returned tiny blob:", aiBlob.size);
     return null;
   }
 
-  // Use createImageBitmap for reliable decoding, then convert to img element
   try {
-    const bmp = await createImageBitmap(blob);
+    // pxbee-style: paste original back onto center of AI result
+    // This guarantees the original image is never degraded
+    const composited = await compositeOriginalBack(aiBlob, outpaintBlob, innerRect);
+
+    const bmp = await createImageBitmap(composited);
     const cvs = new OffscreenCanvas(bmp.width, bmp.height);
     cvs.getContext("2d")!.drawImage(bmp, 0, 0);
     const imgBlob = await cvs.convertToBlob({ type: "image/png" });
@@ -296,7 +354,7 @@ async function callExpandAPI(
       img.src = URL.createObjectURL(imgBlob);
     });
   } catch (e) {
-    console.error("[expand] Failed to decode expanded image:", e);
+    console.error("[expand] Failed to decode/composite expanded image:", e);
     return null;
   }
 }
