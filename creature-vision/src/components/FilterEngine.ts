@@ -802,32 +802,86 @@ function filterTetra(
 // Context-based filter implementations (need ctx for compositing)
 // ---------------------------------------------------------------------------
 
-// 2. Kosukuma - custom bear vision
+// 2. Kosukuma - hyper saturation + glitch + abstract vision
 const filterKosukuma: CtxFilter = (ctx, w, h, fp) => {
   const d = ctx.getImageData(0, 0, w, h), px = d.data;
   for (let i = 0; i < px.length; i += 4) {
     let r = px[i], g = px[i+1], b = px[i+2];
     const l = 0.299*r + 0.587*g + 0.114*b;
-    r = l + (r - l) * 0.5;
-    g = l + (g - l) * 0.7;
-    b = l + (b - l) * 0.6;
-    r = Math.min(255, r * 1.08 + 12);
-    g = Math.min(255, g * 1.03 + 8);
-    b = Math.min(255, b * 0.88);
-    r = r * 0.75 + 128 * 0.25;
-    g = g * 0.75 + 128 * 0.25;
-    b = b * 0.75 + 128 * 0.25;
-    px[i] = r; px[i+1] = g; px[i+2] = b;
+
+    // 1. 彩度を爆上げ（2.8倍）
+    r = l + (r - l) * 2.8;
+    g = l + (g - l) * 2.8;
+    b = l + (b - l) * 2.8;
+
+    // 2. 色相シフト（ピンク/マゼンタ寄り）
+    const shiftedR = Math.min(255, r * 1.15 + b * 0.1);
+    const shiftedG = Math.min(255, g * 0.95 + r * 0.05);
+    const shiftedB = Math.min(255, b * 1.1 + r * 0.05);
+
+    // 3. ハイライトをネオン化
+    if (l > 180) {
+      const boost = (l - 180) / 75;
+      r = Math.min(255, shiftedR + boost * 50);
+      g = Math.min(255, shiftedG + boost * 30);
+      b = Math.min(255, shiftedB + boost * 60);
+    } else {
+      r = shiftedR;
+      g = shiftedG;
+      b = shiftedB;
+    }
+
+    // 4. クランプ
+    px[i]   = Math.min(255, Math.max(0, r));
+    px[i+1] = Math.min(255, Math.max(0, g));
+    px[i+2] = Math.min(255, Math.max(0, b));
   }
   ctx.putImageData(d, 0, 0);
-  ctx.globalAlpha = 0.12;
-  ctx.drawImage(ctx.canvas, -2, -2, w+4, h+4);
-  ctx.drawImage(ctx.canvas, 2, 2, w-4, h-4);
+
+  // 5. グリッチ風の色ずれ（RGBシフト）
+  const tempData = ctx.getImageData(0, 0, w, h);
+  const out = ctx.createImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      const rx = Math.max(0, x - 2);
+      const ridx = (y * w + rx) * 4;
+      out.data[idx] = tempData.data[ridx];
+      out.data[idx + 1] = tempData.data[idx + 1];
+      const bx = Math.min(w - 1, x + 2);
+      const bidx = (y * w + bx) * 4;
+      out.data[idx + 2] = tempData.data[bidx + 2];
+      out.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(out, 0, 0);
+
+  // 6. 抽象化（ソフトな大きいブラー）
+  ctx.globalAlpha = 0.25;
+  ctx.drawImage(ctx.canvas, -4, -4, w+8, h+8);
+  ctx.drawImage(ctx.canvas, 4, 4, w-8, h-8);
+  ctx.drawImage(ctx.canvas, -3, 2, w+6, h-4);
+  ctx.drawImage(ctx.canvas, 3, -2, w-6, h+4);
   ctx.globalAlpha = 1;
-  const vg = ctx.createRadialGradient(w/2,h/2,w*0.4,w/2,h/2,w*0.75);
+
+  // 7. ネオンオーバーレイ（ピンク〜シアン〜マゼンタ）
+  ctx.globalCompositeOperation = "screen";
+  ctx.globalAlpha = 0.08;
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, "#FF1493");
+  grad.addColorStop(0.5, "#00FFFF");
+  grad.addColorStop(1, "#FF00FF");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 1;
+
+  // 8. ビネット（紫黒）
+  const vg = ctx.createRadialGradient(w/2, h/2, w*0.3, w/2, h/2, w*0.8);
   vg.addColorStop(0, "rgba(0,0,0,0)");
-  vg.addColorStop(1, "rgba(50,30,10,0.15)");
-  ctx.fillStyle = vg; ctx.fillRect(0,0,w,h);
+  vg.addColorStop(1, "rgba(20,0,30,0.25)");
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, w, h);
 };
 
 // 4. Night vision

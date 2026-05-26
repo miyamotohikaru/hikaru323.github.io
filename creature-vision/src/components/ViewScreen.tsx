@@ -217,8 +217,20 @@ async function callExpandAPI(
 
     console.log(`[expand] Success: ${blob.size}B`);
     const img = new Image();
-    img.src = URL.createObjectURL(blob);
-    await img.decode().catch(() => {});
+    const objectUrl = URL.createObjectURL(blob);
+    img.src = objectUrl;
+    try {
+      await img.decode();
+    } catch {
+      console.error("[expand] Failed to decode image, discarding");
+      URL.revokeObjectURL(objectUrl);
+      return null;
+    }
+    if (!img.naturalWidth || !img.naturalHeight) {
+      console.error("[expand] Image has no dimensions after decode");
+      URL.revokeObjectURL(objectUrl);
+      return null;
+    }
     return img;
   } catch (err) {
     console.error("[expand] Exception:", err);
@@ -247,9 +259,11 @@ export default function ViewScreen({
   const [canvasRatio, setCanvasRatio] = useState<number | null>(null);
   const [expanding, setExpanding] = useState(false);
   const [loadingText, setLoadingText] = useState("");
+  const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const expandCacheRef = useRef<Map<string, CanvasImageSource>>(new Map());
   const normalizedBlobRef = useRef<Blob | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
+  const renderVersionRef = useRef(0);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
@@ -266,6 +280,23 @@ export default function ViewScreen({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [showShareMenu]);
+
+  // Alternate loading text during expansion
+  useEffect(() => {
+    if (!expanding) {
+      setLoadingTextIndex(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setLoadingTextIndex((prev) => (prev + 1) % 2);
+    }, 1800);
+    return () => clearInterval(interval);
+  }, [expanding]);
+
+  const loadingTexts = [
+    `🐕 ${creature.name}の視点に変換中...`,
+    `🔭 視界を広げているよ...`,
+  ];
 
   // Normalize image for API on mount
   useEffect(() => {
@@ -333,8 +364,9 @@ export default function ViewScreen({
       const c = creatures.find((cr) => cr.id === creatureId)!;
       const fov = FOV_DATA[creatureId];
       const exp = fov?.expansion ?? 1.0;
+      const thisVersion = ++renderVersionRef.current;
 
-      console.log("=== CREATURE CHANGE ===", creatureId, "expansion:", exp);
+      console.log("=== CREATURE CHANGE ===", creatureId, "expansion:", exp, "version:", thisVersion);
 
       // --- STEP 1: Loading ---
       setLoadingText(`${c.name}に転生中...`);
@@ -371,47 +403,71 @@ export default function ViewScreen({
         }
       }
 
-      // --- STEP 3: Draw source image ---
-      ctx.drawImage(sourceImg, 0, 0, w, h);
-
-      // --- STEP 4: Apply creature filter ---
-      applyFilter(ctx, w, h, c.filterType, c.fp);
-
-      // --- STEP 5: Narrow FOV zoom + vignette (expansion < 1.0) ---
-      if (exp > 0 && exp < 1.0) {
-        const filtered = document.createElement("canvas");
-        filtered.width = w;
-        filtered.height = h;
-        filtered.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
-        const cropW = w * exp;
-        const cropH = h * exp;
-        const sx = (w - cropW) / 2;
-        const sy = (h - cropH) / 2;
-        ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
-
-        const darkness = Math.max(0, 1 - exp) * 0.8;
-        const vg = ctx.createRadialGradient(
-          w / 2, h / 2, w * exp * 0.3,
-          w / 2, h / 2, w * 0.6
-        );
-        vg.addColorStop(0, "rgba(0,0,0,0)");
-        vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
-        ctx.fillStyle = vg;
-        ctx.fillRect(0, 0, w, h);
+      // Abort if a newer render has started
+      if (renderVersionRef.current !== thisVersion) {
+        console.log("[draw] Stale render, aborting version:", thisVersion);
+        return;
       }
 
-      // --- STEP 6: Fisheye ONLY when AI expansion succeeded ---
-      if (aiExpandSucceeded) {
-        const fisheyeStrength = Math.min(1.2, exp - 1.0);
-        applyFisheye(ctx, w, h, fisheyeStrength);
-        console.log("[fisheye] strength:", fisheyeStrength);
-      } else if (exp > 1.0) {
-        console.log("[fisheye] Skipped — no AI expansion");
-      }
+      try {
+        // --- STEP 3: Draw source image ---
+        try {
+          ctx.drawImage(sourceImg, 0, 0, w, h);
+        } catch (e) {
+          console.error("[draw] sourceImg failed, falling back to original:", e);
+          ctx.drawImage(originalImage, 0, 0, w, h);
+        }
 
-      // --- STEP 7: Done ---
-      setProcessing(false);
-      setLoadingText("");
+        // Verify canvas has content (detect blank canvas)
+        const sample = ctx.getImageData(Math.floor(w / 2), Math.floor(h / 2), 1, 1).data;
+        if (sample[0] === 0 && sample[1] === 0 && sample[2] === 0 && sample[3] === 0) {
+          console.warn("[draw] Canvas is blank after drawImage, redrawing with original");
+          ctx.drawImage(originalImage, 0, 0, w, h);
+        }
+
+        // --- STEP 4: Apply creature filter ---
+        applyFilter(ctx, w, h, c.filterType, c.fp);
+
+        // --- STEP 5: Narrow FOV zoom + vignette (expansion < 1.0) ---
+        if (exp > 0 && exp < 1.0) {
+          const filtered = document.createElement("canvas");
+          filtered.width = w;
+          filtered.height = h;
+          filtered.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
+          const cropW = w * exp;
+          const cropH = h * exp;
+          const sx = (w - cropW) / 2;
+          const sy = (h - cropH) / 2;
+          ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
+
+          const darkness = Math.max(0, 1 - exp) * 0.8;
+          const vg = ctx.createRadialGradient(
+            w / 2, h / 2, w * exp * 0.3,
+            w / 2, h / 2, w * 0.6
+          );
+          vg.addColorStop(0, "rgba(0,0,0,0)");
+          vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
+          ctx.fillStyle = vg;
+          ctx.fillRect(0, 0, w, h);
+        }
+
+        // --- STEP 6: Fisheye ONLY when AI expansion succeeded ---
+        if (aiExpandSucceeded) {
+          const fisheyeStrength = Math.min(1.2, exp - 1.0);
+          applyFisheye(ctx, w, h, fisheyeStrength);
+          console.log("[fisheye] strength:", fisheyeStrength);
+        } else if (exp > 1.0) {
+          console.log("[fisheye] Skipped — no AI expansion");
+        }
+      } catch (e) {
+        console.error("[draw] Rendering pipeline failed:", e);
+        // Last resort: draw original image unfiltered
+        try { ctx.drawImage(originalImage, 0, 0, w, h); } catch { /* give up */ }
+      } finally {
+        // --- STEP 7: Done ---
+        setProcessing(false);
+        setLoadingText("");
+      }
     },
     [creatures]
   );
@@ -565,13 +621,21 @@ export default function ViewScreen({
         {(processing || expanding) && (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.7)" }}
+            style={{ background: "rgba(255,249,242,0.95)", zIndex: 20, borderRadius: 18 }}
           >
             <div style={{ animation: "eyeOpen 2s ease-in-out infinite" }}>
               <Icon id={creature.id} name={creature.name} cat={creature.cat} size={60} />
             </div>
-            <p className="mt-2" style={{ fontWeight: 700, fontSize: 14, color: "#2D2D2D" }}>
-              {loadingText}
+            <p
+              key={expanding ? loadingTextIndex : "init"}
+              className="mt-4"
+              style={{
+                fontWeight: 900, fontSize: 16, color: "#2D2D2D",
+                textAlign: "center",
+                animation: "fadeInText 0.5s ease",
+              }}
+            >
+              {expanding ? loadingTexts[loadingTextIndex] : loadingText}
             </p>
           </div>
         )}
