@@ -94,102 +94,76 @@ interface RainbowParticle {
 
 /* ───────────────────────── Fire + Water ASMR Sound ───────────────────────── */
 function initFireSound() {
-  const audioCtx = new AudioContext();
-  const sr = audioCtx.sampleRate;
-  const master = audioCtx.createGain();
+  const ac = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+  const sr = ac.sampleRate;
+  const master = ac.createGain();
   master.gain.value = 0.30;
-  master.connect(audioCtx.destination);
+  master.connect(ac.destination);
 
-  // ──── 1. Fire base: deep brown noise (warm rumble) ────
+  // ──── 1. Warm base hiss (very quiet brown noise, 200Hz LP) ────
   const brownLen = sr * 4;
-  const brownBuf = audioCtx.createBuffer(1, brownLen, sr);
+  const brownBuf = ac.createBuffer(1, brownLen, sr);
   const brownD = brownBuf.getChannelData(0);
   let bl = 0;
   for (let i = 0; i < brownLen; i++) {
     bl = (bl + 0.02 * (Math.random() * 2 - 1)) / 1.02;
     brownD[i] = bl * 3.5;
   }
-  const brownSrc = audioCtx.createBufferSource();
+  const brownSrc = ac.createBufferSource();
   brownSrc.buffer = brownBuf;
   brownSrc.loop = true;
-  const fireLp = audioCtx.createBiquadFilter();
+  const fireLp = ac.createBiquadFilter();
   fireLp.type = "lowpass";
-  fireLp.frequency.value = 250;
-  const fireGain = audioCtx.createGain();
-  fireGain.gain.value = 0.35;
+  fireLp.frequency.value = 200;
+  const fireGain = ac.createGain();
+  fireGain.gain.value = 0.08;
   brownSrc.connect(fireLp).connect(fireGain).connect(master);
+  brownSrc.start();
 
-  // ──── 2. Crackle layer 1: frequent small pops ────
-  const crack1Len = sr * 4;
-  const crack1Buf = audioCtx.createBuffer(1, crack1Len, sr);
-  const crack1D = crack1Buf.getChannelData(0);
-  let cv1 = 0;
-  for (let i = 0; i < crack1Len; i++) {
-    if (Math.random() < 0.003) {
-      cv1 = (Math.random() - 0.5) * 1.5;
-    } else {
-      cv1 *= 0.93;
+  // ──── 2. Dynamic crackle pops (main — individual one-shot bursts) ────
+  function crackle() {
+    const now = ac.currentTime;
+    const dur = 0.01 + Math.random() * 0.03; // 10-40ms
+    const samples = Math.floor(sr * dur);
+
+    const buf = ac.createBuffer(1, samples, sr);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < samples; i++) {
+      const env = Math.exp((-i / samples) * 6); // fast decay
+      d[i] = (Math.random() * 2 - 1) * env;
     }
-    crack1D[i] = cv1;
-  }
-  const crack1Src = audioCtx.createBufferSource();
-  crack1Src.buffer = crack1Buf;
-  crack1Src.loop = true;
-  const crack1Bp = audioCtx.createBiquadFilter();
-  crack1Bp.type = "bandpass";
-  crack1Bp.frequency.value = 1200;
-  crack1Bp.Q.value = 0.4;
-  const crack1Gain = audioCtx.createGain();
-  crack1Gain.gain.value = 0.45;
-  crack1Src.connect(crack1Bp).connect(crack1Gain).connect(master);
 
-  // ──── 3. Crackle layer 2: rare loud snaps ────
-  const crack2Len = sr * 6;
-  const crack2Buf = audioCtx.createBuffer(1, crack2Len, sr);
-  const crack2D = crack2Buf.getChannelData(0);
-  let cv2 = 0;
-  for (let i = 0; i < crack2Len; i++) {
-    if (Math.random() < 0.0004) {
-      cv2 = (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.5);
-    } else {
-      cv2 *= 0.97;
-    }
-    crack2D[i] = cv2;
-  }
-  const crack2Src = audioCtx.createBufferSource();
-  crack2Src.buffer = crack2Buf;
-  crack2Src.loop = true;
-  const crack2Hp = audioCtx.createBiquadFilter();
-  crack2Hp.type = "highpass";
-  crack2Hp.frequency.value = 600;
-  const crack2Gain = audioCtx.createGain();
-  crack2Gain.gain.value = 0.55;
-  crack2Src.connect(crack2Hp).connect(crack2Gain).connect(master);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
 
-  // ──── 4. Fire hiss: high-frequency sizzle ────
-  const hissLen = sr * 3;
-  const hissBuf = audioCtx.createBuffer(1, hissLen, sr);
-  const hissD = hissBuf.getChannelData(0);
-  for (let i = 0; i < hissLen; i++) {
-    hissD[i] = (Math.random() * 2 - 1) * 0.15;
-  }
-  const hissSrc = audioCtx.createBufferSource();
-  hissSrc.buffer = hissBuf;
-  hissSrc.loop = true;
-  const hissBp = audioCtx.createBiquadFilter();
-  hissBp.type = "bandpass";
-  hissBp.frequency.value = 3500;
-  hissBp.Q.value = 0.3;
-  const hissGain = audioCtx.createGain();
-  hissGain.gain.value = 0.12;
-  hissSrc.connect(hissBp).connect(hissGain).connect(master);
+    // Random bandpass pitch per pop
+    const bp = ac.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 400 + Math.random() * 2500; // 400-2900Hz
+    bp.Q.value = 1 + Math.random() * 3;
 
-  // ──── 5. Water stream: filtered pink noise + LFO modulation ────
+    // Random volume envelope
+    const vol = ac.createGain();
+    const v = 0.03 + Math.random() * 0.12;
+    vol.gain.setValueAtTime(v, now);
+    vol.gain.exponentialRampToValueAtTime(0.001, now + dur + 0.05);
+
+    src.connect(bp).connect(vol).connect(master);
+    src.start(now);
+    src.stop(now + dur + 0.06);
+
+    // Next crackle at random interval (100-900ms, Poisson-like)
+    setTimeout(crackle, (0.1 + Math.random() * 0.8) * 1000);
+  }
+  // Two independent streams for natural density
+  setTimeout(crackle, 500);
+  setTimeout(crackle, 800);
+
+  // ──── 3. Water stream: filtered pink noise + LFO ────
   const waterLen = sr * 5;
-  const waterBuf = audioCtx.createBuffer(2, waterLen, sr);
+  const waterBuf = ac.createBuffer(2, waterLen, sr);
   for (let ch = 0; ch < 2; ch++) {
     const wd = waterBuf.getChannelData(ch);
-    // Pink noise via Voss-McCartney approximation
     const rows = 16;
     const rowVal = new Float32Array(rows);
     let runningSum = 0;
@@ -198,52 +172,45 @@ function initFireSound() {
       runningSum += rowVal[i];
     }
     for (let i = 0; i < waterLen; i++) {
-      // Find lowest set bit to determine which row to update
       const lsb = i & -i;
       const rowIdx = Math.min(31 - Math.clz32(lsb | 1), rows - 1);
       runningSum -= rowVal[rowIdx];
       rowVal[rowIdx] = (Math.random() * 2 - 1) * 0.5;
       runningSum += rowVal[rowIdx];
-      // Add some white for sparkle
       wd[i] = (runningSum / rows + (Math.random() * 2 - 1) * 0.08) * 0.6;
-      // Slow amplitude wobble simulating water flow variation
       wd[i] *= 0.7 + 0.3 * Math.sin(i / sr * 0.4 * Math.PI * 2 + ch * 1.5);
     }
   }
-  const waterSrc = audioCtx.createBufferSource();
+  const waterSrc = ac.createBufferSource();
   waterSrc.buffer = waterBuf;
   waterSrc.loop = true;
-  // Bandpass to sound like a gentle stream (400-2500Hz)
-  const waterBp = audioCtx.createBiquadFilter();
+  const waterBp = ac.createBiquadFilter();
   waterBp.type = "bandpass";
   waterBp.frequency.value = 900;
   waterBp.Q.value = 0.25;
-  // Second filter: soften harsh frequencies
-  const waterLp = audioCtx.createBiquadFilter();
-  waterLp.type = "lowpass";
-  waterLp.frequency.value = 2800;
-  // LFO modulating water filter frequency for organic movement
-  const waterLfo = audioCtx.createOscillator();
+  const waterLp2 = ac.createBiquadFilter();
+  waterLp2.type = "lowpass";
+  waterLp2.frequency.value = 2800;
+  const waterLfo = ac.createOscillator();
   waterLfo.type = "sine";
   waterLfo.frequency.value = 0.15;
-  const lfoGain = audioCtx.createGain();
+  const lfoGain = ac.createGain();
   lfoGain.gain.value = 300;
   waterLfo.connect(lfoGain).connect(waterBp.frequency);
-  const waterGain = audioCtx.createGain();
-  waterGain.gain.value = 0.22;
-  waterSrc.connect(waterBp).connect(waterLp).connect(waterGain).connect(master);
+  const waterGain = ac.createGain();
+  waterGain.gain.value = 0.18;
+  waterSrc.connect(waterBp).connect(waterLp2).connect(waterGain).connect(master);
+  waterSrc.start();
+  waterLfo.start();
 
-  // ──── 6. Water drip accents: occasional droplet tones ────
+  // ──── 4. Water drip accents ────
   const dripLen = sr * 8;
-  const dripBuf = audioCtx.createBuffer(1, dripLen, sr);
+  const dripBuf = ac.createBuffer(1, dripLen, sr);
   const dripD = dripBuf.getChannelData(0);
-  for (let i = 0; i < dripLen; i++) {
-    dripD[i] = 0;
-  }
-  // Place ~6 drips randomly across 8 seconds
-  for (let d = 0; d < 6; d++) {
+  for (let i = 0; i < dripLen; i++) dripD[i] = 0;
+  for (let dd = 0; dd < 6; dd++) {
     const offset = Math.floor(Math.random() * (dripLen - sr * 0.15));
-    const freq = 800 + Math.random() * 600; // 800-1400 Hz
+    const freq = 800 + Math.random() * 600;
     const dur = 0.03 + Math.random() * 0.06;
     const samples = Math.floor(dur * sr);
     for (let i = 0; i < samples; i++) {
@@ -251,23 +218,15 @@ function initFireSound() {
       dripD[offset + i] += Math.sin(i / sr * freq * Math.PI * 2) * env * 0.3;
     }
   }
-  const dripSrc = audioCtx.createBufferSource();
+  const dripSrc = ac.createBufferSource();
   dripSrc.buffer = dripBuf;
   dripSrc.loop = true;
-  const dripGain = audioCtx.createGain();
-  dripGain.gain.value = 0.18;
+  const dripGain = ac.createGain();
+  dripGain.gain.value = 0.15;
   dripSrc.connect(dripGain).connect(master);
+  dripSrc.start(ac.currentTime + 1.0);
 
-  // ──── Start all sources ────
-  brownSrc.start();
-  crack1Src.start();
-  crack2Src.start(audioCtx.currentTime + 0.5);
-  hissSrc.start(audioCtx.currentTime + 0.2);
-  waterSrc.start();
-  waterLfo.start();
-  dripSrc.start(audioCtx.currentTime + 1.0);
-
-  return audioCtx;
+  return ac;
 }
 
 export default function MothFlameGame() {
@@ -420,21 +379,17 @@ export default function MothFlameGame() {
 
     /* ── Star detection ── */
     function detectStar(pts: Pt[]): boolean {
-      if (pts.length < 12) return false;
+      if (pts.length < 20) return false;
       let sharpTurns = 0;
-      const step = Math.max(1, Math.floor(pts.length / 60));
+      const step = Math.max(1, Math.floor(pts.length / 40));
       for (let i = step * 2; i < pts.length; i += step) {
-        const a = pts[i - step * 2];
-        const b = pts[i - step];
-        const c = pts[i];
-        const ax = b.x - a.x, ay = b.y - a.y;
-        const bx2 = c.x - b.x, by2 = c.y - b.y;
+        const ax = pts[i - step].x - pts[i - step * 2].x;
+        const ay = pts[i - step].y - pts[i - step * 2].y;
+        const bx2 = pts[i].x - pts[i - step].x;
+        const by2 = pts[i].y - pts[i - step].y;
         const dot = ax * bx2 + ay * by2;
-        const magA = Math.sqrt(ax * ax + ay * ay);
-        const magB = Math.sqrt(bx2 * bx2 + by2 * by2);
-        if (magA < 3 || magB < 3) continue;
-        const cosAngle = dot / (magA * magB);
-        const angle = Math.acos(Math.max(-1, Math.min(1, cosAngle)));
+        const cross = ax * by2 - ay * bx2;
+        const angle = Math.abs(Math.atan2(cross, dot));
         if (angle > 1.8) sharpTurns++;
       }
       return sharpTurns >= 4 && sharpTurns <= 7;
@@ -1519,8 +1474,35 @@ export default function MothFlameGame() {
       drawEmbers(dt);
       drawAIMoths();
 
-      if (isDown && !dead) trail.push({ x: mx, y: my, t: T });
-      else liveScoreVal = 0;
+      if (isDown && !dead) {
+        trail.push({ x: mx, y: my, t: T });
+
+        // Auto-detect full circle completion
+        if (trail.length > 30) {
+          let sx2 = 0, sy2 = 0;
+          trail.forEach(p => { sx2 += p.x; sy2 += p.y; });
+          const centX = sx2 / trail.length, centY = sy2 / trail.length;
+          let totalAng = 0;
+          for (let i = 1; i < trail.length; i++) {
+            const a1 = Math.atan2(trail[i - 1].y - centY, trail[i - 1].x - centX);
+            const a2 = Math.atan2(trail[i].y - centY, trail[i].x - centX);
+            let da = a2 - a1;
+            if (da > Math.PI) da -= 6.28;
+            if (da < -Math.PI) da += 6.28;
+            totalAng += da;
+          }
+          const sweep = Math.abs(totalAng) / 6.28;
+          const p0 = trail[0], pN = trail[trail.length - 1];
+          const closeDist = Math.sqrt((p0.x - pN.x) ** 2 + (p0.y - pN.y) ** 2);
+          const avgR = trail.map(p =>
+            Math.sqrt((p.x - centX) ** 2 + (p.y - centY) ** 2)
+          ).reduce((a, b) => a + b, 0) / trail.length;
+          if (sweep > 0.9 && closeDist < avgR * 0.3) {
+            isDown = false;
+            endTrail();
+          }
+        }
+      } else liveScoreVal = 0;
 
       drawTrail();
       drawClosed();
