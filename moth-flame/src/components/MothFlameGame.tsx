@@ -612,9 +612,13 @@ export default function MothFlameGame() {
       const densityMod = 1.4 + NWobble.s(T * 0.5 + 3) * 0.3;
       const ampMod = 0.55 + NF.s(T * 1.3) * 0.12;
 
-      let fireH = Math.floor(baseR * 2.4 * 1.55 * (1 + breath * 0.15));
-      // Randomize tip height with noise
-      fireH += Math.floor(NWobble.s(T * 1.3) * baseR * 0.2);
+      const heightSurge =
+        NWobble.s(T * 0.8) * baseR * 0.6
+        + NWobble.s(T * 1.5 + 3) * baseR * 0.35
+        + NJitter.s(T * 2.5) * baseR * 0.15;
+      const burstChance = NF.s(T * 0.3);
+      const burst = burstChance > 0.7 ? (burstChance - 0.7) * baseR * 2.5 : 0;
+      const fireH = Math.floor(baseR * 2.4 * 1.55 * (1 + breath * 0.15) + heightSurge + burst);
       const fireW = baseR * 1.6 * (1 + NW.s(T) * 0.06);
       const top = SY - fireH,
         bot = SY;
@@ -777,11 +781,9 @@ export default function MothFlameGame() {
           continue;
         }
         if (Math.sin(T * 20 + e.x * 0.1) < -0.75) continue;
-        const gx = Math.floor(e.x / PX),
-          gy = Math.floor(e.y / PX);
         ctx.globalAlpha = Math.min(1, (1 - e.age / e.life) * 1.5);
         ctx.fillStyle = e.col;
-        ctx.fillRect(gx, gy, 1, 1);
+        ctx.fillRect(Math.floor(e.x), Math.floor(e.y), 1, 1);
       }
       ctx.globalAlpha = 1;
     }
