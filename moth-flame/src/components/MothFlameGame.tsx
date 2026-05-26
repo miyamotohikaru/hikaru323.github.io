@@ -119,7 +119,7 @@ function initFireSound() {
     // Lowpass filter — removes hard clicking, keeps soft crackle
     const lp = ac.createBiquadFilter();
     lp.type = "lowpass";
-    lp.frequency.value = 400 + Math.random() * 600; // 400-1000Hz
+    lp.frequency.value = 200 + Math.random() * 200; // 200-400Hz
     lp.Q.value = 0.5 + Math.random() * 0.5;
 
     const vol = ac.createGain();
