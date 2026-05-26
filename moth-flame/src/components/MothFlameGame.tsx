@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 /* ───────────────────────── 1/f Noise ───────────────────────── */
 class PN {
@@ -31,7 +31,8 @@ class PN {
 }
 
 /* ───────────────────────── Constants ───────────────────────── */
-const PX = 5;
+const isMobile = typeof navigator !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent);
+const PX = isMobile ? 3 : 5;
 const COLS = ["#fff7c2", "#ffb454", "#ff8a3d", "#ff5874", "#7d3ac1"];
 const RCOLS = [
   "#ff5874",
@@ -81,12 +82,96 @@ interface ClosedCircle {
   score: number;
   born: number;
 }
+interface RainbowParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  age: number;
+  col: string;
+}
+
+/* ───────────────────────── Fire Sound ───────────────────────── */
+function initFireSound() {
+  const audioCtx = new AudioContext();
+
+  // Brown noise (warm bass)
+  const bufSize = audioCtx.sampleRate * 2;
+  const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < bufSize; i++) {
+    const white = Math.random() * 2 - 1;
+    data[i] = (last + 0.02 * white) / 1.02;
+    last = data[i];
+    data[i] *= 3.5;
+  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+
+  // Lowpass filter (300Hz)
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 300;
+
+  // Crackle noise
+  const crackleSize = audioCtx.sampleRate * 2;
+  const crackleBuf = audioCtx.createBuffer(1, crackleSize, audioCtx.sampleRate);
+  const crackleData = crackleBuf.getChannelData(0);
+  let crackleVal = 0;
+  for (let i = 0; i < crackleSize; i++) {
+    if (Math.random() < 0.001) {
+      crackleVal = (Math.random() - 0.5) * 2;
+    } else {
+      crackleVal *= 0.95;
+    }
+    crackleData[i] = crackleVal;
+  }
+  const crackleSrc = audioCtx.createBufferSource();
+  crackleSrc.buffer = crackleBuf;
+  crackleSrc.loop = true;
+
+  // Crackle bandpass
+  const bp = audioCtx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 800;
+  bp.Q.value = 0.5;
+
+  const crackleGain = audioCtx.createGain();
+  crackleGain.gain.value = 0.6;
+
+  // Master gain
+  const master = audioCtx.createGain();
+  master.gain.value = 0.25;
+
+  src.connect(lp).connect(master);
+  crackleSrc.connect(bp).connect(crackleGain).connect(master);
+  master.connect(audioCtx.destination);
+
+  src.start();
+  crackleSrc.start();
+
+  return audioCtx;
+}
 
 export default function MothFlameGame() {
   const mainRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const audioRef = useRef<AudioContext | null>(null);
+
+  const handleStart = useCallback(() => {
+    setGameStarted(true);
+    if (!audioRef.current) {
+      audioRef.current = initFireSound();
+    }
+  }, []);
 
   useEffect(() => {
+    if (!gameStarted) return;
+
     const mc = mainRef.current!;
     const oc = overlayRef.current!;
     const ctx = mc.getContext("2d")!;
@@ -96,12 +181,10 @@ export default function MothFlameGame() {
     const NB = new PN(0.12);
     const NF = new PN(0.7);
     const NFa = new PN(2.5);
-    const NS = new PN(0.3);
     const NW = new PN(0.2);
     const NGust = new PN(0.15);
     const NWobble = new PN(0.4);
     const NJitter = new PN(3.2);
-    void NS; // used implicitly
 
     function hash(x: number, y: number) {
       let h = ((x * 374761393 + y * 668265263 + T * 1000) & 0xffffffff) >>> 0;
@@ -156,6 +239,13 @@ export default function MothFlameGame() {
         .substr(2, 4)
         .toUpperCase();
 
+    /* ── Easter egg state ── */
+    let easterEggActive = false;
+    let easterEggAt = 0;
+    let easterEggMsg1 = "";
+    let easterEggMsg2 = "";
+    const rainbowParticles: RainbowParticle[] = [];
+
     /* ── Stars ── */
     const stars = Array.from({ length: 90 }, () => ({
       x: Math.random() * 2000,
@@ -184,6 +274,22 @@ export default function MothFlameGame() {
         col: ["#ffb454", "#ff5874", "#fff7c2"][Math.floor(Math.random() * 3)],
       });
     }
+    function spawnEmberTop(
+      cx: number,
+      topY: number,
+      baseR: number
+    ) {
+      embers.push({
+        x: cx + (Math.random() - 0.5) * baseR * 0.6,
+        y: topY - baseR * 0.3,
+        vx: (Math.random() - 0.5) * 20,
+        vy: -(30 + Math.random() * 40),
+        life: 1.0 + Math.random() * 1.2,
+        age: 0,
+        sz: 1,
+        col: ["#ffb454", "#fff7c2"][Math.floor(Math.random() * 2)],
+      });
+    }
 
     /* ── AI Moths ── */
     const aiMoths: AIMoth[] = Array.from({ length: 5 }, () => ({
@@ -196,6 +302,49 @@ export default function MothFlameGame() {
     /* ── Helpers ── */
     function getIdealR() {
       return fireBaseR * 3.5 * PX;
+    }
+
+    /* ── Star detection ── */
+    function detectStar(pts: Pt[]): boolean {
+      if (pts.length < 12) return false;
+      let sharpTurns = 0;
+      const step = Math.max(1, Math.floor(pts.length / 60));
+      for (let i = step * 2; i < pts.length; i += step) {
+        const a = pts[i - step * 2];
+        const b = pts[i - step];
+        const c = pts[i];
+        const ax = b.x - a.x, ay = b.y - a.y;
+        const bx2 = c.x - b.x, by2 = c.y - b.y;
+        const dot = ax * bx2 + ay * by2;
+        const magA = Math.sqrt(ax * ax + ay * ay);
+        const magB = Math.sqrt(bx2 * bx2 + by2 * by2);
+        if (magA < 3 || magB < 3) continue;
+        const cosAngle = dot / (magA * magB);
+        const angle = Math.acos(Math.max(-1, Math.min(1, cosAngle)));
+        if (angle > 1.8) sharpTurns++;
+      }
+      return sharpTurns >= 4 && sharpTurns <= 7;
+    }
+
+    function triggerStarEasterEgg() {
+      easterEggActive = true;
+      easterEggAt = T;
+      easterEggMsg1 = "\u2605 SECRET \u2605";
+      easterEggMsg2 = "You found the hidden star!";
+      // Spawn 60 rainbow particles from center
+      for (let i = 0; i < 60; i++) {
+        const a = Math.random() * 6.28;
+        const spd = 80 + Math.random() * 200;
+        rainbowParticles.push({
+          x: W / 2,
+          y: H / 2,
+          vx: Math.cos(a) * spd,
+          vy: Math.sin(a) * spd - 40,
+          life: 2.0 + Math.random() * 1.5,
+          age: 0,
+          col: RCOLS[Math.floor(Math.random() * RCOLS.length)],
+        });
+      }
     }
 
     /* ── Scoring ── */
@@ -280,6 +429,15 @@ export default function MothFlameGame() {
 
     function endTrail() {
       if (trail.length < 8 || dead) return;
+
+      // Star easter egg check (before normal scoring)
+      if (detectStar(trail)) {
+        triggerStarEasterEgg();
+        trail = [];
+        liveScoreVal = 0;
+        return;
+      }
+
       const score = calcScore(trail);
       if (score < 1) {
         trail = [];
@@ -325,10 +483,17 @@ export default function MothFlameGame() {
       mouseIn = false;
       isDown = false;
     }
+    function onVisibilityChange() {
+      if (document.hidden) {
+        isDown = false;
+        trail = [];
+      }
+    }
     document.addEventListener("pointermove", onPointerMove);
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("pointerup", onPointerUp);
     document.addEventListener("pointerleave", onPointerLeave);
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     /* ══════════════════════ Drawing ══════════════════════ */
 
@@ -378,7 +543,9 @@ export default function MothFlameGame() {
       const densityMod = 1.4 + NWobble.s(T * 0.5 + 3) * 0.3;
       const ampMod = 0.55 + NF.s(T * 1.3) * 0.12;
 
-      const fireH = Math.floor(baseR * 2.4 * 1.55 * (1 + breath * 0.15));
+      let fireH = Math.floor(baseR * 2.4 * 1.55 * (1 + breath * 0.15));
+      // Randomize tip height with noise
+      fireH += Math.floor(NWobble.s(T * 1.3) * baseR * 0.2);
       const fireW = baseR * 1.6 * (1 + NW.s(T) * 0.06);
       const top = SY - fireH,
         bot = SY;
@@ -499,13 +666,14 @@ export default function MothFlameGame() {
       otx.fillRect(0, H * 0.55, W, H * 0.45);
       otx.restore();
 
-      // Embers
-      if (Math.random() < 0.35) spawnEmber(cx, cy, baseR, false);
+      // Embers — 50% from base + 15% from top (doubled total)
+      if (Math.random() < 0.5) spawnEmber(cx, cy, baseR, false);
+      if (Math.random() < 0.15) spawnEmberTop(cx, top, baseR);
 
       // Fire center for scoring
       fireSCX = cx * PX + PX / 2;
-      const fireVisCenter = SY - fireH * 0.45;
-      fireSCY = fireVisCenter * PX;
+      const fireVisCenter = (SY - fireH * 0.45) * PX;
+      fireSCY = fireVisCenter;
       fireBaseR = baseR;
 
       // Center hint
@@ -606,10 +774,10 @@ export default function MothFlameGame() {
         glowCol = "rgba(158,251,182,";
         glowR = 20 + proximity * 15;
       } else if (ratio < 0.7) {
-        const pulse = 0.7 + Math.sin(T * 8) * 0.3;
+        const pulse2 = 0.7 + Math.sin(T * 8) * 0.3;
         bodyCol = "#ff5874";
         headCol = "#fff7c2";
-        wingCol = `rgba(255,88,116,${pulse})`;
+        wingCol = `rgba(255,88,116,${pulse2})`;
         glowCol = "rgba(255,88,116,";
         glowR = 12 + Math.sin(T * 6) * 4;
       } else if (ratio > 1.5) {
@@ -828,7 +996,7 @@ export default function MothFlameGame() {
         if (sc >= 90) {
           otx.font = '11px "VT323",monospace';
           otx.fillStyle = "#9efbb6";
-          otx.fillText("★ PERFECT! ★", tx, ty + 40);
+          otx.fillText("\u2605 PERFECT! \u2605", tx, ty + 40);
         } else if (sc >= 70) {
           otx.font = '11px "VT323",monospace';
           otx.fillStyle = "#9efbb6";
@@ -906,7 +1074,7 @@ export default function MothFlameGame() {
             ? "GREAT!"
             : "NICE";
         otx.fillText(
-          `★ ${lastClosed.score} PT  ${lb} ★`,
+          `\u2605 ${lastClosed.score} PT  ${lb} \u2605`,
           W / 2,
           H / 2
         );
@@ -920,7 +1088,7 @@ export default function MothFlameGame() {
         dy = my - fireSCY;
       const d = Math.sqrt(dx * dx + dy * dy);
       const innerDeath = fd.baseR * 1.8 * PX;
-      const outerDeath = fd.baseR * 4.5 * PX;
+      const outerDeath = fd.baseR * 6.5 * PX;
       if (d < innerDeath) {
         dead = true;
         deadAt = T;
@@ -1070,12 +1238,66 @@ export default function MothFlameGame() {
       }
     }
 
+    function drawEasterEgg(dt: number) {
+      if (!easterEggActive) return;
+      const age = T - easterEggAt;
+      if (age > 3.0) {
+        easterEggActive = false;
+        rainbowParticles.length = 0;
+        return;
+      }
+
+      // Rainbow particles
+      for (let i = rainbowParticles.length - 1; i >= 0; i--) {
+        const p = rainbowParticles[i];
+        p.age += dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 80 * dt;
+        if (p.age >= p.life) {
+          rainbowParticles.splice(i, 1);
+          continue;
+        }
+        const alpha = 1 - p.age / p.life;
+        otx.globalAlpha = alpha;
+        otx.fillStyle = p.col;
+        otx.fillRect(Math.floor(p.x / 4) * 4, Math.floor(p.y / 4) * 4, 4, 4);
+      }
+
+      // Text
+      const textAlpha = age < 0.3 ? age / 0.3 : age > 2.5 ? 1 - (age - 2.5) / 0.5 : 1;
+      otx.globalAlpha = textAlpha;
+      otx.textAlign = "center";
+      otx.textBaseline = "middle";
+
+      // Rainbow color cycling
+      const rcol = RCOLS[Math.floor(T * 8) % RCOLS.length];
+
+      otx.font = '32px "Press Start 2P",monospace';
+      otx.fillStyle = "#0e0d1a";
+      otx.fillText(easterEggMsg1, W / 2 + 2, H / 2 - 20 + 2);
+      otx.fillStyle = rcol;
+      otx.fillText(easterEggMsg1, W / 2, H / 2 - 20);
+
+      otx.font = '16px "Press Start 2P",monospace';
+      otx.fillStyle = "#0e0d1a";
+      otx.fillText(easterEggMsg2, W / 2 + 1, H / 2 + 25 + 1);
+      otx.fillStyle = rcol;
+      otx.fillText(easterEggMsg2, W / 2, H / 2 + 25);
+
+      otx.globalAlpha = 1;
+    }
+
     function drawHUD() {
       otx.save();
+
+      // "DRAG TO DRAW A CIRCLE" — centered below fire
       otx.textAlign = "center";
       otx.font = '12px "VT323",monospace';
-      otx.fillStyle = "#6272a4";
-      otx.fillText("DRAG TO DRAW A CIRCLE", W / 2, H - 60);
+      otx.fillStyle = "#fff7c2";
+      otx.fillText("DRAG TO DRAW A CIRCLE", fireSCX, fireSCY + fireBaseR * PX * 2.5 + 20);
+
+      // BEST score
       otx.font = '14px "Press Start 2P",monospace';
       otx.fillStyle = "#8be9fd";
       otx.fillText(
@@ -1083,12 +1305,13 @@ export default function MothFlameGame() {
         W / 2,
         H - 40
       );
-      otx.textAlign = "left";
+
+      // MOTH-FLAME.EXE — centered below fire
       otx.font = '10px "VT323",monospace';
       otx.fillStyle = "#50fa7b";
-      otx.fillText("MOTH-FLAME.EXE / v1.0", 16, H - 16);
+      otx.fillText("MOTH-FLAME.EXE / v1.0", W / 2, H - 16);
 
-      // Leaderboard panel (local only — no shared storage)
+      // Leaderboard panel
       const panelW = 260,
         panelX = W - panelW - 12,
         panelY = 8;
@@ -1116,7 +1339,6 @@ export default function MothFlameGame() {
       for (let i = 0; i < 10; i++) {
         const y = panelY + 50 + i * 27;
         const rank = String(i + 1).padStart(2, " ");
-        // Show player name placeholder
         otx.globalAlpha = 0.25;
         otx.fillStyle = "#44475a";
         otx.font = '14px "VT323",monospace';
@@ -1125,7 +1347,6 @@ export default function MothFlameGame() {
         otx.fillText("---", panelX + panelW - 14, y);
         otx.textAlign = "left";
       }
-      // Show own best if any
       if (bestScore > 0) {
         const y = panelY + 50;
         otx.globalAlpha = 1;
@@ -1192,6 +1413,7 @@ export default function MothFlameGame() {
       drawMoth();
       checkDeath(fd);
       if (dead) drawGameOver();
+      drawEasterEgg(dt);
       drawHUD();
       drawCRT();
 
@@ -1206,8 +1428,64 @@ export default function MothFlameGame() {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("pointerup", onPointerUp);
       document.removeEventListener("pointerleave", onPointerLeave);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [gameStarted]);
+
+  /* ── Start Screen ── */
+  if (!gameStarted) {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "#0e0d1a",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 10,
+          cursor: "default",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "clamp(14px, 3vw, 24px)",
+            color: "#fff7c2",
+            textAlign: "center",
+            marginBottom: 40,
+            lineHeight: 1.6,
+          }}
+        >
+          DRAG TO DRAW A CIRCLE
+        </div>
+        <button
+          onClick={handleStart}
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "clamp(16px, 2.5vw, 28px)",
+            color: "#0e0d1a",
+            background: "#fff7c2",
+            border: "none",
+            padding: "16px 48px",
+            cursor: "pointer",
+            transition: "transform 0.1s, background 0.1s",
+          }}
+          onMouseOver={(e) => {
+            (e.target as HTMLButtonElement).style.background = "#ffb454";
+            (e.target as HTMLButtonElement).style.transform = "scale(1.05)";
+          }}
+          onMouseOut={(e) => {
+            (e.target as HTMLButtonElement).style.background = "#fff7c2";
+            (e.target as HTMLButtonElement).style.transform = "scale(1)";
+          }}
+        >
+          START
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>

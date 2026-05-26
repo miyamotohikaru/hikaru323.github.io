@@ -11,5 +11,10 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: #0e0d1a;
+}
+
+/* Hide cursor only on the game canvas layer */
+canvas#main,
+canvas#overlay {
   cursor: none;
 }
