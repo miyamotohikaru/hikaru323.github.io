@@ -92,66 +92,180 @@ interface RainbowParticle {
   col: string;
 }
 
-/* ───────────────────────── Fire Sound ───────────────────────── */
+/* ───────────────────────── Fire + Water ASMR Sound ───────────────────────── */
 function initFireSound() {
   const audioCtx = new AudioContext();
-
-  // Brown noise (warm bass)
-  const bufSize = audioCtx.sampleRate * 2;
-  const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
-  const data = buf.getChannelData(0);
-  let last = 0;
-  for (let i = 0; i < bufSize; i++) {
-    const white = Math.random() * 2 - 1;
-    data[i] = (last + 0.02 * white) / 1.02;
-    last = data[i];
-    data[i] *= 3.5;
-  }
-  const src = audioCtx.createBufferSource();
-  src.buffer = buf;
-  src.loop = true;
-
-  // Lowpass filter (300Hz)
-  const lp = audioCtx.createBiquadFilter();
-  lp.type = "lowpass";
-  lp.frequency.value = 300;
-
-  // Crackle noise
-  const crackleSize = audioCtx.sampleRate * 2;
-  const crackleBuf = audioCtx.createBuffer(1, crackleSize, audioCtx.sampleRate);
-  const crackleData = crackleBuf.getChannelData(0);
-  let crackleVal = 0;
-  for (let i = 0; i < crackleSize; i++) {
-    if (Math.random() < 0.001) {
-      crackleVal = (Math.random() - 0.5) * 2;
-    } else {
-      crackleVal *= 0.95;
-    }
-    crackleData[i] = crackleVal;
-  }
-  const crackleSrc = audioCtx.createBufferSource();
-  crackleSrc.buffer = crackleBuf;
-  crackleSrc.loop = true;
-
-  // Crackle bandpass
-  const bp = audioCtx.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.frequency.value = 800;
-  bp.Q.value = 0.5;
-
-  const crackleGain = audioCtx.createGain();
-  crackleGain.gain.value = 0.6;
-
-  // Master gain
+  const sr = audioCtx.sampleRate;
   const master = audioCtx.createGain();
-  master.gain.value = 0.25;
-
-  src.connect(lp).connect(master);
-  crackleSrc.connect(bp).connect(crackleGain).connect(master);
+  master.gain.value = 0.30;
   master.connect(audioCtx.destination);
 
-  src.start();
-  crackleSrc.start();
+  // ──── 1. Fire base: deep brown noise (warm rumble) ────
+  const brownLen = sr * 4;
+  const brownBuf = audioCtx.createBuffer(1, brownLen, sr);
+  const brownD = brownBuf.getChannelData(0);
+  let bl = 0;
+  for (let i = 0; i < brownLen; i++) {
+    bl = (bl + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+    brownD[i] = bl * 3.5;
+  }
+  const brownSrc = audioCtx.createBufferSource();
+  brownSrc.buffer = brownBuf;
+  brownSrc.loop = true;
+  const fireLp = audioCtx.createBiquadFilter();
+  fireLp.type = "lowpass";
+  fireLp.frequency.value = 250;
+  const fireGain = audioCtx.createGain();
+  fireGain.gain.value = 0.35;
+  brownSrc.connect(fireLp).connect(fireGain).connect(master);
+
+  // ──── 2. Crackle layer 1: frequent small pops ────
+  const crack1Len = sr * 4;
+  const crack1Buf = audioCtx.createBuffer(1, crack1Len, sr);
+  const crack1D = crack1Buf.getChannelData(0);
+  let cv1 = 0;
+  for (let i = 0; i < crack1Len; i++) {
+    if (Math.random() < 0.003) {
+      cv1 = (Math.random() - 0.5) * 1.5;
+    } else {
+      cv1 *= 0.93;
+    }
+    crack1D[i] = cv1;
+  }
+  const crack1Src = audioCtx.createBufferSource();
+  crack1Src.buffer = crack1Buf;
+  crack1Src.loop = true;
+  const crack1Bp = audioCtx.createBiquadFilter();
+  crack1Bp.type = "bandpass";
+  crack1Bp.frequency.value = 1200;
+  crack1Bp.Q.value = 0.4;
+  const crack1Gain = audioCtx.createGain();
+  crack1Gain.gain.value = 0.45;
+  crack1Src.connect(crack1Bp).connect(crack1Gain).connect(master);
+
+  // ──── 3. Crackle layer 2: rare loud snaps ────
+  const crack2Len = sr * 6;
+  const crack2Buf = audioCtx.createBuffer(1, crack2Len, sr);
+  const crack2D = crack2Buf.getChannelData(0);
+  let cv2 = 0;
+  for (let i = 0; i < crack2Len; i++) {
+    if (Math.random() < 0.0004) {
+      cv2 = (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.5);
+    } else {
+      cv2 *= 0.97;
+    }
+    crack2D[i] = cv2;
+  }
+  const crack2Src = audioCtx.createBufferSource();
+  crack2Src.buffer = crack2Buf;
+  crack2Src.loop = true;
+  const crack2Hp = audioCtx.createBiquadFilter();
+  crack2Hp.type = "highpass";
+  crack2Hp.frequency.value = 600;
+  const crack2Gain = audioCtx.createGain();
+  crack2Gain.gain.value = 0.55;
+  crack2Src.connect(crack2Hp).connect(crack2Gain).connect(master);
+
+  // ──── 4. Fire hiss: high-frequency sizzle ────
+  const hissLen = sr * 3;
+  const hissBuf = audioCtx.createBuffer(1, hissLen, sr);
+  const hissD = hissBuf.getChannelData(0);
+  for (let i = 0; i < hissLen; i++) {
+    hissD[i] = (Math.random() * 2 - 1) * 0.15;
+  }
+  const hissSrc = audioCtx.createBufferSource();
+  hissSrc.buffer = hissBuf;
+  hissSrc.loop = true;
+  const hissBp = audioCtx.createBiquadFilter();
+  hissBp.type = "bandpass";
+  hissBp.frequency.value = 3500;
+  hissBp.Q.value = 0.3;
+  const hissGain = audioCtx.createGain();
+  hissGain.gain.value = 0.12;
+  hissSrc.connect(hissBp).connect(hissGain).connect(master);
+
+  // ──── 5. Water stream: filtered pink noise + LFO modulation ────
+  const waterLen = sr * 5;
+  const waterBuf = audioCtx.createBuffer(2, waterLen, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const wd = waterBuf.getChannelData(ch);
+    // Pink noise via Voss-McCartney approximation
+    const rows = 16;
+    const rowVal = new Float32Array(rows);
+    let runningSum = 0;
+    for (let i = 0; i < rows; i++) {
+      rowVal[i] = (Math.random() * 2 - 1) * 0.5;
+      runningSum += rowVal[i];
+    }
+    for (let i = 0; i < waterLen; i++) {
+      // Find lowest set bit to determine which row to update
+      const lsb = i & -i;
+      const rowIdx = Math.min(31 - Math.clz32(lsb | 1), rows - 1);
+      runningSum -= rowVal[rowIdx];
+      rowVal[rowIdx] = (Math.random() * 2 - 1) * 0.5;
+      runningSum += rowVal[rowIdx];
+      // Add some white for sparkle
+      wd[i] = (runningSum / rows + (Math.random() * 2 - 1) * 0.08) * 0.6;
+      // Slow amplitude wobble simulating water flow variation
+      wd[i] *= 0.7 + 0.3 * Math.sin(i / sr * 0.4 * Math.PI * 2 + ch * 1.5);
+    }
+  }
+  const waterSrc = audioCtx.createBufferSource();
+  waterSrc.buffer = waterBuf;
+  waterSrc.loop = true;
+  // Bandpass to sound like a gentle stream (400-2500Hz)
+  const waterBp = audioCtx.createBiquadFilter();
+  waterBp.type = "bandpass";
+  waterBp.frequency.value = 900;
+  waterBp.Q.value = 0.25;
+  // Second filter: soften harsh frequencies
+  const waterLp = audioCtx.createBiquadFilter();
+  waterLp.type = "lowpass";
+  waterLp.frequency.value = 2800;
+  // LFO modulating water filter frequency for organic movement
+  const waterLfo = audioCtx.createOscillator();
+  waterLfo.type = "sine";
+  waterLfo.frequency.value = 0.15;
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 300;
+  waterLfo.connect(lfoGain).connect(waterBp.frequency);
+  const waterGain = audioCtx.createGain();
+  waterGain.gain.value = 0.22;
+  waterSrc.connect(waterBp).connect(waterLp).connect(waterGain).connect(master);
+
+  // ──── 6. Water drip accents: occasional droplet tones ────
+  const dripLen = sr * 8;
+  const dripBuf = audioCtx.createBuffer(1, dripLen, sr);
+  const dripD = dripBuf.getChannelData(0);
+  for (let i = 0; i < dripLen; i++) {
+    dripD[i] = 0;
+  }
+  // Place ~6 drips randomly across 8 seconds
+  for (let d = 0; d < 6; d++) {
+    const offset = Math.floor(Math.random() * (dripLen - sr * 0.15));
+    const freq = 800 + Math.random() * 600; // 800-1400 Hz
+    const dur = 0.03 + Math.random() * 0.06;
+    const samples = Math.floor(dur * sr);
+    for (let i = 0; i < samples; i++) {
+      const env = Math.exp(-i / (samples * 0.2));
+      dripD[offset + i] += Math.sin(i / sr * freq * Math.PI * 2) * env * 0.3;
+    }
+  }
+  const dripSrc = audioCtx.createBufferSource();
+  dripSrc.buffer = dripBuf;
+  dripSrc.loop = true;
+  const dripGain = audioCtx.createGain();
+  dripGain.gain.value = 0.18;
+  dripSrc.connect(dripGain).connect(master);
+
+  // ──── Start all sources ────
+  brownSrc.start();
+  crack1Src.start();
+  crack2Src.start(audioCtx.currentTime + 0.5);
+  hissSrc.start(audioCtx.currentTime + 0.2);
+  waterSrc.start();
+  waterLfo.start();
+  dripSrc.start(audioCtx.currentTime + 1.0);
 
   return audioCtx;
 }
