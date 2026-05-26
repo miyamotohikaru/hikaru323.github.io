@@ -3285,17 +3285,16 @@ a:hover { color: var(--text-primary); }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: calc(100vh - 48px);
-    max-height: calc(100dvh - 48px);
+    height: calc(100dvh - 48px);
     overflow: hidden;
-    padding: 1rem 1.5rem 1rem;
+    padding: 0 1.5rem;
     gap: 0;
   }
   .tategaki-search-inner {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1rem;
   }
   .tategaki-search-hero-title {
     writing-mode: horizontal-tb;
@@ -3340,7 +3339,7 @@ a:hover { color: var(--text-primary); }
     writing-mode: vertical-rl;
     text-orientation: mixed;
     width: 2.75rem;
-    height: 11rem;
+    height: 9rem;
     font-size: 1rem;
     border: none;
     background: rgba(217, 212, 200, 0.03);
@@ -3357,7 +3356,7 @@ a:hover { color: var(--text-primary); }
     padding: 0;
     font-size: 0.9375rem;
     width: 2.75rem;
-    height: 11rem;
+    height: 9rem;
     border: none;
     border-left: 1px solid var(--textSoft);
     letter-spacing: 0.3em;
