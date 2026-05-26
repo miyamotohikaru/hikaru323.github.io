@@ -29,7 +29,6 @@ interface Props {
 }
 
 const MAX_W = 900;
-const OUTPAINT_MAX = 1536; // max dimension for outpainting canvas
 
 /* ── SVG Icons ── */
 
@@ -162,199 +161,67 @@ async function generateShareImage(
   });
 }
 
-/* ── Create outpainting canvas (pxbee-style) ── */
+/* ── Normalize image for API (max 1024px, JPEG 85%) ── */
 
-async function createOutpaintCanvas(
-  imageBlob: Blob,
-  expansion: number,
-): Promise<{ blob: Blob; direction: "horizontal" | "vertical"; innerRect: string }> {
-  const bitmap = await createImageBitmap(imageBlob);
-  const isPortrait = bitmap.height > bitmap.width;
-  const direction: "horizontal" | "vertical" = isPortrait ? "vertical" : "horizontal";
+async function normalizeImage(
+  inputBlob: Blob,
+  maxDim: number = 1024
+): Promise<{ blob: Blob; width: number; height: number; orientation: "landscape" | "portrait" | "square" }> {
+  const bitmap = await createImageBitmap(inputBlob);
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  const aspectRatio = w / h;
+  const orientation: "landscape" | "portrait" | "square" =
+    aspectRatio > 1.05 ? "landscape" : aspectRatio < 0.95 ? "portrait" : "square";
 
-  // Resize original to fit within reasonable bounds
-  const maxInner = 768;
-  const innerScale = Math.min(1, maxInner / Math.max(bitmap.width, bitmap.height));
-  const innerW = Math.round(bitmap.width * innerScale);
-  const innerH = Math.round(bitmap.height * innerScale);
-
-  // Calculate target (expanded) canvas size
-  let targetW: number, targetH: number;
-  if (direction === "horizontal") {
-    targetW = Math.round(innerW * Math.min(expansion, 2.5));
-    targetH = innerH;
-  } else {
-    targetW = innerW;
-    targetH = Math.round(innerH * Math.min(expansion, 2.5));
-  }
-
-  // Cap at OUTPAINT_MAX
-  const capScale = Math.min(1, OUTPAINT_MAX / Math.max(targetW, targetH));
-  targetW = Math.round(targetW * capScale);
-  targetH = Math.round(targetH * capScale);
-  const finalInnerW = Math.round(innerW * capScale);
-  const finalInnerH = Math.round(innerH * capScale);
-
-  // Place original in center
-  const offsetX = Math.round((targetW - finalInnerW) / 2);
-  const offsetY = Math.round((targetH - finalInnerH) / 2);
-
-  const canvas = new OffscreenCanvas(targetW, targetH);
+  const canvas = new OffscreenCanvas(w, h);
   const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, 0, 0, w, h);
 
-  // Fill with mirror-stretched edges (gives AI context for extension)
-  // Left edge
-  if (offsetX > 0) {
-    ctx.save();
-    ctx.translate(offsetX, offsetY);
-    ctx.scale(-1, 1);
-    ctx.drawImage(bitmap, 0, 0, bitmap.width * 0.1, bitmap.height, 0, 0, offsetX, finalInnerH);
-    ctx.restore();
-    // Right edge
-    ctx.save();
-    ctx.translate(offsetX + finalInnerW, offsetY);
-    ctx.scale(-1, 1);
-    ctx.drawImage(bitmap, bitmap.width * 0.9, 0, bitmap.width * 0.1, bitmap.height, -offsetX, 0, offsetX, finalInnerH);
-    ctx.restore();
-  }
-  // Top edge
-  if (offsetY > 0) {
-    ctx.save();
-    ctx.translate(offsetX, offsetY);
-    ctx.scale(1, -1);
-    ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height * 0.1, 0, 0, finalInnerW, offsetY);
-    ctx.restore();
-    // Bottom edge
-    ctx.save();
-    ctx.translate(offsetX, offsetY + finalInnerH);
-    ctx.scale(1, -1);
-    ctx.drawImage(bitmap, 0, bitmap.height * 0.9, bitmap.width, bitmap.height * 0.1, 0, -offsetY, finalInnerW, offsetY);
-    ctx.restore();
-  }
-
-  // Draw original image in center (on top of mirrored edges)
-  ctx.drawImage(bitmap, offsetX, offsetY, finalInnerW, finalInnerH);
-
-  console.log(`[outpaint] canvas=${targetW}x${targetH} inner=${finalInnerW}x${finalInnerH} offset=${offsetX},${offsetY}`);
-
-  const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.88 });
-  const innerRect = `${offsetX},${offsetY},${finalInnerW},${finalInnerH}`;
-  return { blob, direction, innerRect };
+  const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.85 });
+  console.log(`[normalize] ${bitmap.width}x${bitmap.height} → ${w}x${h} (${orientation}, ${blob.size}B)`);
+  return { blob, width: w, height: h, orientation };
 }
 
-/* ── Composite: paste original back onto AI result (pxbee-style) ── */
-
-async function compositeOriginalBack(
-  aiBlob: Blob,
-  originalBlob: Blob,
-  innerRect: string
-): Promise<Blob> {
-  const [ox, oy, ow, oh] = innerRect.split(",").map(Number);
-  const aiBmp = await createImageBitmap(aiBlob);
-  const origBmp = await createImageBitmap(originalBlob);
-
-  // Use the AI image as base, then stamp original back into center
-  const canvas = new OffscreenCanvas(aiBmp.width, aiBmp.height);
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(aiBmp, 0, 0);
-
-  // Scale innerRect proportionally if AI output is different size than input
-  const scaleX = aiBmp.width / aiBmp.width; // AI output should match input size
-  const scaleY = aiBmp.height / aiBmp.height;
-
-  // Feathered blend: draw original with soft edge to avoid hard seams
-  // First draw original at full opacity in the center (slightly inset)
-  const feather = 8; // pixels of feathering at the edge
-  const cx = Math.round(ox * scaleX);
-  const cy = Math.round(oy * scaleY);
-  const cw = Math.round(ow * scaleX);
-  const ch = Math.round(oh * scaleY);
-
-  // Create a temp canvas with the original + feathered alpha mask
-  const tmpCanvas = new OffscreenCanvas(cw, ch);
-  const tmpCtx = tmpCanvas.getContext("2d")!;
-  tmpCtx.drawImage(origBmp, 0, 0, cw, ch);
-
-  // Apply feathered edge mask
-  const imgData = tmpCtx.getImageData(0, 0, cw, ch);
-  const d = imgData.data;
-  for (let y = 0; y < ch; y++) {
-    for (let x = 0; x < cw; x++) {
-      const distFromEdge = Math.min(x, y, cw - 1 - x, ch - 1 - y);
-      if (distFromEdge < feather) {
-        const alpha = distFromEdge / feather;
-        const i = (y * cw + x) * 4;
-        d[i + 3] = Math.round(d[i + 3] * alpha);
-      }
-    }
-  }
-  tmpCtx.putImageData(imgData, 0, 0);
-
-  // Stamp feathered original onto AI result
-  ctx.drawImage(tmpCanvas, cx, cy);
-
-  console.log(`[composite] AI=${aiBmp.width}x${aiBmp.height} original@${cx},${cy},${cw}x${ch} feather=${feather}px`);
-  return canvas.convertToBlob({ type: "image/png" });
-}
-
-/* ── Expand API call (outpainting approach) ── */
+/* ── Expand API call (simplified, PxBee-style) ── */
 
 async function callExpandAPI(
-  imageBlob: Blob,
+  normalizedBlob: Blob,
   expansion: number
 ): Promise<HTMLImageElement | null> {
-  console.log("=== API EXPAND START ===", "expansion:", expansion);
+  const bitmap = await createImageBitmap(normalizedBlob);
+  const direction = bitmap.height > bitmap.width ? "vertical" : "horizontal";
 
-  // Create outpainting canvas with original centered
-  const { blob: outpaintBlob, direction, innerRect } = await createOutpaintCanvas(imageBlob, expansion);
-  console.log("[expand] Outpaint blob:", outpaintBlob.size, "bytes, direction:", direction, "innerRect:", innerRect);
+  console.log(`[expand] ${bitmap.width}x${bitmap.height}, direction=${direction}, expansion=${expansion}`);
 
   const formData = new FormData();
-  formData.append("image", outpaintBlob, "outpaint.jpg");
+  formData.append("image", normalizedBlob, "photo.jpg");
   formData.append("expansion", String(expansion));
   formData.append("direction", direction);
-  formData.append("innerRect", innerRect);
-
-  const res = await fetch("/api/expand", { method: "POST", body: formData });
-  console.log("=== API EXPAND RESPONSE ===", res.status);
-
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error("[expand] API error:", res.status, errText);
-    return null;
-  }
-
-  const aiBlob = await res.blob();
-  console.log("=== EXPANDED IMAGE BLOB ===", aiBlob.size, aiBlob.type);
-
-  if (aiBlob.size < 1000) {
-    console.error("[expand] API returned tiny blob:", aiBlob.size);
-    return null;
-  }
 
   try {
-    // pxbee-style: paste original back onto center of AI result
-    // This guarantees the original image is never degraded
-    const composited = await compositeOriginalBack(aiBlob, outpaintBlob, innerRect);
+    const res = await fetch("/api/expand", { method: "POST", body: formData });
+    if (!res.ok) {
+      console.error("[expand] API error:", res.status, await res.text());
+      return null;
+    }
 
-    const bmp = await createImageBitmap(composited);
-    const cvs = new OffscreenCanvas(bmp.width, bmp.height);
-    cvs.getContext("2d")!.drawImage(bmp, 0, 0);
-    const imgBlob = await cvs.convertToBlob({ type: "image/png" });
+    const blob = await res.blob();
+    if (blob.size < 1000) {
+      console.error("[expand] Tiny blob:", blob.size);
+      return null;
+    }
+
+    console.log(`[expand] Success: ${blob.size}B`);
     const img = new Image();
-    return new Promise((resolve) => {
-      img.onload = () => {
-        console.log("=== EXPANDED IMAGE LOADED ===", img.width, "x", img.height);
-        resolve(img);
-      };
-      img.onerror = () => {
-        console.error("[expand] Failed to load expanded image");
-        resolve(null);
-      };
-      img.src = URL.createObjectURL(imgBlob);
-    });
-  } catch (e) {
-    console.error("[expand] Failed to decode/composite expanded image:", e);
+    img.src = URL.createObjectURL(blob);
+    await img.decode().catch(() => {});
+    return img;
+  } catch (err) {
+    console.error("[expand] Exception:", err);
     return null;
   }
 }
@@ -382,6 +249,7 @@ export default function ViewScreen({
   const [expanding, setExpanding] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const expandCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const normalizedBlobRef = useRef<Blob | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
@@ -400,6 +268,15 @@ export default function ViewScreen({
     return () => document.removeEventListener("mousedown", handler);
   }, [showShareMenu]);
 
+  // Normalize image for API on mount
+  useEffect(() => {
+    let cancelled = false;
+    normalizeImage(mediaFile, 1024).then(({ blob }) => {
+      if (!cancelled) normalizedBlobRef.current = blob;
+    });
+    return () => { cancelled = true; };
+  }, [mediaFile]);
+
   // Load media
   useEffect(() => {
     const url = URL.createObjectURL(mediaFile);
@@ -414,33 +291,22 @@ export default function ViewScreen({
 
     (async () => {
       try {
-        // Fetch the blob and decode via createImageBitmap (reliable for large PC images)
-        const resp = await fetch(mediaSrc);
-        const blob = await resp.blob();
+        const bmp = await createImageBitmap(await (await fetch(mediaSrc)).blob());
         if (cancelled) return;
 
-        const bmp = await createImageBitmap(blob);
-        if (cancelled) return;
-
-        // Convert to HTMLImageElement (needed for drawImage compatibility)
         const img = new Image();
         img.src = mediaSrc;
-        // Ensure the element is fully decoded before drawing
         await img.decode().catch(() => {});
         if (cancelled) return;
-
-        // Use bitmap dimensions (guaranteed accurate after decode)
-        const srcW = bmp.width;
-        const srcH = bmp.height;
 
         imgRef.current = img;
         const canvas = canvasRef.current;
         const humanCanvas = humanCanvasRef.current;
         if (!canvas) return;
 
-        const scale = Math.min(1, MAX_W / srcW);
-        const w = Math.floor(srcW * scale);
-        const h = Math.floor(srcH * scale);
+        const scale = Math.min(1, MAX_W / bmp.width);
+        const w = Math.floor(bmp.width * scale);
+        const h = Math.floor(bmp.height * scale);
         canvas.width = w;
         canvas.height = h;
         setCanvasRatio(w / h);
@@ -451,7 +317,7 @@ export default function ViewScreen({
           humanCanvas.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
         }
 
-        console.log("[load] Image ready:", srcW, "x", srcH, "→ canvas:", w, "x", h);
+        console.log("[load] Image ready:", bmp.width, "x", bmp.height, "→ canvas:", w, "x", h);
         handleCreatureChange(selectedId, img, w, h);
       } catch (e) {
         console.error("[load] Failed to load image:", e);
@@ -492,29 +358,29 @@ export default function ViewScreen({
       let aiExpandSucceeded = false;
 
       if (exp > 1.0) {
-        // Check cache first
         const cached = expandCacheRef.current.get(creatureId);
         if (cached) {
-          console.log("[expand] Using cached image for", creatureId);
+          console.log("[expand] Cache hit:", creatureId);
           sourceImg = cached;
           aiExpandSucceeded = true;
-        } else {
-          // AI expansion
+        } else if (normalizedBlobRef.current) {
           setLoadingText("🔭 視界をひろげてるよ...");
           setExpanding(true);
           try {
-            const expandedImg = await callExpandAPI(mediaFile, exp);
+            const expandedImg = await callExpandAPI(normalizedBlobRef.current, exp);
             if (expandedImg) {
               expandCacheRef.current.set(creatureId, expandedImg);
               sourceImg = expandedImg;
               aiExpandSucceeded = true;
             } else {
-              console.warn("[expand] AI expand returned null, using original");
+              console.warn("[expand] AI returned null, using original");
             }
           } catch (e) {
-            console.error("[expand] AI expand failed, using original:", e);
+            console.error("[expand] AI failed:", e);
           }
           setExpanding(false);
+        } else {
+          console.warn("[expand] Normalized blob not ready, using original");
         }
       }
 
@@ -549,18 +415,18 @@ export default function ViewScreen({
 
       // --- STEP 6: Fisheye ONLY when AI expansion succeeded ---
       if (aiExpandSucceeded) {
-        const fisheyeStrength = Math.min(1.0, (exp - 1.0) / 2.0);
+        const fisheyeStrength = Math.min(1.2, exp - 1.0);
         applyFisheye(ctx, w, h, fisheyeStrength);
-        console.log("[fisheye] Applied with strength:", fisheyeStrength);
+        console.log("[fisheye] strength:", fisheyeStrength);
       } else if (exp > 1.0) {
-        console.log("[fisheye] Skipped — AI expansion failed, no fisheye to avoid black borders");
+        console.log("[fisheye] Skipped — no AI expansion");
       }
 
       // --- STEP 7: Done ---
       setProcessing(false);
       setLoadingText("");
     },
-    [creatures, mediaFile]
+    [creatures]
   );
 
   // Share to specific SNS
