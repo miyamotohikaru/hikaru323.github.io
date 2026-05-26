@@ -36,25 +36,25 @@ export async function POST(req: Request) {
     const mimeType = image.type || "image/png";
     console.log("Image size:", arrayBuffer.byteLength, "mimeType:", mimeType);
 
-    const fovDesc =
-      expansion >= 3.0
-        ? "a full 360-degree ultra-wide panoramic"
-        : expansion >= 2.5
-          ? "an extremely wide panoramic"
-          : "a wider panoramic";
+    const innerRect = (formData.get("innerRect") as string) || "";
 
-    const directionPrompt =
+    // Outpainting prompt: the image already has the original centered with
+    // mirror-filled edges. Ask Gemini to replace the extended areas naturally.
+    const dirDesc =
       direction === "vertical"
-        ? "Extend this photograph VERTICALLY above and below"
-        : "Extend this photograph HORIZONTALLY to the LEFT and RIGHT";
+        ? "above and below (vertically)"
+        : "to the left and right (horizontally)";
 
     const prompt =
-      `${directionPrompt} to create ${fovDesc} view. ` +
-      `The original image content must remain in the center, exactly as-is. ` +
-      `Generate new scenery that naturally continues the scene. ` +
-      `The final image should be ${direction === "vertical" ? "much taller than wide" : "much wider than tall"}, like a panoramic photo. ` +
-      `Maintain the same lighting, style, colors, perspective, and time of day. ` +
-      `The extension must be photorealistic and seamlessly blend with the original.`;
+      `This image contains a photograph in its center with rough mirrored borders ${dirDesc}. ` +
+      `Perform AI outpainting: replace the mirrored/repeated border areas with photorealistic scenery that naturally continues the original photograph. ` +
+      `CRITICAL RULES:\n` +
+      `1. The center portion of the image (the original photo) must remain COMPLETELY UNCHANGED.\n` +
+      `2. Only regenerate the extended border areas to seamlessly continue the scene.\n` +
+      `3. Match the lighting, colors, perspective, depth of field, and style exactly.\n` +
+      `4. The result must look like a single natural photograph, not a collage.\n` +
+      `5. Output the FULL image at the same resolution as the input (including both the original center and the new extensions).\n` +
+      `6. The final image aspect ratio must match the input exactly.`;
 
     console.log("Prompt:", prompt.substring(0, 100) + "...");
 

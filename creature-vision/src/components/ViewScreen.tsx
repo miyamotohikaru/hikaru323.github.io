@@ -29,6 +29,7 @@ interface Props {
 }
 
 const MAX_W = 900;
+const OUTPAINT_MAX = 1536; // max dimension for outpainting canvas
 
 /* ── SVG Icons ── */
 
@@ -161,21 +162,87 @@ async function generateShareImage(
   });
 }
 
-/* ── Resize before sending to API ── */
+/* ── Create outpainting canvas (pxbee-style) ── */
 
-async function resizeForAPI(imageBlob: Blob, maxDim: number = 1024): Promise<Blob> {
+async function createOutpaintCanvas(
+  imageBlob: Blob,
+  expansion: number,
+): Promise<{ blob: Blob; direction: "horizontal" | "vertical"; innerRect: string }> {
   const bitmap = await createImageBitmap(imageBlob);
-  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
-  if (scale >= 1) return imageBlob; // already small enough
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
-  const canvas = new OffscreenCanvas(w, h);
+  const isPortrait = bitmap.height > bitmap.width;
+  const direction: "horizontal" | "vertical" = isPortrait ? "vertical" : "horizontal";
+
+  // Resize original to fit within reasonable bounds
+  const maxInner = 768;
+  const innerScale = Math.min(1, maxInner / Math.max(bitmap.width, bitmap.height));
+  const innerW = Math.round(bitmap.width * innerScale);
+  const innerH = Math.round(bitmap.height * innerScale);
+
+  // Calculate target (expanded) canvas size
+  let targetW: number, targetH: number;
+  if (direction === "horizontal") {
+    targetW = Math.round(innerW * Math.min(expansion, 2.5));
+    targetH = innerH;
+  } else {
+    targetW = innerW;
+    targetH = Math.round(innerH * Math.min(expansion, 2.5));
+  }
+
+  // Cap at OUTPAINT_MAX
+  const capScale = Math.min(1, OUTPAINT_MAX / Math.max(targetW, targetH));
+  targetW = Math.round(targetW * capScale);
+  targetH = Math.round(targetH * capScale);
+  const finalInnerW = Math.round(innerW * capScale);
+  const finalInnerH = Math.round(innerH * capScale);
+
+  // Place original in center
+  const offsetX = Math.round((targetW - finalInnerW) / 2);
+  const offsetY = Math.round((targetH - finalInnerH) / 2);
+
+  const canvas = new OffscreenCanvas(targetW, targetH);
   const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(bitmap, 0, 0, w, h);
-  return canvas.convertToBlob({ type: "image/jpeg", quality: 0.85 });
+
+  // Fill with mirror-stretched edges (gives AI context for extension)
+  // Left edge
+  if (offsetX > 0) {
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(-1, 1);
+    ctx.drawImage(bitmap, 0, 0, bitmap.width * 0.1, bitmap.height, 0, 0, offsetX, finalInnerH);
+    ctx.restore();
+    // Right edge
+    ctx.save();
+    ctx.translate(offsetX + finalInnerW, offsetY);
+    ctx.scale(-1, 1);
+    ctx.drawImage(bitmap, bitmap.width * 0.9, 0, bitmap.width * 0.1, bitmap.height, -offsetX, 0, offsetX, finalInnerH);
+    ctx.restore();
+  }
+  // Top edge
+  if (offsetY > 0) {
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(1, -1);
+    ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height * 0.1, 0, 0, finalInnerW, offsetY);
+    ctx.restore();
+    // Bottom edge
+    ctx.save();
+    ctx.translate(offsetX, offsetY + finalInnerH);
+    ctx.scale(1, -1);
+    ctx.drawImage(bitmap, 0, bitmap.height * 0.9, bitmap.width, bitmap.height * 0.1, 0, -offsetY, finalInnerW, offsetY);
+    ctx.restore();
+  }
+
+  // Draw original image in center (on top of mirrored edges)
+  ctx.drawImage(bitmap, offsetX, offsetY, finalInnerW, finalInnerH);
+
+  console.log(`[outpaint] canvas=${targetW}x${targetH} inner=${finalInnerW}x${finalInnerH} offset=${offsetX},${offsetY}`);
+
+  const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.88 });
+  const innerRect = `${offsetX},${offsetY},${finalInnerW},${finalInnerH}`;
+  return { blob, direction, innerRect };
 }
 
-/* ── Expand API call ── */
+/* ── Expand API call (outpainting approach) ── */
 
 async function callExpandAPI(
   imageBlob: Blob,
@@ -183,19 +250,15 @@ async function callExpandAPI(
 ): Promise<HTMLImageElement | null> {
   console.log("=== API EXPAND START ===", "expansion:", expansion);
 
-  // Resize before sending (large images can cause API timeouts)
-  const resized = await resizeForAPI(imageBlob, 1024);
-  console.log("Resized blob:", resized.size, "bytes (original:", imageBlob.size, ")");
+  // Create outpainting canvas with original centered
+  const { blob: outpaintBlob, direction, innerRect } = await createOutpaintCanvas(imageBlob, expansion);
+  console.log("[expand] Outpaint blob:", outpaintBlob.size, "bytes, direction:", direction, "innerRect:", innerRect);
 
   const formData = new FormData();
-  formData.append("image", resized, "photo.jpg");
+  formData.append("image", outpaintBlob, "outpaint.jpg");
   formData.append("expansion", String(expansion));
-
-  // Detect orientation
-  const bitmap = await createImageBitmap(resized);
-  const direction = bitmap.height > bitmap.width ? "vertical" : "horizontal";
   formData.append("direction", direction);
-  console.log("Image direction:", direction, bitmap.width, "x", bitmap.height);
+  formData.append("innerRect", innerRect);
 
   const res = await fetch("/api/expand", { method: "POST", body: formData });
   console.log("=== API EXPAND RESPONSE ===", res.status);
@@ -214,18 +277,28 @@ async function callExpandAPI(
     return null;
   }
 
-  return new Promise((resolve) => {
+  // Use createImageBitmap for reliable decoding, then convert to img element
+  try {
+    const bmp = await createImageBitmap(blob);
+    const cvs = new OffscreenCanvas(bmp.width, bmp.height);
+    cvs.getContext("2d")!.drawImage(bmp, 0, 0);
+    const imgBlob = await cvs.convertToBlob({ type: "image/png" });
     const img = new Image();
-    img.onload = () => {
-      console.log("=== EXPANDED IMAGE LOADED ===", img.width, "x", img.height);
-      resolve(img);
-    };
-    img.onerror = () => {
-      console.error("[expand] Failed to load expanded image");
-      resolve(null);
-    };
-    img.src = URL.createObjectURL(blob);
-  });
+    return new Promise((resolve) => {
+      img.onload = () => {
+        console.log("=== EXPANDED IMAGE LOADED ===", img.width, "x", img.height);
+        resolve(img);
+      };
+      img.onerror = () => {
+        console.error("[expand] Failed to load expanded image");
+        resolve(null);
+      };
+      img.src = URL.createObjectURL(imgBlob);
+    });
+  } catch (e) {
+    console.error("[expand] Failed to decode expanded image:", e);
+    return null;
+  }
 }
 
 /* ── Main component ── */
@@ -279,28 +352,55 @@ export default function ViewScreen({
   // Load image and initial render
   useEffect(() => {
     if (!mediaSrc) return;
-    const img = new Image();
-    img.onload = () => {
-      imgRef.current = img;
-      const canvas = canvasRef.current;
-      const humanCanvas = humanCanvasRef.current;
-      if (!canvas) return;
-      const scale = Math.min(1, MAX_W / img.width);
-      const w = Math.floor(img.width * scale);
-      const h = Math.floor(img.height * scale);
-      canvas.width = w;
-      canvas.height = h;
-      setCanvasRatio(w / h);
+    let cancelled = false;
 
-      if (humanCanvas) {
-        humanCanvas.width = w;
-        humanCanvas.height = h;
-        humanCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+    (async () => {
+      try {
+        // Fetch the blob and decode via createImageBitmap (reliable for large PC images)
+        const resp = await fetch(mediaSrc);
+        const blob = await resp.blob();
+        if (cancelled) return;
+
+        const bmp = await createImageBitmap(blob);
+        if (cancelled) return;
+
+        // Convert to HTMLImageElement (needed for drawImage compatibility)
+        const img = new Image();
+        img.src = mediaSrc;
+        // Ensure the element is fully decoded before drawing
+        await img.decode().catch(() => {});
+        if (cancelled) return;
+
+        // Use bitmap dimensions (guaranteed accurate after decode)
+        const srcW = bmp.width;
+        const srcH = bmp.height;
+
+        imgRef.current = img;
+        const canvas = canvasRef.current;
+        const humanCanvas = humanCanvasRef.current;
+        if (!canvas) return;
+
+        const scale = Math.min(1, MAX_W / srcW);
+        const w = Math.floor(srcW * scale);
+        const h = Math.floor(srcH * scale);
+        canvas.width = w;
+        canvas.height = h;
+        setCanvasRatio(w / h);
+
+        if (humanCanvas) {
+          humanCanvas.width = w;
+          humanCanvas.height = h;
+          humanCanvas.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
+        }
+
+        console.log("[load] Image ready:", srcW, "x", srcH, "→ canvas:", w, "x", h);
+        handleCreatureChange(selectedId, img, w, h);
+      } catch (e) {
+        console.error("[load] Failed to load image:", e);
       }
+    })();
 
-      handleCreatureChange(selectedId, img, w, h);
-    };
-    img.src = mediaSrc;
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mediaSrc]);
 
