@@ -100,27 +100,7 @@ function initFireSound() {
   master.gain.value = 0.30;
   master.connect(ac.destination);
 
-  // ──── 1. Warm base hiss (very quiet brown noise, 200Hz LP) ────
-  const brownLen = sr * 4;
-  const brownBuf = ac.createBuffer(1, brownLen, sr);
-  const brownD = brownBuf.getChannelData(0);
-  let bl = 0;
-  for (let i = 0; i < brownLen; i++) {
-    bl = (bl + 0.02 * (Math.random() * 2 - 1)) / 1.02;
-    brownD[i] = bl * 3.5;
-  }
-  const brownSrc = ac.createBufferSource();
-  brownSrc.buffer = brownBuf;
-  brownSrc.loop = true;
-  const fireLp = ac.createBiquadFilter();
-  fireLp.type = "lowpass";
-  fireLp.frequency.value = 200;
-  const fireGain = ac.createGain();
-  fireGain.gain.value = 0.08;
-  brownSrc.connect(fireLp).connect(fireGain).connect(master);
-  brownSrc.start();
-
-  // ──── 2. Soft crackle pops (irregular timing with burst clusters) ────
+  // ──── Soft crackle pops (irregular timing with burst clusters) ────
   function crackle() {
     const now = ac.currentTime;
     const dur = 0.005 + Math.random() * 0.02; // 5-25ms — short soft pops
@@ -139,7 +119,7 @@ function initFireSound() {
     // Lowpass filter — removes hard clicking, keeps soft crackle
     const lp = ac.createBiquadFilter();
     lp.type = "lowpass";
-    lp.frequency.value = 800 + Math.random() * 1200; // 800-2000Hz
+    lp.frequency.value = 400 + Math.random() * 600; // 400-1000Hz
     lp.Q.value = 0.5 + Math.random() * 0.5;
 
     const vol = ac.createGain();
