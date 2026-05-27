@@ -347,7 +347,17 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         .upload-card:hover {
           transform: rotate(-1deg) translateY(-3px) !important;
           box-shadow: 7px 7px 0 #2a2018 !important;
-          background: #fffdf6 !important;
+          background: #3a3a3a !important;
+          border-color: #3a3a3a !important;
+          color: #fff !important;
+        }
+        .upload-card:hover span,
+        .upload-card:hover .upload-card *:not([style*="background"]) {
+          color: #fff !important;
+        }
+        .upload-card:hover > div:last-of-type {
+          background: #fff !important;
+          color: #2a2018 !important;
         }
         .belt-track:hover {
           animation-play-state: paused;
