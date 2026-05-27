@@ -241,7 +241,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
                   borderRadius: "50%",
                   background: CATEGORY_COLORS[c.cat]?.bg ?? "#f0f0f0",
                   border: `2px solid ${CREAM}`,
-                  boxShadow: `2px 2px 0 ${INK}`,
+                  boxShadow: "none",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
