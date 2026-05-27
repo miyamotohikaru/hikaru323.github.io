@@ -114,7 +114,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           <span className="title-line1" style={{ display: "block" }}>
             生き物の目で
           </span>
-          <span style={{ display: "block", marginTop: 4 }}>
+          <span style={{ display: "block", marginTop: 1 }}>
             <span
               className="title-highlight"
               style={{
@@ -285,7 +285,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           font-size: clamp(28px, 8vw, 84px);
         }
         .subcopy {
-          font-size: 11px; max-width: 220px;
+          font-size: 15px; max-width: 280px;
         }
         .upload-card {
           width: min(88vw, 420px); padding: 14px 14px;
@@ -325,7 +325,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
             font-size: 14px; max-width: none;
           }
           .upload-card {
-            padding: 20px 24px; margin-top: 28px !important;
+            width: min(90vw, 520px); padding: 26px 32px; margin-top: 28px !important;
           }
           .hero-section {
             padding: 48px 20px 24px;
