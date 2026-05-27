@@ -161,30 +161,19 @@ async function generateShareImage(
   });
 }
 
-/* ── Decode image file to ImageBitmap (with HEIC fallback) ── */
+/* ── Decode image file to HTMLImageElement (HEIC-safe) ── */
 
-async function decodeImageFile(file: File): Promise<ImageBitmap> {
-  // Try createImageBitmap directly first (works for JPEG/PNG/WebP on all browsers)
-  try {
-    return await createImageBitmap(file);
-  } catch {
-    // Fallback: use <img> + object URL (handles HEIC on Safari, etc.)
-    console.warn("[decode] createImageBitmap failed, trying <img> fallback for:", file.type);
-  }
-
+async function decodeImageFile(file: File): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    img.src = url;
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error(`Failed to decode image: ${file.name} (${file.type})`));
-    });
-    // Convert loaded <img> to ImageBitmap for consistent API
-    return await createImageBitmap(img);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  const img = new Image();
+  img.src = url;
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error(`Failed to decode image: ${file.name} (${file.type})`));
+  });
+  // NOTE: don't revoke URL — img element needs it alive for canvas drawImage
+  console.log(`[decode] Loaded ${file.name}: ${img.naturalWidth}x${img.naturalHeight}`);
+  return img;
 }
 
 /* ── Normalize image for API (max 1024px, JPEG 85%) ── */
@@ -193,13 +182,20 @@ async function normalizeImage(
   inputBlob: Blob,
   maxDim: number = 1024
 ): Promise<{ blob: Blob; width: number; height: number; orientation: "landscape" | "portrait" | "square" }> {
-  // Use decodeImageFile if input is a File (handles HEIC), otherwise createImageBitmap
-  const bitmap = inputBlob instanceof File
+  const img = inputBlob instanceof File
     ? await decodeImageFile(inputBlob)
-    : await createImageBitmap(inputBlob);
-  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
+    : await (async () => {
+        const url = URL.createObjectURL(inputBlob);
+        const el = new Image();
+        el.src = url;
+        await new Promise<void>((res, rej) => { el.onload = () => res(); el.onerror = () => rej(); });
+        return el;
+      })();
+  const imgW = img.naturalWidth;
+  const imgH = img.naturalHeight;
+  const scale = Math.min(1, maxDim / Math.max(imgW, imgH));
+  const w = Math.round(imgW * scale);
+  const h = Math.round(imgH * scale);
   const aspectRatio = w / h;
   const orientation: "landscape" | "portrait" | "square" =
     aspectRatio > 1.05 ? "landscape" : aspectRatio < 0.95 ? "portrait" : "square";
@@ -208,10 +204,10 @@ async function normalizeImage(
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(bitmap, 0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
 
   const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.85 });
-  console.log(`[normalize] ${bitmap.width}x${bitmap.height} → ${w}x${h} (${orientation}, ${blob.size}B)`);
+  console.log(`[normalize] ${imgW}x${imgH} → ${w}x${h} (${orientation}, ${blob.size}B)`);
   return { blob, width: w, height: h, orientation };
 }
 
@@ -280,7 +276,7 @@ export default function ViewScreen({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const humanCanvasRef = useRef<HTMLCanvasElement>(null);
-  const bmpRef = useRef<ImageBitmap | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const [processing, setProcessing] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
@@ -336,24 +332,23 @@ export default function ViewScreen({
     return () => { cancelled = true; };
   }, [mediaFile]);
 
-  // Load image and initial render (use File directly — no fetch/blob URL needed)
+  // Load image and initial render
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
-        // decodeImageFile handles HEIC and other formats via fallback
-        const bmp = await decodeImageFile(mediaFile);
+        const img = await decodeImageFile(mediaFile);
         if (cancelled) return;
 
-        bmpRef.current = bmp;
+        imgRef.current = img;
         const canvas = canvasRef.current;
         const humanCanvas = humanCanvasRef.current;
         if (!canvas) return;
 
-        const scale = Math.min(1, MAX_W / bmp.width);
-        const w = Math.floor(bmp.width * scale);
-        const h = Math.floor(bmp.height * scale);
+        const scale = Math.min(1, MAX_W / img.naturalWidth);
+        const w = Math.floor(img.naturalWidth * scale);
+        const h = Math.floor(img.naturalHeight * scale);
         canvas.width = w;
         canvas.height = h;
         setCanvasRatio(w / h);
@@ -361,11 +356,11 @@ export default function ViewScreen({
         if (humanCanvas) {
           humanCanvas.width = w;
           humanCanvas.height = h;
-          humanCanvas.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
+          humanCanvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
         }
 
-        console.log("[load] Image ready:", bmp.width, "x", bmp.height, "→ canvas:", w, "x", h);
-        handleCreatureChange(selectedId, bmp, w, h);
+        console.log("[load] Image ready:", img.naturalWidth, "x", img.naturalHeight, "→ canvas:", w, "x", h);
+        handleCreatureChange(selectedId, img, w, h);
       } catch (e) {
         console.error("[load] Failed to load image:", e);
       }
@@ -377,10 +372,10 @@ export default function ViewScreen({
 
   // Re-render when creature changes
   useEffect(() => {
-    if (!bmpRef.current) return;
+    if (!imgRef.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    handleCreatureChange(selectedId, bmpRef.current, canvas.width, canvas.height);
+    handleCreatureChange(selectedId, imgRef.current, canvas.width, canvas.height);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
