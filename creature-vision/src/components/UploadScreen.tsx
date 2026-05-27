@@ -282,7 +282,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           margin-top: 6px; font-size: 9px; padding: 3px 12px;
         }
         .title-line1, .title-highlight {
-          font-size: clamp(28px, 8vw, 84px);
+          font-size: clamp(31px, 8vw, 84px);
         }
         .subcopy {
           font-size: 15px; max-width: 280px;
@@ -295,19 +295,19 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           padding: 10px 16px 8px;
         }
         .belt-container {
-          height: 86px; padding-top: 4px; flex-shrink: 0;
+          height: 130px; padding-top: 4px; flex-shrink: 0;
         }
         .belt-icon {
-          width: 57px; height: 57px;
+          width: 114px; height: 114px;
         }
         .belt-item {
-          width: 64px;
+          width: 120px;
         }
         .belt-label {
-          font-size: 8px !important;
+          font-size: 10px !important;
         }
         .belt-icon-inner {
-          display: flex; transform: scale(0.72); transform-origin: center;
+          display: flex; transform: scale(1.4); transform-origin: center;
         }
 
         /* ── Desktop ── */
