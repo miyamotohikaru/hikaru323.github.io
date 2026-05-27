@@ -295,19 +295,19 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           padding: 10px 16px 8px;
         }
         .belt-container {
-          height: 68px; padding-top: 4px; flex-shrink: 0;
+          height: 86px; padding-top: 4px; flex-shrink: 0;
         }
         .belt-icon {
-          width: 38px; height: 38px;
+          width: 57px; height: 57px;
         }
         .belt-item {
-          width: 46px;
+          width: 64px;
         }
         .belt-label {
           font-size: 8px !important;
         }
         .belt-icon-inner {
-          display: flex; transform: scale(0.48); transform-origin: center;
+          display: flex; transform: scale(0.72); transform-origin: center;
         }
 
         /* ── Desktop ── */
