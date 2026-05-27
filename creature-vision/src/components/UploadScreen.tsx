@@ -14,38 +14,6 @@ const MARQUEE_IDS = [
   "mshrimp","mole","flamingo","pigeon",
 ];
 
-/* Desktop background sticker positions: [id, top%, left%, size, rotation, animDuration, animDelay] */
-const STICKER_LAYOUT: [string, number, number, number, number, number, number][] = [
-  // left column
-  ["dog",        12,  5,  58, -8,   4.2, 0],
-  ["owl",        30,  3,  52,  6,   3.8, 0.6],
-  ["frog",       50,  4,  48, -5,   4.5, 1.2],
-  ["koala",      68,  6,  54, 10,   3.6, 0.3],
-  ["spider",     84,  8,  50,-12,   4.0, 0.9],
-  // right column
-  ["eagle",       8, 89,  54, 12,   3.9, 0.4],
-  ["chameleon",  24, 91,  50,-10,   4.3, 1.0],
-  ["shark",      42, 90,  60, 10,   3.7, 0.7],
-  ["mshrimp",    58, 88,  48,  7,   4.1, 0.2],
-  ["octopus",    74, 90,  56, -6,   3.5, 1.5],
-  ["deepsea",    88, 86,  52, 14,   4.4, 0.8],
-  // top row
-  ["bat",          4, 22,  48, 14,  4.0, 1.3],
-  ["pigeon",       5, 42,  50, -4,  3.6, 0.5],
-  ["flamingo",     4, 62,  54,  8,  4.2, 1.1],
-  ["mantis",       6, 78,  48,-11,  3.8, 0.0],
-  // bottom row
-  ["snake",       90, 22,  52,  5,  4.3, 0.6],
-  ["dolphin",     92, 40,  56, -7,  3.7, 1.4],
-  ["mole",        88, 58,  48, 11,  4.1, 0.3],
-  ["cockroach",   90, 75,  50, -9,  3.9, 0.9],
-  // mid-left / mid-right extras
-  ["horse",       18, 14,  50,  4,  4.4, 0.7],
-  ["goat",        40, 10,  46, -6,  3.5, 1.6],
-  ["foureyedfish",76, 18,  48,  9,  4.0, 0.2],
-  ["human",       20, 80,  52, -3,  3.8, 1.0],
-];
-
 interface Props {
   creatures: { id: string; name: string; cat: string }[];
   onFile: (file: File) => void;
@@ -89,38 +57,6 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           zIndex: 0,
         }}
       />
-
-      {/* Desktop background stickers (all 24 creatures, floating) */}
-      <div className="hidden md:block" style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}>
-        {STICKER_LAYOUT.map(([id, top, left, size, rot, dur, delay]) => {
-          const c = creatures.find((cr) => cr.id === id);
-          if (!c) return null;
-          return (
-            <div
-              key={id}
-              style={{
-                position: "absolute",
-                top: `${top}%`,
-                left: `${left}%`,
-                width: size,
-                height: size,
-                borderRadius: "50%",
-                background: CATEGORY_COLORS[c.cat]?.bg ?? "#f0f0f0",
-                border: `3px solid ${CREAM}`,
-                boxShadow: "0 6px 16px rgba(80,50,20,.12), inset 0 0 0 1px rgba(0,0,0,.04)",
-                transform: `rotate(${rot}deg)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                animation: `stickerFloat ${dur}s ease-in-out ${delay}s infinite`,
-              }}
-            >
-              <Icon id={c.id} name={c.name} cat={c.cat} size={Math.round(size * 0.6)} />
-            </div>
-          );
-        })}
-      </div>
 
       {/* Hero section */}
       <div
@@ -175,10 +111,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
             color: INK,
           }}
         >
-          <span
-            className="title-line1"
-            style={{ display: "block" }}
-          >
+          <span className="title-line1" style={{ display: "block" }}>
             生き物の目で
           </span>
           <span style={{ display: "block", marginTop: 4 }}>
@@ -277,12 +210,10 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         </label>
       </div>
 
-      {/* Mobile belt conveyor */}
+      {/* Belt conveyor (shared: mobile & desktop) */}
       <div
-        className="md:hidden"
         style={{
           position: "relative",
-          height: 80,
           borderTop: `1.5px dashed ${INK}`,
           borderTopColor: "rgba(42,32,24,0.25)",
           overflow: "hidden",
@@ -290,14 +221,13 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           maskImage: "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
           WebkitMaskImage: "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
         }}
+        className="belt-container"
       >
         <div
           className="belt-track"
           style={{
             display: "flex",
-            alignItems: "center",
-            gap: 14,
-            height: "100%",
+            gap: 10,
             width: "max-content",
             animation: "belt 40s linear infinite",
           }}
@@ -305,21 +235,44 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           {[...marqueeCreatures, ...marqueeCreatures].map((c, i) => (
             <div
               key={`${c.id}-${i}`}
+              className="belt-item"
               style={{
                 flexShrink: 0,
-                width: 48,
-                height: 48,
-                borderRadius: "50%",
-                background: CATEGORY_COLORS[c.cat]?.bg ?? "#f0f0f0",
-                border: `2px solid ${CREAM}`,
-                boxShadow: `2px 2px 0 ${INK}`,
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
+                gap: 4,
               }}
             >
-              <Icon id={c.id} name={c.name} cat={c.cat} size={30} />
+              <div
+                style={{
+                  borderRadius: "50%",
+                  background: CATEGORY_COLORS[c.cat]?.bg ?? "#f0f0f0",
+                  border: `2px solid ${CREAM}`,
+                  boxShadow: `2px 2px 0 ${INK}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                }}
+                className="belt-icon"
+              >
+                <Icon id={c.id} name={c.name} cat={c.cat} size={30} />
+              </div>
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  color: INK,
+                  fontFamily: "'Zen Maru Gothic', sans-serif",
+                  textAlign: "center",
+                  lineHeight: 1.1,
+                  whiteSpace: "nowrap",
+                }}
+                className="belt-label"
+              >
+                {c.id === "kosukuma" ? "こすくま" : c.name}
+              </span>
             </div>
           ))}
         </div>
@@ -340,6 +293,33 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         .upload-card {
           width: min(90vw, 420px);
           padding: 20px 24px;
+        }
+        .belt-container {
+          height: 90px;
+          padding-top: 10px;
+        }
+        .belt-icon {
+          width: 48px;
+          height: 48px;
+        }
+        .belt-item {
+          width: 56px;
+        }
+        @media (min-width: 768px) {
+          .belt-container {
+            height: 110px;
+            padding-top: 14px;
+          }
+          .belt-icon {
+            width: 60px;
+            height: 60px;
+          }
+          .belt-item {
+            width: 72px;
+          }
+          .belt-label {
+            font-size: 10px !important;
+          }
         }
         @media (max-width: 767px) {
           .subcopy {
