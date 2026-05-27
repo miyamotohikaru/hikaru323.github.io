@@ -37,7 +37,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        height: "100dvh",
         background: CREAM,
         position: "relative",
         overflow: "hidden",
@@ -62,6 +62,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
       <div
         style={{
           flex: 1,
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -77,21 +78,18 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         <img
           src="/kosukuma.png"
           alt="こすくまくん"
-          width={48}
-          height={48}
+          className="kosukuma-icon"
           style={{ display: "block", objectFit: "contain" }}
         />
 
         {/* 2. CREATURE VISION badge */}
         <div
+          className="cv-badge"
           style={{
-            marginTop: 10,
             background: INK,
             color: CREAM,
-            fontSize: 11,
             fontWeight: 700,
             letterSpacing: "0.2em",
-            padding: "5px 18px",
             borderRadius: 999,
             transform: "rotate(-2deg)",
             fontFamily: "'Zen Maru Gothic', sans-serif",
@@ -282,46 +280,67 @@ export default function UploadScreen({ creatures, onFile }: Props) {
 
       {/* Responsive styles */}
       <style>{`
-        .title-line1 {
-          font-size: clamp(32px, 8vw, 84px);
+        /* ── Mobile-first (default) ── */
+        .kosukuma-icon {
+          width: 36px; height: 36px;
         }
-        .title-highlight {
-          font-size: clamp(32px, 8vw, 84px);
+        .cv-badge {
+          margin-top: 6px; font-size: 9px; padding: 3px 12px;
+        }
+        .title-line1, .title-highlight {
+          font-size: clamp(28px, 8vw, 84px);
         }
         .subcopy {
-          font-size: 14px;
-          max-width: none;
+          font-size: 11px; max-width: 220px;
         }
         .upload-card {
-          width: min(90vw, 420px);
-          padding: 20px 24px;
-        }
-        /* Mobile: fit everything in one screen */
-        .belt-container {
-          height: 76px;
-          padding-top: 6px;
-        }
-        .belt-icon {
-          width: 42px;
-          height: 42px;
-        }
-        .belt-item {
-          width: 50px;
+          width: min(88vw, 420px); padding: 14px 14px;
+          min-height: auto; margin-top: 14px !important;
         }
         .hero-section {
-          padding: 20px 16px 12px;
+          padding: 10px 16px 8px;
         }
+        .belt-container {
+          height: 68px; padding-top: 4px; flex-shrink: 0;
+        }
+        .belt-icon {
+          width: 38px; height: 38px;
+        }
+        .belt-item {
+          width: 46px;
+        }
+        .belt-label {
+          font-size: 8px !important;
+        }
+        .belt-icon-inner {
+          display: flex; transform: scale(0.48); transform-origin: center;
+        }
+
+        /* ── Desktop ── */
         @media (min-width: 768px) {
+          .kosukuma-icon {
+            width: 48px; height: 48px;
+          }
+          .cv-badge {
+            margin-top: 16px; font-size: 11px; padding: 5px 18px;
+          }
+          .title-line1, .title-highlight {
+            font-size: clamp(38px, 8vw, 84px);
+          }
+          .subcopy {
+            font-size: 14px; max-width: none;
+          }
+          .upload-card {
+            padding: 20px 24px; margin-top: 28px !important;
+          }
           .hero-section {
             padding: 48px 20px 24px;
           }
           .belt-container {
-            height: 140px;
-            padding-top: 16px;
+            height: 140px; padding-top: 16px;
           }
           .belt-icon {
-            width: 88px;
-            height: 88px;
+            width: 88px; height: 88px;
           }
           .belt-item {
             width: 100px;
@@ -329,27 +348,6 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           .belt-label {
             font-size: 11px !important;
           }
-        }
-        @media (max-width: 767px) {
-          .subcopy {
-            font-size: 11px;
-            max-width: 220px;
-          }
-          .upload-card {
-            padding: 16px 16px;
-            min-height: auto;
-            margin-top: 16px !important;
-          }
-          .belt-label {
-            font-size: 8px !important;
-          }
-        }
-        .belt-icon-inner {
-          display: flex;
-          transform: scale(0.5);
-          transform-origin: center;
-        }
-        @media (min-width: 768px) {
           .belt-icon-inner {
             transform: scale(1);
           }
