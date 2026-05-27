@@ -100,55 +100,50 @@ function initFireSound() {
   master.gain.value = 0.30;
   master.connect(ac.destination);
 
-  // ──── Soft crackle pops (irregular timing with burst clusters) ────
-  function crackle() {
+  // ──── Soft pachi-pachi only (no clicking) ────
+  function pachi() {
     const now = ac.currentTime;
-    const dur = 0.005 + Math.random() * 0.02; // 5-25ms — short soft pops
+    const dur = 0.015 + Math.random() * 0.03; // 15-45ms — longer = softer pop
     const samples = Math.floor(sr * dur);
 
     const buf = ac.createBuffer(1, samples, sr);
     const d = buf.getChannelData(0);
     for (let i = 0; i < samples; i++) {
-      const env = Math.exp((-i / samples) * 8); // faster decay = softer
+      const env = Math.exp((-i / samples) * 5); // gentle decay
       d[i] = (Math.random() * 2 - 1) * env;
     }
 
     const src = ac.createBufferSource();
     src.buffer = buf;
 
-    // Lowpass filter — removes hard clicking, keeps soft crackle
+    // Very low cutoff — deep muffled pops only
     const lp = ac.createBiquadFilter();
     lp.type = "lowpass";
-    lp.frequency.value = 200 + Math.random() * 200; // 200-400Hz
-    lp.Q.value = 0.5 + Math.random() * 0.5;
+    lp.frequency.value = 150 + Math.random() * 150; // 150-300Hz
+    lp.Q.value = 0.3;
 
     const vol = ac.createGain();
-    const v = 0.02 + Math.random() * 0.10;
+    const v = 0.03 + Math.random() * 0.08;
     vol.gain.setValueAtTime(v, now);
-    vol.gain.exponentialRampToValueAtTime(0.001, now + dur + 0.04);
+    vol.gain.exponentialRampToValueAtTime(0.001, now + dur + 0.05);
 
     src.connect(lp).connect(vol).connect(master);
     src.start(now);
-    src.stop(now + dur + 0.05);
+    src.stop(now + dur + 0.06);
 
-    // Irregular timing: occasional burst clusters + longer pauses
+    // Irregular timing
     let next: number;
-    if (Math.random() < 0.25) {
-      // Burst: rapid 2-4 pops close together
-      next = 30 + Math.random() * 80; // 30-110ms
-    } else if (Math.random() < 0.3) {
-      // Long pause: quiet moment
-      next = 1200 + Math.random() * 2000; // 1.2-3.2s
+    if (Math.random() < 0.15) {
+      next = 50 + Math.random() * 100; // quick double-pop
+    } else if (Math.random() < 0.35) {
+      next = 1500 + Math.random() * 3000; // long silence
     } else {
-      // Normal: varied spacing
-      next = 200 + Math.random() * 800; // 200-1000ms
+      next = 400 + Math.random() * 1200; // normal
     }
-    setTimeout(crackle, next);
+    setTimeout(pachi, next);
   }
-  // Three independent streams for natural density variation
-  setTimeout(crackle, 400);
-  setTimeout(crackle, 900);
-  setTimeout(crackle, 1500);
+  setTimeout(pachi, 600);
+  setTimeout(pachi, 1800);
 
   return ac;
 }
@@ -663,9 +658,9 @@ export default function MothFlameGame() {
       otx.fillRect(0, H * 0.55, W, H * 0.45);
       otx.restore();
 
-      // Embers — 50% from base + 15% from top (doubled total)
-      if (Math.random() < 0.5) spawnEmber(cx, cy, baseR, false);
-      if (Math.random() < 0.15) spawnEmberTop(cx, top, baseR);
+      // Embers — sparse and irregular
+      if (Math.random() < 0.15) spawnEmber(cx, cy, baseR, false);
+      if (Math.random() < 0.05) spawnEmberTop(cx, top, baseR);
 
       // Fire center for scoring
       fireSCX = cx * PX + PX / 2;
