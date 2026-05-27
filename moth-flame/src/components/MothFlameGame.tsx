@@ -950,10 +950,10 @@ export default function MothFlameGame() {
         otx.stroke();
       }
 
-      // Live score near cursor
+      // Live score — top center of screen
       if (trail.length > 1) {
-        const tx = mx + 24,
-          ty = my - 24;
+        const tx = W / 2;
+        const ty = 36;
         let scoreCol = "#6272a4";
         if (sc >= 90) scoreCol = RCOLS[Math.floor(T * 10) % RCOLS.length];
         else if (sc >= 70) scoreCol = "#9efbb6";
@@ -961,8 +961,8 @@ export default function MothFlameGame() {
         else if (sc >= 30) scoreCol = "#ff8a3d";
 
         otx.globalAlpha = 1;
-        otx.font = 'bold 18px "VT323",monospace';
-        otx.textAlign = "left";
+        otx.font = 'bold 22px "VT323",monospace';
+        otx.textAlign = "center";
         otx.fillStyle = "#0e0d1a";
         otx.fillText(sc + "%", tx + 1, ty + 1);
         otx.fillStyle = scoreCol;
@@ -983,19 +983,17 @@ export default function MothFlameGame() {
             ? "#ffb454"
             : "#ff5874";
         otx.fillStyle = dCol;
-        otx.fillText("DIST:" + liveDistInfo.accuracy, tx, ty + 14);
-        otx.fillStyle = sCol;
-        otx.fillText("SHAPE:" + liveDistInfo.shape, tx, ty + 26);
+        otx.fillText("DIST:" + liveDistInfo.accuracy + "  SHAPE:" + liveDistInfo.shape, tx, ty + 14);
 
         otx.globalAlpha = 1;
         if (sc >= 90) {
           otx.font = '11px "VT323",monospace';
           otx.fillStyle = "#9efbb6";
-          otx.fillText("\u2605 PERFECT! \u2605", tx, ty + 40);
+          otx.fillText("\u2605 PERFECT! \u2605", tx, ty + 28);
         } else if (sc >= 70) {
           otx.font = '11px "VT323",monospace';
           otx.fillStyle = "#9efbb6";
-          otx.fillText("GREAT", tx, ty + 40);
+          otx.fillText("GREAT", tx, ty + 28);
         }
       }
 
@@ -1306,59 +1304,66 @@ export default function MothFlameGame() {
       otx.fillStyle = "#50fa7b";
       otx.fillText("MOTH-FLAME.EXE / v1.0", W / 2, H - 16);
 
-      // Leaderboard panel
-      const panelW = 260,
-        panelX = W - panelW - 12,
+      // Leaderboard panel (smaller on mobile)
+      const mob = isMobile;
+      const panelW = mob ? 160 : 260,
+        rowH = mob ? 18 : 27,
+        titleFont = mob ? '9px "Press Start 2P",monospace' : '12px "Press Start 2P",monospace',
+        rowFont = mob ? '11px "VT323",monospace' : '15px "VT323",monospace',
+        rowFontBold = mob ? 'bold 12px "VT323",monospace' : 'bold 16px "VT323",monospace',
+        panelH = (mob ? 38 : 50) + 10 * rowH,
+        panelX = W - panelW - 8,
         panelY = 8;
       otx.globalAlpha = 0.35;
       otx.fillStyle = "#0e0d1a";
-      otx.fillRect(panelX, panelY, panelW, 320);
+      otx.fillRect(panelX, panelY, panelW, panelH);
       otx.globalAlpha = 1;
       otx.strokeStyle = "rgba(98,114,164,0.3)";
       otx.lineWidth = 1;
-      otx.strokeRect(panelX, panelY, panelW, 320);
+      otx.strokeRect(panelX, panelY, panelW, panelH);
 
       otx.textAlign = "center";
-      otx.font = '12px "Press Start 2P",monospace';
+      otx.font = titleFont;
       otx.fillStyle = "#8be9fd";
-      otx.fillText("TOP 10", panelX + panelW / 2, panelY + 22);
+      otx.fillText("TOP 10", panelX + panelW / 2, panelY + (mob ? 16 : 22));
 
       otx.strokeStyle = "rgba(98,114,164,0.2)";
       otx.beginPath();
-      otx.moveTo(panelX + 12, panelY + 32);
-      otx.lineTo(panelX + panelW - 12, panelY + 32);
+      otx.moveTo(panelX + 8, panelY + (mob ? 22 : 32));
+      otx.lineTo(panelX + panelW - 8, panelY + (mob ? 22 : 32));
       otx.stroke();
 
       otx.textAlign = "left";
-      otx.font = '15px "VT323",monospace';
+      otx.font = rowFont;
+      const rowStart = panelY + (mob ? 36 : 50);
       for (let i = 0; i < 10; i++) {
-        const y = panelY + 50 + i * 27;
+        const y = rowStart + i * rowH;
         const rank = String(i + 1).padStart(2, " ");
         otx.globalAlpha = 0.25;
         otx.fillStyle = "#44475a";
-        otx.font = '14px "VT323",monospace';
-        otx.fillText(`${rank}.  ---`, panelX + 14, y);
+        otx.font = rowFont;
+        otx.fillText(`${rank}.  ---`, panelX + 10, y);
         otx.textAlign = "right";
-        otx.fillText("---", panelX + panelW - 14, y);
+        otx.fillText("---", panelX + panelW - 10, y);
         otx.textAlign = "left";
       }
       if (bestScore > 0) {
-        const y = panelY + 50;
+        const y = rowStart;
         otx.globalAlpha = 1;
         otx.fillStyle = "#fff7c2";
-        otx.font = 'bold 16px "VT323",monospace';
-        otx.fillText(" 1.", panelX + 14, y);
-        otx.fillText(myName, panelX + 46, y);
+        otx.font = rowFontBold;
+        otx.fillText(" 1.", panelX + 10, y);
+        otx.fillText(myName, panelX + (mob ? 36 : 46), y);
         otx.textAlign = "right";
         otx.fillText(
           String(bestScore).padStart(3, " "),
-          panelX + panelW - 14,
+          panelX + panelW - 10,
           y
         );
         otx.textAlign = "left";
         otx.globalAlpha = 0.08;
         otx.fillStyle = "#9efbb6";
-        otx.fillRect(panelX + 4, y - 12, panelW - 8, 18);
+        otx.fillRect(panelX + 4, y - 10, panelW - 8, rowH - 2);
       }
       otx.globalAlpha = 1;
       otx.restore();
