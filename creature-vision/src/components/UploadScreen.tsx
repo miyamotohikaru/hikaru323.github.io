@@ -164,14 +164,6 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files); }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.transform = "rotate(-1deg) translateY(-2px)";
-            (e.currentTarget as HTMLElement).style.boxShadow = `7px 7px 0 ${INK}`;
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.transform = "rotate(-1deg)";
-            (e.currentTarget as HTMLElement).style.boxShadow = `5px 5px 0 ${INK}`;
-          }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -351,6 +343,11 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           .belt-icon-inner {
             transform: scale(1);
           }
+        }
+        .upload-card:hover {
+          transform: rotate(-1deg) translateY(-3px) !important;
+          box-shadow: 7px 7px 0 #2a2018 !important;
+          background: #fffdf6 !important;
         }
         .belt-track:hover {
           animation-play-state: paused;
