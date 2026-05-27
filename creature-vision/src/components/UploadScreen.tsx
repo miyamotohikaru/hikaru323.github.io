@@ -292,12 +292,10 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           min-height: auto; margin-top: 14px !important;
         }
         .hero-section {
-          padding: 10px 16px 0px;
-          justify-content: flex-end !important;
-          padding-bottom: 12px;
+          padding: 10px 16px 8px;
         }
         .belt-container {
-          height: 86px; padding-top: 4px; flex-shrink: 0;
+          height: 100px; padding-top: 18px; flex-shrink: 0;
         }
         .belt-icon {
           width: 57px; height: 57px;
