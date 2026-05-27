@@ -14,18 +14,36 @@ const MARQUEE_IDS = [
   "mshrimp","mole","flamingo","pigeon",
 ];
 
-/* Desktop background sticker positions: [id, top%, left%, size, rotation] */
-const STICKER_LAYOUT: [string, number, number, number, number][] = [
-  ["dog",      14, 6,   60, -8],
-  ["eagle",    10, 88,  54, 12],
-  ["frog",     62, 4,   48, -5],
-  ["shark",    50, 90,  64, 10],
-  ["spider",   84, 14,  52, -12],
-  ["octopus",  84, 82,  56, 7],
-  ["bat",       6, 48,  50, 14],
-  ["flamingo", 90, 50,  58, -3],
-  ["chameleon",38, 92,  52, -10],
-  ["owl",      30,  3,  56, 6],
+/* Desktop background sticker positions: [id, top%, left%, size, rotation, animDuration, animDelay] */
+const STICKER_LAYOUT: [string, number, number, number, number, number, number][] = [
+  // left column
+  ["dog",        12,  5,  58, -8,   4.2, 0],
+  ["owl",        30,  3,  52,  6,   3.8, 0.6],
+  ["frog",       50,  4,  48, -5,   4.5, 1.2],
+  ["koala",      68,  6,  54, 10,   3.6, 0.3],
+  ["spider",     84,  8,  50,-12,   4.0, 0.9],
+  // right column
+  ["eagle",       8, 89,  54, 12,   3.9, 0.4],
+  ["chameleon",  24, 91,  50,-10,   4.3, 1.0],
+  ["shark",      42, 90,  60, 10,   3.7, 0.7],
+  ["mshrimp",    58, 88,  48,  7,   4.1, 0.2],
+  ["octopus",    74, 90,  56, -6,   3.5, 1.5],
+  ["deepsea",    88, 86,  52, 14,   4.4, 0.8],
+  // top row
+  ["bat",          4, 22,  48, 14,  4.0, 1.3],
+  ["pigeon",       5, 42,  50, -4,  3.6, 0.5],
+  ["flamingo",     4, 62,  54,  8,  4.2, 1.1],
+  ["mantis",       6, 78,  48,-11,  3.8, 0.0],
+  // bottom row
+  ["snake",       90, 22,  52,  5,  4.3, 0.6],
+  ["dolphin",     92, 40,  56, -7,  3.7, 1.4],
+  ["mole",        88, 58,  48, 11,  4.1, 0.3],
+  ["cockroach",   90, 75,  50, -9,  3.9, 0.9],
+  // mid-left / mid-right extras
+  ["horse",       18, 14,  50,  4,  4.4, 0.7],
+  ["goat",        40, 10,  46, -6,  3.5, 1.6],
+  ["foureyedfish",76, 18,  48,  9,  4.0, 0.2],
+  ["human",       20, 80,  52, -3,  3.8, 1.0],
 ];
 
 interface Props {
@@ -72,9 +90,9 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         }}
       />
 
-      {/* Desktop background stickers */}
+      {/* Desktop background stickers (all 24 creatures, floating) */}
       <div className="hidden md:block" style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}>
-        {STICKER_LAYOUT.map(([id, top, left, size, rot]) => {
+        {STICKER_LAYOUT.map(([id, top, left, size, rot, dur, delay]) => {
           const c = creatures.find((cr) => cr.id === id);
           if (!c) return null;
           return (
@@ -95,6 +113,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
                 alignItems: "center",
                 justifyContent: "center",
                 overflow: "hidden",
+                animation: `stickerFloat ${dur}s ease-in-out ${delay}s infinite`,
               }}
             >
               <Icon id={c.id} name={c.name} cat={c.cat} size={Math.round(size * 0.6)} />
@@ -316,7 +335,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         }
         .subcopy {
           font-size: 14px;
-          max-width: 320px;
+          max-width: none;
         }
         .upload-card {
           width: min(90vw, 420px);
