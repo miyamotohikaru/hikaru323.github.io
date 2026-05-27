@@ -224,7 +224,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
             animation: "belt 40s linear infinite",
           }}
         >
-          {[...marqueeCreatures, ...marqueeCreatures].map((c, i) => (
+          {[...marqueeCreatures, ...marqueeCreatures, ...marqueeCreatures].map((c, i) => (
             <div
               key={`${c.id}-${i}`}
               className="belt-item"
