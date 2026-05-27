@@ -285,7 +285,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           font-size: clamp(43px, 8vw, 84px);
         }
         .subcopy {
-          font-size: 15px; max-width: 280px;
+          font-size: 12px; max-width: 280px;
         }
         .upload-card {
           width: min(88vw, 420px); padding: 14px 14px;
