@@ -282,7 +282,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           margin-top: 6px; font-size: 9px; padding: 3px 12px;
         }
         .title-line1, .title-highlight {
-          font-size: clamp(31px, 8vw, 84px);
+          font-size: clamp(36px, 8vw, 84px);
         }
         .subcopy {
           font-size: 15px; max-width: 280px;
