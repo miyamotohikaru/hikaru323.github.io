@@ -68,9 +68,9 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           justifyContent: "center",
           position: "relative",
           zIndex: 2,
-          padding: "48px 20px 24px",
           animation: "fadeUp 0.6s ease-out",
         }}
+        className="hero-section"
       >
         {/* 1. Kosukuma icon */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -85,7 +85,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         {/* 2. CREATURE VISION badge */}
         <div
           style={{
-            marginTop: 16,
+            marginTop: 10,
             background: INK,
             color: CREAM,
             fontSize: 11,
@@ -103,7 +103,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         {/* 3. Main title */}
         <h1
           style={{
-            marginTop: 20,
+            marginTop: 14,
             textAlign: "center",
             fontFamily: "'Klee One', 'Zen Maru Gothic', sans-serif",
             fontWeight: 800,
@@ -135,7 +135,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         <p
           className="subcopy"
           style={{
-            marginTop: 16,
+            marginTop: 10,
             textAlign: "center",
             color: "#7a6a55",
             fontFamily: "'Zen Maru Gothic', sans-serif",
@@ -257,7 +257,9 @@ export default function UploadScreen({ creatures, onFile }: Props) {
                 }}
                 className="belt-icon"
               >
-                <Icon id={c.id} name={c.name} cat={c.cat} size={30} />
+                <span className="belt-icon-inner">
+                  <Icon id={c.id} name={c.name} cat={c.cat} size={56} />
+                </span>
               </div>
               <span
                 style={{
@@ -281,10 +283,10 @@ export default function UploadScreen({ creatures, onFile }: Props) {
       {/* Responsive styles */}
       <style>{`
         .title-line1 {
-          font-size: clamp(38px, 8vw, 84px);
+          font-size: clamp(32px, 8vw, 84px);
         }
         .title-highlight {
-          font-size: clamp(38px, 8vw, 84px);
+          font-size: clamp(32px, 8vw, 84px);
         }
         .subcopy {
           font-size: 14px;
@@ -294,41 +296,62 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           width: min(90vw, 420px);
           padding: 20px 24px;
         }
+        /* Mobile: fit everything in one screen */
         .belt-container {
-          height: 90px;
-          padding-top: 10px;
+          height: 76px;
+          padding-top: 6px;
         }
         .belt-icon {
-          width: 48px;
-          height: 48px;
+          width: 42px;
+          height: 42px;
         }
         .belt-item {
-          width: 56px;
+          width: 50px;
+        }
+        .hero-section {
+          padding: 20px 16px 12px;
         }
         @media (min-width: 768px) {
+          .hero-section {
+            padding: 48px 20px 24px;
+          }
           .belt-container {
-            height: 110px;
-            padding-top: 14px;
+            height: 140px;
+            padding-top: 16px;
           }
           .belt-icon {
-            width: 60px;
-            height: 60px;
+            width: 88px;
+            height: 88px;
           }
           .belt-item {
-            width: 72px;
+            width: 100px;
           }
           .belt-label {
-            font-size: 10px !important;
+            font-size: 11px !important;
           }
         }
         @media (max-width: 767px) {
           .subcopy {
             font-size: 11px;
-            max-width: 240px;
+            max-width: 220px;
           }
           .upload-card {
-            padding: 26px 20px;
-            min-height: 120px;
+            padding: 16px 16px;
+            min-height: auto;
+            margin-top: 16px !important;
+          }
+          .belt-label {
+            font-size: 8px !important;
+          }
+        }
+        .belt-icon-inner {
+          display: flex;
+          transform: scale(0.5);
+          transform-origin: center;
+        }
+        @media (min-width: 768px) {
+          .belt-icon-inner {
+            transform: scale(1);
           }
         }
         .belt-track:hover {
