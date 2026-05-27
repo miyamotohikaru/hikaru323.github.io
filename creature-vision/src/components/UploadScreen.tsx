@@ -74,13 +74,15 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         className="hero-section"
       >
         {/* 1. Kosukuma icon */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/kosukuma.png"
-          alt="こすくまくん"
-          className="kosukuma-icon"
-          style={{ display: "block", objectFit: "contain" }}
-        />
+        <div style={{ animation: "bounce 2s ease-in-out infinite" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/kosukuma.png"
+            alt="こすくまくん"
+            className="kosukuma-icon"
+            style={{ display: "block", objectFit: "contain" }}
+          />
+        </div>
 
         {/* 2. CREATURE VISION badge */}
         <div
@@ -274,7 +276,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
       <style>{`
         /* ── Mobile-first (default) ── */
         .kosukuma-icon {
-          width: 36px; height: 36px;
+          width: 90px; height: 90px;
         }
         .cv-badge {
           margin-top: 6px; font-size: 9px; padding: 3px 12px;
@@ -311,7 +313,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         /* ── Desktop ── */
         @media (min-width: 768px) {
           .kosukuma-icon {
-            width: 48px; height: 48px;
+            width: 120px; height: 120px;
           }
           .cv-badge {
             margin-top: 16px; font-size: 11px; padding: 5px 18px;
