@@ -295,7 +295,7 @@ export default function UploadScreen({ creatures, onFile }: Props) {
           padding: 10px 16px 8px;
         }
         .belt-container {
-          height: 86px; padding-top: 4px; flex-shrink: 0;
+          height: 86px; padding-top: 4px; flex-shrink: 0; margin-top: -3px;
         }
         .belt-icon {
           width: 57px; height: 57px;
