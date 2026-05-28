@@ -93,7 +93,7 @@ interface RainbowParticle {
 }
 
 /* ───────────────────────── Fire + Water ASMR Sound ───────────────────────── */
-function initFireSound() {
+function initFireSound(): AudioContext {
   const ac = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
   const sr = ac.sampleRate;
   const master = ac.createGain();
@@ -102,6 +102,11 @@ function initFireSound() {
 
   // ──── Soft pachi-pachi only (no clicking) ────
   function pachi() {
+    // Skip if context not running yet
+    if (ac.state !== "running") {
+      setTimeout(pachi, 200);
+      return;
+    }
     const now = ac.currentTime;
     const dur = 0.015 + Math.random() * 0.03; // 15-45ms — longer = softer pop
     const samples = Math.floor(sr * dur);
@@ -142,8 +147,8 @@ function initFireSound() {
     }
     setTimeout(pachi, next);
   }
-  setTimeout(pachi, 600);
-  setTimeout(pachi, 1800);
+  setTimeout(pachi, 300);
+  setTimeout(pachi, 800);
 
   return ac;
 }
