@@ -159,6 +159,10 @@ export default function MothFlameGame() {
     if (!audioRef.current) {
       audioRef.current = initFireSound();
     }
+    // Resume AudioContext if suspended (mobile browsers require user gesture)
+    if (audioRef.current && audioRef.current.state === "suspended") {
+      audioRef.current.resume();
+    }
   }, []);
 
   useEffect(() => {
