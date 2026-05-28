@@ -116,14 +116,14 @@ function initFireSound() {
     const src = ac.createBufferSource();
     src.buffer = buf;
 
-    // Very low cutoff — deep muffled pops only
+    // Warm cutoff — audible on phone speakers
     const lp = ac.createBiquadFilter();
     lp.type = "lowpass";
-    lp.frequency.value = 150 + Math.random() * 150; // 150-300Hz
+    lp.frequency.value = 500 + Math.random() * 400; // 500-900Hz
     lp.Q.value = 0.3;
 
     const vol = ac.createGain();
-    const v = 0.03 + Math.random() * 0.08;
+    const v = 0.08 + Math.random() * 0.15;
     vol.gain.setValueAtTime(v, now);
     vol.gain.exponentialRampToValueAtTime(0.001, now + dur + 0.05);
 
