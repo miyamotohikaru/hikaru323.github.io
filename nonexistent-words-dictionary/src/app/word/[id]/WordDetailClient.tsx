@@ -186,7 +186,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
   }
 
   return (
-    <main className="main-content">
+    <main className="main-content word-detail-content">
       <div className="word-detail-header">
         <Link href="/" className="back-link">
           {t("common.backToDict")}

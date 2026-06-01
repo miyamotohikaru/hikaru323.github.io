@@ -10,6 +10,9 @@ export default function MobileScrollConverter() {
       const container = target.closest(".h-scroll, .dictionary-page") as HTMLElement | null;
       if (!container || e.deltaY === 0) return;
 
+      // 個別語ページ（/word/）ではページ縦スクロールを優先
+      if (container.closest(".word-detail-content")) return;
+
       container.scrollLeft -= e.deltaY;
       e.preventDefault();
     };
@@ -37,6 +40,8 @@ export default function MobileScrollConverter() {
       if (shouldIgnore(target)) return;
       const container = target.closest(".h-scroll, .dictionary-page") as HTMLElement | null;
       if (!container) return;
+      // 個別語ページではスクロール変換しない
+      if (container.closest(".word-detail-content")) return;
       activeContainer = container;
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;

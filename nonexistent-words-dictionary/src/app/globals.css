@@ -1215,6 +1215,9 @@ a:hover { color: var(--text-primary); }
 
 .word-detail-content {
   animation: fadeIn 0.5s ease-out;
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
 }
 
 /* ===== Word Actions ===== */
@@ -2453,7 +2456,11 @@ a:hover { color: var(--text-primary); }
   box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.15);
   line-height: 1.9;
   letter-spacing: 0.05em;
-  align-content: start;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.5rem;
 }
 
 .dictionary-page--rejection {
@@ -2481,6 +2488,9 @@ a:hover { color: var(--text-primary); }
 
 .dict-entry {
   margin-left: 0.5rem;
+  align-self: flex-start;
+  margin-top: 0;
+  flex-shrink: 0;
 }
 
 .dict-headword {
@@ -3474,6 +3484,20 @@ a:hover { color: var(--text-primary); }
   .dict-pos { font-size: 0.625rem; }
   .dict-example { font-size: 0.75rem; }
   .dict-author { font-size: 0.6875rem; }
+
+  /* 個別語ページ — 縦スクロール有効化 */
+  .word-detail-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    height: auto;
+    min-height: auto;
+  }
+  .word-detail-content .dictionary-page {
+    min-height: auto;
+    height: auto;
+    padding: 1.5rem 1rem;
+  }
 
   /* ===== 5. 投稿フォーム（紙面上）→ 横書き ===== */
   .dict-form-area { writing-mode: horizontal-tb; }
