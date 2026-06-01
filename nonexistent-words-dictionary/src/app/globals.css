@@ -3310,7 +3310,7 @@ a:hover { color: var(--text-primary); }
   .tategaki-search-hero-sub {
     writing-mode: horizontal-tb;
     text-orientation: initial;
-    font-size: 0.8125rem;
+    font-size: 0.6875rem;
     text-align: center;
     max-width: 280px;
     line-height: 1.9;
