@@ -254,28 +254,20 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
           )}
         </div>
       ) : (
-        /* Japanese word detail - vertical layout */
-        <div className="dictionary-page fade-in" style={{ maxWidth: 800, margin: "2rem auto" }}>
-          <div className="dict-entry">
-            <span className="dict-headword" style={{ fontSize: "1.75rem" }}>{word.word}</span>
+        /* Japanese word detail - vertical continuous flow */
+        <div className="word-detail-paper-wrapper">
+          <div className="word-detail-paper fade-in">
+            <span className="wdp-headword">{word.word}</span>
+            <span className="wdp-reading">【{currentReading}】</span>
+            <span className="wdp-pos">{posMap[word.partOfSpeech] || `〘${word.partOfSpeech}〙`}</span>
+            <span className="wdp-definition">{currentDef}</span>
+            {word.etymology && (
+              <span className="wdp-etymology">▷ {word.etymology}</span>
+            )}
+            {currentExample && (
+              <span className="wdp-example">▽「{currentExample}」</span>
+            )}
           </div>
-          <div className="dict-entry">
-            <span className="dict-reading">【{currentReading}】</span>
-            <span className="dict-pos">{posMap[word.partOfSpeech] || `〘${word.partOfSpeech}〙`}</span>
-          </div>
-          <div className="dict-entry">
-            <p className="dict-definition">{currentDef}</p>
-          </div>
-          {word.etymology && (
-            <div className="dict-entry" style={{ borderRight: "1px solid rgba(100,85,60,0.2)", paddingRight: "0.5rem" }}>
-              <p style={{ fontSize: "0.8125rem", color: "#585538" }}>▷ {word.etymology}</p>
-            </div>
-          )}
-          {currentExample && (
-            <div className="dict-entry">
-              <p className="dict-example">▽「{currentExample}」</p>
-            </div>
-          )}
         </div>
       )}
 

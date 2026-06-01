@@ -1215,9 +1215,68 @@ a:hover { color: var(--text-primary); }
 
 .word-detail-content {
   animation: fadeIn 0.5s ease-out;
-  height: auto;
-  min-height: 100vh;
-  overflow-y: auto;
+}
+
+/* ===== Word Detail Paper (continuous vertical flow) ===== */
+.word-detail-paper-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1rem 2rem;
+  -webkit-overflow-scrolling: touch;
+}
+.word-detail-paper {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  height: calc(100vh - 12rem);
+  width: max-content;
+  max-width: none;
+  display: block;
+  padding: 2.5rem 3rem;
+  box-sizing: border-box;
+  background: var(--page-bg);
+  box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.15);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.95;
+  letter-spacing: 0.03em;
+  color: #2e2818;
+  text-align: start;
+}
+.wdp-headword {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1610;
+  border-right: 2px solid var(--accent-garnet);
+  padding-right: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.wdp-reading {
+  font-size: 0.8125rem;
+  color: #585538;
+  margin-bottom: 0.25rem;
+}
+.wdp-pos {
+  font-size: 0.6875rem;
+  color: #585538;
+  margin-bottom: 1.25rem;
+}
+.wdp-definition {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+.wdp-etymology {
+  display: block;
+  font-size: 0.8125rem;
+  color: #585538;
+  margin-bottom: 1rem;
+}
+.wdp-example {
+  display: block;
+  font-size: 0.8125rem;
+  color: #4a4530;
+  margin-bottom: 0.5rem;
 }
 
 /* ===== Word Actions ===== */
@@ -3485,18 +3544,20 @@ a:hover { color: var(--text-primary); }
   .dict-example { font-size: 0.75rem; }
   .dict-author { font-size: 0.6875rem; }
 
-  /* 個別語ページ — 縦スクロール有効化 */
-  .word-detail-content {
-    overflow-y: auto;
-    overflow-x: hidden;
+  /* 個別語ページ */
+  .word-detail-paper-wrapper {
+    padding: 0.5rem 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
-    height: auto;
-    min-height: auto;
   }
-  .word-detail-content .dictionary-page {
-    min-height: auto;
-    height: auto;
-    padding: 1.5rem 1rem;
+  .word-detail-paper {
+    height: calc(100vh - 10rem);
+    padding: 1.5rem 1.5rem;
+    font-size: 0.875rem;
+  }
+  .wdp-headword {
+    font-size: 1.5rem;
   }
 
   /* ===== 5. 投稿フォーム（紙面上）→ 横書き ===== */

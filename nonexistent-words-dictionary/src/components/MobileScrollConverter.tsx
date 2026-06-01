@@ -7,11 +7,8 @@ export default function MobileScrollConverter() {
     // PC: wheelイベントで縦スクロール→横スクロール変換
     const handleWheel = (e: WheelEvent) => {
       const target = e.target as HTMLElement;
-      const container = target.closest(".h-scroll, .dictionary-page") as HTMLElement | null;
+      const container = target.closest(".h-scroll, .dictionary-page, .word-detail-paper-wrapper") as HTMLElement | null;
       if (!container || e.deltaY === 0) return;
-
-      // 個別語ページ（/word/）ではページ縦スクロールを優先
-      if (container.closest(".word-detail-content")) return;
 
       container.scrollLeft -= e.deltaY;
       e.preventDefault();
@@ -38,10 +35,8 @@ export default function MobileScrollConverter() {
     const handleTouchStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       if (shouldIgnore(target)) return;
-      const container = target.closest(".h-scroll, .dictionary-page") as HTMLElement | null;
+      const container = target.closest(".h-scroll, .dictionary-page, .word-detail-paper-wrapper") as HTMLElement | null;
       if (!container) return;
-      // 個別語ページではスクロール変換しない
-      if (container.closest(".word-detail-content")) return;
       activeContainer = container;
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
