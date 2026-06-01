@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, FormEvent } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
 import FallingWords from "@/components/FallingWords";
-import { EmptyWordNotice } from "@/components/EmptyWordNotice";
 import { useI18n } from "@/lib/i18n";
 import { useFooterVisibility } from "@/components/ClientProviders";
 
@@ -379,20 +378,10 @@ export default function Home() {
       {phase === "result" && result && !result.exists && result.kojienEntry && (
         /* ── 検索ヒット（新語）── */
         <div className="h-scroll" ref={hScrollRef}>
-          {/* 検索フォーム列（最右） */}
+          {/* 該当件数 */}
           <div className="result-search-col fade-in-rtl">
             <span className="result-hit-count">該当　・　1 件</span>
-            <form onSubmit={handleSearch} className="tategaki-search-form">
-              <span className="tategaki-search-label">読み（ひらがな）</span>
-              <div className="tategaki-search-input-wrap">
-                <input type="text" value={word} onChange={(e) => setWord(e.target.value)} className="tategaki-search-input" maxLength={20} />
-                <button type="submit" className="tategaki-search-button" disabled={!word.trim()}>引く</button>
-              </div>
-            </form>
           </div>
-
-          {/* 蔵書印スタイル通知 */}
-          <EmptyWordNotice />
 
           {/* 本文列 */}
           <div className="result-body-col fade-in-rtl">
