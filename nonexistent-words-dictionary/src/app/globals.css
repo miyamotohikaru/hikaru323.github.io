@@ -2447,6 +2447,7 @@ a:hover { color: var(--text-primary); }
   text-orientation: mixed;
   padding: 2rem 2.5rem;
   min-height: 400px;
+  height: auto;
   overflow-x: auto;
   position: relative;
   box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.15);
