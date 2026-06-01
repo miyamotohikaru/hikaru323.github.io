@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, FormEvent } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
 import FallingWords from "@/components/FallingWords";
+import { EmptyWordNotice } from "@/components/EmptyWordNotice";
 import { useI18n } from "@/lib/i18n";
 import { useFooterVisibility } from "@/components/ClientProviders";
 
@@ -382,6 +383,9 @@ export default function Home() {
           <div className="result-search-col fade-in-rtl">
             <span className="result-hit-count">該当　・　1 件</span>
           </div>
+
+          {/* 蔵書印スタイル通知 */}
+          <EmptyWordNotice />
 
           {/* 本文列 */}
           <div className="result-body-col fade-in-rtl">
