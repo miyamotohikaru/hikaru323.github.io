@@ -30,6 +30,8 @@ export default function MobileScrollConverter() {
       );
     };
 
+    let touchStartY = 0;
+
     const handleTouchStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       if (shouldIgnore(target)) return;
@@ -37,6 +39,7 @@ export default function MobileScrollConverter() {
       if (!container) return;
       activeContainer = container;
       touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
       scrollStartX = container.scrollLeft;
     };
 
@@ -44,7 +47,16 @@ export default function MobileScrollConverter() {
       const target = e.target as HTMLElement;
       if (shouldIgnore(target) || !activeContainer) return;
       const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
       const deltaX = touchStartX - currentX;
+      const deltaY = touchStartY - currentY;
+
+      // If vertical swipe is dominant, let the page scroll normally
+      if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
+        activeContainer = null;
+        return;
+      }
+
       const isRtl = getComputedStyle(activeContainer).direction === "rtl";
       activeContainer.scrollLeft = scrollStartX + (isRtl ? deltaX : -deltaX) * 1.5;
       e.preventDefault();
