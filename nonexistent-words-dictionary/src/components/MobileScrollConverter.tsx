@@ -16,8 +16,8 @@ export default function MobileScrollConverter() {
 
     window.addEventListener("wheel", handleWheel, { passive: false });
 
-    // モバイル: touchイベントで縦スワイプ→横スクロール変換
-    let touchStartY = 0;
+    // モバイル: touchイベントで左スワイプ→左スクロール変換
+    let touchStartX = 0;
     let scrollStartX = 0;
     let activeContainer: HTMLElement | null = null;
 
@@ -36,17 +36,17 @@ export default function MobileScrollConverter() {
       const container = target.closest(".h-scroll, .dictionary-page") as HTMLElement | null;
       if (!container) return;
       activeContainer = container;
-      touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
       scrollStartX = container.scrollLeft;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       if (shouldIgnore(target) || !activeContainer) return;
-      const currentY = e.touches[0].clientY;
-      const deltaY = touchStartY - currentY;
+      const currentX = e.touches[0].clientX;
+      const deltaX = touchStartX - currentX;
       const isRtl = getComputedStyle(activeContainer).direction === "rtl";
-      activeContainer.scrollLeft = scrollStartX + (isRtl ? -deltaY : deltaY) * 1.5;
+      activeContainer.scrollLeft = scrollStartX + (isRtl ? deltaX : -deltaX) * 1.5;
       e.preventDefault();
     };
 
