@@ -85,10 +85,7 @@ export default function Home() {
     };
   }, [phase]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("fictionary_nickname");
-    if (saved) setNickname(saved);
-  }, []);
+  // 掲載者名は毎回空欄にする（保存はするが自動入力しない）
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
