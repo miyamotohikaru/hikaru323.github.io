@@ -140,7 +140,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
           ) : (
             /* Japanese word - vertical continuous flow (詳細ページと同じ) */
             <div className="word-detail-paper-wrapper">
-              <div className="word-detail-paper fade-in">
+              <div className="word-detail-paper word-detail-paper--share fade-in">
                 <div className="wdp-head-group">
                   <span className="wdp-headword">{word.word}</span>
                   <span className="wdp-reading">【{word.reading}】</span>

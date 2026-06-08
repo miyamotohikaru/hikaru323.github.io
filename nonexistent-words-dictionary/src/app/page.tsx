@@ -69,9 +69,9 @@ export default function Home() {
     return () => setMobileVisible(false);
   }, [phase, setMobileVisible]);
 
-  // loading/result時にbodyの縦スクロールを防止＆トップにリセット
+  // loading/result時のみbodyの縦スクロールを防止（sharedは下までスクロールさせる）
   useEffect(() => {
-    if (phase !== "idle") {
+    if (phase === "loading" || phase === "result") {
       window.scrollTo(0, 0);
       document.body.style.overflow = "hidden";
       document.documentElement.style.overflow = "hidden";
@@ -283,7 +283,7 @@ export default function Home() {
           </div>
 
           <div className="word-detail-paper-wrapper">
-            <div className="word-detail-paper fade-in">
+            <div className="word-detail-paper word-detail-paper--share fade-in">
               <div className="wdp-head-group">
                 <span className="wdp-headword">{savedWord.word}</span>
                 <span className="wdp-reading">【{savedWord.reading}】</span>

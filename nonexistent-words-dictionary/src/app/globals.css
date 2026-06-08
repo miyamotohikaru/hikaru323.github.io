@@ -1249,6 +1249,11 @@ a:hover { color: var(--text-primary); }
   vertical-align: top;
   margin-left: 1.375rem;
 }
+/* シェア画面の紙面: 全画面化せず控えめな高さに（複数列折り返しは維持）
+   詳細度を上げてモバイル用 .word-detail-paper の高さ指定にも勝たせる */
+.word-detail-paper.word-detail-paper--share {
+  height: clamp(280px, 50vh, 440px);
+}
 .wdp-headword {
   display: inline-block;
   font-family: var(--font-heading);
