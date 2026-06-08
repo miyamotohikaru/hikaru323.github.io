@@ -257,9 +257,11 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
         /* Japanese word detail - vertical continuous flow */
         <div className="word-detail-paper-wrapper">
           <div className="word-detail-paper fade-in">
-            <span className="wdp-headword">{word.word}</span>
-            <span className="wdp-reading">【{currentReading}】</span>
-            <span className="wdp-pos">{posMap[word.partOfSpeech] || `〘${word.partOfSpeech}〙`}</span>
+            <div className="wdp-head-group">
+              <span className="wdp-headword">{word.word}</span>
+              <span className="wdp-reading">【{currentReading}】</span>
+              <span className="wdp-pos">{posMap[word.partOfSpeech] || `〘${word.partOfSpeech}〙`}</span>
+            </div>
             <span className="wdp-definition">{currentDef}</span>
             {word.etymology && (
               <span className="wdp-etymology">▷ {word.etymology}</span>

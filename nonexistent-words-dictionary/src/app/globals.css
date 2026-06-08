@@ -1242,6 +1242,13 @@ a:hover { color: var(--text-primary); }
   color: #2e2818;
   text-align: start;
 }
+/* 見出し語グループ: 紙面の高さいっぱいの独立した1列を占有 → 定義は必ず次の列へ */
+.wdp-head-group {
+  display: inline-block;
+  height: 100%;
+  vertical-align: top;
+  margin-left: 1.375rem;
+}
 .wdp-headword {
   display: inline-block;
   font-family: var(--font-heading);
@@ -1262,21 +1269,27 @@ a:hover { color: var(--text-primary); }
   color: #585538;
   margin-bottom: 1.25rem;
 }
+/* 定義: インラインのまま（height指定なし）→ 複数列に自然に折り返す */
 .wdp-definition {
-  display: block;
   margin-bottom: 1.5rem;
 }
+/* 語源: 独立した1列 */
 .wdp-etymology {
-  display: block;
+  display: inline-block;
+  height: 100%;
+  vertical-align: top;
   font-size: 0.8125rem;
   color: #585538;
-  margin-bottom: 1rem;
+  margin-right: 1rem;
 }
+/* 例文: 独立した1列 */
 .wdp-example {
-  display: block;
+  display: inline-block;
+  height: 100%;
+  vertical-align: top;
   font-size: 0.8125rem;
   color: #4a4530;
-  margin-bottom: 0.5rem;
+  margin-right: 1.125rem;
 }
 
 /* ===== Word Actions ===== */
