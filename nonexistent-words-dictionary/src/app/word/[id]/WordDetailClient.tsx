@@ -138,25 +138,22 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
               </div>
             </div>
           ) : (
-            /* Japanese word - vertical layout */
-            <div className="dictionary-page">
-              <div className="dict-entry">
-                <span className="dict-headword">{word.word}</span>
-              </div>
-              <div className="dict-entry">
-                <span className="dict-reading">【{word.reading}】</span>
-                <span className="dict-pos">{posMap[word.partOfSpeech] || `〘${word.partOfSpeech}〙`}</span>
-              </div>
-              <div className="dict-entry">
-                <p className="dict-definition">{word.definition}</p>
-              </div>
-              {word.examples && word.examples.length > 0 && word.examples[0] && (
-                <div className="dict-entry">
-                  <p className="dict-example">▽「{word.examples[0]}」</p>
+            /* Japanese word - vertical continuous flow (詳細ページと同じ) */
+            <div className="word-detail-paper-wrapper">
+              <div className="word-detail-paper fade-in">
+                <div className="wdp-head-group">
+                  <span className="wdp-headword">{word.word}</span>
+                  <span className="wdp-reading">【{word.reading}】</span>
+                  <span className="wdp-pos">{posMap[word.partOfSpeech] || `〘${word.partOfSpeech}〙`}</span>
                 </div>
-              )}
-              <div className="dict-entry">
-                <span className="dict-author">── {word.nickname} 編</span>
+                <span className="wdp-definition">{word.definition}</span>
+                {word.etymology && (
+                  <span className="wdp-etymology">▷ {word.etymology}</span>
+                )}
+                {word.examples && word.examples.length > 0 && word.examples[0] && (
+                  <span className="wdp-example">▽「{word.examples[0]}」</span>
+                )}
+                <span className="wdp-author">── {word.nickname} 編</span>
               </div>
             </div>
           )}

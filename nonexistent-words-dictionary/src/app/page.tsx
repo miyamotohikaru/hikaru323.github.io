@@ -282,24 +282,18 @@ export default function Home() {
             <span className="share-dict-page-num">p.{Math.floor(Math.random() * 900) + 100}</span>
           </div>
 
-          <div className="dictionary-page">
-            <div className="dict-entry ink-delay-1">
-              <span className="dict-headword">{savedWord.word}</span>
-            </div>
-            <div className="dict-entry ink-delay-2">
-              <span className="dict-reading">【{savedWord.reading}】</span>
-              <span className="dict-pos">{posMap[savedWord.partOfSpeech] || `〘${savedWord.partOfSpeech}〙`}</span>
-            </div>
-            <div className="dict-entry ink-delay-3">
-              <p className="dict-definition">{savedWord.definition}</p>
-            </div>
-            {savedWord.example && (
-              <div className="dict-entry ink-delay-4">
-                <p className="dict-example">▽「{savedWord.example}」</p>
+          <div className="word-detail-paper-wrapper">
+            <div className="word-detail-paper fade-in">
+              <div className="wdp-head-group">
+                <span className="wdp-headword">{savedWord.word}</span>
+                <span className="wdp-reading">【{savedWord.reading}】</span>
+                <span className="wdp-pos">{posMap[savedWord.partOfSpeech] || `〘${savedWord.partOfSpeech}〙`}</span>
               </div>
-            )}
-            <div className="dict-entry">
-              <span className="dict-author">── {savedWord.nickname} 編</span>
+              <span className="wdp-definition">{savedWord.definition}</span>
+              {savedWord.example && (
+                <span className="wdp-example">▽「{savedWord.example}」</span>
+              )}
+              <span className="wdp-author">── {savedWord.nickname} 編</span>
             </div>
           </div>
 
