@@ -140,7 +140,8 @@ export default function FallingWords() {
             colHeight,
             fontSize,
             color,
-            opacity: rand(0.027, 0.072),
+            // 文字色の透明度(0.5〜0.75)と乗算され、実効 約5.4〜10.4%
+            opacity: rand(0.108, 0.139),
             iconSize: 0,
             iconW: 0,
             iconH: 0,
@@ -179,7 +180,8 @@ export default function FallingWords() {
             colHeight: iconH,
             fontSize: 0,
             color: "",
-            opacity: rand(0.027, 0.09),
+            // 画像描画のため色の透明度は掛からず、実効 6〜18%
+            opacity: rand(0.06, 0.18),
             iconSize: baseSize,
             iconW,
             iconH,
