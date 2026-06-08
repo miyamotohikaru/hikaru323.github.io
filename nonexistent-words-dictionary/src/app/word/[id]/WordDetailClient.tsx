@@ -269,6 +269,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
             {currentExample && (
               <span className="wdp-example">▽「{currentExample}」</span>
             )}
+            <span className="wdp-author">── {word.nickname} 編</span>
           </div>
         </div>
       )}
@@ -276,7 +277,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
       {/* 横書きのメタ情報 */}
       <div style={{ maxWidth: 800, margin: "0 auto" }}>
         <div className="word-meta" style={{ borderTop: "1px solid var(--base-border)", paddingTop: "1rem", marginTop: "1rem" }}>
-          <span className="word-meta-nickname">{word.nickname} {isEn ? "" : "編"}</span>
+          {isEn && <span className="word-meta-nickname">{word.nickname}</span>}
           {word.createdAt && (
             <span className="word-meta-date">{new Date(word.createdAt).toLocaleDateString(isEn ? "en-US" : "ja-JP")}</span>
           )}
