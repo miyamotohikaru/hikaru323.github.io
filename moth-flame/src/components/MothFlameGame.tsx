@@ -367,29 +367,38 @@ export default function MothFlameGame() {
     // so the motion never feels uniform (sometimes calm, sometimes gusty).
     let fireT = 0;
 
-    /* ── Star detection ── */
-    function detectStar(pts: Pt[]): boolean {
-      if (pts.length < 20) return false;
-      let sharpTurns = 0;
+    /* ── Square detection (≈4 sharp corners) ──
+       Each corner is a run of consecutive sharp-turn samples, so it's counted
+       once (not multiple times). Threshold ~1.0rad (≈57°) catches slightly
+       rounded, hand-drawn corners. 3–5 corners → square-ish. */
+    function detectSquare(pts: Pt[]): boolean {
+      if (pts.length < 15) return false;
       const step = Math.max(1, Math.floor(pts.length / 40));
+      let corners = 0;
+      let inCorner = false;
       for (let i = step * 2; i < pts.length; i += step) {
         const ax = pts[i - step].x - pts[i - step * 2].x;
         const ay = pts[i - step].y - pts[i - step * 2].y;
-        const bx2 = pts[i].x - pts[i - step].x;
-        const by2 = pts[i].y - pts[i - step].y;
-        const dot = ax * bx2 + ay * by2;
-        const cross = ax * by2 - ay * bx2;
-        const angle = Math.abs(Math.atan2(cross, dot));
-        if (angle > 1.8) sharpTurns++;
+        const bx = pts[i].x - pts[i - step].x;
+        const by = pts[i].y - pts[i - step].y;
+        const angle = Math.abs(Math.atan2(ax * by - ay * bx, ax * bx + ay * by));
+        if (angle > 1.0) {
+          if (!inCorner) {
+            corners++;
+            inCorner = true;
+          }
+        } else {
+          inCorner = false;
+        }
       }
-      return sharpTurns >= 4 && sharpTurns <= 7;
+      return corners >= 3 && corners <= 5;
     }
 
     function triggerStarEasterEgg() {
       easterEggActive = true;
       easterEggAt = T;
       easterEggMsg1 = "★ SECRET ★";
-      easterEggMsg2 = "You found the hidden star!";
+      easterEggMsg2 = "You found the hidden square!";
       for (let i = 0; i < 60; i++) {
         const a = Math.random() * 6.28;
         const spd = 80 + Math.random() * 200;
@@ -493,8 +502,8 @@ export default function MothFlameGame() {
     function endTrail() {
       if (trail.length < 8 || dead) return;
 
-      // Star easter egg check (before normal scoring)
-      if (detectStar(trail)) {
+      // Square easter egg check (before normal scoring)
+      if (detectSquare(trail)) {
         triggerStarEasterEgg();
         trail = [];
         liveScoreVal = 0;
