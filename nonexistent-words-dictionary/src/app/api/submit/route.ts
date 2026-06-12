@@ -160,7 +160,7 @@ async function handleJapanese(word: string, meaning: string | undefined, apiKey:
     const client = new Anthropic({ apiKey });
     try {
       const message = await client.messages.create({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 500,
         messages: [{ role: "user", content: `言葉: ${word}` }],
         system: EXISTS_PROMPT_JA,
@@ -199,7 +199,7 @@ async function handleJapanese(word: string, meaning: string | undefined, apiKey:
   const userContent = meaning ? `言葉: ${word}\n意味: ${meaning}` : `言葉: ${word}`;
   const client = new Anthropic({ apiKey });
   const message = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 800,
     messages: [{ role: "user", content: userContent }],
     system: SYSTEM_PROMPT_JA,
@@ -269,7 +269,7 @@ async function handleEnglish(word: string, meaning: string | undefined, apiKey: 
 
   try {
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 800,
       messages: [{ role: "user", content: userContent }],
       system: SYSTEM_PROMPT_EN,
