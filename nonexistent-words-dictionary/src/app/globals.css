@@ -4659,3 +4659,52 @@ a:hover { color: var(--text-primary); }
 }
 
 /* (480px block merged into 640px above) */
+
+/* ===== シェア画面: 遷移時の上スライドを無効化（フェードのみ） =====
+   .fade-in の translateY(16px) で「少しアップ」して見えるのを防ぐ。
+   二重クラスで .fade-in より詳細度を上げて確実に上書き。 */
+@keyframes fadeInStatic {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.share-dict-page.fade-in,
+.word-detail-paper--share.fade-in {
+  animation: fadeInStatic 0.5s ease-out;
+}
+
+/* ===== 五十音索引: モバイルレイアウトの再適用 =====
+   .dict-index-* の基本(PC)ルールがこのファイルの後方にあり、
+   @media(640px) を後勝ちで上書きしてしまうため、末尾で再宣言して
+   モバイルでは「タブを上に横並び・本文は下」に戻す（被り解消）。 */
+@media (max-width: 640px) {
+  .dict-index-container {
+    flex-direction: column;
+  }
+  .dict-index-sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-self: stretch;
+    margin-right: 0;
+    margin-bottom: 1rem;
+    z-index: auto;
+  }
+  .dict-index-tab {
+    border-radius: 4px 4px 0 0;
+    border-right: 1px solid var(--base-border);
+    border-bottom: none;
+    min-width: 32px;
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0;
+  }
+  .dict-index-tab.active {
+    border-bottom: 1px solid var(--base-bg);
+    border-right: 1px solid var(--base-border);
+  }
+  .dict-index-content {
+    border-left: none;
+    border-top: 1px solid var(--base-border);
+    padding-left: 0;
+    padding-top: 1rem;
+  }
+}
