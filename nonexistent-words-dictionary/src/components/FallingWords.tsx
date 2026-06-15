@@ -144,10 +144,10 @@ export default function FallingWords() {
             color,
             // 文字色の透明度(0.5〜0.75)と乗算。PC: 実効 約5.4〜10.4%
             // 携帯(幅<768px)は文字が画面に対して大きく濃く見えるため大幅に下げ、
-            // PCと同程度の薄さに見せる: 実効 約1.75〜3.75%
+            // PCと同程度の薄さに見せる: 実効 約0.9〜1.9%
             opacity:
               window.innerWidth < 768
-                ? rand(0.035, 0.05)
+                ? rand(0.018, 0.025)
                 : rand(0.108, 0.139),
             iconSize: 0,
             iconW: 0,
