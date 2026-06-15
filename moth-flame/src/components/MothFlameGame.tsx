@@ -337,6 +337,141 @@ export default function MothFlameGame() {
       ph: Math.random() * 6.28,
     }));
 
+    /* ── こすくまくん (hidden mascot): drifts in from off-screen toward the
+       fire, flaps, and bursts into embers on contact. Pure decoration. ── */
+    const kosuFrames: HTMLImageElement[] = [];
+    [
+      "/kosukuma_bae_1.png",
+      "/kosukuma_bae_2.png",
+      "/kosukuma_bae_3.png",
+      "/kosukuma_bae_4.png",
+    ].forEach((src) => {
+      const img = new Image();
+      img.src = src;
+      kosuFrames.push(img);
+    });
+    const FIRE_PAL = ["#fff7c2", "#ffb454", "#ff8a3d", "#ff5874"];
+    let kosu: { x: number; y: number; vx: number; vy: number; wph: number } | null =
+      null;
+    let nextKosuT = 10 + Math.random() * 15; // first possible appearance
+    const kosuParts: {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      decay: number;
+      col: string;
+    }[] = [];
+
+    function spawnKosu() {
+      const edge = Math.floor(Math.random() * 4);
+      const m = 60;
+      let sxp = 0,
+        syp = 0;
+      if (edge === 0) {
+        sxp = Math.random() * W;
+        syp = -m;
+      } else if (edge === 1) {
+        sxp = W + m;
+        syp = Math.random() * H;
+      } else if (edge === 2) {
+        sxp = Math.random() * W;
+        syp = H + m;
+      } else {
+        sxp = -m;
+        syp = Math.random() * H;
+      }
+      const dx = fireSCX - sxp,
+        dy = fireSCY - syp;
+      const dist = Math.hypot(dx, dy) || 1;
+      const speed = dist / (2 + Math.random() * 2); // reach the fire in 2–4s
+      kosu = {
+        x: sxp,
+        y: syp,
+        vx: (dx / dist) * speed,
+        vy: (dy / dist) * speed,
+        wph: Math.random() * 6.28,
+      };
+    }
+
+    function kosukumaStep(dt: number) {
+      // Burst particles
+      for (let i = kosuParts.length - 1; i >= 0; i--) {
+        const p = kosuParts[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 220 * dt;
+        p.life -= p.decay;
+        if (p.life <= 0) {
+          kosuParts.splice(i, 1);
+          continue;
+        }
+        otx.globalAlpha = Math.max(0, p.life);
+        otx.fillStyle = p.col;
+        otx.fillRect(Math.round(p.x), Math.round(p.y), 4, 4);
+      }
+      otx.globalAlpha = 1;
+
+      // Spawn: rare, one at a time, never while the player is drawing
+      if (
+        !kosu &&
+        T >= nextKosuT &&
+        !isDown &&
+        !dead &&
+        fireSCX > 0 &&
+        kosuFrames.every((im) => im.complete && im.naturalWidth > 0)
+      ) {
+        spawnKosu();
+        nextKosuT = T + 15 + Math.random() * 25;
+      }
+      if (!kosu) return;
+
+      kosu.x += kosu.vx * dt;
+      kosu.y += kosu.vy * dt;
+
+      // Touched the fire → burst
+      const d = Math.hypot(kosu.x - fireSCX, kosu.y - fireSCY);
+      if (d < fireBaseR * 1.2 * PX) {
+        const n = 15 + Math.floor(Math.random() * 6);
+        for (let i = 0; i < n; i++) {
+          const a = Math.random() * 6.28,
+            sp = 40 + Math.random() * 90;
+          kosuParts.push({
+            x: kosu.x,
+            y: kosu.y,
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp - 60,
+            life: 1,
+            decay: 0.012 + Math.random() * 0.02,
+            col: FIRE_PAL[Math.floor(Math.random() * FIRE_PAL.length)],
+          });
+        }
+        kosu = null;
+        return;
+      }
+      // Safety: drifted far off screen
+      if (kosu.x < -200 || kosu.x > W + 200 || kosu.y < -200 || kosu.y > H + 200) {
+        kosu = null;
+        return;
+      }
+
+      // Draw (4-frame flap @ 80ms, faces travel direction, soft wobble)
+      const img = kosuFrames[Math.floor((T * 1000) / 80) % 4];
+      if (!img || !img.complete || !img.naturalWidth) return;
+      const h = 52,
+        w = (img.naturalWidth / img.naturalHeight) * h;
+      const perp = Math.atan2(kosu.vy, kosu.vx) + Math.PI / 2;
+      const wob = Math.sin(T * 4 + kosu.wph) * 9;
+      const dxp = kosu.x + Math.cos(perp) * wob;
+      const dyp = kosu.y + Math.sin(perp) * wob + Math.sin(T * 6 + kosu.wph) * 3;
+      otx.save();
+      otx.translate(dxp, dyp);
+      if (kosu.vx < 0) otx.scale(-1, 1);
+      otx.drawImage(img, -w / 2, -h / 2, w, h);
+      otx.restore();
+    }
+
     /* ── Helpers ── */
     function getIdealR() {
       return fireBaseR * 3.5 * PX;
@@ -1502,6 +1637,7 @@ export default function MothFlameGame() {
       checkDeath(fd);
       if (dead) drawGameOver();
       drawEasterEgg(dt);
+      kosukumaStep(dt);
       drawHUD();
       drawCRT();
 
