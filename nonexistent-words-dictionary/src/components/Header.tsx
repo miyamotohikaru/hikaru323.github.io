@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import RandomWordButton from "@/components/RandomWordButton";
 import { useI18n, SUPPORTED_LANGS } from "@/lib/i18n";
 import { useState, useCallback, useEffect } from "react";
 
@@ -48,7 +47,6 @@ export default function Header() {
           <Link href="/ranking" className="header-link">
             {t("nav.ranking")}
           </Link>
-          <RandomWordButton />
           <span className="header-divider" />
           <div className="lang-switcher">
             <button
@@ -117,9 +115,6 @@ export default function Header() {
           <Link href="/ranking" className="mobile-menu-link" onClick={closeMenu}>
             {t("nav.ranking")}
           </Link>
-          <div className="mobile-menu-link" style={{ cursor: "default" }}>
-            <RandomWordButton />
-          </div>
           <div className="mobile-menu-lang">
             {SUPPORTED_LANGS.map((l) => (
               <button
