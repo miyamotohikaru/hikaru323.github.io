@@ -351,8 +351,17 @@ export default function MothFlameGame() {
       kosuFrames.push(img);
     });
     const FIRE_PAL = ["#fff7c2", "#ffb454", "#ff8a3d", "#ff5874"];
-    let kosu: { x: number; y: number; vx: number; vy: number; wph: number } | null =
-      null;
+    let kosu:
+      | {
+          x: number;
+          y: number;
+          vx: number;
+          vy: number;
+          wph: number;
+          wps: { x: number; y: number }[];
+          wi: number;
+        }
+      | null = null;
     let nextKosuT = 10 + Math.random() * 15; // first possible appearance
     const kosuParts: {
       x: number;
@@ -382,16 +391,29 @@ export default function MothFlameGame() {
         sxp = -m;
         syp = Math.random() * H;
       }
-      const dx = fireSCX - sxp,
-        dy = fireSCY - syp;
+      // Wander to a few random spots (kept away from the fire) before heading in
+      const wps: { x: number; y: number }[] = [];
+      const want = 3 + Math.floor(Math.random() * 3); // 3–5 stops
+      let tries = 0;
+      while (wps.length < want && tries < 40) {
+        tries++;
+        const px = W * (0.12 + 0.76 * Math.random());
+        const py = H * (0.12 + 0.76 * Math.random());
+        if (Math.hypot(px - fireSCX, py - fireSCY) < getIdealR() * 1.7) continue;
+        wps.push({ x: px, y: py });
+      }
+      const dx = (wps[0]?.x ?? fireSCX) - sxp,
+        dy = (wps[0]?.y ?? fireSCY) - syp;
       const dist = Math.hypot(dx, dy) || 1;
-      const speed = dist / (2 + Math.random() * 2); // reach the fire in 2–4s
+      const cruise = 95;
       kosu = {
         x: sxp,
         y: syp,
-        vx: (dx / dist) * speed,
-        vy: (dy / dist) * speed,
+        vx: (dx / dist) * cruise,
+        vy: (dy / dist) * cruise,
         wph: Math.random() * 6.28,
+        wps,
+        wi: 0,
       };
     }
 
@@ -427,12 +449,29 @@ export default function MothFlameGame() {
       }
       if (!kosu) return;
 
+      // Steer toward the current waypoint (then, finally, the fire). The
+      // velocity eases toward the desired heading, so turns curve gently and
+      // the whole path reads as floaty wandering.
+      const heading = kosu.wi < kosu.wps.length;
+      const tx = heading ? kosu.wps[kosu.wi].x : fireSCX;
+      const ty = heading ? kosu.wps[kosu.wi].y : fireSCY;
+      const tdx = tx - kosu.x,
+        tdy = ty - kosu.y;
+      const tdist = Math.hypot(tdx, tdy) || 1;
+      const cruise = 95;
+      const desvx = (tdx / tdist) * cruise;
+      const desvy = (tdy / tdist) * cruise;
+      const ease = Math.min(1, 1.4 * dt); // lower = floatier
+      kosu.vx += (desvx - kosu.vx) * ease;
+      kosu.vy += (desvy - kosu.vy) * ease;
       kosu.x += kosu.vx * dt;
       kosu.y += kosu.vy * dt;
+      // reached this waypoint → drift to the next
+      if (heading && tdist < 55) kosu.wi++;
 
-      // Touched the fire → burst
+      // Touched the fire → burst (only once it's actually heading in)
       const d = Math.hypot(kosu.x - fireSCX, kosu.y - fireSCY);
-      if (d < fireBaseR * 1.2 * PX) {
+      if (!heading && d < fireBaseR * 1.2 * PX) {
         const n = 15 + Math.floor(Math.random() * 6);
         for (let i = 0; i < n; i++) {
           const a = Math.random() * 6.28,
@@ -462,9 +501,10 @@ export default function MothFlameGame() {
       const h = 52,
         w = (img.naturalWidth / img.naturalHeight) * h;
       const perp = Math.atan2(kosu.vy, kosu.vx) + Math.PI / 2;
-      const wob = Math.sin(T * 4 + kosu.wph) * 9;
+      const wob =
+        Math.sin(T * 3.3 + kosu.wph) * 13 + Math.sin(T * 1.7 + kosu.wph * 2) * 7;
       const dxp = kosu.x + Math.cos(perp) * wob;
-      const dyp = kosu.y + Math.sin(perp) * wob + Math.sin(T * 6 + kosu.wph) * 3;
+      const dyp = kosu.y + Math.sin(perp) * wob + Math.sin(T * 5 + kosu.wph) * 5;
       otx.save();
       otx.translate(dxp, dyp);
       if (kosu.vx < 0) otx.scale(-1, 1);
