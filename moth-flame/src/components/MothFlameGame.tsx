@@ -1529,8 +1529,22 @@ export default function MothFlameGame() {
     const x = c.getContext("2d")!;
     let raf = 0;
     let t = 0;
+    // A swirling "ball of circles" — many overlapping hand-drawn loops.
+    const PAL = ["#8cfb7d", "#b6f25a", "#ffd23f", "#ffa63d", "#ff7a59", "#ff5874", "#9efbb6"];
+    const SCALE = isMobile ? 1.42 : 1.0; // mobile loops ~2 sizes larger
+    const RINGS = Array.from({ length: 16 }, (_, i) => ({
+      rf: 0.16 + Math.random() * 0.2,
+      aspect: 0.74 + Math.random() * 0.26,
+      rot0: Math.random() * Math.PI * 2,
+      rotSpd: (Math.random() - 0.5) * 0.12,
+      col: PAL[i % PAL.length],
+      lw: 1.5 + Math.random() * 1.8,
+      alpha: 0.22 + Math.random() * 0.5,
+      wob: 0.02 + Math.random() * 0.06,
+      harm: 2 + Math.floor(Math.random() * 3),
+      wph: Math.random() * 6.28,
+    }));
     const trail: { x: number; y: number; a: number }[] = [];
-    const RC = ["#ff5874", "#ffb454", "#fff7c2", "#9efbb6", "#7ecadf", "#7d3ac1"];
     function resize() {
       c!.width = window.innerWidth;
       c!.height = window.innerHeight;
@@ -1546,42 +1560,70 @@ export default function MothFlameGame() {
       x.fillRect(0, 0, W, H);
 
       const cx = W / 2,
-        cy = H / 2,
-        R = Math.min(W, H) * 0.26;
+        cy = H / 2;
+      const base = Math.min(W, H) * SCALE;
+
+      // Ball of overlapping, slowly swirling circles
+      x.lineCap = "round";
+      x.lineJoin = "round";
+      const STEPS = 90;
+      for (const r of RINGS) {
+        const rot = r.rot0 + t * r.rotSpd;
+        const cos = Math.cos(rot),
+          sin = Math.sin(rot);
+        x.globalAlpha = r.alpha;
+        x.strokeStyle = r.col;
+        x.lineWidth = r.lw;
+        x.beginPath();
+        for (let k = 0; k <= STEPS; k++) {
+          const th = (k / STEPS) * Math.PI * 2;
+          const rr = r.rf * base * (1 + r.wob * Math.sin(th * r.harm + r.wph + t * 0.4));
+          const px = Math.cos(th) * rr;
+          const py = Math.sin(th) * rr * r.aspect;
+          const X = cx + px * cos - py * sin;
+          const Y = cy + px * sin + py * cos;
+          if (k === 0) x.moveTo(X, Y);
+          else x.lineTo(X, Y);
+        }
+        x.closePath();
+        x.stroke();
+      }
+      x.globalAlpha = 1;
 
       // Flame glow at the centre
-      const flick = 0.16 + Math.sin(t * 7) * 0.03 + Math.sin(t * 13) * 0.02;
-      const g = x.createRadialGradient(cx, cy, 0, cx, cy, R * 0.7);
+      const flick = 0.18 + Math.sin(t * 7) * 0.03 + Math.sin(t * 13) * 0.02;
+      const R = base * 0.26;
+      const g = x.createRadialGradient(cx, cy, 0, cx, cy, R * 0.8);
       g.addColorStop(0, `rgba(255,180,84,${flick})`);
       g.addColorStop(0.5, "rgba(255,120,60,0.06)");
       g.addColorStop(1, "rgba(255,180,84,0)");
       x.fillStyle = g;
       x.fillRect(cx - R, cy - R, 2 * R, 2 * R);
 
-      // Moth position on a perfect circular orbit (equal X/Y radius, no wobble)
+      // A moth pen tracing the brightest loop, with a short glowing trail
       const ang = t * 1.0;
-      const mxp = cx + Math.cos(ang) * R;
-      const myp = cy + Math.sin(ang) * R;
-
+      const mr = base * 0.27;
+      const mxp = cx + Math.cos(ang) * mr;
+      const myp = cy + Math.sin(ang) * mr * 0.95;
       trail.push({ x: mxp, y: myp, a: 1 });
-      if (trail.length > 150) trail.shift();
+      if (trail.length > 60) trail.shift();
       for (let i = 0; i < trail.length; i++) {
         const p = trail[i];
-        p.a *= 0.985;
-        if (p.a < 0.04) continue;
-        x.globalAlpha = p.a * 0.6;
-        x.fillStyle = RC[(i + Math.floor(t * 12)) % RC.length];
-        x.fillRect(Math.floor(p.x / 4) * 4, Math.floor(p.y / 4) * 4, 4, 4);
+        p.a *= 0.93;
+        if (p.a < 0.05) continue;
+        x.globalAlpha = p.a * 0.8;
+        x.fillStyle = "#9efbb6";
+        x.fillRect(Math.round(p.x), Math.round(p.y), 3, 3);
       }
       x.globalAlpha = 1;
 
-      // Pixel moth
+      // Pixel moth (pen head)
       const s = 4;
-      const bx = Math.floor(mxp / s) * s,
-        by = Math.floor(myp / s) * s;
+      const bx = Math.round(mxp),
+        by = Math.round(myp);
       const flap = Math.floor(t * 12) % 2;
       const gr = x.createRadialGradient(bx, by, 0, bx, by, 22);
-      gr.addColorStop(0, "rgba(255,247,194,0.25)");
+      gr.addColorStop(0, "rgba(255,247,194,0.3)");
       gr.addColorStop(1, "rgba(255,247,194,0)");
       x.fillStyle = gr;
       x.fillRect(bx - 22, by - 22, 44, 44);
@@ -1668,14 +1710,26 @@ export default function MothFlameGame() {
           <div
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "clamp(16px, 3.5vw, 28px)",
+              fontSize: "clamp(11px, 2.2vw, 16px)",
               color: "#ffb454",
-              marginBottom: 28,
+              marginBottom: 14,
               lineHeight: 1.6,
               textShadow: "2px 2px 0 #0e0d1a",
             }}
           >
             MOTH &amp; FLAME
+          </div>
+          <div
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "clamp(20px, 5vw, 44px)",
+              color: "#fff7c2",
+              marginBottom: 36,
+              lineHeight: 1.4,
+              textShadow: "3px 3px 0 #0e0d1a",
+            }}
+          >
+            DRAW A CIRCLE
           </div>
           <button
             onClick={handleStart}
