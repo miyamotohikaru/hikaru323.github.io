@@ -511,7 +511,7 @@ export default function MothFlameGame() {
       const centerDist = Math.sqrt(
         (cx - fireSCX) ** 2 + (cy - fireSCY) ** 2
       );
-      const centering = Math.max(0, 1 - (centerDist / idealR) * 1.5);
+      const centering = Math.max(0, 1 - centerDist / idealR);
 
       /* ⑤ Combine and curve */
       const raw = (distScore * 0.4 + shapeScore * 0.6) * centering * smoothness;
