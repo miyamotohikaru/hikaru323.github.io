@@ -269,6 +269,7 @@ export default function MothFlameGame() {
       bestScore = parseInt(localStorage.getItem("mf_best") || "0", 10) || 0;
     } catch {}
     let firstCircleDone = bestScore > 0;
+    let reviveAt = -999; // time of last respawn (for brief invulnerability)
     let fireSCX = 0,
       fireSCY = 0,
       fireBaseR = 0;
@@ -372,26 +373,34 @@ export default function MothFlameGame() {
        once (not multiple times). Threshold ~1.0rad (≈57°) catches slightly
        rounded, hand-drawn corners. 3–5 corners → square-ish. */
     function detectSquare(pts: Pt[]): boolean {
-      if (pts.length < 15) return false;
-      const step = Math.max(1, Math.floor(pts.length / 40));
+      if (pts.length < 24) return false;
+      const step = Math.max(1, Math.floor(pts.length / 48));
       let corners = 0;
       let inCorner = false;
+      let totalTurn = 0; // signed cumulative turning
+      let edgeTurn = 0; // turning that happens away from corners
       for (let i = step * 2; i < pts.length; i += step) {
         const ax = pts[i - step].x - pts[i - step * 2].x;
         const ay = pts[i - step].y - pts[i - step * 2].y;
         const bx = pts[i].x - pts[i - step].x;
         const by = pts[i].y - pts[i - step].y;
-        const angle = Math.abs(Math.atan2(ax * by - ay * bx, ax * bx + ay * by));
-        if (angle > 1.0) {
+        const turn = Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
+        totalTurn += turn;
+        if (Math.abs(turn) > 1.0) {
           if (!inCorner) {
             corners++;
             inCorner = true;
           }
         } else {
           inCorner = false;
+          edgeTurn += Math.abs(turn);
         }
       }
-      return corners >= 3 && corners <= 5;
+      // A real square: ~4 sharp corners, drawn as ONE closed loop
+      // (total turning ≈ 2π) with fairly straight edges between corners.
+      const oneLoop = Math.abs(totalTurn) > 4.5 && Math.abs(totalTurn) < 8.2;
+      const straightEdges = edgeTurn < 2.5;
+      return corners >= 4 && corners <= 5 && oneLoop && straightEdges;
     }
 
     function triggerStarEasterEgg() {
@@ -489,12 +498,40 @@ export default function MothFlameGame() {
         totalAng += da;
       }
       const sweep = Math.min(1, Math.abs(totalAng) / 6.28);
-      const shapeScore = roundness * 0.5 + closeFit * 0.25 + sweep * 0.25;
 
-      const raw = (distanceScore * 0.5 + shapeScore * 0.5) * centering;
+      // Smoothness: a clean circle turns gently and consistently in one
+      // direction; a scribble has big, erratic, sign-flipping turns. This
+      // strongly penalizes messy input so only tidy circles score high.
+      const st = Math.max(1, Math.floor(pts.length / 60));
+      let sqTurn = 0,
+        flips = 0,
+        prevDa = 0,
+        cnt = 0;
+      for (let i = st * 2; i < pts.length; i += st) {
+        const ax = pts[i - st].x - pts[i - st * 2].x;
+        const ay = pts[i - st].y - pts[i - st * 2].y;
+        const bx = pts[i].x - pts[i - st].x;
+        const by = pts[i].y - pts[i - st].y;
+        if ((ax === 0 && ay === 0) || (bx === 0 && by === 0)) continue;
+        const da = Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
+        sqTurn += da * da;
+        if (cnt > 0 && da * prevDa < 0 && Math.abs(da) > 0.25) flips++;
+        prevDa = da;
+        cnt++;
+      }
+      const avgSq = cnt > 0 ? sqTurn / cnt : 1;
+      const curveSmooth = Math.max(0, Math.min(1, 1 - avgSq * 4));
+      const flipPenalty = cnt > 0 ? Math.max(0, 1 - (flips / cnt) * 3) : 0;
+      const smoothness = curveSmooth * 0.55 + flipPenalty * 0.45;
+
+      const shapeScore = roundness * 0.55 + closeFit * 0.15 + sweep * 0.3;
+      const raw =
+        (distanceScore * 0.4 + shapeScore * 0.6) *
+        centering *
+        (0.35 + 0.65 * smoothness);
       liveDistInfo = {
         accuracy: Math.round(distAccuracy * 100),
-        shape: Math.round(shapeScore * 100),
+        shape: Math.round(Math.min(1, shapeScore * smoothness) * 100),
       };
       return Math.min(100, Math.round(100 * Math.pow(Math.max(0, raw), 1.3)));
     }
@@ -558,7 +595,6 @@ export default function MothFlameGame() {
       lastClosed = null;
       setResult(null);
       setCopied(false);
-      if (dead && T - deadAt > 2.2) dead = false;
     }
     function onPointerUp() {
       isDown = false;
@@ -1161,9 +1197,10 @@ export default function MothFlameGame() {
     }
 
     function checkDeath(fd: { cx: number; cy: number; baseR: number; SY: number }) {
-      // Only the moth in flight (while tracing) can burn or get lost,
-      // so moving the cursor to UI buttons never kills the player.
-      if (dead || !mouseIn || !isDown) return;
+      // Only the moth in flight (while tracing) can burn or get lost, so
+      // moving the cursor to UI buttons never kills the player. A brief
+      // post-respawn grace prevents the instant re-death "spiral".
+      if (dead || !mouseIn || !isDown || T - reviveAt < 0.7) return;
       const dx = mx - fireSCX,
         dy = my - fireSCY;
       const d = Math.sqrt(dx * dx + dy * dy);
@@ -1173,6 +1210,7 @@ export default function MothFlameGame() {
         dead = true;
         deadAt = T;
         deadReason = "BURN";
+        isDown = false; // drop the held press so it can't auto-respawn into death
         trail = [];
         deathMX = mx;
         deathMY = my;
@@ -1197,6 +1235,7 @@ export default function MothFlameGame() {
         dead = true;
         deadAt = T;
         deadReason = "LOST";
+        isDown = false; // drop the held press so it can't auto-respawn into death
         trail = [];
         deathMX = mx;
         deathMY = my;
@@ -1312,6 +1351,8 @@ export default function MothFlameGame() {
 
       if (age > 1.2 && isDown) {
         dead = false;
+        reviveAt = T; // brief invulnerability so you don't instantly re-die
+        trail = [];
         deathBits.length = 0;
         tongues = genTongues(); // new fire shape on every respawn
         oc.style.transform = "";
