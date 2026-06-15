@@ -424,7 +424,12 @@ export default function MothFlameGame() {
     }
 
     /* ── Scoring ── */
-    function calcScore(pts: Pt[]) {
+    // live=true → a "quality so far" meter for the on-screen number: it does
+    // not punish an unfinished stroke (sweep / closeFit / off-centre centroid),
+    // so a good arc reads high from the start. live=false is the full final
+    // score (completeness + centring included). They converge on a finished,
+    // well-centred circle.
+    function calcScore(pts: Pt[], live = false) {
       liveDistInfo = { accuracy: 0, shape: 0 };
       if (pts.length < 8) return 0;
       const idealR = getIdealR();
@@ -479,7 +484,8 @@ export default function MothFlameGame() {
       const closeDist = Math.sqrt((p0.x - pN.x) ** 2 + (p0.y - pN.y) ** 2);
       const closeFit = Math.max(0, 1 - closeDist / (ownR * 1.5));
 
-      const shapeScore = roundness * 0.55 + sweep * 0.3 + closeFit * 0.15;
+      const shapeScore =
+        roundness * 0.55 + (live ? 1 : sweep) * 0.3 + (live ? 1 : closeFit) * 0.15;
 
       /* ③ Smoothness — punish sharp corners and direction reversals (×0.2–1.0).
          Turning is measured over ~1/20-of-the-path windows, so a square's
@@ -511,7 +517,7 @@ export default function MothFlameGame() {
       const centerDist = Math.sqrt(
         (cx - fireSCX) ** 2 + (cy - fireSCY) ** 2
       );
-      const centering = Math.max(0, 1 - centerDist / idealR);
+      const centering = live ? 1 : Math.max(0, 1 - centerDist / idealR);
 
       /* ⑤ Combine and curve */
       const raw = (distScore * 0.4 + shapeScore * 0.6) * centering * smoothness;
@@ -1011,9 +1017,9 @@ export default function MothFlameGame() {
       if (trail.length < 2) return;
 
       const idealR = getIdealR();
-      // Live score uses the exact same formula as the final score, so the
-      // number at the top converges to — and matches — the final result.
-      liveScoreVal = calcScore(trail);
+      // Live "quality" score: reads high from the start for a good arc and
+      // converges to the final score as the circle is completed.
+      liveScoreVal = calcScore(trail, true);
 
       const sc = liveScoreVal;
       otx.save();
