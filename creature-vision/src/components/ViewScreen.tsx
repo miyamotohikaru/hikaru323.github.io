@@ -501,7 +501,8 @@ export default function ViewScreen({
     async (sns: "x" | "line" | "facebook") => {
       const shareText = SHARE_TEXTS[creature.id] || "";
       const fullText = `${shareText}\n\n👁 生き物の目で世界を見よう`;
-      const url = "https://creature-vision.vercel.app";
+      // 共有するURL。シェアページ作成に失敗したら従来どおりトップURLにフォールバック
+      let url = "https://creature-vision.vercel.app";
 
       const creatureCanvas = canvasRef.current;
       const humanCanvas = humanCanvasRef.current;
@@ -513,6 +514,22 @@ export default function ViewScreen({
         a.download = `creature-vision-${creature.id}.png`;
         a.click();
         URL.revokeObjectURL(dlUrl);
+
+        // 比較画像をアップロードしてOGP付きシェアページURLを生成し、それを共有する
+        try {
+          const fd = new FormData();
+          fd.append("image", blob, `${creature.id}.png`);
+          fd.append("creatureId", creature.id);
+          const res = await fetch("/api/share", { method: "POST", body: fd });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.shareUrl) url = data.shareUrl;
+          } else {
+            console.error("[share] create failed:", res.status);
+          }
+        } catch (e) {
+          console.error("[share] create error:", e);
+        }
       }
 
       let shareUrl = "";
