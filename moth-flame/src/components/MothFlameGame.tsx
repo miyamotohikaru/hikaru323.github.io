@@ -430,110 +430,98 @@ export default function MothFlameGame() {
       const idealR = getIdealR();
       if (idealR < 30) return 0;
 
-      let sx2 = 0,
-        sy2 = 0;
-      pts.forEach((p) => {
-        sx2 += p.x;
-        sy2 += p.y;
-      });
-      const centX = sx2 / pts.length,
-        centY = sy2 / pts.length;
-      const centDist = Math.sqrt(
-        (centX - fireSCX) ** 2 + (centY - fireSCY) ** 2
-      );
-      // Soft centering factor: full credit when the trail is centred on the
-      // fire (within 0.6·idealR), tapering smoothly beyond. A partial arc
-      // early in the stroke now scores instead of showing a hard 0%, and a
-      // properly centred finished circle is unaffected (factor ≈ 1).
-      const centering = Math.max(
-        0,
-        Math.min(1, 1 - Math.max(0, centDist - idealR * 0.6) / (idealR * 0.8))
-      );
+      // Centroid of the drawn shape
+      let sx = 0,
+        sy = 0;
+      for (const p of pts) {
+        sx += p.x;
+        sy += p.y;
+      }
+      const cx = sx / pts.length,
+        cy = sy / pts.length;
 
+      /* ① Distance from the fire (weight 40%) */
       const fireDists = pts.map((p) =>
         Math.sqrt((p.x - fireSCX) ** 2 + (p.y - fireSCY) ** 2)
       );
-      const avgFireDist =
-        fireDists.reduce((a, b) => a + b, 0) / fireDists.length;
-      const distOffset = Math.abs(avgFireDist - idealR) / idealR;
-      const distAccuracy = Math.max(0, 1 - distOffset * 2);
-      const distDev = Math.sqrt(
-        fireDists.reduce((a, d) => a + (d - avgFireDist) ** 2, 0) /
-          fireDists.length
+      const avgD = fireDists.reduce((a, b) => a + b, 0) / fireDists.length;
+      const stdD = Math.sqrt(
+        fireDists.reduce((a, d) => a + (d - avgD) ** 2, 0) / fireDists.length
       );
-      const distConsistency = Math.max(0, 1 - (distDev / idealR) * 3);
-      const distanceScore = distAccuracy * 0.65 + distConsistency * 0.35;
+      const distAccuracy = Math.max(0, 1 - (Math.abs(avgD - idealR) / idealR) * 2);
+      const distConsistency = Math.max(0, 1 - (stdD / idealR) * 3);
+      const distScore = distAccuracy * 0.65 + distConsistency * 0.35;
 
-      let sx = 0,
-        sy = 0;
-      pts.forEach((p) => {
-        sx += p.x;
-        sy += p.y;
-      });
-      const cxx = sx / pts.length,
-        cyy = sy / pts.length;
+      /* ② Shape / circle-ness (weight 60%) */
       const ownDists = pts.map((p) =>
-        Math.sqrt((p.x - cxx) ** 2 + (p.y - cyy) ** 2)
+        Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2)
       );
       const ownR = ownDists.reduce((a, b) => a + b, 0) / ownDists.length;
       if (ownR < 15) return 0;
-
       const ownDev = Math.sqrt(
         ownDists.reduce((a, d) => a + (d - ownR) ** 2, 0) / ownDists.length
       );
       const roundness = Math.max(0, 1 - ownDev / ownR);
+
+      let totalAng = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const a1 = Math.atan2(pts[i - 1].y - cy, pts[i - 1].x - cx);
+        const a2 = Math.atan2(pts[i].y - cy, pts[i].x - cx);
+        let da = a2 - a1;
+        if (da > Math.PI) da -= 2 * Math.PI;
+        if (da < -Math.PI) da += 2 * Math.PI;
+        totalAng += da;
+      }
+      const sweep = Math.min(1, Math.abs(totalAng) / (2 * Math.PI));
 
       const p0 = pts[0],
         pN = pts[pts.length - 1];
       const closeDist = Math.sqrt((p0.x - pN.x) ** 2 + (p0.y - pN.y) ** 2);
       const closeFit = Math.max(0, 1 - closeDist / (ownR * 1.5));
 
-      let totalAng = 0;
-      for (let i = 1; i < pts.length; i++) {
-        const a1 = Math.atan2(pts[i - 1].y - cyy, pts[i - 1].x - cxx);
-        const a2 = Math.atan2(pts[i].y - cyy, pts[i].x - cxx);
-        let da = a2 - a1;
-        if (da > Math.PI) da -= 6.28;
-        if (da < -Math.PI) da += 6.28;
-        totalAng += da;
-      }
-      const sweep = Math.min(1, Math.abs(totalAng) / 6.28);
+      const shapeScore = roundness * 0.55 + sweep * 0.3 + closeFit * 0.15;
 
-      // Smoothness: a clean circle turns gently and consistently in one
-      // direction; a scribble has big, erratic, sign-flipping turns. This
-      // strongly penalizes messy input so only tidy circles score high.
-      const st = Math.max(1, Math.floor(pts.length / 60));
-      let sqTurn = 0,
-        flips = 0,
-        prevDa = 0,
-        cnt = 0;
-      for (let i = st * 2; i < pts.length; i += st) {
-        const ax = pts[i - st].x - pts[i - st * 2].x;
-        const ay = pts[i - st].y - pts[i - st * 2].y;
-        const bx = pts[i].x - pts[i - st].x;
-        const by = pts[i].y - pts[i - st].y;
+      /* ③ Smoothness — punish sharp corners and direction reversals (×0.2–1.0).
+         Turning is measured over ~1/20-of-the-path windows, so a square's
+         corners concentrate into big turns while a circle stays gentle.
+         cornerPenalty SUMS the excess turn, so 4 corners stack up and crush
+         the score (a square lands ~0.4, a clean circle stays 1.0). */
+      const stp = Math.max(1, Math.floor(pts.length / 20));
+      let cornerPenalty = 0;
+      let reversalCount = 0;
+      let prevDa = 0;
+      let hasPrev = false;
+      for (let i = stp * 2; i < pts.length; i += stp) {
+        const ax = pts[i - stp].x - pts[i - stp * 2].x;
+        const ay = pts[i - stp].y - pts[i - stp * 2].y;
+        const bx = pts[i].x - pts[i - stp].x;
+        const by = pts[i].y - pts[i - stp].y;
         if ((ax === 0 && ay === 0) || (bx === 0 && by === 0)) continue;
         const da = Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
-        sqTurn += da * da;
-        if (cnt > 0 && da * prevDa < 0 && Math.abs(da) > 0.25) flips++;
+        cornerPenalty += Math.max(0, Math.abs(da) - 0.6); // 0.6rad ≈ 34° (hand-wobble tolerant)
+        if (hasPrev && da * prevDa < 0 && Math.abs(da) > 0.3) reversalCount++;
         prevDa = da;
-        cnt++;
+        hasPrev = true;
       }
-      const avgSq = cnt > 0 ? sqTurn / cnt : 1;
-      const curveSmooth = Math.max(0, Math.min(1, 1 - avgSq * 4));
-      const flipPenalty = cnt > 0 ? Math.max(0, 1 - (flips / cnt) * 3) : 0;
-      const smoothness = curveSmooth * 0.55 + flipPenalty * 0.45;
+      const cornerScore = Math.max(0, 1 - cornerPenalty * 0.5);
+      const reversalScore = Math.max(0, 1 - reversalCount * 0.25);
+      const smoothness = Math.max(0.2, cornerScore * 0.6 + reversalScore * 0.4);
 
-      const shapeScore = roundness * 0.55 + closeFit * 0.15 + sweep * 0.3;
-      const raw =
-        (distanceScore * 0.4 + shapeScore * 0.6) *
-        centering *
-        (0.35 + 0.65 * smoothness);
+      /* ④ Centering — the shape must surround the fire (×0–1.0) */
+      const centerDist = Math.sqrt(
+        (cx - fireSCX) ** 2 + (cy - fireSCY) ** 2
+      );
+      const centering = Math.max(0, 1 - (centerDist / idealR) * 1.5);
+
+      /* ⑤ Combine and curve */
+      const raw = (distScore * 0.4 + shapeScore * 0.6) * centering * smoothness;
+      const score = Math.round(100 * Math.pow(Math.max(0, raw), 1.3));
+
       liveDistInfo = {
         accuracy: Math.round(distAccuracy * 100),
         shape: Math.round(Math.min(1, shapeScore * smoothness) * 100),
       };
-      return Math.min(100, Math.round(100 * Math.pow(Math.max(0, raw), 1.3)));
+      return Math.max(1, Math.min(100, score));
     }
 
     function endTrail() {
