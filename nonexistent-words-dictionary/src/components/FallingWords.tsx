@@ -109,7 +109,9 @@ export default function FallingWords() {
       const delay = rand(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX);
       wordTimer = setTimeout(() => {
         const words = wordsRef.current;
-        if (words.length > 0 && particlesRef.current.length < MAX_PARTICLES) {
+        // 携帯(幅<768px)は画面が狭く文字が密集して多く見えるため同時表示数を減らす
+        const maxParticles = window.innerWidth < 768 ? 7 : MAX_PARTICLES;
+        if (words.length > 0 && particlesRef.current.length < maxParticles) {
           const word = words[Math.floor(Math.random() * words.length)];
           const fontSize =
             FONT_SIZES[Math.floor(Math.random() * FONT_SIZES.length)];
