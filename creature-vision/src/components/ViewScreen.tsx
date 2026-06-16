@@ -504,18 +504,18 @@ export default function ViewScreen({
       // 共有するURL。シェアページ作成に失敗したら従来どおりトップURLにフォールバック
       let url = "https://creature-vision.vercel.app";
 
+      // クリック直後にタブを開いておく（アップロード完了後に window.open すると
+      // ユーザー操作から離れてポップアップブロックされるため。特にSafari対策）
+      const win = window.open("about:blank", "_blank");
+      if (win) win.opener = null;
+
       const creatureCanvas = canvasRef.current;
       const humanCanvas = humanCanvasRef.current;
       if (creatureCanvas && humanCanvas) {
         const blob = await generateShareImage(creatureCanvas, humanCanvas, creature);
-        const dlUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = dlUrl;
-        a.download = `creature-vision-${creature.id}.png`;
-        a.click();
-        URL.revokeObjectURL(dlUrl);
 
         // 比較画像をアップロードしてOGP付きシェアページURLを生成し、それを共有する
+        // （ダウンロードはせず、生成したリンクを投稿してもらう形にする）
         try {
           const fd = new FormData();
           fd.append("image", blob, `${creature.id}.png`);
@@ -544,7 +544,12 @@ export default function ViewScreen({
           shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(fullText)}`;
           break;
       }
-      window.open(shareUrl, "_blank", "noopener,noreferrer");
+      if (win) {
+        win.location.href = shareUrl;
+      } else {
+        // タブを開けなかった場合のフォールバック
+        window.open(shareUrl, "_blank", "noopener,noreferrer");
+      }
       setShowShareMenu(false);
     },
     [creature]
