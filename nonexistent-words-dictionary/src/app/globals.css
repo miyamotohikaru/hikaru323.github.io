@@ -4710,3 +4710,23 @@ a:hover { color: var(--text-primary); }
     padding-top: 1rem;
   }
 }
+
+/* ===== ランキング本棚: 携帯で横5列に固定 =====
+   JSXは5冊ずつ行にしているが、本が広く折り返していたため、
+   携帯では折り返しなし・等幅(1/5)で確実に5列に並べる。
+   末尾で再宣言し、2重定義(flex-wrap:wrap/固定幅)に後勝ちさせる。 */
+@media (max-width: 640px) {
+  .bookshelf-books {
+    flex-wrap: nowrap;
+    gap: 3px;
+    padding: 0 0.5rem;
+    justify-content: center;
+  }
+  .book-spine {
+    width: calc((100% - 12px) / 5);
+    min-width: 0;
+    flex: none;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+}
