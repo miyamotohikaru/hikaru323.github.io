@@ -58,24 +58,24 @@ A user will submit a coined word (possibly with a meaning explanation). Your job
    - When in doubt, rule that it EXISTS (strict policy)
 
 2. If it exists, explain its meaning, origin, and etymology in detail
-   - In the "reason" field, write 50-150 words covering the dictionary meaning,
+   - In the "reason" field, write 30-50 words covering the dictionary meaning,
      etymology, and how it's used
    - Do NOT just say "this word exists"
 
 3. If it does NOT exist, generate a dictionary entry
    - If meaning is provided, respect it while polishing for dictionary style
    - If no meaning is provided, creatively invent a definition based on the word's sound and feel
-   - Definition: 50-150 words, covering the word's nuance and context of use
+   - Definition: 30-50 words, covering the word's nuance and context of use
    - Dry, authoritative dictionary tone but detailed
    - Example: a natural sentence using the word
 
 Output ONLY the following JSON. No other text:
 {
   "exists": boolean,
-  "reason": "If exists: meaning/origin/etymology in 50-150 words. If not: empty string",
+  "reason": "If exists: meaning/origin/etymology in 30-50 words. If not: empty string",
   "reading": "pronunciation guide (IPA or phonetic)",
   "partOfSpeech": "noun|verb|adjective|adverb|interjection",
-  "definition": "Definition (50-150 words)",
+  "definition": "Definition (30-50 words)",
   "example": "Example sentence",
   "formatted": "word /pronunciation/ (part of speech) — definition. Example: \\"example sentence\\""
 }`;
@@ -93,7 +93,7 @@ Explain the meaning, origin, and etymology of the word the user sends.
 
 Output ONLY the following JSON. No other text:
 {
-  "reason": "Meaning, origin, and etymology in 50-150 words"
+  "reason": "Meaning, origin, and etymology in 30-50 words"
 }`;
 
 export async function POST(request: NextRequest) {
@@ -121,8 +121,9 @@ export async function POST(request: NextRequest) {
     if (word.length > 20) {
       return NextResponse.json({ error: language === "en" ? "Word must be 20 characters or less." : "言葉は20文字以内で入力してください。" }, { status: 400 });
     }
-    if (meaning && meaning.length > 200) {
-      return NextResponse.json({ error: language === "en" ? "Meaning must be 200 characters or less." : "意味は200文字以内で入力してください。" }, { status: 400 });
+    const meaningLimit = language === "en" ? 400 : 200;
+    if (meaning && meaning.length > meaningLimit) {
+      return NextResponse.json({ error: language === "en" ? `Meaning must be ${meaningLimit} characters or less.` : "意味は200文字以内で入力してください。" }, { status: 400 });
     }
     if (containsNGWord(word) || (meaning && containsNGWord(meaning))) {
       return NextResponse.json({ error: language === "en" ? "Inappropriate content detected." : "不適切な表現が含まれています。" }, { status: 400 });
