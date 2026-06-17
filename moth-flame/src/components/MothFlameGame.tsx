@@ -705,7 +705,9 @@ export default function MothFlameGame() {
         return;
       }
 
-      const score = calcScore(trail);
+      // Final score uses the same "quality" calc shown live at the top, so the
+      // number on screen while drawing is exactly the number you end up with.
+      const score = calcScore(trail, true);
       if (score < 1) {
         trail = [];
         return;
