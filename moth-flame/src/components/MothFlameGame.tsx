@@ -85,6 +85,7 @@ interface ClosedCircle {
   r: number;
   score: number;
   born: number;
+  reason: string;
 }
 interface RainbowParticle {
   x: number;
@@ -275,6 +276,7 @@ export default function MothFlameGame() {
       fireBaseR = 0;
     let liveScoreVal = 0;
     let liveDistInfo = { accuracy: 0, shape: 0 };
+    let liveReason = ""; // short "why this score" hint (weakest factor)
     let deathMX = 0,
       deathMY = 0;
     const deathBits: DeathBit[] = [];
@@ -362,7 +364,7 @@ export default function MothFlameGame() {
           age: number;
         }
       | null = null;
-    let nextKosuT = 10 + Math.random() * 15; // first possible appearance
+    let nextKosuT = 30 + Math.random() * 25; // first possible appearance
     const kosuParts: {
       x: number;
       y: number;
@@ -433,7 +435,7 @@ export default function MothFlameGame() {
         kosuFrames.every((im) => im.complete && im.naturalWidth > 0)
       ) {
         spawnKosu();
-        nextKosuT = T + 15 + Math.random() * 25;
+        nextKosuT = T + 45 + Math.random() * 30; // ~1 minute between appearances
       }
       if (!kosu) return;
 
@@ -691,6 +693,31 @@ export default function MothFlameGame() {
         accuracy: Math.round(distAccuracy * 100),
         shape: Math.round(Math.min(1, shapeScore * smoothness) * 100),
       };
+
+      // "Why this score": surface the weakest factor as a short hint
+      const factors: { v: number; k: string }[] = [
+        { v: distAccuracy, k: "acc" },
+        { v: distConsistency, k: "steady" },
+        { v: roundness, k: "round" },
+        { v: smoothness, k: "smooth" },
+      ];
+      let worst = factors[0];
+      for (const f of factors) if (f.v < worst.v) worst = f;
+      if (worst.k === "acc") {
+        liveReason =
+          avgD < idealR * 0.92
+            ? "TOO CLOSE TO THE FLAME"
+            : avgD > idealR * 1.08
+            ? "TOO FAR FROM THE FLAME"
+            : "WRONG SIZE";
+      } else if (worst.k === "steady") {
+        liveReason = "KEEP AN EVEN DISTANCE";
+      } else if (worst.k === "round") {
+        liveReason = "NOT ROUND ENOUGH";
+      } else {
+        liveReason = "TOO SHAKY";
+      }
+
       return Math.max(1, Math.min(100, score));
     }
 
@@ -724,7 +751,7 @@ export default function MothFlameGame() {
         Math.sqrt((p.x - cxx) ** 2 + (p.y - cyy) ** 2)
       );
       const r = dists.reduce((a, b) => a + b, 0) / dists.length;
-      lastClosed = { pts: [...trail], cx: cxx, cy: cyy, r, score, born: T };
+      lastClosed = { pts: [...trail], cx: cxx, cy: cyy, r, score, born: T, reason: liveReason };
       firstCircleDone = true;
       if (score > bestScore) {
         bestScore = score;
@@ -1333,25 +1360,35 @@ export default function MothFlameGame() {
         otx.lineTo(pts[i].x, pts[i].y);
         otx.stroke();
       }
-      if (age < 1.2) {
+      if (age < 1.4) {
         const fl = Math.floor(T * 8) % 2;
-        otx.font = '20px "DotGothic16",monospace';
+        const sc = lastClosed.score;
+        const tier =
+          sc >= 90
+            ? "PERFECT!"
+            : sc >= 75
+            ? "GREAT!"
+            : sc >= 55
+            ? "GOOD"
+            : sc >= 35
+            ? "OK"
+            : "KEEP TRYING";
         otx.textAlign = "center";
         otx.textBaseline = "middle";
+        // Score bar
         otx.fillStyle = fl ? "#fff7c2" : "#0e0d1a";
-        otx.fillRect(W / 2 - 160, H / 2 - 18, 320, 36);
+        otx.fillRect(W / 2 - 170, H / 2 - 20, 340, 40);
         otx.fillStyle = fl ? "#0e0d1a" : "#fff7c2";
-        const lb =
-          lastClosed.score >= 90
-            ? "FANTASTIC!"
-            : lastClosed.score >= 70
-            ? "GREAT!"
-            : "NICE";
-        otx.fillText(
-          `★ ${lastClosed.score} PT  ${lb} ★`,
-          W / 2,
-          H / 2
-        );
+        otx.font = '20px "DotGothic16",monospace';
+        otx.fillText(`★ ${sc} PT  ${tier} ★`, W / 2, H / 2);
+        // Small "why this score" hint below (skipped on a near-perfect circle)
+        if (sc < 90 && lastClosed.reason) {
+          otx.font = '13px "VT323",monospace';
+          otx.fillStyle = "#0e0d1a";
+          otx.fillText(lastClosed.reason, W / 2 + 1, H / 2 + 31);
+          otx.fillStyle = "#ffb454";
+          otx.fillText(lastClosed.reason, W / 2, H / 2 + 30);
+        }
       }
       otx.restore();
     }
