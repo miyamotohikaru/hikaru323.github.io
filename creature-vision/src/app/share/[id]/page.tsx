@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import { CREATURES } from "@/data/creatures";
-import { SHARE_TEXTS } from "@/data/shareTexts";
 import { Metadata } from "next";
 import Link from "next/link";
 import { getSql } from "@/lib/db";
-import ShareLinkButton from "@/components/ShareLinkButton";
 
 // DBアクセスがあるため毎リクエスト動的に評価する
 export const dynamic = "force-dynamic";
@@ -93,10 +91,23 @@ export default async function SharePage({
         ← トップに戻る
       </Link>
 
-      <ShareLinkButton
-        title={`${creature.name}の目で見た世界`}
-        text={SHARE_TEXTS[creature.id] || "生き物の目で世界を見よう"}
-      />
+      <Link
+        href={`/?creature=${creature.id}`}
+        style={{
+          display: "block",
+          padding: "14px 20px",
+          background: "#2D2D2D",
+          color: "#fff",
+          borderRadius: 16,
+          textAlign: "center",
+          fontWeight: 900,
+          textDecoration: "none",
+          fontSize: 16,
+          marginBottom: 16,
+        }}
+      >
+        🐾 自分の写真でも{creature.name}の目を試す
+      </Link>
 
       <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 20 }}>
         {creature.name}の目で見た世界
@@ -124,23 +135,6 @@ export default async function SharePage({
         </h3>
         <p style={{ lineHeight: 1.7, fontSize: 14 }}>{creature.bio}</p>
       </div>
-
-      <Link
-        href={`/?creature=${creature.id}`}
-        style={{
-          display: "block",
-          padding: "14px 20px",
-          background: "#2D2D2D",
-          color: "#fff",
-          borderRadius: 16,
-          textAlign: "center",
-          fontWeight: 900,
-          textDecoration: "none",
-          fontSize: 16,
-        }}
-      >
-        🐾 自分の写真でも{creature.name}の目を試す
-      </Link>
     </main>
   );
 }
