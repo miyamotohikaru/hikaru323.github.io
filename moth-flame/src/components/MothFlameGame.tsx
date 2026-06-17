@@ -1042,6 +1042,15 @@ export default function MothFlameGame() {
       grd.addColorStop(1, "rgba(255,247,194,0)");
       otx.fillStyle = grd;
       otx.fillRect(fireSCX - 10, fireSCY - 10, 20, 20);
+      // Subtle black dot marking the centre to aim around (faint ring so it
+      // stays visible over both the dark sky and the bright flame)
+      otx.beginPath();
+      otx.arc(fireSCX, fireSCY, 3, 0, 6.28);
+      otx.fillStyle = "rgba(0,0,0,0.5)";
+      otx.fill();
+      otx.lineWidth = 1;
+      otx.strokeStyle = "rgba(255,247,194,0.35)";
+      otx.stroke();
       otx.restore();
 
       return { cx, cy, baseR, SY };
