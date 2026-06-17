@@ -2365,21 +2365,22 @@ a:hover { color: var(--text-primary); }
   margin-bottom: 0.5rem;
 }
 
+/* カード背景がクリーム(--page-bg)のため、文字は紙面用の濃い色を使う（視認性確保） */
 .kojien-detail-word {
   font-family: var(--font-heading);
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--page-text);
 }
 
 .kojien-detail-reading {
   font-size: 0.8125rem;
-  color: var(--text-sub);
+  color: var(--page-text-sub);
 }
 
 .kojien-detail-pos {
   font-size: 0.6875rem;
-  color: var(--text-sub);
+  color: var(--page-text-sub);
   background: rgba(88, 85, 56, 0.1);
   padding: 1px 6px;
   border-radius: 2px;
@@ -2388,14 +2389,14 @@ a:hover { color: var(--text-primary); }
 .kojien-detail-definition {
   font-family: var(--font-body);
   font-size: 0.875rem;
-  color: var(--text-body);
+  color: var(--page-text-body);
   line-height: 1.8;
 }
 
 .kojien-detail-example {
   font-family: var(--font-body);
   font-size: 0.8125rem;
-  color: var(--text-sub);
+  color: var(--page-text-sub);
   margin-top: 0.5rem;
   line-height: 1.7;
 }
