@@ -43,6 +43,7 @@ body {
   font-family: var(--font-main);
   line-height: 1.8;
   min-height: 100vh;
+  min-height: 100dvh; /* 携帯でキーボード表示時に下が伸びるのを防ぐ（dvhは可視領域に追従） */
   position: relative;
 }
 
