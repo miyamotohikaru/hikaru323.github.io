@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { CREATURES } from "@/data/creatures";
+import { SHARE_TEXTS } from "@/data/shareTexts";
 import { Metadata } from "next";
 import Link from "next/link";
 import { getSql } from "@/lib/db";
+import ShareLinkButton from "@/components/ShareLinkButton";
 
 // DBアクセスがあるため毎リクエスト動的に評価する
 export const dynamic = "force-dynamic";
@@ -90,6 +92,11 @@ export default async function SharePage({
       >
         ← トップに戻る
       </Link>
+
+      <ShareLinkButton
+        title={`${creature.name}の目で見た世界`}
+        text={SHARE_TEXTS[creature.id] || "生き物の目で世界を見よう"}
+      />
 
       <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 20 }}>
         {creature.name}の目で見た世界
