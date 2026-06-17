@@ -1042,15 +1042,19 @@ export default function MothFlameGame() {
       grd.addColorStop(1, "rgba(255,247,194,0)");
       otx.fillStyle = grd;
       otx.fillRect(fireSCX - 10, fireSCY - 10, 20, 20);
-      // Subtle black dot marking the centre to aim around (faint ring so it
-      // stays visible over both the dark sky and the bright flame)
+      // Soft "aim here" marker at the centre — a tiny pulsing glow with a
+      // bright core. A cool cyan accent reads as a target over the warm flame
+      // (instead of a black blemish) and matches the BEST / sound UI colour.
+      const mp = 0.6 + Math.sin(T * 2.2) * 0.4;
+      const mg = otx.createRadialGradient(fireSCX, fireSCY, 0, fireSCX, fireSCY, 9);
+      mg.addColorStop(0, `rgba(139,233,253,${0.4 * mp})`);
+      mg.addColorStop(1, "rgba(139,233,253,0)");
+      otx.fillStyle = mg;
+      otx.fillRect(fireSCX - 9, fireSCY - 9, 18, 18);
       otx.beginPath();
-      otx.arc(fireSCX, fireSCY, 3, 0, 6.28);
-      otx.fillStyle = "rgba(0,0,0,0.5)";
+      otx.arc(fireSCX, fireSCY, 1.8, 0, 6.28);
+      otx.fillStyle = `rgba(255,255,255,${0.65 + 0.3 * mp})`;
       otx.fill();
-      otx.lineWidth = 1;
-      otx.strokeStyle = "rgba(255,247,194,0.35)";
-      otx.stroke();
       otx.restore();
 
       return { cx, cy, baseR, SY };
