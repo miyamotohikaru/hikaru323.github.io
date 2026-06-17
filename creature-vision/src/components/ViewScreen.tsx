@@ -289,6 +289,9 @@ export default function ViewScreen({
   const normalizedBlobRef = useRef<Blob | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const renderVersionRef = useRef(0);
+  // シェアメニューを開いた時点で先読み生成したシェアURLをキャッシュ（about:blankの待ち時間を消すため）
+  const sharePrepRef = useRef<{ url: string; creatureId: string } | null>(null);
+  const [preparingShare, setPreparingShare] = useState(false);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
@@ -496,6 +499,38 @@ export default function ViewScreen({
     [creatures]
   );
 
+  // 比較画像を生成→アップロードしてOGP付きシェアページURLを返す（失敗時はnull）
+  const createShareUrl = useCallback(async (): Promise<string | null> => {
+    const creatureCanvas = canvasRef.current;
+    const humanCanvas = humanCanvasRef.current;
+    if (!creatureCanvas || !humanCanvas) return null;
+    try {
+      const blob = await generateShareImage(creatureCanvas, humanCanvas, creature);
+      const fd = new FormData();
+      fd.append("image", blob, `${creature.id}.png`);
+      fd.append("creatureId", creature.id);
+      const res = await fetch("/api/share", { method: "POST", body: fd });
+      if (!res.ok) {
+        console.error("[share] create failed:", res.status);
+        return null;
+      }
+      const data = await res.json();
+      return data.shareUrl ?? null;
+    } catch (e) {
+      console.error("[share] create error:", e);
+      return null;
+    }
+  }, [creature]);
+
+  // シェアメニューを開いた瞬間にURLを先読み生成しておく（about:blankの待ち時間を消す）
+  const prepareShareUrl = useCallback(async () => {
+    if (sharePrepRef.current?.creatureId === creature.id) return; // この生き物は生成済み
+    setPreparingShare(true);
+    const url = await createShareUrl();
+    if (url) sharePrepRef.current = { url, creatureId: creature.id };
+    setPreparingShare(false);
+  }, [creature, createShareUrl]);
+
   // Share to specific SNS
   const shareToSns = useCallback(
     async (sns: "x" | "line" | "facebook") => {
@@ -504,31 +539,32 @@ export default function ViewScreen({
       // 共有するURL。シェアページ作成に失敗したら従来どおりトップURLにフォールバック
       let url = "https://creature-vision.vercel.app";
 
-      // クリック直後にタブを開いておく（アップロード完了後に window.open すると
-      // ユーザー操作から離れてポップアップブロックされるため。特にSafari対策）
-      const win = window.open("about:blank", "_blank");
-      if (win) win.opener = null;
+      // 先読み済みならタブを開かず即遷移できる（about:blankの空白が出ない）
+      const prepared =
+        sharePrepRef.current?.creatureId === creature.id
+          ? sharePrepRef.current.url
+          : null;
 
-      const creatureCanvas = canvasRef.current;
-      const humanCanvas = humanCanvasRef.current;
-      if (creatureCanvas && humanCanvas) {
-        const blob = await generateShareImage(creatureCanvas, humanCanvas, creature);
-
-        // 比較画像をアップロードしてOGP付きシェアページURLを生成し、それを共有する
-        // （ダウンロードはせず、生成したリンクを投稿してもらう形にする）
-        try {
-          const fd = new FormData();
-          fd.append("image", blob, `${creature.id}.png`);
-          fd.append("creatureId", creature.id);
-          const res = await fetch("/api/share", { method: "POST", body: fd });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.shareUrl) url = data.shareUrl;
-          } else {
-            console.error("[share] create failed:", res.status);
-          }
-        } catch (e) {
-          console.error("[share] create error:", e);
+      let win: Window | null = null;
+      if (prepared) {
+        url = prepared;
+      } else {
+        // 未生成: タブを先に開き「準備中…」を表示してからURLを差し込む
+        // （アップロード後に window.open するとポップアップブロックされるため。特にSafari対策）
+        win = window.open("about:blank", "_blank");
+        if (win) {
+          win.opener = null;
+          win.document.write(
+            `<!doctype html><meta charset="utf-8"><title>準備中…</title>` +
+              `<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#FFF9F2;font-family:sans-serif;color:#666">` +
+              `<div style="text-align:center"><div style="font-size:44px">🐾</div>` +
+              `<div style="margin-top:12px;font-size:14px">シェアリンクを準備中…</div></div></body>`
+          );
+        }
+        const created = await createShareUrl();
+        if (created) {
+          url = created;
+          sharePrepRef.current = { url: created, creatureId: creature.id };
         }
       }
 
@@ -547,12 +583,12 @@ export default function ViewScreen({
       if (win) {
         win.location.href = shareUrl;
       } else {
-        // タブを開けなかった場合のフォールバック
+        // 先読み済み or タブを開けなかった場合
         window.open(shareUrl, "_blank", "noopener,noreferrer");
       }
       setShowShareMenu(false);
     },
-    [creature]
+    [creature, createShareUrl]
   );
 
   const isFav = favs.includes(selectedId);
@@ -716,7 +752,9 @@ export default function ViewScreen({
               animation: "fadeUp 0.2s ease-out", zIndex: 10,
             }}
           >
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>シェアする</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>
+              {preparingShare ? "リンク準備中…" : "シェアする"}
+            </p>
             <div className="flex gap-5">
               {([["x", <XIcon key="x" />, "X"], ["line", <LineIcon key="l" />, "LINE"], ["facebook", <FacebookIcon key="f" />, "Facebook"]] as const).map(([sns, icon, label]) => (
                 <button
@@ -741,7 +779,11 @@ export default function ViewScreen({
           </div>
         )}
         <button
-          onClick={() => setShowShareMenu((v) => !v)}
+          onClick={() => {
+            const next = !showShareMenu;
+            setShowShareMenu(next);
+            if (next) prepareShareUrl(); // 開いた瞬間にリンクを先読み生成
+          }}
           style={{
             width: "100%", padding: "14px 20px", borderRadius: 16,
             border: "2px solid rgba(0,0,0,0.06)",
