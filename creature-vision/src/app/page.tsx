@@ -48,7 +48,15 @@ function Home() {
   }, []);
 
   if (phase === "upload") {
-    return <UploadScreen creatures={CREATURES} onFile={handleFile} />;
+    const preselectedCreature =
+      CREATURES.find((c) => c.id === preselected) ?? null;
+    return (
+      <UploadScreen
+        creatures={CREATURES}
+        onFile={handleFile}
+        preselectedCreature={preselectedCreature}
+      />
+    );
   }
 
   if (phase === "select") {

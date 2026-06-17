@@ -17,9 +17,11 @@ const MARQUEE_IDS = [
 interface Props {
   creatures: { id: string; name: string; cat: string }[];
   onFile: (file: File) => void;
+  // シェアリンク(/?creature=xxx)から来たとき、その生き物を強調表示する
+  preselectedCreature?: { id: string; name: string; cat: string } | null;
 }
 
-export default function UploadScreen({ creatures, onFile }: Props) {
+export default function UploadScreen({ creatures, onFile, preselectedCreature }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -73,6 +75,49 @@ export default function UploadScreen({ creatures, onFile }: Props) {
         }}
         className="hero-section"
       >
+        {/* 0. シェアから来たときの文脈バナー */}
+        {preselectedCreature && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: CATEGORY_COLORS[preselectedCreature.cat]?.bg ?? "#fff",
+              border: `2px solid ${INK}`,
+              borderRadius: 999,
+              padding: "6px 16px 6px 8px",
+              marginBottom: 12,
+              boxShadow: `3px 3px 0 ${INK}`,
+              transform: "rotate(-1deg)",
+              fontFamily: "'Zen Maru Gothic', sans-serif",
+            }}
+          >
+            <span
+              style={{
+                display: "flex",
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                overflow: "hidden",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#fff",
+                flexShrink: 0,
+              }}
+            >
+              <Icon
+                id={preselectedCreature.id}
+                name={preselectedCreature.name}
+                cat={preselectedCreature.cat}
+                size={24}
+              />
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: INK }}>
+              「{preselectedCreature.name}の目」で見てみよう！
+            </span>
+          </div>
+        )}
+
         {/* 1. Kosukuma icon */}
         <div style={{ animation: "bounce 2s ease-in-out infinite" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -142,7 +187,11 @@ export default function UploadScreen({ creatures, onFile }: Props) {
             fontWeight: 500,
           }}
         >
-          写真をアップして、<br className="md:hidden" />24種類の生き物の目で見てみよう
+          {preselectedCreature ? (
+            <>写真をえらぶと、<br className="md:hidden" />すぐ{preselectedCreature.name}の視点に変わります</>
+          ) : (
+            <>写真をアップして、<br className="md:hidden" />24種類の生き物の目で見てみよう</>
+          )}
         </p>
 
         {/* 5. Upload card */}
