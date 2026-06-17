@@ -358,8 +358,8 @@ export default function MothFlameGame() {
           vx: number;
           vy: number;
           wph: number;
-          wps: { x: number; y: number }[];
-          wi: number;
+          wang: number;
+          age: number;
         }
       | null = null;
     let nextKosuT = 10 + Math.random() * 15; // first possible appearance
@@ -391,29 +391,17 @@ export default function MothFlameGame() {
         sxp = -m;
         syp = Math.random() * H;
       }
-      // Wander to a few random spots (kept away from the fire) before heading in
-      const wps: { x: number; y: number }[] = [];
-      const want = 3 + Math.floor(Math.random() * 3); // 3–5 stops
-      let tries = 0;
-      while (wps.length < want && tries < 40) {
-        tries++;
-        const px = W * (0.12 + 0.76 * Math.random());
-        const py = H * (0.12 + 0.76 * Math.random());
-        if (Math.hypot(px - fireSCX, py - fireSCY) < getIdealR() * 1.7) continue;
-        wps.push({ x: px, y: py });
-      }
-      const dx = (wps[0]?.x ?? fireSCX) - sxp,
-        dy = (wps[0]?.y ?? fireSCY) - syp;
+      const dx = fireSCX - sxp,
+        dy = fireSCY - syp;
       const dist = Math.hypot(dx, dy) || 1;
-      const cruise = 95;
       kosu = {
         x: sxp,
         y: syp,
-        vx: (dx / dist) * cruise,
-        vy: (dy / dist) * cruise,
+        vx: (dx / dist) * 120,
+        vy: (dy / dist) * 120,
         wph: Math.random() * 6.28,
-        wps,
-        wi: 0,
+        wang: Math.random() * 6.28,
+        age: 0,
       };
     }
 
@@ -449,29 +437,30 @@ export default function MothFlameGame() {
       }
       if (!kosu) return;
 
-      // Steer toward the current waypoint (then, finally, the fire). The
-      // velocity eases toward the desired heading, so turns curve gently and
-      // the whole path reads as floaty wandering.
-      const heading = kosu.wi < kosu.wps.length;
-      const tx = heading ? kosu.wps[kosu.wi].x : fireSCX;
-      const ty = heading ? kosu.wps[kosu.wi].y : fireSCY;
-      const tdx = tx - kosu.x,
-        tdy = ty - kosu.y;
-      const tdist = Math.hypot(tdx, tdy) || 1;
-      const cruise = 95;
-      const desvx = (tdx / tdist) * cruise;
-      const desvy = (tdy / tdist) * cruise;
-      const ease = Math.min(1, 1.4 * dt); // lower = floatier
-      kosu.vx += (desvx - kosu.vx) * ease;
-      kosu.vy += (desvy - kosu.vy) * ease;
+      // Irregular flight: a random "wander" force darts it around, while a
+      // fire-seeking pull that grows with age makes it home in quickly (short
+      // flight). The blend reads as erratic fluttering that ends at the flame.
+      kosu.age += dt;
+      const fdx = fireSCX - kosu.x,
+        fdy = fireSCY - kosu.y;
+      const fdist = Math.hypot(fdx, fdy) || 1;
+      kosu.wang += (Math.random() - 0.5) * 7 * dt; // drift the wander heading
+      const seek = Math.min(1.8, 0.4 + kosu.age * 0.55); // grows → converges
+      let dvx = (fdx / fdist) * seek + Math.cos(kosu.wang) * 1.0;
+      let dvy = (fdy / fdist) * seek + Math.sin(kosu.wang) * 1.0;
+      const dl = Math.hypot(dvx, dvy) || 1;
+      const cruise = 135;
+      dvx = (dvx / dl) * cruise;
+      dvy = (dvy / dl) * cruise;
+      const ease = Math.min(1, 4 * dt);
+      kosu.vx += (dvx - kosu.vx) * ease;
+      kosu.vy += (dvy - kosu.vy) * ease;
       kosu.x += kosu.vx * dt;
       kosu.y += kosu.vy * dt;
-      // reached this waypoint → drift to the next
-      if (heading && tdist < 55) kosu.wi++;
 
-      // Touched the fire → burst (only once it's actually heading in)
+      // Caught by the flame → burn and scatter (any time it touches the fire)
       const d = Math.hypot(kosu.x - fireSCX, kosu.y - fireSCY);
-      if (!heading && d < fireBaseR * 1.2 * PX) {
+      if (d < fireBaseR * 1.5 * PX) {
         const n = 15 + Math.floor(Math.random() * 6);
         for (let i = 0; i < n; i++) {
           const a = Math.random() * 6.28,
@@ -498,7 +487,7 @@ export default function MothFlameGame() {
       // Draw (4-frame flap @ 80ms, faces travel direction, soft wobble)
       const img = kosuFrames[Math.floor((T * 1000) / 80) % 4];
       if (!img || !img.complete || !img.naturalWidth) return;
-      const h = 52,
+      const h = 34,
         w = (img.naturalWidth / img.naturalHeight) * h;
       const perp = Math.atan2(kosu.vy, kosu.vx) + Math.PI / 2;
       const wob =
