@@ -439,7 +439,27 @@ export default function ViewScreen({
       try {
         // --- STEP 3: Draw source image ---
         try {
-          ctx.drawImage(sourceImg, 0, 0, w, h);
+          if (aiExpandSucceeded) {
+            // AI拡張した横長(または縦長)画像を「歪ませず全体が収まるよう」描画する。
+            // 以前は w×h に押し込んで横圧縮していたため、生成された周囲が潰れて
+            // 拡張が効いていないように見えていた。
+            const ew = (sourceImg as HTMLImageElement).naturalWidth || w;
+            const eh = (sourceImg as HTMLImageElement).naturalHeight || h;
+            // 背景: 拡張画像で画面全体を覆い暗くする（余白を黒帯にしないため）
+            const coverScale = Math.max(w / ew, h / eh);
+            const cw = ew * coverScale;
+            const ch = eh * coverScale;
+            ctx.drawImage(sourceImg, (w - cw) / 2, (h - ch) / 2, cw, ch);
+            ctx.fillStyle = "rgba(0,0,0,0.45)";
+            ctx.fillRect(0, 0, w, h);
+            // 本体: アスペクト比を保ったまま全体を表示（生成された左右/上下が見える）
+            const fitScale = Math.min(w / ew, h / eh);
+            const fw = ew * fitScale;
+            const fh = eh * fitScale;
+            ctx.drawImage(sourceImg, (w - fw) / 2, (h - fh) / 2, fw, fh);
+          } else {
+            ctx.drawImage(sourceImg, 0, 0, w, h);
+          }
         } catch (e) {
           console.error("[draw] sourceImg failed, falling back to original:", e);
           ctx.drawImage(originalImage, 0, 0, w, h);
@@ -479,8 +499,10 @@ export default function ViewScreen({
         }
 
         // --- STEP 6: Fisheye ONLY when AI expansion succeeded ---
+        // 魚眼を弱める: 強すぎると中心が過剰に拡大＋四隅が黒つぶれし、
+        // せっかくAI拡張で生成した左右の景色が見えなくなるため。
         if (aiExpandSucceeded) {
-          const fisheyeStrength = Math.min(1.2, exp - 1.0);
+          const fisheyeStrength = Math.min(0.5, (exp - 1.0) * 0.3);
           applyFisheye(ctx, w, h, fisheyeStrength);
           console.log("[fisheye] strength:", fisheyeStrength);
         } else if (exp > 1.0) {
