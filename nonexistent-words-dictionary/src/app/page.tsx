@@ -29,6 +29,9 @@ interface SubmitResult {
   word: string;
   reason?: string;
   kojienEntry?: KojienEntryData;
+  alreadyRegistered?: boolean;
+  id?: string;
+  nickname?: string;
 }
 
 interface SavedWordData {
@@ -149,8 +152,9 @@ export default function Home() {
     }
 
     const entry = result.kojienEntry;
-    const def = editing ? editDef : entry.definition;
-    const example = editing ? editExample : entry.example;
+    // 編集中フラグに関わらず、現在の編集値を保存する（編集を終了しても反映されるように）
+    const def = editDef || entry.definition;
+    const example = editExample || entry.example;
     const partOfSpeech = entry.partOfSpeech;
     const formatted = isEnMode
       ? `${entry.word} (${partOfSpeech}) — ${def}${example ? `. Example: "${example}"` : ""}`
@@ -333,27 +337,96 @@ export default function Home() {
       )}
 
       {/* ===== 結果表示 ===== */}
+      {phase === "result" && result && result.alreadyRegistered && result.kojienEntry && (
+        /* ── すでに辞典に登録済み ── */
+        <div className="h-scroll is-rejected" ref={hScrollRef}>
+          <div className="reject-headword-col fade-in-rtl">
+            <span className="result-reading">{result.word}</span>
+            <span className="stamp-unavailable">{isEnMode ? "Registered" : "登録済み"}</span>
+          </div>
+
+          <div className="reject-message-col fade-in-rtl">
+            {isEnMode ? (
+              <>
+                &ldquo;{result.word}&rdquo; is already<br />
+                in the Fictionary.
+              </>
+            ) : (
+              <>
+                「{result.word}」はすでに存在しない<br />
+                言葉辞典に登録されています。
+              </>
+            )}
+          </div>
+
+          {/* 登録済みの意味 */}
+          <div className="result-body-col fade-in-rtl">
+            <span className="result-reading">{result.kojienEntry.reading}</span>
+            <span className="result-headword">
+              <span className="result-headword-bracket">【</span>
+              {result.kojienEntry.word}
+              <span className="result-headword-bracket">】</span>
+            </span>
+            <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
+            <p className="result-definition">
+              <span className="result-def-number">①</span>{" "}
+              {result.kojienEntry.definition}
+              {result.kojienEntry.example && (
+                <>
+                  {" "}<span className="result-example-badge">{isEnMode ? "ex" : "例"}</span>{" "}
+                  「{result.kojienEntry.example}」
+                </>
+              )}
+            </p>
+          </div>
+
+          {/* この語を見る / 再検索 */}
+          <div className="reject-retry-col fade-in-rtl">
+            {result.id && (
+              <Link href={`/word/${result.id}`} className="reject-retry-btn" style={{ marginBottom: 8 }}>
+                {isEnMode ? "View this word" : "この言葉を見る"}
+              </Link>
+            )}
+            <button onClick={handleReset} className="reject-retry-btn">
+              {isEnMode ? "Look up another word" : "別の言葉を引く"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== 結果表示 ===== */}
       {phase === "result" && result && result.exists && (
         /* ── 既存語（実在語）── */
         <div className="h-scroll is-rejected" ref={hScrollRef}>
           {/* 見出し列 + スタンプ */}
           <div className="reject-headword-col fade-in-rtl">
             <span className="result-reading">{result.word}</span>
-            <span className="stamp-unavailable">掲載不可</span>
+            <span className="stamp-unavailable">{isEnMode ? "Not eligible" : "掲載不可"}</span>
           </div>
 
           {/* メッセージ列 */}
           <div className="reject-message-col fade-in-rtl">
-            「{result.word}」は実在する言葉のため、<br />
-            本辞典には掲載できません。<br />
-            別の存在しない<br />
-            言葉を、お試しください。
+            {isEnMode ? (
+              <>
+                &ldquo;{result.word}&rdquo; is a real word, so<br />
+                it cannot be added to this<br />
+                dictionary. Please try another<br />
+                word that doesn&apos;t exist.
+              </>
+            ) : (
+              <>
+                「{result.word}」は実在する言葉のため、<br />
+                本辞典には掲載できません。<br />
+                別の存在しない<br />
+                言葉を、お試しください。
+              </>
+            )}
           </div>
 
           {/* 既存辞書での意味 */}
           {result.reason && (
             <div className="reject-existing-col fade-in-rtl">
-              <span className="reject-existing-label">既存辞書より</span>
+              <span className="reject-existing-label">{isEnMode ? "From dictionaries" : "既存辞書より"}</span>
               <p style={{ marginLeft: 12 }}>{result.reason}</p>
             </div>
           )}
@@ -361,22 +434,22 @@ export default function Home() {
           {/* 再検索 */}
           <div className="reject-retry-col fade-in-rtl">
             <button onClick={handleReset} className="reject-retry-btn">
-              別の言葉を引く
+              {isEnMode ? "Look up another word" : "別の言葉を引く"}
             </button>
           </div>
         </div>
       )}
 
-      {phase === "result" && result && !result.exists && result.kojienEntry && (
+      {phase === "result" && result && !result.exists && !result.alreadyRegistered && result.kojienEntry && (
         /* ── 検索ヒット（新語）── */
         <div className="h-scroll" ref={hScrollRef}>
           {/* 該当件数 */}
           <div className="result-search-col fade-in-rtl">
-            <span className="result-hit-count">該当　・　1 件</span>
+            <span className="result-hit-count">{isEnMode ? "Found · 1" : "該当　・　1 件"}</span>
           </div>
 
           {/* 蔵書印スタイル通知 */}
-          <EmptyWordNotice />
+          <EmptyWordNotice isEn={isEnMode} />
 
           {/* 本文列 */}
           <div className="result-body-col fade-in-rtl">
@@ -389,14 +462,14 @@ export default function Home() {
             <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
             {editing ? (
               <div className="result-edit-fields">
-                <label className="result-edit-label">定義</label>
+                <label className="result-edit-label">{isEnMode ? "Definition" : "定義"}</label>
                 <textarea
                   value={editDef}
                   onChange={(e) => setEditDef(e.target.value)}
                   className="result-edit-textarea"
                   rows={6}
                 />
-                <label className="result-edit-label">用例</label>
+                <label className="result-edit-label">{isEnMode ? "Example" : "用例"}</label>
                 <textarea
                   value={editExample}
                   onChange={(e) => setEditExample(e.target.value)}
@@ -404,7 +477,7 @@ export default function Home() {
                   rows={4}
                 />
                 <button onClick={() => setEditing(false)} className="result-edit-btn" style={{ marginTop: "8px" }}>
-                  編集を終了
+                  {isEnMode ? "Done editing" : "編集を終了"}
                 </button>
               </div>
             ) : (
@@ -420,7 +493,7 @@ export default function Home() {
                   )}
                 </p>
                 <button onClick={() => setEditing(true)} className="result-edit-btn" style={{ marginTop: "auto" }}>
-                  内容を編集する
+                  {isEnMode ? "Edit" : "内容を編集する"}
                 </button>
               </>
             )}
@@ -459,7 +532,7 @@ export default function Home() {
           {/* TOPに戻るボタン */}
           <div className="reject-retry-col fade-in-rtl" style={{ borderLeft: `1px solid var(--rule)` }}>
             <button onClick={handleReset} className="reject-retry-btn">
-              別の言葉を引く
+              {isEnMode ? "Look up another word" : "別の言葉を引く"}
             </button>
           </div>
         </div>

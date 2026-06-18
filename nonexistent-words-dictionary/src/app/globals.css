@@ -43,6 +43,7 @@ body {
   font-family: var(--font-main);
   line-height: 1.8;
   min-height: 100vh;
+  min-height: 100dvh; /* 携帯でキーボード表示時に下が伸びるのを防ぐ（dvhは可視領域に追従） */
   position: relative;
 }
 
@@ -2365,21 +2366,22 @@ a:hover { color: var(--text-primary); }
   margin-bottom: 0.5rem;
 }
 
+/* カード背景がクリーム(--page-bg)のため、文字は紙面用の濃い色を使う（視認性確保） */
 .kojien-detail-word {
   font-family: var(--font-heading);
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--page-text);
 }
 
 .kojien-detail-reading {
   font-size: 0.8125rem;
-  color: var(--text-sub);
+  color: var(--page-text-sub);
 }
 
 .kojien-detail-pos {
   font-size: 0.6875rem;
-  color: var(--text-sub);
+  color: var(--page-text-sub);
   background: rgba(88, 85, 56, 0.1);
   padding: 1px 6px;
   border-radius: 2px;
@@ -2388,14 +2390,14 @@ a:hover { color: var(--text-primary); }
 .kojien-detail-definition {
   font-family: var(--font-body);
   font-size: 0.875rem;
-  color: var(--text-body);
+  color: var(--page-text-body);
   line-height: 1.8;
 }
 
 .kojien-detail-example {
   font-family: var(--font-body);
   font-size: 0.8125rem;
-  color: var(--text-sub);
+  color: var(--page-text-sub);
   margin-top: 0.5rem;
   line-height: 1.7;
 }
@@ -4706,5 +4708,25 @@ a:hover { color: var(--text-primary); }
     border-top: 1px solid var(--base-border);
     padding-left: 0;
     padding-top: 1rem;
+  }
+}
+
+/* ===== ランキング本棚: 携帯で横5列に固定 =====
+   JSXは5冊ずつ行にしているが、本が広く折り返していたため、
+   携帯では折り返しなし・等幅(1/5)で確実に5列に並べる。
+   末尾で再宣言し、2重定義(flex-wrap:wrap/固定幅)に後勝ちさせる。 */
+@media (max-width: 640px) {
+  .bookshelf-books {
+    flex-wrap: nowrap;
+    gap: 3px;
+    padding: 0 0.5rem;
+    justify-content: center;
+  }
+  .book-spine {
+    width: calc((100% - 12px) / 5);
+    min-width: 0;
+    flex: none;
+    padding-left: 2px;
+    padding-right: 2px;
   }
 }

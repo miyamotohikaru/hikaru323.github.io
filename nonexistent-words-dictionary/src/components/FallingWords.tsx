@@ -71,7 +71,7 @@ export default function FallingWords() {
 
   // Fetch registered words
   useEffect(() => {
-    fetch("/api/words?sort=popular&limit=100")
+    fetch("/api/words?sort=popular&limit=100", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         const wordList = (data.words || []).map(
@@ -109,7 +109,9 @@ export default function FallingWords() {
       const delay = rand(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX);
       wordTimer = setTimeout(() => {
         const words = wordsRef.current;
-        if (words.length > 0 && particlesRef.current.length < MAX_PARTICLES) {
+        // 携帯(幅<768px)は画面が狭く文字が密集して多く見えるため同時表示数を減らす
+        const maxParticles = window.innerWidth < 768 ? 7 : MAX_PARTICLES;
+        if (words.length > 0 && particlesRef.current.length < maxParticles) {
           const word = words[Math.floor(Math.random() * words.length)];
           const fontSize =
             FONT_SIZES[Math.floor(Math.random() * FONT_SIZES.length)];
@@ -141,10 +143,11 @@ export default function FallingWords() {
             fontSize,
             color,
             // 文字色の透明度(0.5〜0.75)と乗算。PC: 実効 約5.4〜10.4%
-            // 携帯(幅<768px)は密度が高く濃く見えるため低め: 実効 約3.6〜7%
+            // 携帯(幅<768px)は降ってくるこすくま(薄い輪郭)の見た目の薄さに合わせる。
+            // 文字は線が詰まり濃く見えるため数値は低めに: rand(0.03,0.045)=実効 約1.5〜3.4%
             opacity:
               window.innerWidth < 768
-                ? rand(0.072, 0.093)
+                ? rand(0.03, 0.045)
                 : rand(0.108, 0.139),
             iconSize: 0,
             iconW: 0,

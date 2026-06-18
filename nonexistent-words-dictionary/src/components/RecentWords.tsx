@@ -9,7 +9,7 @@ export default function RecentWords() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/words?limit=5&sort=newest")
+    fetch("/api/words?limit=5&sort=newest", { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();

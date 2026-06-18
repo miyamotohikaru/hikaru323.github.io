@@ -3,6 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { containsNGWord } from "@/lib/ng-words";
 import { existsInLocalDictionary } from "@/lib/dictionary";
+import { getDb, isFirebaseAvailable } from "@/lib/firebase";
+import { findByWord } from "@/lib/in-memory-store";
 
 function katakanaToHiragana(str: string): string {
   return str.replace(/[\u30A1-\u30F6]/g, (ch) =>
@@ -58,24 +60,24 @@ A user will submit a coined word (possibly with a meaning explanation). Your job
    - When in doubt, rule that it EXISTS (strict policy)
 
 2. If it exists, explain its meaning, origin, and etymology in detail
-   - In the "reason" field, write 50-150 words covering the dictionary meaning,
+   - In the "reason" field, write 30-50 words covering the dictionary meaning,
      etymology, and how it's used
    - Do NOT just say "this word exists"
 
 3. If it does NOT exist, generate a dictionary entry
    - If meaning is provided, respect it while polishing for dictionary style
    - If no meaning is provided, creatively invent a definition based on the word's sound and feel
-   - Definition: 50-150 words, covering the word's nuance and context of use
+   - Definition: 30-50 words, covering the word's nuance and context of use
    - Dry, authoritative dictionary tone but detailed
    - Example: a natural sentence using the word
 
 Output ONLY the following JSON. No other text:
 {
   "exists": boolean,
-  "reason": "If exists: meaning/origin/etymology in 50-150 words. If not: empty string",
+  "reason": "If exists: meaning/origin/etymology in 30-50 words. If not: empty string",
   "reading": "pronunciation guide (IPA or phonetic)",
   "partOfSpeech": "noun|verb|adjective|adverb|interjection",
-  "definition": "Definition (50-150 words)",
+  "definition": "Definition (30-50 words)",
   "example": "Example sentence",
   "formatted": "word /pronunciation/ (part of speech) — definition. Example: \\"example sentence\\""
 }`;
@@ -93,8 +95,66 @@ Explain the meaning, origin, and etymology of the word the user sends.
 
 Output ONLY the following JSON. No other text:
 {
-  "reason": "Meaning, origin, and etymology in 50-150 words"
+  "reason": "Meaning, origin, and etymology in 30-50 words"
 }`;
+
+interface RegisteredWord {
+  id: string;
+  word: string;
+  reading: string;
+  partOfSpeech: string;
+  definition: string;
+  example: string;
+  formatted: string;
+  nickname: string;
+}
+
+// 辞典に既に登録済みの語を探す（同じ言葉＋同じ言語）。無ければ null。
+async function findRegisteredWord(word: string, language: string): Promise<RegisteredWord | null> {
+  if (isFirebaseAvailable()) {
+    try {
+      const db = await getDb();
+      const snap = await db
+        .collection("words")
+        .where("word", "==", word)
+        .where("language", "==", language)
+        .limit(1)
+        .get();
+      if (!snap.empty) {
+        const doc = snap.docs[0];
+        const d = doc.data();
+        if (d.isVisible === false) return null;
+        return {
+          id: doc.id,
+          word: d.word || word,
+          reading: d.reading || "",
+          partOfSpeech: d.partOfSpeech || "",
+          definition: d.definition || "",
+          example: Array.isArray(d.examples) && d.examples.length > 0 ? d.examples[0] : "",
+          formatted: d.kojienFormatted || "",
+          nickname: d.nickname || "",
+        };
+      }
+      return null;
+    } catch {
+      // Firebase失敗時はインメモリにフォールバック
+    }
+  }
+  const mem = findByWord(word, language);
+  if (mem && mem.isVisible) {
+    return {
+      id: mem.id,
+      word: mem.word,
+      reading: mem.reading,
+      partOfSpeech: mem.partOfSpeech,
+      definition: mem.definition,
+      example: Array.isArray(mem.examples) && mem.examples.length > 0 ? mem.examples[0] : "",
+      formatted: mem.kojienFormatted || "",
+      nickname: mem.nickname || "",
+    };
+  }
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   const ip =
@@ -121,11 +181,31 @@ export async function POST(request: NextRequest) {
     if (word.length > 20) {
       return NextResponse.json({ error: language === "en" ? "Word must be 20 characters or less." : "言葉は20文字以内で入力してください。" }, { status: 400 });
     }
-    if (meaning && meaning.length > 200) {
-      return NextResponse.json({ error: language === "en" ? "Meaning must be 200 characters or less." : "意味は200文字以内で入力してください。" }, { status: 400 });
+    const meaningLimit = language === "en" ? 400 : 200;
+    if (meaning && meaning.length > meaningLimit) {
+      return NextResponse.json({ error: language === "en" ? `Meaning must be ${meaningLimit} characters or less.` : "意味は200文字以内で入力してください。" }, { status: 400 });
     }
     if (containsNGWord(word) || (meaning && containsNGWord(meaning))) {
       return NextResponse.json({ error: language === "en" ? "Inappropriate content detected." : "不適切な表現が含まれています。" }, { status: 400 });
+    }
+
+    // すでに辞典に登録済みなら、AIで作り直さず既存の語を返す（再登録不可）
+    const registered = await findRegisteredWord(word, language);
+    if (registered) {
+      return NextResponse.json({
+        alreadyRegistered: true,
+        word,
+        id: registered.id,
+        nickname: registered.nickname,
+        kojienEntry: {
+          word: registered.word,
+          reading: registered.reading,
+          partOfSpeech: registered.partOfSpeech,
+          definition: registered.definition,
+          example: registered.example,
+          formatted: registered.formatted,
+        },
+      });
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;

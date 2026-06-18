@@ -48,18 +48,22 @@ export async function POST(request: NextRequest) {
     if (word.length > 20) {
       return NextResponse.json({ error: language === "en" ? "Word must be 20 characters or less." : "言葉は20文字以内で入力してください。" }, { status: 400 });
     }
-    if (definition.length > 200) {
-      return NextResponse.json({ error: language === "en" ? "Definition must be 200 characters or less." : "定義文は200文字以内で入力してください。" }, { status: 400 });
+    // 詳しい定義も登録できるよう上限を緩める（日英共通）
+    const defLimit = 600;
+    if (definition.length > defLimit) {
+      return NextResponse.json({ error: language === "en" ? `Definition must be ${defLimit} characters or less.` : `定義文は${defLimit}文字以内で入力してください。` }, { status: 400 });
     }
     if (nickname.length > 15) {
       return NextResponse.json({ error: language === "en" ? "Nickname must be 15 characters or less." : "ニックネームは15文字以内で入力してください。" }, { status: 400 });
     }
-    if (etymology.length > 200) {
-      return NextResponse.json({ error: language === "en" ? "Etymology must be 200 characters or less." : "語源は200文字以内で入力してください。" }, { status: 400 });
+    const etyLimit = 300;
+    if (etymology.length > etyLimit) {
+      return NextResponse.json({ error: language === "en" ? `Etymology must be ${etyLimit} characters or less.` : `語源は${etyLimit}文字以内で入力してください。` }, { status: 400 });
     }
+    const exLimit = 200;
     for (const ex of examples) {
-      if (ex.length > 100) {
-        return NextResponse.json({ error: language === "en" ? "Each example must be 100 characters or less." : "例文は100文字以内で入力してください。" }, { status: 400 });
+      if (ex.length > exLimit) {
+        return NextResponse.json({ error: language === "en" ? `Each example must be ${exLimit} characters or less.` : `例文は${exLimit}文字以内で入力してください。` }, { status: 400 });
       }
     }
     if (synonyms.length > 30) {

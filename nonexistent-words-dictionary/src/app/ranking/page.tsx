@@ -45,7 +45,7 @@ export default function RankingPage() {
     setFetchError(false);
     setSelectedWord(null);
     const sort = activeTab === "popular" ? "popular" : "newest";
-    fetch(`/api/words?sort=${sort}&limit=20`)
+    fetch(`/api/words?sort=${sort}&limit=20`, { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();

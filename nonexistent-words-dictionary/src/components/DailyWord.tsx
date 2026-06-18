@@ -11,7 +11,7 @@ export default function DailyWord() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/daily")
+    fetch("/api/daily", { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();
