@@ -70,13 +70,6 @@ function spineFontSize(lines: string[]): number {
   return Math.max(9, Math.min(15, fs));
 }
 
-// 掲載者名を1列に収めるためのフォントサイズ（長い名前は小さく）
-function authorFontSize(name: string): number {
-  const len = Array.from(name || "").length;
-  const fs = Math.round(40 / (len * 1.2));
-  return Math.max(6, Math.min(9, fs));
-}
-
 export default function RankingPage() {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>("popular");
@@ -185,7 +178,6 @@ export default function RankingPage() {
                       <span className="book-spine-title" style={{ fontSize: `${titleFs}px` }}>
                         {titleLines.join("\n")}
                       </span>
-                      <span className="book-spine-author" style={{ fontSize: `${authorFontSize(w.nickname)}px` }}>{w.nickname}</span>
                       <span className="book-spine-likes">♡ {w.likes}</span>
                     </button>
                   );
