@@ -152,8 +152,9 @@ export default function Home() {
     }
 
     const entry = result.kojienEntry;
-    const def = editing ? editDef : entry.definition;
-    const example = editing ? editExample : entry.example;
+    // 編集中フラグに関わらず、現在の編集値を保存する（編集を終了しても反映されるように）
+    const def = editDef || entry.definition;
+    const example = editExample || entry.example;
     const partOfSpeech = entry.partOfSpeech;
     const formatted = isEnMode
       ? `${entry.word} (${partOfSpeech}) — ${def}${example ? `. Example: "${example}"` : ""}`
