@@ -38,7 +38,16 @@ export default function RankingPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [selectedWord, setSelectedWord] = useState<WordEntry | null>(null);
+  // 1棚あたりの冊数: PC=10冊、携帯(<=640px)=5冊
+  const [perShelf, setPerShelf] = useState(10);
   const bookRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updatePerShelf = () => setPerShelf(window.innerWidth <= 640 ? 5 : 10);
+    updatePerShelf();
+    window.addEventListener("resize", updatePerShelf);
+    return () => window.removeEventListener("resize", updatePerShelf);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -102,12 +111,12 @@ export default function RankingPage() {
         <p className="empty-text">{t("common.noPostsYet")}</p>
       ) : (
         <div className="bookshelf">
-          {/* 本棚の段を作る（1段に5〜6冊） */}
-          {chunkArray(words, 5).map((shelf, shelfIndex) => (
+          {/* 本棚の段を作る（PC=10冊/段, 携帯=5冊/段） */}
+          {chunkArray(words, perShelf).map((shelf, shelfIndex) => (
             <div key={shelfIndex} className="bookshelf-row">
               <div className="bookshelf-books">
                 {shelf.map((w, i) => {
-                  const globalIndex = shelfIndex * 5 + i;
+                  const globalIndex = shelfIndex * perShelf + i;
                   const color = getSpineColor(globalIndex);
                   const width = getBookWidth(w);
                   const isSelected = selectedWord?.id === w.id;
