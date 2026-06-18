@@ -2480,6 +2480,8 @@ a:hover { color: var(--text-primary); }
   border: 1px solid var(--textSoft);
   width: 50px;
   height: 380px;
+  /* 背景を塗って不透明に。降ってくる文字/こすくまは後ろのレイヤーに隠す */
+  background: var(--bg);
 }
 
 .tategaki-search-input {

@@ -211,6 +211,9 @@ export default function RankingPage() {
                           <span className="open-book-pos">
                             {selectedWord.partOfSpeech}
                           </span>
+                          <span className="open-book-author">
+                            {selectedWord.nickname} 編
+                          </span>
                         </div>
                       </div>
                       <div className="open-book-body">
@@ -226,9 +229,6 @@ export default function RankingPage() {
                           )}
                       </div>
                       <div className="open-book-footer">
-                        <span className="open-book-author">
-                          {selectedWord.nickname} 編
-                        </span>
                         <LikeButton
                           key={selectedWord.id}
                           wordId={selectedWord.id}
