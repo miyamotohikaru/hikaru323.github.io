@@ -29,6 +29,9 @@ interface SubmitResult {
   word: string;
   reason?: string;
   kojienEntry?: KojienEntryData;
+  alreadyRegistered?: boolean;
+  id?: string;
+  nickname?: string;
 }
 
 interface SavedWordData {
@@ -333,6 +336,64 @@ export default function Home() {
       )}
 
       {/* ===== 結果表示 ===== */}
+      {phase === "result" && result && result.alreadyRegistered && result.kojienEntry && (
+        /* ── すでに辞典に登録済み ── */
+        <div className="h-scroll is-rejected" ref={hScrollRef}>
+          <div className="reject-headword-col fade-in-rtl">
+            <span className="result-reading">{result.word}</span>
+            <span className="stamp-unavailable">{isEnMode ? "Registered" : "登録済み"}</span>
+          </div>
+
+          <div className="reject-message-col fade-in-rtl">
+            {isEnMode ? (
+              <>
+                &ldquo;{result.word}&rdquo; is already<br />
+                in the Fictionary.
+              </>
+            ) : (
+              <>
+                「{result.word}」はすでに存在しない<br />
+                言葉辞典に登録されています。
+              </>
+            )}
+          </div>
+
+          {/* 登録済みの意味 */}
+          <div className="result-body-col fade-in-rtl">
+            <span className="result-reading">{result.kojienEntry.reading}</span>
+            <span className="result-headword">
+              <span className="result-headword-bracket">【</span>
+              {result.kojienEntry.word}
+              <span className="result-headword-bracket">】</span>
+            </span>
+            <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
+            <p className="result-definition">
+              <span className="result-def-number">①</span>{" "}
+              {result.kojienEntry.definition}
+              {result.kojienEntry.example && (
+                <>
+                  {" "}<span className="result-example-badge">{isEnMode ? "ex" : "例"}</span>{" "}
+                  「{result.kojienEntry.example}」
+                </>
+              )}
+            </p>
+          </div>
+
+          {/* この語を見る / 再検索 */}
+          <div className="reject-retry-col fade-in-rtl">
+            {result.id && (
+              <Link href={`/word/${result.id}`} className="reject-retry-btn" style={{ marginBottom: 8 }}>
+                {isEnMode ? "View this word" : "この言葉を見る"}
+              </Link>
+            )}
+            <button onClick={handleReset} className="reject-retry-btn">
+              {isEnMode ? "Look up another word" : "別の言葉を引く"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== 結果表示 ===== */}
       {phase === "result" && result && result.exists && (
         /* ── 既存語（実在語）── */
         <div className="h-scroll is-rejected" ref={hScrollRef}>
@@ -378,7 +439,7 @@ export default function Home() {
         </div>
       )}
 
-      {phase === "result" && result && !result.exists && result.kojienEntry && (
+      {phase === "result" && result && !result.exists && !result.alreadyRegistered && result.kojienEntry && (
         /* ── 検索ヒット（新語）── */
         <div className="h-scroll" ref={hScrollRef}>
           {/* 該当件数 */}
