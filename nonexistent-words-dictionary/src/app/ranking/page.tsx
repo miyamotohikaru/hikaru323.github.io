@@ -31,6 +31,42 @@ function getBookWidth(word: WordEntry) {
   return 48;
 }
 
+// 背表紙タイトルを、長い場合は自然な区切りで2行(2列)に分割する。
+// 区切り優先度: 助詞の直後 ＞ 漢字↔かな/カタカナの境目。中央に近いほど優先。
+function splitSpineTitle(word: string): string[] {
+  const chars = Array.from(word);
+  if (chars.length <= 7) return [word];
+  const mid = Math.round(chars.length / 2);
+  const isKanji = (c: string) => /[一-鿿々]/.test(c);
+  const isKatakana = (c: string) => /[゠-ヿ]/.test(c);
+  const particles = new Set(["の", "は", "を", "に", "へ", "と", "で", "が", "も", "や"]);
+  let best = mid;
+  let bestScore = -Infinity;
+  for (let i = 2; i <= chars.length - 2; i++) {
+    const prev = chars[i - 1];
+    const cur = chars[i];
+    let score = 0;
+    if (particles.has(prev)) score = 3;
+    else if (isKanji(prev) !== isKanji(cur)) score = 2;
+    else if (isKatakana(prev) !== isKatakana(cur)) score = 2;
+    if (score > 0) {
+      const adj = score * 5 - Math.abs(i - mid); // 中央に近いほど優先
+      if (adj > bestScore) {
+        bestScore = adj;
+        best = i;
+      }
+    }
+  }
+  return [chars.slice(0, best).join(""), chars.slice(best).join("")];
+}
+
+// 1列に収まる文字数に応じてフォントサイズを決める（縦書き・可読下限/上限でクランプ）
+function spineFontSize(lines: string[]): number {
+  const maxLen = Math.max(...lines.map((l) => Array.from(l).length));
+  const fs = Math.round(92 / (maxLen * 1.35));
+  return Math.max(9, Math.min(15, fs));
+}
+
 export default function RankingPage() {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>("popular");
@@ -120,6 +156,8 @@ export default function RankingPage() {
                   const color = getSpineColor(globalIndex);
                   const width = getBookWidth(w);
                   const isSelected = selectedWord?.id === w.id;
+                  const titleLines = splitSpineTitle(w.word);
+                  const titleFs = spineFontSize(titleLines);
                   return (
                     <button
                       key={w.id}
@@ -134,7 +172,9 @@ export default function RankingPage() {
                       <span className="book-spine-rank">
                         {globalIndex + 1}
                       </span>
-                      <span className="book-spine-title">{w.word}</span>
+                      <span className="book-spine-title" style={{ fontSize: `${titleFs}px` }}>
+                        {titleLines.join("\n")}
+                      </span>
                       <span className="book-spine-author">{w.nickname}</span>
                       <span className="book-spine-likes">♡ {w.likes}</span>
                     </button>

@@ -1735,14 +1735,16 @@ a:hover { color: var(--text-primary); }
   font-weight: 600;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1.4;
+  line-height: 1.25;
+  /* 改行(\n)で列を分け、各列内は自動折返ししない（長語はJS側で自然な位置に\nを挿入） */
+  white-space: pre-wrap;
+  word-break: keep-all;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .book-spine-author {
