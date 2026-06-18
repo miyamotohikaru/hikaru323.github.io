@@ -46,15 +46,18 @@ function splitSpineTitle(word: string): string[] {
     const prev = chars[i - 1];
     const cur = chars[i];
     let score = 0;
-    if (particles.has(prev)) score = 3;
-    else if (isKanji(prev) !== isKanji(cur)) score = 2;
+    // 文字種の変わり目（漢字↔かな、カタカナ↔ひらがな）を主な区切り候補に
+    if (isKanji(prev) !== isKanji(cur)) score = 2;
     else if (isKatakana(prev) !== isKatakana(cur)) score = 2;
-    if (score > 0) {
-      const adj = score * 5 - Math.abs(i - mid); // 中央に近いほど優先
-      if (adj > bestScore) {
-        bestScore = adj;
-        best = i;
-      }
+    // 助詞の前後はやや優先（軽い加点）
+    if (particles.has(prev)) score += 1;
+    if (particles.has(cur)) score += 1;
+    if (score === 0) continue;
+    // 中央寄りを強めに重視（バランスの良い2分割を優先）
+    const adj = score * 3 - Math.abs(i - mid);
+    if (adj > bestScore) {
+      bestScore = adj;
+      best = i;
     }
   }
   return [chars.slice(0, best).join(""), chars.slice(best).join("")];
