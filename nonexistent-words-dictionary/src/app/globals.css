@@ -1753,7 +1753,7 @@ a:hover { color: var(--text-primary); }
   opacity: 0.5;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  max-height: 3em;
+  white-space: nowrap; /* 名前を折り返さず1列で表示（長い名前はJS側でフォント縮小） */
   overflow: hidden;
 }
 
