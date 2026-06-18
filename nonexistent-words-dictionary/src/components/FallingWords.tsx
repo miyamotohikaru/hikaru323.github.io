@@ -99,7 +99,16 @@ export default function FallingWords() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    window.addEventListener("resize", resize);
+    // 横幅が変わった時だけ再構築する。モバイルで検索ボックスにフォーカス→
+    // キーボード表示で「高さだけ」変わるとCanvasが作り直されて降る絵文字/イラストが
+    // 崩れるため、高さのみの変化（キーボード）では再構築しない。
+    let lastWidth = window.innerWidth;
+    const handleResize = () => {
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      resize();
+    };
+    window.addEventListener("resize", handleResize);
 
     // ── Spawn word particles on interval ──
     let wordTimer: ReturnType<typeof setTimeout> | null = null;
@@ -255,7 +264,7 @@ export default function FallingWords() {
 
     return () => {
       disposed = true;
-      window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(rafRef.current);
       if (wordTimer) clearTimeout(wordTimer);
       if (iconTimer) clearTimeout(iconTimer);
