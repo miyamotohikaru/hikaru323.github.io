@@ -53,7 +53,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
     // APIから authorToken を取得してオーナー判定
     const token = localStorage.getItem("fictionary_author_token");
     if (token) {
-      fetch(`/api/words/${word.id}`)
+      fetch(`/api/words/${word.id}`, { cache: "no-store" })
         .then((res) => res.json())
         .then((data) => {
           if (data.authorToken === token) setIsOwner(true);

@@ -71,7 +71,7 @@ export default function FallingWords() {
 
   // Fetch registered words
   useEffect(() => {
-    fetch("/api/words?sort=popular&limit=100")
+    fetch("/api/words?sort=popular&limit=100", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         const wordList = (data.words || []).map(

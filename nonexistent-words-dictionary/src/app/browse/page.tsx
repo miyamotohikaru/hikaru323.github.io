@@ -25,7 +25,7 @@ export default function BrowsePage() {
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   useEffect(() => {
-    fetch("/api/words?limit=500&sort=newest")
+    fetch("/api/words?limit=500&sort=newest", { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();
