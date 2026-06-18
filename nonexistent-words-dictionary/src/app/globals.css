@@ -2859,24 +2859,27 @@ a:hover { color: var(--text-primary); }
 }
 
 .result-register-label {
-  font-size: 11px;
-  color: var(--textMute);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
   letter-spacing: 0.2em;
 }
 
+/* 入力欄だと分かるよう、枠＋薄い背景の「入力ボックス」にする（掲載者名の場所を明確化） */
 .result-register-input {
   writing-mode: vertical-rl;
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--rule);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
   color: var(--text);
   font-family: var(--font-main);
   font-size: 15px;
-  padding: 8px;
+  padding: 10px 8px;
+  min-height: 140px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
 }
-.result-register-input:focus { border-right-color: var(--textSoft); }
+.result-register-input:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.08); }
 .result-register-input::placeholder { color: var(--textMute); }
 
 .result-register-textarea {

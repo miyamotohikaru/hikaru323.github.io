@@ -258,7 +258,7 @@ export default function Home() {
                   type="text"
                   value={word}
                   onChange={(e) => setWord(e.target.value)}
-                  placeholder={isEnMode ? "look up a word" : "ことばを引く"}
+                  placeholder={isEnMode ? "register a word" : "ことばを登録する"}
                   className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
                   maxLength={20}
                 />
