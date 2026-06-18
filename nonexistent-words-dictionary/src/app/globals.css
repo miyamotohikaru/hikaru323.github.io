@@ -1682,7 +1682,7 @@ a:hover { color: var(--text-primary); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   height: 180px;
   padding: 12px 4px;
   border-radius: 2px 3px 3px 2px;
@@ -1736,10 +1736,11 @@ a:hover { color: var(--text-primary); }
   writing-mode: vertical-rl;
   text-orientation: mixed;
   letter-spacing: 0.05em;
-  flex: 1;
+  flex: 0 1 auto;
+  margin-top: 6px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   line-height: 1.25;
   /* 改行(\n)で列を分け、各列内は自動折返ししない（長語はJS側で自然な位置に\nを挿入） */
   white-space: pre-wrap;
@@ -1761,7 +1762,8 @@ a:hover { color: var(--text-primary); }
   font-family: var(--font-ui);
   font-size: 0.5625rem;
   opacity: 0.7;
-  margin-top: 4px;
+  margin-top: auto; /* タイトルを上揃えにし、いいね数は下端へ */
+  padding-top: 4px;
 }
 
 @media (max-width: 480px) {

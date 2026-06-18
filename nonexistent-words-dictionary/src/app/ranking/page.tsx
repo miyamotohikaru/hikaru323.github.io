@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { WordEntry } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
+import LikeButton from "@/components/LikeButton";
 
 type Tab = "popular" | "newest";
 
@@ -228,6 +229,11 @@ export default function RankingPage() {
                         <span className="open-book-author">
                           {selectedWord.nickname} 編
                         </span>
+                        <LikeButton
+                          key={selectedWord.id}
+                          wordId={selectedWord.id}
+                          initialLikes={selectedWord.likes}
+                        />
                         <Link
                           href={`/word/${selectedWord.id}`}
                           className="open-book-detail-link"
