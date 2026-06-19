@@ -4749,6 +4749,11 @@ a:hover { color: var(--text-primary); }
      縦積み＆確実に画面内で折り返す */
   .dictionary-page.dictionary-page--en {
     display: block;
+    box-sizing: border-box;
+    /* ビューポート基準でカード幅を固定し、確実に画面内で折り返す（インラインの maxWidth:800 を上書き） */
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+    margin: 1.5rem auto !important;
     padding: 1.5rem 1.25rem;
     overflow-x: hidden;
   }
