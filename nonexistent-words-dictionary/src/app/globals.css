@@ -1738,9 +1738,10 @@ a:hover { color: var(--text-primary); }
   letter-spacing: 0.05em;
   flex: 0 1 auto;
   margin-top: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  /* flexだと縦書きで短い列が中央寄りになるため block にし、各列を上詰めにする。
+     横方向の中央寄せは親(.book-spine align-items:center)に任せる */
+  display: block;
+  text-align: start;
   line-height: 1.25;
   /* 改行(\n)で列を分け、各列内は自動折返ししない（長語はJS側で自然な位置に\nを挿入） */
   white-space: pre-wrap;
