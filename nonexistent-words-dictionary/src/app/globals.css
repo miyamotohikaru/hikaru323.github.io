@@ -4745,17 +4745,16 @@ a:hover { color: var(--text-primary); }
    PCは横並び(row-reverse)で良いが、携帯だと3ブロックが圧縮され定義が
    1〜2語ずつ折れて読みづらい。携帯のみ縦積み(見出し→定義→例文・全幅)に。 */
 @media (max-width: 640px) {
+  /* flexのサイズ計算でカードが画面幅を超えるため、携帯ではブロックにして
+     縦積み＆確実に画面内で折り返す */
   .dictionary-page.dictionary-page--en {
-    flex-direction: column;
-    align-items: stretch;
+    display: block;
     padding: 1.5rem 1.25rem;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden; /* 画面幅を超えて溢れない */
+    overflow-x: hidden;
   }
   .dictionary-page--en .dict-entry-en {
-    width: 100%;
-    min-width: 0; /* flexアイテムが縮んで折り返せるように */
+    width: auto;
+    margin-bottom: 0.75rem;
   }
   .dictionary-page--en .dict-definition-en,
   .dictionary-page--en .dict-example-en {
