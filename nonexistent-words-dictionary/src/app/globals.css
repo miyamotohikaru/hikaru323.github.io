@@ -4740,3 +4740,17 @@ a:hover { color: var(--text-primary); }
     padding-right: 2px;
   }
 }
+
+/* ===== 英語の単語詳細/シェア: 携帯では縦積みで読みやすく =====
+   PCは横並び(row-reverse)で良いが、携帯だと3ブロックが圧縮され定義が
+   1〜2語ずつ折れて読みづらい。携帯のみ縦積み(見出し→定義→例文・全幅)に。 */
+@media (max-width: 640px) {
+  .dictionary-page.dictionary-page--en {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.5rem 1.25rem;
+  }
+  .dictionary-page--en .dict-entry-en {
+    width: 100%;
+  }
+}
