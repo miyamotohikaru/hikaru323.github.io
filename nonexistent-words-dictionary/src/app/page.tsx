@@ -8,6 +8,10 @@ import { EmptyWordNotice } from "@/components/EmptyWordNotice";
 import { useI18n } from "@/lib/i18n";
 import { useFooterVisibility } from "@/components/ClientProviders";
 
+// 登録時の文字数上限（サーバー側 words/route.ts と合わせる）
+const DEF_LIMIT = 600;
+const EX_LIMIT = 200;
+
 // カタカナをひらがなに変換
 function toHiragana(str: string): string {
   return str.replace(/[\u30A1-\u30F6]/g, (ch) =>
@@ -155,6 +159,23 @@ export default function Home() {
     // 編集中フラグに関わらず、現在の編集値を保存する（編集を終了しても反映されるように）
     const def = editDef || entry.definition;
     const example = editExample || entry.example;
+
+    // 文字数上限チェック（超過時は登録できない旨を表示）
+    if (def.length > DEF_LIMIT) {
+      setSaveError(isEnMode
+        ? `Definition must be ${DEF_LIMIT} characters or less. Currently ${def.length}. Cannot register.`
+        : `定義は${DEF_LIMIT}字以内にしてください（現在${def.length}字）。このままでは登録できません。`);
+      setIsSaving(false);
+      return;
+    }
+    if (example.length > EX_LIMIT) {
+      setSaveError(isEnMode
+        ? `Example must be ${EX_LIMIT} characters or less. Cannot register.`
+        : `用例は${EX_LIMIT}字以内にしてください。このままでは登録できません。`);
+      setIsSaving(false);
+      return;
+    }
+
     const partOfSpeech = entry.partOfSpeech;
     const formatted = isEnMode
       ? `${entry.word} (${partOfSpeech}) — ${def}${example ? `. Example: "${example}"` : ""}`
@@ -237,7 +258,7 @@ export default function Home() {
                   type="text"
                   value={word}
                   onChange={(e) => setWord(e.target.value)}
-                  placeholder={isEnMode ? "look up a word" : "ことばを引く"}
+                  placeholder={isEnMode ? "register a word" : "ことばを登録する"}
                   className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
                   maxLength={20}
                 />
@@ -462,13 +483,25 @@ export default function Home() {
             <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
             {editing ? (
               <div className="result-edit-fields">
-                <label className="result-edit-label">{isEnMode ? "Definition" : "定義"}</label>
+                <label className="result-edit-label">
+                  {isEnMode ? `Definition (within ${DEF_LIMIT} chars)` : `定義（${DEF_LIMIT}字以内）`}
+                </label>
                 <textarea
                   value={editDef}
                   onChange={(e) => setEditDef(e.target.value)}
                   className="result-edit-textarea"
                   rows={6}
                 />
+                <span
+                  className="result-edit-count"
+                  style={{
+                    fontSize: "0.6875rem",
+                    color: editDef.length > DEF_LIMIT ? "var(--accent)" : "var(--textMute)",
+                  }}
+                >
+                  {editDef.length} / {DEF_LIMIT}
+                  {editDef.length > DEF_LIMIT && (isEnMode ? " — too long, cannot register" : " 字超過：このままでは登録できません")}
+                </span>
                 <label className="result-edit-label">{isEnMode ? "Example" : "用例"}</label>
                 <textarea
                   value={editExample}

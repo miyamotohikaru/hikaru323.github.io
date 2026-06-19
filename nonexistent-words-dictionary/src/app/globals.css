@@ -1682,7 +1682,7 @@ a:hover { color: var(--text-primary); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   height: 180px;
   padding: 12px 4px;
   border-radius: 2px 3px 3px 2px;
@@ -1735,14 +1735,18 @@ a:hover { color: var(--text-primary); }
   font-weight: 600;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  letter-spacing: 0.1em;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.4;
+  letter-spacing: 0.05em;
+  flex: 0 1 auto;
+  margin-top: 6px;
+  /* flexだと縦書きで短い列が中央寄りになるため block にし、各列を上詰めにする。
+     横方向の中央寄せは親(.book-spine align-items:center)に任せる */
+  display: block;
+  text-align: start;
+  line-height: 1.25;
+  /* 改行(\n)で列を分け、各列内は自動折返ししない（長語はJS側で自然な位置に\nを挿入） */
+  white-space: pre-wrap;
+  word-break: keep-all;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .book-spine-author {
@@ -1751,7 +1755,7 @@ a:hover { color: var(--text-primary); }
   opacity: 0.5;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  max-height: 3em;
+  white-space: nowrap; /* 名前を折り返さず1列で表示（長い名前はJS側でフォント縮小） */
   overflow: hidden;
 }
 
@@ -1759,7 +1763,8 @@ a:hover { color: var(--text-primary); }
   font-family: var(--font-ui);
   font-size: 0.5625rem;
   opacity: 0.7;
-  margin-top: 4px;
+  margin-top: auto; /* タイトルを上揃えにし、いいね数は下端へ */
+  padding-top: 4px;
 }
 
 @media (max-width: 480px) {
@@ -2476,6 +2481,8 @@ a:hover { color: var(--text-primary); }
   border: 1px solid var(--textSoft);
   width: 50px;
   height: 380px;
+  /* 背景を塗って不透明に。降ってくる文字/こすくまは後ろのレイヤーに隠す */
+  background: var(--bg);
 }
 
 .tategaki-search-input {
@@ -2859,24 +2866,27 @@ a:hover { color: var(--text-primary); }
 }
 
 .result-register-label {
-  font-size: 11px;
-  color: var(--textMute);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
   letter-spacing: 0.2em;
 }
 
+/* 入力欄だと分かるよう、枠＋薄い背景の「入力ボックス」にする（掲載者名の場所を明確化） */
 .result-register-input {
   writing-mode: vertical-rl;
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--rule);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
   color: var(--text);
   font-family: var(--font-main);
   font-size: 15px;
-  padding: 8px;
+  padding: 10px 8px;
+  min-height: 140px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
 }
-.result-register-input:focus { border-right-color: var(--textSoft); }
+.result-register-input:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.08); }
 .result-register-input::placeholder { color: var(--textMute); }
 
 .result-register-textarea {
@@ -4728,5 +4738,37 @@ a:hover { color: var(--text-primary); }
     flex: none;
     padding-left: 2px;
     padding-right: 2px;
+  }
+}
+
+/* ===== 英語の単語詳細/シェア: 携帯では縦積みで読みやすく =====
+   PCは横並び(row-reverse)で良いが、携帯だと3ブロックが圧縮され定義が
+   1〜2語ずつ折れて読みづらい。携帯のみ縦積み(見出し→定義→例文・全幅)に。 */
+@media (max-width: 640px) {
+  /* ページ全体の横はみ出しをクリップ（はみ出しで100vwが膨らみカードが溢れるのを防ぐ）。
+     clipはhiddenと違いsticky等を壊さない */
+  .main-content {
+    overflow-x: clip;
+  }
+  /* flexのサイズ計算でカードが画面幅を超えるため、携帯ではブロック＋全幅にして
+     縦積み＆確実にコンテナ内で折り返す */
+  .dictionary-page.dictionary-page--en {
+    display: block;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 1.5rem 0 !important;
+    padding: 1.5rem 1.25rem;
+    overflow-x: hidden;
+  }
+  .dictionary-page--en .dict-entry-en {
+    width: auto;
+    max-width: 100%;
+    margin-bottom: 0.75rem;
+  }
+  .dictionary-page--en .dict-definition-en,
+  .dictionary-page--en .dict-example-en {
+    max-width: 100%;
+    overflow-wrap: break-word;
   }
 }

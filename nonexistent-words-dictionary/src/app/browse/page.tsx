@@ -54,8 +54,15 @@ export default function BrowsePage() {
       }
     }
   }
-  for (const [, words] of wordsByRow) {
-    words.sort((a, b) => a.reading.localeCompare(b.reading));
+  // 行内は kana 配列の並び順（清音 → 濁音 → 半濁音）でソート、同じ頭文字は読み全体で
+  for (const row of GOJUON_ROWS) {
+    const words = wordsByRow.get(row.label)!;
+    words.sort((a, b) => {
+      const ia = row.kana.indexOf(a.reading.charAt(0));
+      const ib = row.kana.indexOf(b.reading.charAt(0));
+      if (ia !== ib) return ia - ib;
+      return a.reading.localeCompare(b.reading);
+    });
   }
 
   // Group EN words by first letter
