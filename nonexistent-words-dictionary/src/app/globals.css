@@ -4749,8 +4749,16 @@ a:hover { color: var(--text-primary); }
     flex-direction: column;
     align-items: stretch;
     padding: 1.5rem 1.25rem;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden; /* 画面幅を超えて溢れない */
   }
   .dictionary-page--en .dict-entry-en {
     width: 100%;
+    min-width: 0; /* flexアイテムが縮んで折り返せるように */
+  }
+  .dictionary-page--en .dict-definition-en,
+  .dictionary-page--en .dict-example-en {
+    overflow-wrap: break-word;
   }
 }
