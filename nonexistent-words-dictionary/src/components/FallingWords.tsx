@@ -90,12 +90,18 @@ export default function FallingWords() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Canvasの論理サイズ。resize時のみ更新し、以降の描画/座標計算はこれを基準にする
+    // （モバイルでキーボード表示中に innerHeight が縮んでも、クリア漏れ＝白い帯が出ないように）
+    let viewW = window.innerWidth;
+    let viewH = window.innerHeight;
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
+      viewW = window.innerWidth;
+      viewH = window.innerHeight;
+      canvas.width = viewW * dpr;
+      canvas.height = viewH * dpr;
+      canvas.style.width = `${viewW}px`;
+      canvas.style.height = `${viewH}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
@@ -131,8 +137,8 @@ export default function FallingWords() {
           const colHeight = charStep * word.length;
           const colWidth = fontSize; // single character width approximation
 
-          const cw = window.innerWidth;
-          const ch = window.innerHeight;
+          const cw = viewW;
+          const ch = viewH;
           const duration = rand(DURATION_MIN, DURATION_MAX);
           // speed = total vertical distance / (duration * 60fps)
           const speed = (ch + colHeight + 100) / (duration * 60);
@@ -181,8 +187,8 @@ export default function FallingWords() {
           const aspect = img.naturalWidth / img.naturalHeight;
           const iconW = baseSize;
           const iconH = baseSize / aspect;
-          const cw = window.innerWidth;
-          const ch = window.innerHeight;
+          const cw = viewW;
+          const ch = viewH;
           const duration = rand(DURATION_MIN, DURATION_MAX);
           const speed = (ch + iconH + 100) / (duration * 60);
 
@@ -210,10 +216,11 @@ export default function FallingWords() {
 
     // ── Animation loop ──
     const tick = () => {
-      const cw = window.innerWidth;
-      const ch = window.innerHeight;
+      const cw = viewW;
+      const ch = viewH;
       const particles = particlesRef.current;
 
+      // Canvas全体をクリア（viewHは固定なのでキーボード表示時もクリア漏れしない）
       ctx.clearRect(0, 0, cw, ch);
 
       // Update & draw
