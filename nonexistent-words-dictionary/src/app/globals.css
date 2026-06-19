@@ -4745,24 +4745,30 @@ a:hover { color: var(--text-primary); }
    PCは横並び(row-reverse)で良いが、携帯だと3ブロックが圧縮され定義が
    1〜2語ずつ折れて読みづらい。携帯のみ縦積み(見出し→定義→例文・全幅)に。 */
 @media (max-width: 640px) {
-  /* flexのサイズ計算でカードが画面幅を超えるため、携帯ではブロックにして
-     縦積み＆確実に画面内で折り返す */
+  /* ページ全体の横はみ出しをクリップ（はみ出しで100vwが膨らみカードが溢れるのを防ぐ）。
+     clipはhiddenと違いsticky等を壊さない */
+  .main-content {
+    overflow-x: clip;
+  }
+  /* flexのサイズ計算でカードが画面幅を超えるため、携帯ではブロック＋全幅にして
+     縦積み＆確実にコンテナ内で折り返す */
   .dictionary-page.dictionary-page--en {
     display: block;
     box-sizing: border-box;
-    /* ビューポート基準でカード幅を固定し、確実に画面内で折り返す（インラインの maxWidth:800 を上書き） */
-    width: calc(100vw - 2rem) !important;
-    max-width: calc(100vw - 2rem) !important;
-    margin: 1.5rem auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 1.5rem 0 !important;
     padding: 1.5rem 1.25rem;
     overflow-x: hidden;
   }
   .dictionary-page--en .dict-entry-en {
     width: auto;
+    max-width: 100%;
     margin-bottom: 0.75rem;
   }
   .dictionary-page--en .dict-definition-en,
   .dictionary-page--en .dict-example-en {
+    max-width: 100%;
     overflow-wrap: break-word;
   }
 }
