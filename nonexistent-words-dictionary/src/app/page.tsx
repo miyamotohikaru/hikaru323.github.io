@@ -418,11 +418,11 @@ export default function Home() {
             </form>
             <p className="search-limit-note">
               {isEnMode
-                ? `※ Up to ${REGISTER_LIMIT} words per person`
-                : `※ お一人さま${REGISTER_LIMIT}つまで登録できます`}
+                ? `Up to ${REGISTER_LIMIT} words per person`
+                : `1人、${REGISTER_LIMIT}つまで登録できます`}
             </p>
           </div>
-          <p className="tategaki-search-note">{t("home.note")}</p>
+          <p className="tategaki-search-note tategaki-search-note--tight">{t("home.note")}</p>
         </div>
       )}
 
@@ -685,13 +685,6 @@ export default function Home() {
           {/* 掲載フォーム列 */}
           <div className="result-register-col fade-in-rtl">
             <span className="result-register-heading">{isEnMode ? "Register this word" : "存在しない言葉辞典に掲載できます"}</span>
-            {myWordCount !== null && (
-              <span className={`result-register-count${myWordCount >= REGISTER_LIMIT ? " is-full" : ""}`}>
-                {isEnMode
-                  ? `${myWordCount} / ${REGISTER_LIMIT} registered${myWordCount >= REGISTER_LIMIT ? " (full)" : ""}`
-                  : `登録数 ${myWordCount} / ${REGISTER_LIMIT}${myWordCount >= REGISTER_LIMIT ? "（上限）" : ""}`}
-              </span>
-            )}
 
             <div className="result-register-field">
               <span className="result-register-label">{isEnMode ? t("result.pronunciationLabel") : t("result.readingLabel")}</span>
@@ -715,6 +708,13 @@ export default function Home() {
             <button onClick={handleSave} disabled={isSaving} className="result-cta-button">
               {isSaving ? t("result.submitting") : t("result.submit")}
             </button>
+            {myWordCount !== null && (
+              <span className={`result-register-count${myWordCount >= REGISTER_LIMIT ? " is-full" : ""}`}>
+                {isEnMode
+                  ? `${myWordCount} / ${REGISTER_LIMIT} registered${myWordCount >= REGISTER_LIMIT ? " (full)" : ""}`
+                  : `登録数 ${myWordCount} / ${REGISTER_LIMIT}${myWordCount >= REGISTER_LIMIT ? "（上限）" : ""}`}
+              </span>
+            )}
 
             {saveError && <span className="result-error">{saveError}</span>}
           </div>

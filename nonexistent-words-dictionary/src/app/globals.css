@@ -4961,13 +4961,35 @@ a:hover { color: var(--text-primary); }
 }
 .result-register-count.is-full { color: var(--accent); font-weight: 700; }
 
-/* TOPの登録上限の控えめな注記 */
+/* TOPの登録上限の控えめな注記。
+   デスクトップは縦書きで、下部の注意事項(.tategaki-search-note)の隣に並べる */
 .search-limit-note {
-  margin-top: 0.6rem;
-  font-size: 0.7rem;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  position: absolute;
+  left: 84px;
+  bottom: 20px;
+  margin: 0;
+  font-size: 11px;
   color: var(--textMute);
-  text-align: center;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.2em;
+  z-index: 1;
+}
+/* モバイルは静的・横書きにして、注意事項のすぐ上に詰めて表示 */
+@media (max-width: 640px) {
+  .search-limit-note {
+    writing-mode: horizontal-tb;
+    text-orientation: initial;
+    position: static;
+    left: auto;
+    bottom: auto;
+    text-align: center;
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    margin: 0.4rem 0 0;
+  }
+  /* 直下の注意事項との隙間を詰める */
+  .tategaki-search-note--tight { margin-top: 0.25rem; }
 }
 
 /* 3タブが狭い画面でも収まるように */
