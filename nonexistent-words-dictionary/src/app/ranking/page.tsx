@@ -34,12 +34,6 @@ const POS_EN_MAP: Record<string, string> = {
   conjunction: "接続詞",
   pronoun: "連体詞",
 };
-// 凡例で見せる品詞ラベル
-const POS_LABELS: Record<string, string> = {
-  "名詞": "名詞", "動詞": "動詞", "形容詞": "形容詞", "形容動詞": "形容動詞",
-  "副詞": "副詞", "感動詞": "感動詞", "連体詞": "連体詞", "接続詞": "接続詞",
-};
-
 function normalizePos(pos: string): string {
   const p = (pos || "").trim();
   return POS_EN_MAP[p.toLowerCase()] || p;
@@ -59,13 +53,8 @@ function getPosColor(pos: string) {
   return SPINE_COLORS[posColorIndex(pos)];
 }
 
-// 本の厚み（文字数に応じて変える）
-function getBookWidth(word: WordEntry) {
-  const len = (word.definition || "").length;
-  if (len > 80) return 70;
-  if (len > 40) return 58;
-  return 48;
-}
+// 本の厚み（すべて同じ幅で揃える）
+const BOOK_WIDTH = 56;
 
 // 背表紙タイトルを、長い場合は自然な区切りで2行(2列)に分割する。
 function splitSpineTitle(word: string): string[] {
@@ -223,11 +212,6 @@ export default function RankingPage() {
     setSelectedWord((cur) => (cur?.id === word.id ? null : word));
   };
 
-  // 現在表示中の単語に含まれる品詞（凡例用）
-  const legendPos = Array.from(
-    new Set(words.map((w) => normalizePos(w.partOfSpeech)).filter(Boolean))
-  );
-
   return (
     <main className="main-content">
       <div className="gojuon-header">
@@ -259,21 +243,6 @@ export default function RankingPage() {
         </button>
       </div>
 
-      {/* 品詞カラーの凡例 */}
-      {!loading && !fetchError && legendPos.length > 0 && (
-        <div className="pos-legend">
-          {legendPos.map((pos) => (
-            <span key={pos} className="pos-legend-item">
-              <span
-                className="pos-legend-swatch"
-                style={{ background: getPosColor(pos).bg }}
-              />
-              {POS_LABELS[pos] || pos}
-            </span>
-          ))}
-        </div>
-      )}
-
       {loading ? (
         <p className="loading-text">{t("loading.text")}</p>
       ) : fetchError ? (
@@ -289,7 +258,7 @@ export default function RankingPage() {
                 {shelf.map((w, i) => {
                   const globalIndex = shelfIndex * perShelf + i;
                   const color = getPosColor(w.partOfSpeech);
-                  const width = getBookWidth(w);
+                  const width = BOOK_WIDTH;
                   const isSelected = selectedWord?.id === w.id;
                   const titleLines = splitSpineTitle(w.word);
                   const titleFs = spineFontSize(titleLines);
