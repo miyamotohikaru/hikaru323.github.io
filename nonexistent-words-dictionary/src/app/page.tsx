@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, FormEvent } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
 import FallingWords from "@/components/FallingWords";
+import VerticalTextInput from "@/components/VerticalTextInput";
 import { EmptyWordNotice } from "@/components/EmptyWordNotice";
 import { useI18n } from "@/lib/i18n";
 import { useFooterVisibility } from "@/components/ClientProviders";
@@ -727,20 +728,22 @@ export default function Home() {
 
             <div className="result-register-field">
               <span className="result-register-label">{isEnMode ? t("result.pronunciationLabel") : t("result.readingLabel")}</span>
-              <input
-                type="text" value={reading}
-                onChange={(e) => setReading(isEnMode ? e.target.value : toHiragana(e.target.value))}
+              <VerticalTextInput
+                value={reading}
+                onChange={(v) => setReading(isEnMode ? v : toHiragana(v))}
                 placeholder={isEnMode ? t("result.pronunciationPlaceholder") : t("result.readingPlaceholder")}
-                className="result-register-input" maxLength={isEnMode ? 50 : 30}
+                ariaLabel={isEnMode ? t("result.pronunciationLabel") : t("result.readingLabel")}
+                maxLength={isEnMode ? 50 : 30}
               />
             </div>
             <div className="result-register-field">
               <span className="result-register-label">{t("result.nicknameLabel")}</span>
-              <input
-                type="text" value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+              <VerticalTextInput
+                value={nickname}
+                onChange={setNickname}
                 placeholder={t("result.nicknamePlaceholder")}
-                className="result-register-input" maxLength={15}
+                ariaLabel={t("result.nicknameLabel")}
+                maxLength={15}
               />
             </div>
 
