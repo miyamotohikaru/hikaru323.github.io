@@ -1541,11 +1541,15 @@ export default function MothFlameGame() {
       const pts = lastClosed.pts;
       if (pts.length < 2) return;
       const fadeA = age > 1.8 ? 1 - (age - 1.8) / 0.4 : 1;
+      const sc = lastClosed.score;
+      // Rainbow only for 90+, otherwise a single colour by score
+      const rainbow = sc >= 90;
+      const solid = sc >= 70 ? "#9efbb6" : sc >= 50 ? "#ffb454" : "#fff7c2";
       otx.save();
       otx.lineCap = "round";
       otx.lineJoin = "round";
       otx.globalAlpha = 0.35 * fadeA;
-      otx.strokeStyle = RCOLS[Math.floor(T * 10) % RCOLS.length];
+      otx.strokeStyle = rainbow ? RCOLS[Math.floor(T * 10) % RCOLS.length] : solid;
       otx.lineWidth = 14;
       otx.beginPath();
       otx.moveTo(pts[0].x, pts[0].y);
@@ -1555,7 +1559,9 @@ export default function MothFlameGame() {
       otx.globalAlpha = fadeA;
       otx.lineWidth = 4;
       for (let i = 1; i < pts.length; i++) {
-        otx.strokeStyle = RCOLS[(i + Math.floor(T * 12)) % RCOLS.length];
+        otx.strokeStyle = rainbow
+          ? RCOLS[(i + Math.floor(T * 12)) % RCOLS.length]
+          : solid;
         otx.beginPath();
         otx.moveTo(pts[i - 1].x, pts[i - 1].y);
         otx.lineTo(pts[i].x, pts[i].y);
@@ -1563,7 +1569,6 @@ export default function MothFlameGame() {
       }
       if (age < 1.4) {
         const fl = Math.floor(T * 8) % 2;
-        const sc = lastClosed.score;
         const tier =
           sc >= 90
             ? "PERFECT!"
