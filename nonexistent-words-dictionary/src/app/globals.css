@@ -4953,9 +4953,19 @@ a:hover { color: var(--text-primary); }
   margin-bottom: 0.75rem;
 }
 
-/* 検索結果欄の登録数表示（◯/5） */
+/* 「この言葉を辞典に載せる」ボタンと登録数を縦に積む。
+   .result-register-col は vertical-rl のため flex-direction:row が「上下方向」になる */
+.result-cta-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+/* 検索結果欄の登録数表示（◯/5）。ボタンの下に横書きで小さく出す */
 .result-register-count {
-  font-size: 0.72rem;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  font-size: 0.78rem;
   color: var(--textMute);
   letter-spacing: 0.04em;
 }

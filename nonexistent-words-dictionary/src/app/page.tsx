@@ -418,8 +418,8 @@ export default function Home() {
             </form>
             <p className="search-limit-note">
               {isEnMode
-                ? `Up to ${REGISTER_LIMIT} words per person`
-                : `1人、${REGISTER_LIMIT}つまで登録できます`}
+                ? `※ Up to ${REGISTER_LIMIT} words per person`
+                : `※1人、${REGISTER_LIMIT}つまで登録できます`}
             </p>
           </div>
           <p className="tategaki-search-note tategaki-search-note--tight">{t("home.note")}</p>
@@ -705,16 +705,16 @@ export default function Home() {
               />
             </div>
 
-            <button onClick={handleSave} disabled={isSaving} className="result-cta-button">
-              {isSaving ? t("result.submitting") : t("result.submit")}
-            </button>
-            {myWordCount !== null && (
-              <span className={`result-register-count${myWordCount >= REGISTER_LIMIT ? " is-full" : ""}`}>
-                {isEnMode
-                  ? `${myWordCount} / ${REGISTER_LIMIT} registered${myWordCount >= REGISTER_LIMIT ? " (full)" : ""}`
-                  : `登録数 ${myWordCount} / ${REGISTER_LIMIT}${myWordCount >= REGISTER_LIMIT ? "（上限）" : ""}`}
-              </span>
-            )}
+            <div className="result-cta-wrap">
+              <button onClick={handleSave} disabled={isSaving} className="result-cta-button">
+                {isSaving ? t("result.submitting") : t("result.submit")}
+              </button>
+              {myWordCount !== null && (
+                <span className={`result-register-count${myWordCount >= REGISTER_LIMIT ? " is-full" : ""}`}>
+                  {myWordCount}/{REGISTER_LIMIT}
+                </span>
+              )}
+            </div>
 
             {saveError && <span className="result-error">{saveError}</span>}
           </div>
