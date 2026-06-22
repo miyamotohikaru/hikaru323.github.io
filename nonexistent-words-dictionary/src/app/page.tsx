@@ -92,6 +92,9 @@ export default function Home() {
   const [limitWords, setLimitWords] = useState<MyWord[]>([]);
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // 自分の登録数（検索結果に「◯/5」表示）
+  const [myWordCount, setMyWordCount] = useState<number | null>(null);
 
   // フッター表示制御: idleの時だけフッターを表示
   useEffect(() => {
@@ -114,6 +117,25 @@ export default function Home() {
       document.documentElement.style.overflow = "";
     };
   }, [phase]);
+
+  // 検索結果（登録可能な新語）が出たら、自分の登録数を取得して「◯/5」表示に使う
+  useEffect(() => {
+    const registerable =
+      phase === "result" && result && !result.exists && !result.alreadyRegistered && !!result.kojienEntry;
+    if (!registerable) return;
+    const token = localStorage.getItem("fictionary_author_token");
+    if (!token) { setMyWordCount(0); return; }
+    let aborted = false;
+    fetch("/api/words/mine", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ authorToken: token }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (!aborted) setMyWordCount((d.words || []).length); })
+      .catch(() => { if (!aborted) setMyWordCount(null); });
+    return () => { aborted = true; };
+  }, [phase, result]);
 
   // 掲載者名は毎回空欄にする（保存はするが自動入力しない）
 
@@ -314,13 +336,9 @@ export default function Home() {
   };
 
   // 上限到達時、既存の単語を1つ削除して枠を空け、保留中の新語を登録する
+  // （アプリ内ブラウザで window.confirm が出ないことがあるため、確認はモーダル内のインラインUIで行う）
   const handleDeleteForSlot = async (id: string) => {
     if (!pendingSave || deletingId) return;
-    const target = limitWords.find((w) => w.id === id);
-    const ok = window.confirm(isEnMode
-      ? `Delete "${target?.word}" and register your new word?`
-      : `「${target?.word}」を削除して、新しい言葉を登録しますか？`);
-    if (!ok) return;
 
     setDeletingId(id);
     setSaveError(null);
@@ -351,6 +369,7 @@ export default function Home() {
   const closeLimitModal = () => {
     setShowLimitModal(false);
     setPendingSave(null);
+    setConfirmDeleteId(null);
     setIsSaving(false);
   };
 
@@ -397,6 +416,11 @@ export default function Home() {
                 </button>
               </div>
             </form>
+            <p className="search-limit-note">
+              {isEnMode
+                ? `※ Up to ${REGISTER_LIMIT} words per person`
+                : `※ お一人さま${REGISTER_LIMIT}つまで登録できます`}
+            </p>
           </div>
           <p className="tategaki-search-note">{t("home.note")}</p>
         </div>
@@ -661,6 +685,13 @@ export default function Home() {
           {/* 掲載フォーム列 */}
           <div className="result-register-col fade-in-rtl">
             <span className="result-register-heading">{isEnMode ? "Register this word" : "存在しない言葉辞典に掲載できます"}</span>
+            {myWordCount !== null && (
+              <span className={`result-register-count${myWordCount >= REGISTER_LIMIT ? " is-full" : ""}`}>
+                {isEnMode
+                  ? `${myWordCount} / ${REGISTER_LIMIT} registered${myWordCount >= REGISTER_LIMIT ? " (full)" : ""}`
+                  : `登録数 ${myWordCount} / ${REGISTER_LIMIT}${myWordCount >= REGISTER_LIMIT ? "（上限）" : ""}`}
+              </span>
+            )}
 
             <div className="result-register-field">
               <span className="result-register-label">{isEnMode ? t("result.pronunciationLabel") : t("result.readingLabel")}</span>
@@ -708,40 +739,79 @@ export default function Home() {
             </p>
             <p className="limit-modal-desc">
               {isEnMode
-                ? "To register your new word, please delete one of your existing words below (uncheck it)."
-                : "新しい言葉を登録するには、下の登録済み単語からどれか1つを削除（チェックを外す）してください。"}
+                ? "To register your new word, tap one of your words below to uncheck and delete it."
+                : "新しい言葉を登録するには、下の登録済みの言葉をタップしてチェックを外し、どれか1つ削除してください。"}
             </p>
 
+            <span className="limit-count-badge">
+              {isEnMode
+                ? `${limitWords.length} / ${REGISTER_LIMIT} registered`
+                : `登録数 ${limitWords.length} / ${REGISTER_LIMIT}`}
+            </span>
+
             <div className="limit-word-list">
-              {/* 登録済みの5単語（チェック済み＝外すと削除） */}
-              {limitWords.map((w) => (
-                <label key={w.id} className="limit-word-row">
-                  <input
-                    type="checkbox"
-                    className="limit-word-check"
-                    checked
-                    disabled={deletingId !== null}
-                    onChange={() => handleDeleteForSlot(w.id)}
-                  />
-                  <span className="limit-word-main">
-                    <span className="limit-word-head">{w.word}</span>
-                    <span className="limit-word-def">{w.definition}</span>
-                  </span>
-                </label>
-              ))}
+              {/* 登録済みの単語（チェック済み。タップで外すと削除確認） */}
+              {limitWords.map((w) => {
+                const confirming = confirmDeleteId === w.id;
+                return (
+                  <div key={w.id} className="limit-word-row">
+                    <input
+                      type="checkbox"
+                      className="limit-word-check"
+                      checked={!confirming}
+                      disabled={deletingId !== null}
+                      onChange={() => setConfirmDeleteId(confirming ? null : w.id)}
+                    />
+                    <span className="limit-word-main">
+                      <span className="limit-word-head">{w.word}</span>
+                      <span className="limit-word-def">{w.definition}</span>
+
+                      {confirming && (
+                        <span className="limit-word-confirm">
+                          <span className="limit-word-confirm-text">
+                            {isEnMode
+                              ? `Delete "${w.word}" and register your new word?`
+                              : `「${w.word}」を削除して、新しい言葉を登録しますか？`}
+                          </span>
+                          <span className="limit-confirm-buttons">
+                            <button
+                              className="limit-confirm-del"
+                              onClick={() => handleDeleteForSlot(w.id)}
+                              disabled={deletingId !== null}
+                            >
+                              {deletingId === w.id
+                                ? (isEnMode ? "Deleting…" : "削除中…")
+                                : (isEnMode ? "Delete & register" : "削除して登録")}
+                            </button>
+                            <button
+                              className="limit-confirm-cancel"
+                              onClick={() => setConfirmDeleteId(null)}
+                              disabled={deletingId !== null}
+                            >
+                              {isEnMode ? "Keep" : "やめる"}
+                            </button>
+                          </span>
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
 
               {/* これから登録したい新語（未チェック） */}
               <div className="limit-word-row is-pending">
                 <input type="checkbox" className="limit-word-check" checked={false} readOnly disabled />
                 <span className="limit-word-main">
-                  <span className="limit-word-tag">{isEnMode ? "New" : "登録したい言葉"}</span>
-                  <span className="limit-word-head">{pendingSave.display.word}</span>
+                  <span className="limit-word-head">
+                    <span className="limit-word-tag">{isEnMode ? "New" : "登録したい言葉"}</span>
+                    {pendingSave.display.word}
+                  </span>
                   <span className="limit-word-def">{pendingSave.display.definition}</span>
                 </span>
               </div>
             </div>
 
-            {saveError && <span className="result-error" style={{ display: "block", marginBottom: "0.75rem" }}>{saveError}</span>}
+            {saveError && <span className="limit-modal-error">{saveError}</span>}
 
             <div className="limit-modal-actions">
               <button className="limit-modal-cancel" onClick={closeLimitModal} disabled={deletingId !== null}>
