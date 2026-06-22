@@ -362,9 +362,10 @@ export default function MothFlameGame() {
           wph: number;
           wang: number;
           age: number;
+          series: number;
         }
       | null = null;
-    let nextKosuT = 30 + Math.random() * 25; // first possible appearance
+    let nextKosuT = 3 + Math.random() * 7; // first appearance within ~10s
     const kosuParts: {
       x: number;
       y: number;
@@ -589,6 +590,7 @@ export default function MothFlameGame() {
         wph: Math.random() * 6.28,
         wang: Math.random() * 6.28,
         age: 0,
+        series: Math.floor(Math.random() * 4), // random series each appearance
       };
     }
 
@@ -671,8 +673,8 @@ export default function MothFlameGame() {
         return;
       }
 
-      // Draw (4-frame flap @ 80ms, faces travel direction, soft wobble)
-      const img = kosuFrames[Math.floor((T * 1000) / 80) % 4];
+      // Draw (random series, 4-frame flap @ 80ms, faces direction, soft wobble)
+      const img = kosuSeries[kosu.series][Math.floor((T * 1000) / 80) % 4];
       if (!img || !img.complete || !img.naturalWidth) return;
       const h = 34,
         w = (img.naturalWidth / img.naturalHeight) * h;
