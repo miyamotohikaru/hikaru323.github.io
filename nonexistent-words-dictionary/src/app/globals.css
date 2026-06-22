@@ -2992,6 +2992,19 @@ a:hover { color: var(--text-primary); }
 }
 .result-edit-btn:hover { color: var(--textSoft); border-color: var(--textSoft); }
 
+/* 編集パネル上部に固定する「編集を終了」ボタン。スクロールしても常に押せる */
+.result-edit-done-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  width: 100%;
+  border-style: solid;
+  background: var(--bg);
+  color: var(--text);
+  padding: 10px 20px;
+  font-size: 13px;
+}
+
 .result-edit-fields {
   writing-mode: horizontal-tb;
   display: flex;

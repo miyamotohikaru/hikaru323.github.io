@@ -651,6 +651,9 @@ export default function Home() {
             <span className="result-pos-label">{editPos || result.kojienEntry.partOfSpeech}</span>
             {editing ? (
               <div className="result-edit-fields">
+                <button onClick={() => setEditing(false)} className="result-edit-btn result-edit-done-top">
+                  {isEnMode ? "Done editing" : "編集を終了"}
+                </button>
                 <label className="result-edit-label">{isEnMode ? "Pronunciation" : "ふりがな（読み）"}</label>
                 <input
                   type="text"
@@ -698,9 +701,6 @@ export default function Home() {
                   className="result-edit-textarea"
                   rows={4}
                 />
-                <button onClick={() => setEditing(false)} className="result-edit-btn" style={{ marginTop: "8px" }}>
-                  {isEnMode ? "Done editing" : "編集を終了"}
-                </button>
               </div>
             ) : (
               <>
