@@ -53,17 +53,12 @@ function rand(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-export default function FallingWords({ paused = false }: { paused?: boolean }) {
+export default function FallingWords() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const wordsRef = useRef<string[]>([]);
   const rafRef = useRef(0);
   const iconRef = useRef<HTMLImageElement | null>(null);
-  // 入力中(paused)は降る言葉を止めて消す。effectを作り直さずに参照だけ更新する
-  const pausedRef = useRef(paused);
-  useEffect(() => {
-    pausedRef.current = paused;
-  }, [paused]);
 
   // Load icon
   useEffect(() => {
@@ -227,13 +222,6 @@ export default function FallingWords({ paused = false }: { paused?: boolean }) {
 
       // Canvas全体をクリア（viewHは固定なのでキーボード表示時もクリア漏れしない）
       ctx.clearRect(0, 0, cw, ch);
-
-      // 入力中は描画せず、降っている言葉も消して画面をクリーンに保つ
-      if (pausedRef.current) {
-        particles.length = 0;
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
 
       // Update & draw
       for (let i = particles.length - 1; i >= 0; i--) {
