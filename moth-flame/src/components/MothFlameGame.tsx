@@ -483,9 +483,10 @@ export default function MothFlameGame() {
     }
 
     function spawnMassScatter(cx: number, cy: number) {
-      // 95+: a huge shower of kosukuma (all series), pattern chosen at random
-      const big = ["burst", "fountain", "spiral", "ring"][Math.floor(Math.random() * 4)];
-      pattern(big, cx, cy, 52, 16);
+      // 95+: a huge shower of kosukuma rising from the fire like embers
+      // (fixed "fountain" so the 95+ payoff always looks the same)
+      pattern("fountain", cx, cy, 40, 16);
+      pattern("burst", cx, cy, 16, 16);
       for (let i = 0; i < 60; i++) pushSpark(cx, cy);
     }
 
@@ -502,17 +503,23 @@ export default function MothFlameGame() {
         });
         return;
       }
-      if (score <= 70) {
-        // Base — modest, but still varied (a small puff or a little fountain)
-        pattern(Math.random() < 0.5 ? "burst" : "fountain", cx, cy, 5, 16);
+      if (score < 70) {
+        // Base — same modest puff for every sub-70 circle
+        pattern("burst", cx, cy, 4, 14);
         return;
       }
-      // 71–94: gets more lavish every 5 points; a random pattern each time
-      const tier = Math.floor((score - 70) / 5); // 1..4
-      const pool = ["burst", "fountain", "ring", "spiral", "rain"];
-      const name = pool[Math.floor(Math.random() * pool.length)];
-      pattern(name, cx, cy, 6 + tier * 5, 18 + tier * 4);
-      for (let i = 0; i < tier * 10; i++) pushSpark(cx, cy);
+      // Fixed effect per 5-point band: same band → same effect, higher → grander
+      const band = Math.floor((score - 70) / 5); // 0:70-74, 1:75-79, ... 4:90-94
+      const specs = [
+        { name: "burst", count: 8, size: 18, sparks: 0 },   // 70–74 (控えめ)
+        { name: "fountain", count: 12, size: 20, sparks: 8 }, // 75–79
+        { name: "ring", count: 16, size: 22, sparks: 14 },    // 80–84
+        { name: "spiral", count: 20, size: 24, sparks: 20 },  // 85–89
+        { name: "rain", count: 26, size: 26, sparks: 28 },    // 90–94
+      ];
+      const s = specs[Math.min(band, specs.length - 1)];
+      pattern(s.name, cx, cy, s.count, s.size);
+      for (let i = 0; i < s.sparks; i++) pushSpark(cx, cy);
     }
     function drawCeleb(dt: number) {
       for (let i = celebParts.length - 1; i >= 0; i--) {
