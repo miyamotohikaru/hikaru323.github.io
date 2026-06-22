@@ -14,6 +14,8 @@ const DEF_LIMIT = 600;
 const EX_LIMIT = 200;
 // 1人(端末=authorToken)あたりの登録上限（サーバー側 words/route.ts と合わせる）
 const REGISTER_LIMIT = 5;
+// 入れ替えモーダルで「これから登録する新語」を表すチェックボックスのID
+const NEW_WORD_ID = "__new__";
 
 // 品詞の選択肢（編集パネルのプルダウン用）
 const POS_OPTIONS_JA = ["名詞", "動詞", "形容詞", "形容動詞", "副詞", "感動詞", "連体詞", "接続詞", "感嘆詞"];
@@ -97,8 +99,10 @@ export default function Home() {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitWords, setLimitWords] = useState<MyWord[]>([]);
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // 入れ替えモーダルで「残す5つ」として選択中のID（既存ID + 新語はNEW_WORD_ID）
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // 最終確認（「本当にこの単語にしますか？」）を表示中か
+  const [replaceConfirming, setReplaceConfirming] = useState(false);
   // 自分の登録数（検索結果に「◯/5」表示）
   const [myWordCount, setMyWordCount] = useState<number | null>(null);
 
@@ -246,6 +250,7 @@ export default function Home() {
     display: Omit<SavedWordData, "id">,
     authorToken: string
   ) => {
+    let mine: MyWord[] = [];
     try {
       const res = await fetch("/api/words/mine", {
         method: "POST",
@@ -253,10 +258,13 @@ export default function Home() {
         body: JSON.stringify({ authorToken }),
       });
       const data = await res.json();
-      setLimitWords(data.words || []);
+      mine = data.words || [];
     } catch {
-      setLimitWords([]);
+      mine = [];
     }
+    setLimitWords(mine);
+    setSelectedIds([...mine.map((w) => w.id), NEW_WORD_ID]);
+    setReplaceConfirming(false);
     setPendingSave({ payload, display, authorToken });
     setShowLimitModal(true);
     setIsSaving(false);
@@ -330,6 +338,8 @@ export default function Home() {
       const mine: MyWord[] = data.words || [];
       if (mine.length >= REGISTER_LIMIT) {
         setLimitWords(mine);
+        setSelectedIds([...mine.map((w) => w.id), NEW_WORD_ID]);
+        setReplaceConfirming(false);
         setPendingSave({ payload, display, authorToken });
         setShowLimitModal(true);
         setIsSaving(false);
@@ -342,41 +352,59 @@ export default function Home() {
     await doRegister(payload, display, authorToken);
   };
 
-  // 上限到達時、既存の単語を1つ削除して枠を空け、保留中の新語を登録する
-  // （アプリ内ブラウザで window.confirm が出ないことがあるため、確認はモーダル内のインラインUIで行う）
-  const handleDeleteForSlot = async (id: string) => {
-    if (!pendingSave || deletingId) return;
+  // 入れ替えモーダルのチェック切り替え（残す5つを選ぶ）
+  const toggleSelect = (id: string) => {
+    if (isSaving) return;
+    setSaveError(null);
+    setReplaceConfirming(false);
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
-    setDeletingId(id);
+  // 「この5つの単語を登録」確定。チェックされていない既存語を削除し、
+  // 新語が選択されていれば登録する（アプリ内ブラウザ対策でwindow.confirmは使わない）
+  const handleConfirmReplace = async () => {
+    if (!pendingSave || isSaving) return;
+    setIsSaving(true);
     setSaveError(null);
     try {
-      const res = await fetch(`/api/words/${id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ authorToken: pendingSave.authorToken }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setSaveError(data.error || (isEnMode ? "Failed to delete." : "削除に失敗しました。"));
-        setDeletingId(null);
-        return;
+      // チェックされていない既存語を削除
+      const toDelete = limitWords.filter((w) => !selectedIds.includes(w.id));
+      for (const w of toDelete) {
+        const res = await fetch(`/api/words/${w.id}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ authorToken: pendingSave.authorToken }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setSaveError(data.error || (isEnMode ? "Failed to delete." : "削除に失敗しました。"));
+          setIsSaving(false);
+          return;
+        }
       }
-      const remaining = limitWords.filter((w) => w.id !== id);
-      setLimitWords(remaining);
-      setDeletingId(null);
-      if (remaining.length < REGISTER_LIMIT) {
+      if (selectedIds.includes(NEW_WORD_ID)) {
+        // 新語を登録（成功時にモーダルを閉じてsharedへ）
         await doRegister(pendingSave.payload, pendingSave.display, pendingSave.authorToken);
+      } else {
+        // 新語は登録しない（既存の5つを選んだ）。モーダルを閉じる
+        setShowLimitModal(false);
+        setPendingSave(null);
+        setReplaceConfirming(false);
+        setMyWordCount(selectedIds.filter((id) => id !== NEW_WORD_ID).length);
       }
     } catch {
       setSaveError(isEnMode ? "Network error." : "通信に失敗しました。");
-      setDeletingId(null);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const closeLimitModal = () => {
     setShowLimitModal(false);
     setPendingSave(null);
-    setConfirmDeleteId(null);
+    setReplaceConfirming(false);
     setIsSaving(false);
   };
 
@@ -781,68 +809,26 @@ export default function Home() {
             </p>
             <p className="limit-modal-desc">
               {isEnMode
-                ? "To register your new word, tap one of your words below to uncheck and delete it."
-                : "新しい言葉を登録するには、下の登録済みの言葉をタップしてチェックを外し、どれか1つ削除してください。"}
+                ? `Choose the ${REGISTER_LIMIT} words to keep. Unchecked words will be deleted.`
+                : `残したい言葉を${REGISTER_LIMIT}つ選んでください。チェックを外した言葉は削除されます。`}
             </p>
 
-            <span className="limit-count-badge">
+            <span className={`limit-count-badge${selectedIds.length === REGISTER_LIMIT ? "" : " is-over"}`}>
               {isEnMode
-                ? `${limitWords.length} / ${REGISTER_LIMIT} registered`
-                : `登録数 ${limitWords.length} / ${REGISTER_LIMIT}`}
+                ? `${selectedIds.length} / ${REGISTER_LIMIT} selected`
+                : `選択中 ${selectedIds.length} / ${REGISTER_LIMIT}`}
             </span>
 
             <div className="limit-word-list">
-              {/* 登録済みの単語（チェック済み。タップで外すと削除確認） */}
-              {limitWords.map((w) => {
-                const confirming = confirmDeleteId === w.id;
-                return (
-                  <div key={w.id} className="limit-word-row">
-                    <input
-                      type="checkbox"
-                      className="limit-word-check"
-                      checked={!confirming}
-                      disabled={deletingId !== null}
-                      onChange={() => setConfirmDeleteId(confirming ? null : w.id)}
-                    />
-                    <span className="limit-word-main">
-                      <span className="limit-word-head">{w.word}</span>
-                      <span className="limit-word-def">{w.definition}</span>
-
-                      {confirming && (
-                        <span className="limit-word-confirm">
-                          <span className="limit-word-confirm-text">
-                            {isEnMode
-                              ? `Delete "${w.word}" and register your new word?`
-                              : `「${w.word}」を削除して、新しい言葉を登録しますか？`}
-                          </span>
-                          <span className="limit-confirm-buttons">
-                            <button
-                              className="limit-confirm-del"
-                              onClick={() => handleDeleteForSlot(w.id)}
-                              disabled={deletingId !== null}
-                            >
-                              {deletingId === w.id
-                                ? (isEnMode ? "Deleting…" : "削除中…")
-                                : (isEnMode ? "Delete & register" : "削除して登録")}
-                            </button>
-                            <button
-                              className="limit-confirm-cancel"
-                              onClick={() => setConfirmDeleteId(null)}
-                              disabled={deletingId !== null}
-                            >
-                              {isEnMode ? "Keep" : "やめる"}
-                            </button>
-                          </span>
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                );
-              })}
-
-              {/* これから登録したい新語（未チェック） */}
-              <div className="limit-word-row is-pending">
-                <input type="checkbox" className="limit-word-check" checked={false} readOnly disabled />
+              {/* これから登録したい新語 */}
+              <label className="limit-word-row is-pending">
+                <input
+                  type="checkbox"
+                  className="limit-word-check"
+                  checked={selectedIds.includes(NEW_WORD_ID)}
+                  disabled={isSaving}
+                  onChange={() => toggleSelect(NEW_WORD_ID)}
+                />
                 <span className="limit-word-main">
                   <span className="limit-word-head">
                     <span className="limit-word-tag">{isEnMode ? "New" : "登録したい言葉"}</span>
@@ -850,16 +836,62 @@ export default function Home() {
                   </span>
                   <span className="limit-word-def">{pendingSave.display.definition}</span>
                 </span>
-              </div>
+              </label>
+
+              {/* 登録済みの単語（チェックを外すと削除対象） */}
+              {limitWords.map((w) => (
+                <label key={w.id} className="limit-word-row">
+                  <input
+                    type="checkbox"
+                    className="limit-word-check"
+                    checked={selectedIds.includes(w.id)}
+                    disabled={isSaving}
+                    onChange={() => toggleSelect(w.id)}
+                  />
+                  <span className="limit-word-main">
+                    <span className="limit-word-head">{w.word}</span>
+                    <span className="limit-word-def">{w.definition}</span>
+                  </span>
+                </label>
+              ))}
             </div>
 
             {saveError && <span className="limit-modal-error">{saveError}</span>}
 
-            <div className="limit-modal-actions">
-              <button className="limit-modal-cancel" onClick={closeLimitModal} disabled={deletingId !== null}>
-                {isEnMode ? "Cancel" : "やめる"}
-              </button>
-            </div>
+            {replaceConfirming ? (
+              <div className="limit-confirm-box">
+                <p className="limit-confirm-q">
+                  {isEnMode
+                    ? "Are you sure these are your words? Unchecked words will be deleted."
+                    : "本当にこの単語にしますか？チェックされていない言葉は削除されます。"}
+                </p>
+                <div className="limit-modal-actions">
+                  <button className="limit-modal-cancel" onClick={() => setReplaceConfirming(false)} disabled={isSaving}>
+                    {isEnMode ? "Back" : "やめる"}
+                  </button>
+                  <button className="limit-register-btn" onClick={handleConfirmReplace} disabled={isSaving}>
+                    {isSaving
+                      ? (isEnMode ? "Saving…" : "登録中…")
+                      : (isEnMode ? "Yes, register" : "はい、登録する")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="limit-modal-actions">
+                <button className="limit-modal-cancel" onClick={closeLimitModal} disabled={isSaving}>
+                  {isEnMode ? "Cancel" : "やめる"}
+                </button>
+                <button
+                  className="limit-register-btn"
+                  onClick={() => setReplaceConfirming(true)}
+                  disabled={isSaving || selectedIds.length !== REGISTER_LIMIT}
+                >
+                  {isEnMode
+                    ? `Register these ${REGISTER_LIMIT} words`
+                    : `この${REGISTER_LIMIT}つの単語を登録`}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
