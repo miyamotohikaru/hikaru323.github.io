@@ -2520,6 +2520,23 @@ a:hover { color: var(--text-primary); }
   font-size: 14px;
 }
 
+/* 縦書き入力欄の点滅キャレット（横バー）。フォーカス中だけ表示 */
+.tategaki-search-caret {
+  display: inline-block;
+  width: 1em;
+  height: 2px;
+  background: var(--text);
+  vertical-align: middle;
+  animation: tategakiCaretBlink 1.05s step-end infinite;
+}
+@keyframes tategakiCaretBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tategaki-search-caret { animation: none; }
+}
+
 .tategaki-search-input {
   position: absolute;
   top: 0;

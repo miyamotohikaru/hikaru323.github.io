@@ -80,6 +80,8 @@ export default function Home() {
   const wordLanguage = lang === "en" ? "en" : "ja";
   const isEnMode = wordLanguage === "en";
   const [word, setWord] = useState("");
+  // 検索欄フォーカス中フラグ（縦書きミラーに点滅キャレットを出すため）
+  const [searchFocused, setSearchFocused] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [savedWord, setSavedWord] = useState<SavedWordData | null>(null);
@@ -439,15 +441,24 @@ export default function Home() {
                       IME入力すると変換中の文字が崩れるため、実際の入力は下の
                       横書きinput(透明)で受け、その値をここに映す */}
                   <div
-                    className={`tategaki-search-display ${word ? "" : "is-placeholder"}`}
+                    className={`tategaki-search-display ${!word && !searchFocused ? "is-placeholder" : ""}`}
                     aria-hidden="true"
                   >
-                    {word || (isEnMode ? "register a word" : "ことばを登録する")}
+                    {searchFocused ? (
+                      <>
+                        {word}
+                        <span className="tategaki-search-caret" />
+                      </>
+                    ) : (
+                      word || (isEnMode ? "register a word" : "ことばを登録する")
+                    )}
                   </div>
                   <input
                     type="text"
                     value={word}
                     onChange={(e) => setWord(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
                     aria-label={isEnMode ? "Word" : "読み（ひらがな）"}
                     placeholder={isEnMode ? "register a word" : undefined}
                     className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
