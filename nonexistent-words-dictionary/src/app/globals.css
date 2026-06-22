@@ -2563,6 +2563,9 @@ a:hover { color: var(--text-primary); }
   color: var(--textMute);
   font-size: 14px;
 }
+/* 透明な入力文字が選択されると白い帯に見えるため、選択ハイライトも透明にする */
+.tategaki-search-input::selection { background: transparent; }
+.tategaki-search-input::-moz-selection { background: transparent; }
 
 .tategaki-search-input:disabled { opacity: 0.5; }
 
@@ -2980,6 +2983,9 @@ a:hover { color: var(--text-primary); }
   font-size: 16px;
   padding: 10px 8px;
 }
+/* 透明な入力文字が選択されると白い帯に見えるため、選択ハイライトも透明にする */
+.result-register-input__field::selection { background: transparent; }
+.result-register-input__field::-moz-selection { background: transparent; }
 
 .result-register-textarea {
   writing-mode: vertical-rl;
@@ -3011,7 +3017,9 @@ a:hover { color: var(--text-primary); }
   padding: 28px 24px;
   cursor: pointer;
   transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
-  height: 80%;
+  /* PCでは折り返さず一行（縦書きで一列）にする。モバイルは@mediaで通常折り返し */
+  white-space: nowrap;
+  height: auto;
   width: 92px;
   box-shadow: 2px 2px 12px rgba(121, 46, 41, 0.3);
   /* 注意を引くため、ほのかに明滅させて存在感を出す */
@@ -3732,6 +3740,8 @@ a:hover { color: var(--text-primary); }
   .result-cta-button {
     padding: 18px 14px; font-size: 15px;
     width: 70px; height: auto;
+    /* モバイルは従来どおり折り返す（PCのみ一行化） */
+    white-space: normal;
   }
   .result-unpublished-badge { font-size: 12px; padding: 6px 10px; }
   .result-register-heading { font-size: 14px; }
