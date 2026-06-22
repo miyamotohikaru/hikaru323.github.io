@@ -11,6 +11,8 @@ import { useFooterVisibility } from "@/components/ClientProviders";
 // 登録時の文字数上限（サーバー側 words/route.ts と合わせる）
 const DEF_LIMIT = 600;
 const EX_LIMIT = 200;
+// 1人(端末=authorToken)あたりの登録上限（サーバー側 words/route.ts と合わせる）
+const REGISTER_LIMIT = 5;
 
 // カタカナをひらがなに変換
 function toHiragana(str: string): string {
@@ -48,6 +50,21 @@ interface SavedWordData {
   nickname: string;
 }
 
+// 自分が登録済みの単語（登録上限の入れ替えUI用）
+interface MyWord {
+  id: string;
+  word: string;
+  definition: string;
+  partOfSpeech: string;
+}
+
+// 上限到達時、削除後に登録するための保留データ
+interface PendingSave {
+  payload: Record<string, unknown>;
+  display: Omit<SavedWordData, "id">;
+  authorToken: string;
+}
+
 type Phase = "idle" | "loading" | "result" | "shared";
 
 export default function Home() {
@@ -69,6 +86,12 @@ export default function Home() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const hScrollRef = useRef<HTMLDivElement>(null);
+
+  // 登録上限（5単語）の入れ替えモーダル用
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitWords, setLimitWords] = useState<MyWord[]>([]);
+  const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // フッター表示制御: idleの時だけフッターを表示
   useEffect(() => {
@@ -139,21 +162,83 @@ export default function Home() {
     setSaveError(null);
   };
 
+  const getAuthorToken = () => {
+    let authorToken = localStorage.getItem("fictionary_author_token");
+    if (!authorToken) {
+      authorToken = crypto.randomUUID();
+      localStorage.setItem("fictionary_author_token", authorToken);
+    }
+    return authorToken;
+  };
+
+  // 実際の登録（POST）。上限に達していたら入れ替えモーダルを開く
+  const doRegister = async (
+    payload: Record<string, unknown>,
+    display: Omit<SavedWordData, "id">,
+    authorToken: string
+  ) => {
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch("/api/words", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.limitReached) {
+          // サーバー側でも上限。自分の単語を取得して入れ替えモーダルを開く
+          await openLimitModal(payload, display, authorToken);
+          return;
+        }
+        setSaveError(data.error || "掲載に失敗しました。");
+        return;
+      }
+
+      const postsCount = parseInt(localStorage.getItem("fictionary_posts_count") || "0", 10);
+      localStorage.setItem("fictionary_posts_count", String(postsCount + 1));
+      localStorage.setItem("fictionary_nickname", display.nickname);
+
+      setShowLimitModal(false);
+      setPendingSave(null);
+      setSavedWord({ ...display, id: data.id });
+      setPhase("shared");
+    } catch {
+      setSaveError("通信に失敗しました。");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 自分の単語一覧を取得して入れ替えモーダルを開く
+  const openLimitModal = async (
+    payload: Record<string, unknown>,
+    display: Omit<SavedWordData, "id">,
+    authorToken: string
+  ) => {
+    try {
+      const res = await fetch("/api/words/mine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ authorToken }),
+      });
+      const data = await res.json();
+      setLimitWords(data.words || []);
+    } catch {
+      setLimitWords([]);
+    }
+    setPendingSave({ payload, display, authorToken });
+    setShowLimitModal(true);
+    setIsSaving(false);
+  };
+
   const handleSave = async () => {
     if (!result?.kojienEntry || isSaving) return;
     const trimmedNickname = nickname.trim();
     const trimmedReading = reading.trim();
     if (!isEnMode && !trimmedReading) { setSaveError("読み（ひらがな）を入力してください。"); return; }
     if (!trimmedNickname) { setSaveError(isEnMode ? "Please enter a nickname." : "掲載者名を入力してください。"); return; }
-
-    setIsSaving(true);
-    setSaveError(null);
-
-    let authorToken = localStorage.getItem("fictionary_author_token");
-    if (!authorToken) {
-      authorToken = crypto.randomUUID();
-      localStorage.setItem("fictionary_author_token", authorToken);
-    }
 
     const entry = result.kojienEntry;
     // 編集中フラグに関わらず、現在の編集値を保存する（編集を終了しても反映されるように）
@@ -165,67 +250,108 @@ export default function Home() {
       setSaveError(isEnMode
         ? `Definition must be ${DEF_LIMIT} characters or less. Currently ${def.length}. Cannot register.`
         : `定義は${DEF_LIMIT}字以内にしてください（現在${def.length}字）。このままでは登録できません。`);
-      setIsSaving(false);
       return;
     }
     if (example.length > EX_LIMIT) {
       setSaveError(isEnMode
         ? `Example must be ${EX_LIMIT} characters or less. Cannot register.`
         : `用例は${EX_LIMIT}字以内にしてください。このままでは登録できません。`);
-      setIsSaving(false);
       return;
     }
 
+    const authorToken = getAuthorToken();
     const partOfSpeech = entry.partOfSpeech;
     const formatted = isEnMode
       ? `${entry.word} (${partOfSpeech}) — ${def}${example ? `. Example: "${example}"` : ""}`
       : `${entry.word}【${trimmedReading}】（${partOfSpeech}）${def}。▽用例「${example}」`;
 
+    const payload: Record<string, unknown> = {
+      word: entry.word,
+      reading: trimmedReading,
+      partOfSpeech,
+      definition: def,
+      etymology: "",
+      examples: example ? [example] : [],
+      synonyms: "",
+      nickname: trimmedNickname,
+      source: "user",
+      kojienFormatted: formatted,
+      authorToken,
+      language: wordLanguage,
+    };
+    const display: Omit<SavedWordData, "id"> = {
+      word: entry.word,
+      reading: trimmedReading,
+      partOfSpeech,
+      definition: def,
+      example: example || "",
+      nickname: trimmedNickname,
+    };
+
+    setIsSaving(true);
+    setSaveError(null);
+    // 登録上限(5単語)チェック: 先に自分の登録数を確認
     try {
-      const res = await fetch("/api/words", {
+      const res = await fetch("/api/words/mine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          word: entry.word,
-          reading: trimmedReading,
-          partOfSpeech,
-          definition: def,
-          etymology: "",
-          examples: example ? [example] : [],
-          synonyms: "",
-          nickname: trimmedNickname,
-          source: "user",
-          kojienFormatted: formatted,
-          authorToken,
-          language: wordLanguage,
-        }),
+        body: JSON.stringify({ authorToken }),
       });
-
       const data = await res.json();
-      if (!res.ok) {
-        setSaveError(data.error || "掲載に失敗しました。");
+      const mine: MyWord[] = data.words || [];
+      if (mine.length >= REGISTER_LIMIT) {
+        setLimitWords(mine);
+        setPendingSave({ payload, display, authorToken });
+        setShowLimitModal(true);
+        setIsSaving(false);
         return;
       }
-
-      const postsCount = parseInt(localStorage.getItem("fictionary_posts_count") || "0", 10);
-      localStorage.setItem("fictionary_posts_count", String(postsCount + 1));
-      localStorage.setItem("fictionary_nickname", trimmedNickname);
-
-      setSavedWord({
-        id: data.id,
-        word: entry.word,
-        reading: trimmedReading,
-        partOfSpeech,
-        definition: def,
-        example: example || "",
-        nickname: trimmedNickname,
-      });
-      setPhase("shared");
     } catch {
-      setSaveError("通信に失敗しました。");
-    } finally {
-      setIsSaving(false);
+      // 取得失敗時はサーバー側の制限に委ねてそのまま登録を試みる
     }
+
+    await doRegister(payload, display, authorToken);
+  };
+
+  // 上限到達時、既存の単語を1つ削除して枠を空け、保留中の新語を登録する
+  const handleDeleteForSlot = async (id: string) => {
+    if (!pendingSave || deletingId) return;
+    const target = limitWords.find((w) => w.id === id);
+    const ok = window.confirm(isEnMode
+      ? `Delete "${target?.word}" and register your new word?`
+      : `「${target?.word}」を削除して、新しい言葉を登録しますか？`);
+    if (!ok) return;
+
+    setDeletingId(id);
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/words/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ authorToken: pendingSave.authorToken }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data.error || (isEnMode ? "Failed to delete." : "削除に失敗しました。"));
+        setDeletingId(null);
+        return;
+      }
+      const remaining = limitWords.filter((w) => w.id !== id);
+      setLimitWords(remaining);
+      setDeletingId(null);
+      if (remaining.length < REGISTER_LIMIT) {
+        await doRegister(pendingSave.payload, pendingSave.display, pendingSave.authorToken);
+      }
+    } catch {
+      setSaveError(isEnMode ? "Network error." : "通信に失敗しました。");
+      setDeletingId(null);
+    }
+  };
+
+  const closeLimitModal = () => {
+    setShowLimitModal(false);
+    setPendingSave(null);
+    setIsSaving(false);
   };
 
   const pageNumber = result ? `p.${Math.floor(Math.random() * 900) + 100}` : "";
@@ -567,6 +693,61 @@ export default function Home() {
             <button onClick={handleReset} className="reject-retry-btn">
               {isEnMode ? "Look up another word" : "別の言葉を引く"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== 登録上限（5単語）入れ替えモーダル ===== */}
+      {showLimitModal && pendingSave && (
+        <div className="limit-modal-overlay" onClick={closeLimitModal}>
+          <div className="limit-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="limit-modal-title">
+              {isEnMode
+                ? `Up to ${REGISTER_LIMIT} words per person`
+                : `登録は1人${REGISTER_LIMIT}単語までです`}
+            </p>
+            <p className="limit-modal-desc">
+              {isEnMode
+                ? "To register your new word, please delete one of your existing words below (uncheck it)."
+                : "新しい言葉を登録するには、下の登録済み単語からどれか1つを削除（チェックを外す）してください。"}
+            </p>
+
+            <div className="limit-word-list">
+              {/* 登録済みの5単語（チェック済み＝外すと削除） */}
+              {limitWords.map((w) => (
+                <label key={w.id} className="limit-word-row">
+                  <input
+                    type="checkbox"
+                    className="limit-word-check"
+                    checked
+                    disabled={deletingId !== null}
+                    onChange={() => handleDeleteForSlot(w.id)}
+                  />
+                  <span className="limit-word-main">
+                    <span className="limit-word-head">{w.word}</span>
+                    <span className="limit-word-def">{w.definition}</span>
+                  </span>
+                </label>
+              ))}
+
+              {/* これから登録したい新語（未チェック） */}
+              <div className="limit-word-row is-pending">
+                <input type="checkbox" className="limit-word-check" checked={false} readOnly disabled />
+                <span className="limit-word-main">
+                  <span className="limit-word-tag">{isEnMode ? "New" : "登録したい言葉"}</span>
+                  <span className="limit-word-head">{pendingSave.display.word}</span>
+                  <span className="limit-word-def">{pendingSave.display.definition}</span>
+                </span>
+              </div>
+            </div>
+
+            {saveError && <span className="result-error" style={{ display: "block", marginBottom: "0.75rem" }}>{saveError}</span>}
+
+            <div className="limit-modal-actions">
+              <button className="limit-modal-cancel" onClick={closeLimitModal} disabled={deletingId !== null}>
+                {isEnMode ? "Cancel" : "やめる"}
+              </button>
+            </div>
           </div>
         </div>
       )}

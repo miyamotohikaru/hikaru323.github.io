@@ -4772,3 +4772,154 @@ a:hover { color: var(--text-primary); }
     overflow-wrap: break-word;
   }
 }
+
+/* ===== 品詞カラーの凡例（ランキング本棚） ===== */
+.pos-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  margin: -0.75rem 0 1.5rem;
+  padding: 0;
+}
+.pos-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  letter-spacing: 0.03em;
+}
+.pos-legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* ===== 無限スクロールのセンチネル ===== */
+.bookshelf-sentinel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  padding: 1rem 0;
+}
+
+/* ===== 登録上限（5単語）入れ替えモーダル ===== */
+.limit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(20, 16, 12, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  backdrop-filter: blur(2px);
+}
+.limit-modal {
+  background: var(--bg, #f5f1e8);
+  color: var(--text-primary);
+  width: 100%;
+  max-width: 440px;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 10px;
+  border: 1px solid var(--base-border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  padding: 1.5rem 1.4rem 1.3rem;
+}
+.limit-modal-title {
+  font-family: var(--font-serif, serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+.limit-modal-desc {
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--text-sub);
+  margin: 0 0 1rem;
+}
+.limit-word-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.limit-word-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--base-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.4);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.limit-word-row:hover { background: rgba(255, 255, 255, 0.7); }
+.limit-word-row.is-pending {
+  cursor: default;
+  background: rgba(121, 46, 41, 0.06);
+  border-style: dashed;
+  border-color: var(--accent, #792e29);
+}
+.limit-word-check {
+  margin-top: 0.15rem;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--accent, #792e29);
+  cursor: pointer;
+}
+.limit-word-main { min-width: 0; flex: 1; }
+.limit-word-head {
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 0.15rem;
+  word-break: break-word;
+}
+.limit-word-def {
+  font-size: 0.74rem;
+  color: var(--text-sub);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.limit-word-tag {
+  display: inline-block;
+  font-size: 0.66rem;
+  color: var(--accent, #792e29);
+  border: 1px solid var(--accent, #792e29);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.limit-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+.limit-modal-cancel {
+  background: transparent;
+  border: 1px solid var(--base-border);
+  color: var(--text-sub);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  padding: 0.5rem 1rem;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.limit-modal-cancel:hover { color: var(--text-primary); }
+
+/* 3タブが狭い画面でも収まるように */
+@media (max-width: 640px) {
+  .ranking-tab { padding: 0.7rem 0.9rem; font-size: 0.82rem; }
+  .ranking-tabs { justify-content: center; }
+}

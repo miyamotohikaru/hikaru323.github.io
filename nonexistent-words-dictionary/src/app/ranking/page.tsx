@@ -6,7 +6,7 @@ import { WordEntry } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
 import LikeButton from "@/components/LikeButton";
 
-type Tab = "popular" | "newest";
+type Tab = "popular" | "recommend" | "newest";
 
 // 背表紙の色バリエーション
 const SPINE_COLORS = [
@@ -20,8 +20,43 @@ const SPINE_COLORS = [
   { bg: "linear-gradient(180deg, #583828, #482818)", text: "#d8c8b8" },
 ];
 
-function getSpineColor(index: number) {
-  return SPINE_COLORS[index % SPINE_COLORS.length];
+// 品詞ごとに色を固定で割り当てる（同じ品詞は同じ色＝本棚が品詞で色分けされる）
+const POS_ORDER = [
+  "名詞", "動詞", "形容詞", "形容動詞", "副詞", "感動詞", "連体詞", "接続詞",
+];
+// 英語品詞 → 日本語品詞へ正規化（同じ意味は同じ色に）
+const POS_EN_MAP: Record<string, string> = {
+  noun: "名詞",
+  verb: "動詞",
+  adjective: "形容詞",
+  adverb: "副詞",
+  interjection: "感動詞",
+  conjunction: "接続詞",
+  pronoun: "連体詞",
+};
+// 凡例で見せる品詞ラベル
+const POS_LABELS: Record<string, string> = {
+  "名詞": "名詞", "動詞": "動詞", "形容詞": "形容詞", "形容動詞": "形容動詞",
+  "副詞": "副詞", "感動詞": "感動詞", "連体詞": "連体詞", "接続詞": "接続詞",
+};
+
+function normalizePos(pos: string): string {
+  const p = (pos || "").trim();
+  return POS_EN_MAP[p.toLowerCase()] || p;
+}
+
+function posColorIndex(pos: string): number {
+  const norm = normalizePos(pos);
+  const known = POS_ORDER.indexOf(norm);
+  if (known >= 0) return known % SPINE_COLORS.length;
+  // 未知の品詞は文字列ハッシュで安定して色付け
+  let h = 0;
+  for (const ch of norm) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h % SPINE_COLORS.length;
+}
+
+function getPosColor(pos: string) {
+  return SPINE_COLORS[posColorIndex(pos)];
 }
 
 // 本の厚み（文字数に応じて変える）
@@ -33,7 +68,6 @@ function getBookWidth(word: WordEntry) {
 }
 
 // 背表紙タイトルを、長い場合は自然な区切りで2行(2列)に分割する。
-// 区切り優先度: 助詞の直後 ＞ 漢字↔かな/カタカナの境目。中央に近いほど優先。
 function splitSpineTitle(word: string): string[] {
   const chars = Array.from(word);
   if (chars.length <= 7) return [word];
@@ -47,14 +81,11 @@ function splitSpineTitle(word: string): string[] {
     const prev = chars[i - 1];
     const cur = chars[i];
     let score = 0;
-    // 文字種の変わり目（漢字↔かな、カタカナ↔ひらがな）を主な区切り候補に
     if (isKanji(prev) !== isKanji(cur)) score = 2;
     else if (isKatakana(prev) !== isKatakana(cur)) score = 2;
-    // 助詞の前後はやや優先（軽い加点）
     if (particles.has(prev)) score += 1;
     if (particles.has(cur)) score += 1;
     if (score === 0) continue;
-    // 中央寄りを強めに重視（バランスの良い2分割を優先）
     const adj = score * 3 - Math.abs(i - mid);
     if (adj > bestScore) {
       bestScore = adj;
@@ -64,11 +95,19 @@ function splitSpineTitle(word: string): string[] {
   return [chars.slice(0, best).join(""), chars.slice(best).join("")];
 }
 
-// 1列に収まる文字数に応じてフォントサイズを決める（縦書き・可読下限/上限でクランプ）
 function spineFontSize(lines: string[]): number {
   const maxLen = Math.max(...lines.map((l) => Array.from(l).length));
   const fs = Math.round(92 / (maxLen * 1.35));
   return Math.max(9, Math.min(15, fs));
+}
+
+// 「新着」初期表示は画面が埋まる分だけ読み込む
+function computeNewestLimit(): number {
+  if (typeof window === "undefined") return 30;
+  const perShelf = window.innerWidth <= 640 ? 5 : 10;
+  const rowH = 180; // 1段の概算高さ(px)
+  const rows = Math.ceil(window.innerHeight / rowH) + 1;
+  return Math.min(100, Math.max(perShelf * 2, rows * perShelf));
 }
 
 export default function RankingPage() {
@@ -76,11 +115,16 @@ export default function RankingPage() {
   const [activeTab, setActiveTab] = useState<Tab>("popular");
   const [words, setWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const [selectedWord, setSelectedWord] = useState<WordEntry | null>(null);
   // 1棚あたりの冊数: PC=10冊、携帯(<=640px)=5冊
   const [perShelf, setPerShelf] = useState(10);
   const bookRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const cursorRef = useRef<string | null>(null);
+  const loadMoreRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const updatePerShelf = () => setPerShelf(window.innerWidth <= 640 ? 5 : 10);
@@ -89,20 +133,85 @@ export default function RankingPage() {
     return () => window.removeEventListener("resize", updatePerShelf);
   }, []);
 
+  // タブ切替時の初回ロード
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     setFetchError(false);
     setSelectedWord(null);
-    const sort = activeTab === "popular" ? "popular" : "newest";
-    fetch(`/api/words?sort=${sort}&limit=20`, { cache: "no-store" })
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then((data) => setWords(data.words || []))
-      .catch(() => { setWords([]); setFetchError(true); })
-      .finally(() => setLoading(false));
+    setWords([]);
+    setHasMore(false);
+    cursorRef.current = null;
+
+    const run = async () => {
+      try {
+        if (activeTab === "newest") {
+          const lim = computeNewestLimit();
+          const res = await fetch(`/api/words?sort=newest&limit=${lim}`, { cache: "no-store" });
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          if (cancelled) return;
+          const list: WordEntry[] = data.words || [];
+          setWords(list);
+          cursorRef.current = list.length ? list[list.length - 1].id : null;
+          setHasMore(list.length >= lim);
+        } else {
+          const sort = activeTab === "popular" ? "popular" : "recommend";
+          const res = await fetch(`/api/words?sort=${sort}&limit=50`, { cache: "no-store" });
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          if (cancelled) return;
+          setWords(data.words || []);
+          setHasMore(false);
+        }
+      } catch {
+        if (!cancelled) { setWords([]); setFetchError(true); }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
   }, [activeTab]);
+
+  // 「新着」の追加読み込み（無限スクロール）
+  const loadMore = async () => {
+    if (activeTab !== "newest" || loadingMore || !hasMore || !cursorRef.current) return;
+    setLoadingMore(true);
+    try {
+      const lim = 20;
+      const res = await fetch(
+        `/api/words?sort=newest&limit=${lim}&cursor=${cursorRef.current}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const more: WordEntry[] = data.words || [];
+      setWords((prev) => {
+        const seen = new Set(prev.map((w) => w.id));
+        return [...prev, ...more.filter((w) => !seen.has(w.id))];
+      });
+      cursorRef.current = more.length ? more[more.length - 1].id : cursorRef.current;
+      setHasMore(more.length >= lim);
+    } catch {
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+  loadMoreRef.current = loadMore;
+
+  // 末尾センチネルが見えたら追加読み込み
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMoreRef.current(); },
+      { rootMargin: "300px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [activeTab, hasMore]);
 
   useEffect(() => {
     if (selectedWord && bookRef.current) {
@@ -111,12 +220,13 @@ export default function RankingPage() {
   }, [selectedWord]);
 
   const handleBookClick = (word: WordEntry) => {
-    if (selectedWord?.id === word.id) {
-      setSelectedWord(null);
-    } else {
-      setSelectedWord(word);
-    }
+    setSelectedWord((cur) => (cur?.id === word.id ? null : word));
   };
+
+  // 現在表示中の単語に含まれる品詞（凡例用）
+  const legendPos = Array.from(
+    new Set(words.map((w) => normalizePos(w.partOfSpeech)).filter(Boolean))
+  );
 
   return (
     <main className="main-content">
@@ -136,12 +246,33 @@ export default function RankingPage() {
           {t("ranking.popular")}
         </button>
         <button
+          className={`ranking-tab ${activeTab === "recommend" ? "active" : ""}`}
+          onClick={() => setActiveTab("recommend")}
+        >
+          {t("ranking.recommend")}
+        </button>
+        <button
           className={`ranking-tab ${activeTab === "newest" ? "active" : ""}`}
           onClick={() => setActiveTab("newest")}
         >
           {t("ranking.newest")}
         </button>
       </div>
+
+      {/* 品詞カラーの凡例 */}
+      {!loading && !fetchError && legendPos.length > 0 && (
+        <div className="pos-legend">
+          {legendPos.map((pos) => (
+            <span key={pos} className="pos-legend-item">
+              <span
+                className="pos-legend-swatch"
+                style={{ background: getPosColor(pos).bg }}
+              />
+              {POS_LABELS[pos] || pos}
+            </span>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <p className="loading-text">{t("loading.text")}</p>
@@ -157,7 +288,7 @@ export default function RankingPage() {
               <div className="bookshelf-books">
                 {shelf.map((w, i) => {
                   const globalIndex = shelfIndex * perShelf + i;
-                  const color = getSpineColor(globalIndex);
+                  const color = getPosColor(w.partOfSpeech);
                   const width = getBookWidth(w);
                   const isSelected = selectedWord?.id === w.id;
                   const titleLines = splitSpineTitle(w.word);
@@ -247,6 +378,13 @@ export default function RankingPage() {
               )}
             </div>
           ))}
+
+          {/* 無限スクロール用センチネル＋追加読み込み表示（新着のみ） */}
+          {activeTab === "newest" && hasMore && (
+            <div ref={sentinelRef} className="bookshelf-sentinel">
+              {loadingMore && <span className="loading-text">{t("loading.text")}</span>}
+            </div>
+          )}
         </div>
       )}
     </main>

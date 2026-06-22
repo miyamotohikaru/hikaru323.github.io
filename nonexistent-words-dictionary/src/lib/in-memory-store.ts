@@ -81,6 +81,16 @@ export function listWords(options: {
   return result.slice(0, options.limit || 20);
 }
 
+export function listWordsByAuthor(authorToken: string): WordDoc[] {
+  return Array.from(words.values()).filter(
+    (w) => w.isVisible && w.authorToken === authorToken
+  );
+}
+
+export function deleteWord(id: string): boolean {
+  return words.delete(id);
+}
+
 export function likeWord(id: string): number | null {
   const doc = words.get(id);
   if (!doc) return null;

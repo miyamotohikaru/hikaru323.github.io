@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getFieldValue, isFirebaseAvailable } from "@/lib/firebase";
-import { getWord, incrementView, updateWord } from "@/lib/in-memory-store";
+import { getWord, incrementView, updateWord, deleteWord } from "@/lib/in-memory-store";
 
 export async function GET(
   _request: NextRequest,
@@ -130,5 +130,56 @@ export async function PATCH(
   } catch (error) {
     console.error("Word update error:", error);
     return NextResponse.json({ error: "更新に失敗しました。" }, { status: 500 });
+  }
+}
+
+// オーナーのみ削除可能（登録上限を超えた際の入れ替え用）
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const authorToken = body.authorToken;
+
+    if (!authorToken) {
+      return NextResponse.json({ error: "認証情報がありません。" }, { status: 401 });
+    }
+
+    if (isFirebaseAvailable()) {
+      try {
+        const db = await getDb();
+        const docRef = db.collection("words").doc(id);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+          return NextResponse.json({ error: "語が見つかりません。" }, { status: 404 });
+        }
+        if (doc.data()!.authorToken !== authorToken) {
+          return NextResponse.json({ error: "この語を削除する権限がありません。" }, { status: 403 });
+        }
+
+        await docRef.delete();
+        return NextResponse.json({ success: true });
+      } catch (fbError) {
+        console.error("Firebase error, falling back to in-memory:", fbError);
+      }
+    }
+
+    // インメモリモード
+    const doc = getWord(id);
+    if (!doc) {
+      return NextResponse.json({ error: "語が見つかりません。" }, { status: 404 });
+    }
+    if (doc.authorToken !== authorToken) {
+      return NextResponse.json({ error: "この語を削除する権限がありません。" }, { status: 403 });
+    }
+
+    deleteWord(id);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Word delete error:", error);
+    return NextResponse.json({ error: "削除に失敗しました。" }, { status: 500 });
   }
 }
