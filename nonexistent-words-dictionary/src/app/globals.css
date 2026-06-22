@@ -2485,18 +2485,24 @@ a:hover { color: var(--text-primary); }
   background: var(--bg);
 }
 
-/* 縦書き入力欄: 透明な横書きinput(実入力) + 縦書きdiv(表示ミラー) を重ねる */
+/* 縦書き入力欄: 透明な横書きinput(実入力) + 縦書きdiv(表示ミラー) を重ねる。
+   display/inputはともに4辺0の絶対配置でfieldを埋める（flex項目への
+   height:100%はブラウザによって0/autoに潰れるため使わない） */
 .tategaki-search-field {
   position: relative;
   flex: 1;
+  min-height: 0;
   width: 100%;
 }
 
 .tategaki-search-display {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  width: 100%;
-  height: 100%;
   box-sizing: border-box;
   color: var(--text);
   font-family: var(--font-main);
@@ -2518,8 +2524,8 @@ a:hover { color: var(--text-primary); }
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   box-sizing: border-box;
   /* iOSの縦書きinput IME崩れを避けるため入力自体は横書き。
      文字とキャレットは透明にし、見た目は .tategaki-search-display に反映する */
@@ -2943,8 +2949,8 @@ a:hover { color: var(--text-primary); }
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   box-sizing: border-box;
   writing-mode: horizontal-tb;
   background: transparent;
