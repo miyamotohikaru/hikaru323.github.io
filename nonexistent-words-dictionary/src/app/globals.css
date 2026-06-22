@@ -2485,15 +2485,51 @@ a:hover { color: var(--text-primary); }
   background: var(--bg);
 }
 
-.tategaki-search-input {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
+/* 縦書き入力欄: 透明な横書きinput(実入力) + 縦書きdiv(表示ミラー) を重ねる */
+.tategaki-search-field {
+  position: relative;
   flex: 1;
   width: 100%;
+}
+
+.tategaki-search-display {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 16px;
+  letter-spacing: 0.15em;
+  padding: 12px 8px;
+  overflow: hidden;
+  pointer-events: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tategaki-search-display.is-placeholder {
+  color: var(--textMute);
+  font-size: 14px;
+}
+
+.tategaki-search-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  /* iOSの縦書きinput IME崩れを避けるため入力自体は横書き。
+     文字とキャレットは透明にし、見た目は .tategaki-search-display に反映する */
+  writing-mode: horizontal-tb;
   background: transparent;
   border: none;
   outline: none;
-  color: var(--text);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: transparent;
   font-family: var(--font-main);
   font-size: 16px;
   letter-spacing: 0.15em;
@@ -3302,6 +3338,23 @@ a:hover { color: var(--text-primary); }
   height: auto;
 }
 
+/* 英語モードは横書きの通常inputをそのまま見せる（ミラーdivは隠す） */
+.tategaki-search-input-wrap.en-mode .tategaki-search-field {
+  position: static;
+  flex: none;
+  width: auto;
+  height: auto;
+}
+.tategaki-search-input-wrap.en-mode .tategaki-search-display {
+  display: none;
+}
+.tategaki-search-input-wrap.en-mode .tategaki-search-input {
+  position: static;
+  color: var(--text);
+  -webkit-text-fill-color: currentColor;
+  caret-color: auto;
+}
+
 .tategaki-search-input.en-mode {
   writing-mode: horizontal-tb;
   text-orientation: initial;
@@ -3449,16 +3502,23 @@ a:hover { color: var(--text-primary); }
     position: relative;
     margin: 0 auto;
   }
-  .tategaki-search-input {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
+  .tategaki-search-field {
     width: 2.75rem;
     height: calc(12.6rem + 21px);
-    font-size: 1rem;
-    border: none;
-    background: rgba(217, 212, 200, 0.03);
-    padding: 0.75rem 0.5rem;
     flex: none;
+  }
+  .tategaki-search-display {
+    font-size: 1rem;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    background: rgba(217, 212, 200, 0.03);
+  }
+  .tategaki-search-display.is-placeholder {
+    font-size: 0.875rem;
+  }
+  .tategaki-search-input {
+    font-size: 1rem;
+    padding: 0.75rem 0.5rem;
     text-align: center;
   }
   .tategaki-search-input::placeholder {

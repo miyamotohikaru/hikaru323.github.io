@@ -399,14 +399,26 @@ export default function Home() {
             <form onSubmit={handleSearch} className="tategaki-search-form">
               <span className="tategaki-search-label">{isEnMode ? "Word" : "読み（ひらがな）"}</span>
               <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""}`}>
-                <input
-                  type="text"
-                  value={word}
-                  onChange={(e) => setWord(e.target.value)}
-                  placeholder={isEnMode ? "register a word" : "ことばを登録する"}
-                  className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
-                  maxLength={20}
-                />
+                <div className="tategaki-search-field">
+                  {/* 縦書きの見た目はこのdivで再現する。iOSでは縦書きinputに直接
+                      IME入力すると変換中の文字が崩れるため、実際の入力は下の
+                      横書きinput(透明)で受け、その値をここに映す */}
+                  <div
+                    className={`tategaki-search-display ${word ? "" : "is-placeholder"}`}
+                    aria-hidden="true"
+                  >
+                    {word || (isEnMode ? "register a word" : "ことばを登録する")}
+                  </div>
+                  <input
+                    type="text"
+                    value={word}
+                    onChange={(e) => setWord(e.target.value)}
+                    aria-label={isEnMode ? "Word" : "読み（ひらがな）"}
+                    placeholder={isEnMode ? "register a word" : undefined}
+                    className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
+                    maxLength={20}
+                  />
+                </div>
                 <button
                   type="submit"
                   className="tategaki-search-button"
