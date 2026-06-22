@@ -73,6 +73,7 @@ export default function Home() {
   const wordLanguage = lang === "en" ? "en" : "ja";
   const isEnMode = wordLanguage === "en";
   const [word, setWord] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [savedWord, setSavedWord] = useState<SavedWordData | null>(null);
@@ -383,7 +384,7 @@ export default function Home() {
 
   return (
     <main className="main-content" style={{ position: "relative" }}>
-      {phase === "idle" && <FallingWords />}
+      {phase === "idle" && <FallingWords paused={searchFocused} />}
 
       {/* ヒーロー: タイトル + 説明 + 罫線 + 検索フォーム */}
       {phase === "idle" && (
@@ -403,6 +404,8 @@ export default function Home() {
                   type="text"
                   value={word}
                   onChange={(e) => setWord(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
                   placeholder={isEnMode ? "register a word" : "ことばを登録する"}
                   className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
                   maxLength={20}
