@@ -439,15 +439,56 @@ export default function MothFlameGame() {
         col: RCOLS[Math.floor(Math.random() * RCOLS.length)],
       });
     }
-    function spawnMassScatter(cx: number, cy: number) {
-      // 95+: a huge shower of kosukuma (all series) blasting out like embers
-      for (let i = 0; i < 48; i++) {
-        const a = Math.random() * 6.28,
-          sp = 120 + Math.random() * 280;
-        pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp - 130, 14 + Math.random() * 18, 1.2 + Math.random() * 0.9, 240);
+    // A library of distinct burst patterns so completions don't all look the
+    // same "everything flies apart". Each lays out the kosukuma differently.
+    function pattern(name: string, cx: number, cy: number, count: number, size: number) {
+      const sz = () => size * (0.8 + Math.random() * 0.5);
+      if (name === "burst") {
+        for (let i = 0; i < count; i++) {
+          const a = Math.random() * 6.28,
+            sp = 80 + Math.random() * 190;
+          pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp - 55, sz(), 1.0 + Math.random() * 0.7, 210);
+        }
+      } else if (name === "fountain") {
+        // shoot up in a narrow cone, then rain back down
+        for (let i = 0; i < count; i++) {
+          const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.2,
+            sp = 220 + Math.random() * 240;
+          pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp, sz(), 1.3 + Math.random() * 0.8, 360);
+        }
+      } else if (name === "ring") {
+        // evenly-spaced clean expanding ring
+        const sp = 150 + size * 2;
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * 6.28;
+          pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp, size, 1.3 + Math.random() * 0.4, 45);
+        }
+      } else if (name === "spiral") {
+        // radial + tangential velocity → swirling pinwheel
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * 6.28 * 2,
+            rad = 90 + Math.random() * 70,
+            tx = Math.cos(a),
+            ty = Math.sin(a);
+          pushKosuP(cx, cy, tx * rad - ty * 130, ty * rad + tx * 130, sz(), 1.4 + Math.random() * 0.5, 70);
+        }
+      } else if (name === "rain") {
+        // flutter down from the top of the screen like confetti
+        for (let i = 0; i < count; i++) {
+          const x = Math.random() * W,
+            y = -30 - Math.random() * 260;
+          pushKosuP(x, y, (Math.random() - 0.5) * 50, 30 + Math.random() * 70, sz(), 2.4 + Math.random(), 130);
+        }
       }
+    }
+
+    function spawnMassScatter(cx: number, cy: number) {
+      // 95+: a huge shower of kosukuma (all series), pattern chosen at random
+      const big = ["burst", "fountain", "spiral", "ring"][Math.floor(Math.random() * 4)];
+      pattern(big, cx, cy, 52, 16);
       for (let i = 0; i < 60; i++) pushSpark(cx, cy);
     }
+
     function celebrate(score: number) {
       const cx = fireSCX,
         cy = fireSCY;
@@ -462,24 +503,15 @@ export default function MothFlameGame() {
         return;
       }
       if (score <= 70) {
-        // Base puff — same modest effect for every sub-70 circle
-        for (let i = 0; i < 5; i++) {
-          const a = Math.random() * 6.28,
-            sp = 30 + Math.random() * 45;
-          pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp - 30, 18, 1.0 + Math.random() * 0.4, 140);
-        }
+        // Base — modest, but still varied (a small puff or a little fountain)
+        pattern(Math.random() < 0.5 ? "burst" : "fountain", cx, cy, 5, 16);
         return;
       }
-      // 71–94: gets more lavish every 5 points
+      // 71–94: gets more lavish every 5 points; a random pattern each time
       const tier = Math.floor((score - 70) / 5); // 1..4
-      const count = 6 + tier * 5;
-      const size = 18 + tier * 5;
-      const speed = 70 + tier * 30;
-      for (let i = 0; i < count; i++) {
-        const a = Math.random() * 6.28,
-          sp = speed * (0.5 + Math.random() * 0.7);
-        pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp - 45, size * (0.8 + Math.random() * 0.5), 1.0 + Math.random() * 0.6, 190);
-      }
+      const pool = ["burst", "fountain", "ring", "spiral", "rain"];
+      const name = pool[Math.floor(Math.random() * pool.length)];
+      pattern(name, cx, cy, 6 + tier * 5, 18 + tier * 4);
       for (let i = 0; i < tier * 10; i++) pushSpark(cx, cy);
     }
     function drawCeleb(dt: number) {
