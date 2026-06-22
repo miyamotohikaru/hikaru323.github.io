@@ -375,6 +375,152 @@ export default function MothFlameGame() {
       col: string;
     }[] = [];
 
+    // ── Celebration effects (scale with the score) ──
+    // All four mascot animation series, used for the burst confetti.
+    const KOSU_SERIES_SRCS = [
+      ["/kosukuma_bae_1.png", "/kosukuma_bae_2.png", "/kosukuma_bae_3.png", "/kosukuma_bae_4.png"],
+      ["/kosukuma_bae_loco_1.png", "/kosukuma_bae_loco_2.png", "/kosukuma_bae_loco_3.png", "/kosukuma_bae_loco_4.png"],
+      ["/kosukuma_bae_p03_1.png", "/kosukuma_bae_p03_2.png", "/kosukuma_bae_p03_3.png", "/kosukuma_bae_p03_4.png"],
+      ["/kosukuma_bae_p01_1.png", "/kosukuma_bae_p01_2.png", "/kosukuma_bae_p01_3.png", "/kosukuma_bae_p01_4.png"],
+    ];
+    const kosuSeries: HTMLImageElement[][] = KOSU_SERIES_SRCS.map((arr) =>
+      arr.map((src) => {
+        const im = new Image();
+        im.src = src;
+        return im;
+      })
+    );
+    interface CelebP {
+      kind: "kosu" | "spark" | "herald";
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      max: number;
+      grav: number;
+      scale: number;
+      series: number;
+      rot: number;
+      vrot: number;
+      col: string;
+    }
+    const celebParts: CelebP[] = [];
+
+    function kosuImg(series: number) {
+      const fr = kosuSeries[series][Math.floor((T * 1000) / 80) % 4];
+      return fr && fr.complete && fr.naturalWidth ? fr : null;
+    }
+    function drawKosuSprite(series: number, x: number, y: number, h: number, alpha: number, rot: number) {
+      const img = kosuImg(series);
+      if (!img) return;
+      const w = (img.naturalWidth / img.naturalHeight) * h;
+      otx.save();
+      otx.globalAlpha = Math.max(0, Math.min(1, alpha));
+      otx.translate(x, y);
+      if (rot) otx.rotate(rot);
+      otx.drawImage(img, -w / 2, -h / 2, w, h);
+      otx.restore();
+    }
+    function pushKosuP(x: number, y: number, vx: number, vy: number, scale: number, life: number, grav: number) {
+      celebParts.push({
+        kind: "kosu", x, y, vx, vy, life, max: life, grav, scale,
+        series: Math.floor(Math.random() * 4),
+        rot: (Math.random() - 0.5) * 0.6, vrot: (Math.random() - 0.5) * 3.5, col: "",
+      });
+    }
+    function pushSpark(x: number, y: number) {
+      const a = Math.random() * 6.28,
+        sp = 60 + Math.random() * 200;
+      const life = 0.6 + Math.random() * 0.7;
+      celebParts.push({
+        kind: "spark", x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 50,
+        life, max: life, grav: 220, scale: 0, series: 0, rot: 0, vrot: 0,
+        col: RCOLS[Math.floor(Math.random() * RCOLS.length)],
+      });
+    }
+    function spawnMassScatter(cx: number, cy: number) {
+      // 95+: a huge shower of kosukuma (all series) blasting out like embers
+      for (let i = 0; i < 48; i++) {
+        const a = Math.random() * 6.28,
+          sp = 120 + Math.random() * 280;
+        pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp - 130, 14 + Math.random() * 18, 1.2 + Math.random() * 0.9, 240);
+      }
+      for (let i = 0; i < 60; i++) pushSpark(cx, cy);
+    }
+    function celebrate(score: number) {
+      const cx = fireSCX,
+        cy = fireSCY;
+      if (cx <= 0) return;
+      if (score >= 95) {
+        // A big kosukuma rises into the flame, then bursts (see herald handling)
+        celebParts.push({
+          kind: "herald", x: cx, y: cy + Math.min(H * 0.36, 280), vx: 0, vy: 0,
+          life: 1.6, max: 1.6, grav: 0, scale: Math.min(170, H * 0.24),
+          series: Math.floor(Math.random() * 4), rot: 0, vrot: 0, col: "",
+        });
+        return;
+      }
+      if (score <= 70) {
+        // Base puff — same modest effect for every sub-70 circle
+        for (let i = 0; i < 5; i++) {
+          const a = Math.random() * 6.28,
+            sp = 30 + Math.random() * 45;
+          pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp - 30, 18, 1.0 + Math.random() * 0.4, 140);
+        }
+        return;
+      }
+      // 71–94: gets more lavish every 5 points
+      const tier = Math.floor((score - 70) / 5); // 1..4
+      const count = 6 + tier * 5;
+      const size = 18 + tier * 5;
+      const speed = 70 + tier * 30;
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * 6.28,
+          sp = speed * (0.5 + Math.random() * 0.7);
+        pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp - 45, size * (0.8 + Math.random() * 0.5), 1.0 + Math.random() * 0.6, 190);
+      }
+      for (let i = 0; i < tier * 10; i++) pushSpark(cx, cy);
+    }
+    function drawCeleb(dt: number) {
+      for (let i = celebParts.length - 1; i >= 0; i--) {
+        const p = celebParts[i];
+        if (p.kind === "herald") {
+          const dx = fireSCX - p.x,
+            dy = fireSCY - p.y;
+          const d = Math.hypot(dx, dy) || 1;
+          p.x += (dx / d) * 260 * dt;
+          p.y += (dy / d) * 260 * dt;
+          p.life -= dt;
+          if (d < 28 || p.life <= 0) {
+            spawnMassScatter(fireSCX, fireSCY);
+            celebParts.splice(i, 1);
+            continue;
+          }
+          drawKosuSprite(p.series, p.x, p.y, p.scale, 1, Math.sin(T * 6) * 0.12);
+          continue;
+        }
+        p.life -= dt;
+        if (p.life <= 0) {
+          celebParts.splice(i, 1);
+          continue;
+        }
+        p.vy += p.grav * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.vrot * dt;
+        const alpha = Math.min(1, (p.life / p.max) * 1.3);
+        if (p.kind === "spark") {
+          otx.globalAlpha = alpha;
+          otx.fillStyle = p.col;
+          otx.fillRect(Math.round(p.x), Math.round(p.y), 4, 4);
+        } else {
+          drawKosuSprite(p.series, p.x, p.y, p.scale, alpha, p.rot);
+        }
+      }
+      otx.globalAlpha = 1;
+    }
+
     function spawnKosu() {
       const edge = Math.floor(Math.random() * 4);
       const m = 60;
@@ -761,6 +907,7 @@ export default function MothFlameGame() {
       }
       setResult({ score });
       setCopied(false);
+      celebrate(score); // score-scaled kosukuma celebration
       trail = [];
       liveScoreVal = 0;
     }
@@ -1719,6 +1866,7 @@ export default function MothFlameGame() {
       if (dead) drawGameOver();
       drawEasterEgg(dt);
       kosukumaStep(dt);
+      drawCeleb(dt);
       drawHUD();
       drawCRT();
 
