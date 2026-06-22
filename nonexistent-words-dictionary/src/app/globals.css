@@ -3023,6 +3023,39 @@ a:hover { color: var(--text-primary); }
   border-color: var(--textSoft);
 }
 
+.result-edit-input,
+.result-edit-select {
+  width: 100%;
+  min-width: 280px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--text);
+  font-family: var(--font-main);
+  /* iOSの自動ズーム防止のため16px */
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 10px 12px;
+  outline: none;
+}
+.result-edit-input:focus,
+.result-edit-select:focus {
+  border-color: var(--textSoft);
+}
+.result-edit-select {
+  /* ネイティブの矢印を活かしつつ背景を辞典トーンに */
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--textMute) 50%),
+    linear-gradient(135deg, var(--textMute) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+}
+.result-edit-select option {
+  color: #000;
+}
+
 .result-error {
   color: var(--accent);
   font-size: 13px;

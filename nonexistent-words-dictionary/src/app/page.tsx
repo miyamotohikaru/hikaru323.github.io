@@ -14,6 +14,10 @@ const EX_LIMIT = 200;
 // 1人(端末=authorToken)あたりの登録上限（サーバー側 words/route.ts と合わせる）
 const REGISTER_LIMIT = 5;
 
+// 品詞の選択肢（編集パネルのプルダウン用）
+const POS_OPTIONS_JA = ["名詞", "動詞", "形容詞", "形容動詞", "副詞", "感動詞", "連体詞", "接続詞", "感嘆詞"];
+const POS_OPTIONS_EN = ["noun", "verb", "adjective", "adverb", "conjunction", "interjection"];
+
 // カタカナをひらがなに変換
 function toHiragana(str: string): string {
   return str.replace(/[\u30A1-\u30F6]/g, (ch) =>
@@ -81,6 +85,7 @@ export default function Home() {
   const [editing, setEditing] = useState(false);
   const [editDef, setEditDef] = useState("");
   const [editExample, setEditExample] = useState("");
+  const [editPos, setEditPos] = useState("");
   const [reading, setReading] = useState("");
   const [nickname, setNickname] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -168,6 +173,7 @@ export default function Home() {
         setEditDef(data.kojienEntry.definition);
         setEditExample(data.kojienEntry.example || "");
         setReading(isEnMode ? (data.kojienEntry.reading || "") : toHiragana(data.kojienEntry.reading || ""));
+        setEditPos(data.kojienEntry.partOfSpeech || "");
       }
       setPhase("result");
     } catch {
@@ -282,7 +288,7 @@ export default function Home() {
     }
 
     const authorToken = getAuthorToken();
-    const partOfSpeech = entry.partOfSpeech;
+    const partOfSpeech = editPos.trim() || entry.partOfSpeech;
     const formatted = isEnMode
       ? `${entry.word} (${partOfSpeech}) — ${def}${example ? `. Example: "${example}"` : ""}`
       : `${entry.word}【${trimmedReading}】（${partOfSpeech}）${def}。▽用例「${example}」`;
@@ -636,15 +642,36 @@ export default function Home() {
 
           {/* 本文列 */}
           <div className="result-body-col fade-in-rtl">
-            <span className="result-reading">{result.kojienEntry.reading}</span>
+            <span className="result-reading">{reading || result.kojienEntry.reading}</span>
             <span className="result-headword">
               <span className="result-headword-bracket">【</span>
               {result.kojienEntry.word}
               <span className="result-headword-bracket">】</span>
             </span>
-            <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
+            <span className="result-pos-label">{editPos || result.kojienEntry.partOfSpeech}</span>
             {editing ? (
               <div className="result-edit-fields">
+                <label className="result-edit-label">{isEnMode ? "Pronunciation" : "ふりがな（読み）"}</label>
+                <input
+                  type="text"
+                  value={reading}
+                  onChange={(e) => setReading(isEnMode ? e.target.value : toHiragana(e.target.value))}
+                  placeholder={isEnMode ? t("result.pronunciationPlaceholder") : t("result.readingPlaceholder")}
+                  className="result-edit-input"
+                  maxLength={isEnMode ? 50 : 30}
+                />
+                <label className="result-edit-label">{isEnMode ? "Part of speech" : "品詞"}</label>
+                <select
+                  value={editPos}
+                  onChange={(e) => setEditPos(e.target.value)}
+                  className="result-edit-select"
+                >
+                  {(() => {
+                    const opts = isEnMode ? POS_OPTIONS_EN : POS_OPTIONS_JA;
+                    const list = editPos && !opts.includes(editPos) ? [editPos, ...opts] : opts;
+                    return list.map((p) => <option key={p} value={p}>{p}</option>);
+                  })()}
+                </select>
                 <label className="result-edit-label">
                   {isEnMode ? `Definition (within ${DEF_LIMIT} chars)` : `定義（${DEF_LIMIT}字以内）`}
                 </label>
