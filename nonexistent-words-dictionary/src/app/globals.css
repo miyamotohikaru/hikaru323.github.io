@@ -2978,20 +2978,38 @@ a:hover { color: var(--text-primary); }
   writing-mode: vertical-rl;
   background: var(--accent);
   color: #fff;
-  border: none;
+  /* 金色の縁取りで「押せるボタン」だと一目で分かるように */
+  border: 2px solid #d8b36a;
+  border-radius: 6px;
   font-family: var(--font-main);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.4em;
   padding: 28px 24px;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
   height: 80%;
-  width: 85px;
+  width: 92px;
   box-shadow: 2px 2px 12px rgba(121, 46, 41, 0.3);
+  /* 注意を引くため、ほのかに明滅させて存在感を出す */
+  animation: ctaPulse 2.2s ease-in-out infinite;
 }
-.result-cta-button:hover:not(:disabled) { background: var(--accentDim); }
-.result-cta-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.result-cta-button:hover:not(:disabled) { background: var(--accentDim); transform: translateY(-2px); }
+.result-cta-button:active:not(:disabled) { transform: translateY(0); }
+.result-cta-button:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
+
+@keyframes ctaPulse {
+  0%, 100% {
+    box-shadow: 2px 2px 12px rgba(121, 46, 41, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(216, 179, 106, 0.28), 2px 2px 20px rgba(121, 46, 41, 0.55);
+  }
+}
+/* 「動きを減らす」設定の端末では明滅を止める */
+@media (prefers-reduced-motion: reduce) {
+  .result-cta-button { animation: none; }
+}
 
 .result-footer-bar {
   writing-mode: horizontal-tb;
@@ -3689,8 +3707,8 @@ a:hover { color: var(--text-primary); }
   .result-register-input__display,
   .result-register-input__field { padding: 6px; }
   .result-cta-button {
-    padding: 16px 14px; font-size: 13px;
-    width: 60px; height: auto;
+    padding: 18px 14px; font-size: 15px;
+    width: 70px; height: auto;
   }
   .result-unpublished-badge { font-size: 12px; padding: 6px 10px; }
   .result-register-heading { font-size: 14px; }
