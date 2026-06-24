@@ -2,7 +2,14 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Icon from "./Icon";
-import { applyFilter, FOV_DATA, applyFisheye } from "./FilterEngine";
+import {
+  applyFilter,
+  FOV_DATA,
+  applyFisheye,
+  applyCircularFisheye,
+  applyPanoramaBand,
+  applyCenteredDistortion,
+} from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
 import { SHARE_TEXTS } from "@/data/shareTexts";
 
@@ -302,6 +309,12 @@ export default function ViewScreen({
   const sharePrepRef = useRef<{ url: string; creatureId: string } | null>(null);
   const [preparingShare, setPreparingShare] = useState(false);
 
+  // 360°系の見せ方の切り替え（円形魚眼 / パノラマ帯 / 中心＋歪み）
+  const [viewMode, setViewMode] = useState<"circular" | "panorama" | "centered">("circular");
+  // handleCreatureChange の依存を増やさず最新値を読むための ref
+  const viewModeRef = useRef(viewMode);
+  viewModeRef.current = viewMode;
+
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
   const fovData = FOV_DATA[creature.id];
@@ -391,6 +404,15 @@ export default function ViewScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
+  // 見せ方モードを切り替えたら再描画（拡張画像はキャッシュ利用＝API再呼び出しなし）
+  useEffect(() => {
+    if (!imgRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    handleCreatureChange(selectedId, imgRef.current, canvas.width, canvas.height);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
+
   // Main rendering function
   const handleCreatureChange = useCallback(
     async (creatureId: string, originalImage: CanvasImageSource, w: number, h: number) => {
@@ -445,10 +467,22 @@ export default function ViewScreen({
         return;
       }
 
+      // 360°系(fov≧340)でAI拡張が成功したときだけ、見せ方の切り替え対象にする
+      const is360 = aiExpandSucceeded && (fov?.fov ?? 0) >= 340;
+
       try {
         // --- STEP 3: Draw source image ---
         try {
-          if (aiExpandSucceeded) {
+          if (aiExpandSucceeded && is360) {
+            // 360°比較モード: 拡張シーンで画面全体を埋める（cover）。
+            // 余白やクリーム化は後段の各モード変換側が担当する。
+            const ew = (sourceImg as HTMLImageElement).naturalWidth || w;
+            const eh = (sourceImg as HTMLImageElement).naturalHeight || h;
+            const coverScale = Math.max(w / ew, h / eh);
+            const cw = ew * coverScale;
+            const ch = eh * coverScale;
+            ctx.drawImage(sourceImg, (w - cw) / 2, (h - ch) / 2, cw, ch);
+          } else if (aiExpandSucceeded) {
             // AI拡張した横長(または縦長)画像を「歪ませず全体が収まるよう」描画する。
             // 以前は w×h に押し込んで横圧縮していたため、生成された周囲が潰れて
             // 拡張が効いていないように見えていた。
@@ -507,10 +541,24 @@ export default function ViewScreen({
           ctx.fillRect(0, 0, w, h);
         }
 
-        // --- STEP 6: Fisheye ONLY when AI expansion succeeded ---
-        // 魚眼を弱める: 強すぎると中心が過剰に拡大＋四隅が黒つぶれし、
-        // せっかくAI拡張で生成した左右の景色が見えなくなるため。
-        if (aiExpandSucceeded) {
+        // --- STEP 6: 変換 ---
+        if (is360) {
+          // 360°系: 見せ方を3モードで切り替え（outpaintは再生成せず変換だけ）
+          const fovDeg = fov?.fov ?? 360;
+          const strength = Math.min(1.0, (fovDeg - 120) / 240);
+          const mode = viewModeRef.current;
+          if (mode === "panorama") {
+            applyPanoramaBand(ctx, w, h);
+          } else if (mode === "centered") {
+            applyCenteredDistortion(ctx, w, h, strength);
+          } else {
+            applyCircularFisheye(ctx, w, h, strength);
+          }
+          console.log("[view] 360 mode:", mode, "strength:", strength);
+        } else if (aiExpandSucceeded) {
+          // それ以外の広視野: 従来の弱い魚眼。
+          // 強すぎると中心が過剰に拡大＋四隅が黒つぶれし、せっかくAI拡張で
+          // 生成した左右の景色が見えなくなるため弱める。
           const fisheyeStrength = Math.min(0.5, (exp - 1.0) * 0.3);
           applyFisheye(ctx, w, h, fisheyeStrength);
           console.log("[fisheye] strength:", fisheyeStrength);
@@ -694,6 +742,37 @@ export default function ViewScreen({
           <div style={{ fontSize: 13, color: "#999" }}>{creature.en}</div>
         </div>
       </div>
+
+      {/* 360°系の見せ方 切り替えボタン（fov≧340 のときだけ表示） */}
+      {fovData && fovData.fov >= 340 && (
+        <div style={{ display: "flex", gap: 8, justifyContent: "center", margin: "12px 0" }}>
+          {([
+            { key: "circular", label: "⭕ 円形魚眼" },
+            { key: "panorama", label: "🎞 パノラマ帯" },
+            { key: "centered", label: "🎯 中心＋歪み" },
+          ] as const).map((m) => (
+            <button
+              key={m.key}
+              onClick={() => setViewMode(m.key)}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 100,
+                border: "none",
+                background: viewMode === m.key ? "#2D2D2D" : "#fff",
+                color: viewMode === m.key ? "#fff" : "#666",
+                fontWeight: 900,
+                fontSize: 13,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                transition: "all 0.2s",
+              }}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Canvas area */}
       <div
