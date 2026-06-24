@@ -5,10 +5,10 @@ import Icon from "./Icon";
 import {
   applyFilter,
   FOV_DATA,
-  applyFisheye,
   applyCircularFisheye,
   applyPanoramaBand,
   applyCenteredDistortion,
+  applyEagleCenterZoom,
 } from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
 import { SHARE_TEXTS } from "@/data/shareTexts";
@@ -225,58 +225,94 @@ async function normalizeImage(
   return { blob, width: w, height: h, orientation };
 }
 
-/* ── Expand API call (simplified, PxBee-style) ── */
+/* ── マスター拡張画像の生成（写真1枚につき1回・360°ぶん・全生き物で使い回す） ── */
 
-async function callExpandAPI(
-  normalizedBlob: Blob,
-  expansion: number,
-  creatureId: string
-): Promise<HTMLImageElement | null> {
-  const bitmap = await createImageBitmap(normalizedBlob);
-  const direction = bitmap.height > bitmap.width ? "vertical" : "horizontal";
-
-  console.log(`[expand] ${bitmap.width}x${bitmap.height}, direction=${direction}, expansion=${expansion}, creature=${creatureId}`);
-
+async function generateMaster(normalizedBlob: Blob): Promise<HTMLImageElement | null> {
   const formData = new FormData();
   formData.append("image", normalizedBlob, "photo.jpg");
-  formData.append("expansion", String(expansion));
-  formData.append("direction", direction);
-  formData.append("creatureId", creatureId);
+  formData.append("expansion", "3.0"); // 360°ぶん固定
+  formData.append("direction", "horizontal");
 
   try {
     const res = await fetch("/api/expand", { method: "POST", body: formData });
     if (!res.ok) {
-      console.error("[expand] API error:", res.status, await res.text());
+      console.error("[master] API error:", res.status, await res.text());
       return null;
     }
-
     const blob = await res.blob();
     if (blob.size < 1000) {
-      console.error("[expand] Tiny blob:", blob.size);
+      console.error("[master] Tiny blob:", blob.size);
       return null;
     }
-
-    console.log(`[expand] Success: ${blob.size}B`);
     const img = new Image();
-    const objectUrl = URL.createObjectURL(blob);
-    img.src = objectUrl;
+    img.src = URL.createObjectURL(blob);
     try {
       await img.decode();
     } catch {
-      console.error("[expand] Failed to decode image, discarding");
-      URL.revokeObjectURL(objectUrl);
+      console.error("[master] Failed to decode image");
       return null;
     }
-    if (!img.naturalWidth || !img.naturalHeight) {
-      console.error("[expand] Image has no dimensions after decode");
-      URL.revokeObjectURL(objectUrl);
-      return null;
-    }
+    if (!img.naturalWidth || !img.naturalHeight) return null;
+    console.log(`[master] ready: ${img.naturalWidth}x${img.naturalHeight}`);
     return img;
   } catch (err) {
-    console.error("[expand] Exception:", err);
+    console.error("[master] Exception:", err);
     return null;
   }
+}
+
+/* ── 見え方の仕様（全24種） ── */
+// 色フィルターの上書き（既存filterTypeが形状まで焼くもの→純色フィルターに分離）
+const VISION_COLOR: Record<string, string> = {
+  horse: "dichro", // 既存"panorama"は形状込み→色のみdichroにして幾何は変換側で
+  goat: "dichro", // 既存"horizoneye"も同様
+};
+
+type ViewTransform =
+  | { kind: "circular"; strength: number }
+  | { kind: "panorama" }
+  | { kind: "centered"; strength: number }
+  | { kind: "horse" } // 円形魚眼 + 中心の盲点(黒)
+  | { kind: "eagle" } // 中央に望遠ズーム円
+  | { kind: "none" }; // 既存フィルターが形状も担当（分割眼など）→追加変換なし
+
+// 幾何変換の割り当て（マスター画像を使う広視野の生き物のみ）。
+// 未登録(human/owl/deepsea/mole)は変換なし＝既存の狭視野ズーム等にフォールバック。
+const VISION_TRANSFORM: Record<string, ViewTransform> = {
+  kosukuma: { kind: "circular", strength: 0.625 },
+  dog: { kind: "centered", strength: 0.54 },
+  horse: { kind: "horse" },
+  goat: { kind: "panorama" },
+  chameleon: { kind: "none" }, // dualeyeが左右分割を担当
+  frog: { kind: "circular", strength: 1.0 },
+  eagle: { kind: "eagle" },
+  bat: { kind: "circular", strength: 1.0 },
+  cockroach: { kind: "circular", strength: 1.0 },
+  mantis: { kind: "centered", strength: 0.75 },
+  spider: { kind: "none" }, // multieyeが8眼を担当
+  koala: { kind: "centered", strength: 0.33 },
+  dolphin: { kind: "circular", strength: 0.75 },
+  shark: { kind: "circular", strength: 1.0 },
+  octopus: { kind: "circular", strength: 0.96 },
+  foureyedfish: { kind: "none" }, // spliteyeが上下分割を担当
+  snake: { kind: "centered", strength: 0.75 },
+  mshrimp: { kind: "circular", strength: 1.0 },
+  flamingo: { kind: "circular", strength: 0.75 }, // upsidedownフィルターが上下反転を担当
+  pigeon: { kind: "circular", strength: 0.96 },
+};
+
+// マスター画像を fov に応じて中心からクロップして ctx いっぱいに描画
+function cropMasterForFov(
+  ctx: CanvasRenderingContext2D,
+  master: HTMLImageElement,
+  fov: number,
+  w: number,
+  h: number
+): void {
+  const cropRatio = Math.min(1.0, Math.max(0.33, fov / 360));
+  const cropW = master.naturalWidth * cropRatio;
+  const cropX = (master.naturalWidth - cropW) / 2; // 中心基準（元写真は中央）
+  ctx.drawImage(master, cropX, 0, cropW, master.naturalHeight, 0, 0, w, h);
 }
 
 /* ── Main component ── */
@@ -301,19 +337,15 @@ export default function ViewScreen({
   const [expanding, setExpanding] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
-  const expandCacheRef = useRef<Map<string, CanvasImageSource>>(new Map());
+  // マスター拡張画像（写真1枚につき1回生成し全生き物で使い回す）と生成中Promise（多重生成防止）
+  const masterImgRef = useRef<HTMLImageElement | null>(null);
+  const masterPromiseRef = useRef<Promise<HTMLImageElement | null> | null>(null);
   const normalizedBlobRef = useRef<Blob | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const renderVersionRef = useRef(0);
   // シェアメニューを開いた時点で先読み生成したシェアURLをキャッシュ（about:blankの待ち時間を消すため）
   const sharePrepRef = useRef<{ url: string; creatureId: string } | null>(null);
   const [preparingShare, setPreparingShare] = useState(false);
-
-  // 360°系の見せ方の切り替え（円形魚眼 / パノラマ帯 / 中心＋歪み）
-  const [viewMode, setViewMode] = useState<"circular" | "panorama" | "centered">("circular");
-  // handleCreatureChange の依存を増やさず最新値を読むための ref
-  const viewModeRef = useRef(viewMode);
-  viewModeRef.current = viewMode;
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
@@ -351,6 +383,9 @@ export default function ViewScreen({
   // Normalize image for API on mount
   useEffect(() => {
     let cancelled = false;
+    // 写真が変わったらマスター拡張画像を破棄（次の生き物選択で1回だけ再生成）
+    masterImgRef.current = null;
+    masterPromiseRef.current = null;
     normalizeImage(mediaFile, 1024).then(({ blob }) => {
       if (!cancelled) normalizedBlobRef.current = blob;
     });
@@ -404,15 +439,6 @@ export default function ViewScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
-  // 見せ方モードを切り替えたら再描画（拡張画像はキャッシュ利用＝API再呼び出しなし）
-  useEffect(() => {
-    if (!imgRef.current) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    handleCreatureChange(selectedId, imgRef.current, canvas.width, canvas.height);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode]);
-
   // Main rendering function
   const handleCreatureChange = useCallback(
     async (creatureId: string, originalImage: CanvasImageSource, w: number, h: number) => {
@@ -430,34 +456,27 @@ export default function ViewScreen({
       setLoadingText(`${c.name}に転生中...`);
       setProcessing(true);
 
-      // --- STEP 2: Determine image source ---
-      let sourceImg: CanvasImageSource = originalImage;
-      let aiExpandSucceeded = false;
-
+      // --- STEP 2: マスター拡張画像を用意（広視野=exp>1.0 のときだけ。写真1枚に1回生成し全生き物で使い回す） ---
+      let master: HTMLImageElement | null = null;
       if (exp > 1.0) {
-        const cached = expandCacheRef.current.get(creatureId);
-        if (cached) {
-          console.log("[expand] Cache hit:", creatureId);
-          sourceImg = cached;
-          aiExpandSucceeded = true;
+        if (masterImgRef.current) {
+          master = masterImgRef.current; // 生成済み → 即座に使い回し
         } else if (normalizedBlobRef.current) {
           setLoadingText("🔭 視界をひろげてるよ...");
           setExpanding(true);
           try {
-            const expandedImg = await callExpandAPI(normalizedBlobRef.current, exp, creatureId);
-            if (expandedImg) {
-              expandCacheRef.current.set(creatureId, expandedImg);
-              sourceImg = expandedImg;
-              aiExpandSucceeded = true;
-            } else {
-              console.warn("[expand] AI returned null, using original");
+            // 多重生成防止: 生成Promiseを共有
+            if (!masterPromiseRef.current) {
+              masterPromiseRef.current = generateMaster(normalizedBlobRef.current);
             }
+            master = await masterPromiseRef.current;
+            if (master) masterImgRef.current = master;
+            else masterPromiseRef.current = null; // 失敗時は次回リトライ可
           } catch (e) {
-            console.error("[expand] AI failed:", e);
+            console.error("[master] failed:", e);
+            masterPromiseRef.current = null;
           }
           setExpanding(false);
-        } else {
-          console.warn("[expand] Normalized blob not ready, using original");
         }
       }
 
@@ -467,44 +486,22 @@ export default function ViewScreen({
         return;
       }
 
-      // 360°系(fov≧340)でAI拡張が成功したときだけ、見せ方の切り替え対象にする
-      const is360 = aiExpandSucceeded && (fov?.fov ?? 0) >= 340;
+      const useMaster = exp > 1.0 && !!master;
+      const transform = VISION_TRANSFORM[creatureId] ?? { kind: "none" as const };
+      const colorFilter = VISION_COLOR[creatureId] ?? c.filterType;
+      // 色のみのフィルターに差し替えた場合は fp を渡さない（既定値を使う）
+      const colorFp = colorFilter === c.filterType ? c.fp : {};
 
       try {
-        // --- STEP 3: Draw source image ---
+        // --- STEP 3: マスター画像を fov でクロップ（広視野）／元写真（狭視野） ---
         try {
-          if (aiExpandSucceeded && is360) {
-            // 360°比較モード: 拡張シーンで画面全体を埋める（cover）。
-            // 余白やクリーム化は後段の各モード変換側が担当する。
-            const ew = (sourceImg as HTMLImageElement).naturalWidth || w;
-            const eh = (sourceImg as HTMLImageElement).naturalHeight || h;
-            const coverScale = Math.max(w / ew, h / eh);
-            const cw = ew * coverScale;
-            const ch = eh * coverScale;
-            ctx.drawImage(sourceImg, (w - cw) / 2, (h - ch) / 2, cw, ch);
-          } else if (aiExpandSucceeded) {
-            // AI拡張した横長(または縦長)画像を「歪ませず全体が収まるよう」描画する。
-            // 以前は w×h に押し込んで横圧縮していたため、生成された周囲が潰れて
-            // 拡張が効いていないように見えていた。
-            const ew = (sourceImg as HTMLImageElement).naturalWidth || w;
-            const eh = (sourceImg as HTMLImageElement).naturalHeight || h;
-            // 背景: 拡張画像で画面全体を覆い暗くする（余白を黒帯にしないため）
-            const coverScale = Math.max(w / ew, h / eh);
-            const cw = ew * coverScale;
-            const ch = eh * coverScale;
-            ctx.drawImage(sourceImg, (w - cw) / 2, (h - ch) / 2, cw, ch);
-            ctx.fillStyle = "rgba(0,0,0,0.45)";
-            ctx.fillRect(0, 0, w, h);
-            // 本体: アスペクト比を保ったまま全体を表示（生成された左右/上下が見える）
-            const fitScale = Math.min(w / ew, h / eh);
-            const fw = ew * fitScale;
-            const fh = eh * fitScale;
-            ctx.drawImage(sourceImg, (w - fw) / 2, (h - fh) / 2, fw, fh);
+          if (useMaster && master) {
+            cropMasterForFov(ctx, master, fov?.fov ?? 360, w, h);
           } else {
-            ctx.drawImage(sourceImg, 0, 0, w, h);
+            ctx.drawImage(originalImage, 0, 0, w, h);
           }
         } catch (e) {
-          console.error("[draw] sourceImg failed, falling back to original:", e);
+          console.error("[draw] source failed, falling back to original:", e);
           ctx.drawImage(originalImage, 0, 0, w, h);
         }
 
@@ -515,10 +512,10 @@ export default function ViewScreen({
           ctx.drawImage(originalImage, 0, 0, w, h);
         }
 
-        // --- STEP 4: Apply creature filter ---
-        applyFilter(ctx, w, h, c.filterType, c.fp);
+        // --- STEP 4: 色・質感フィルター（色はここで全部やる） ---
+        applyFilter(ctx, w, h, colorFilter, colorFp);
 
-        // --- STEP 5: Narrow FOV zoom + vignette (expansion < 1.0) ---
+        // --- STEP 5: 狭視野(exp<1.0)は中央ズーム＋周辺暗転 ---
         if (exp > 0 && exp < 1.0) {
           const filtered = document.createElement("canvas");
           filtered.width = w;
@@ -541,29 +538,38 @@ export default function ViewScreen({
           ctx.fillRect(0, 0, w, h);
         }
 
-        // --- STEP 6: 変換 ---
-        if (is360) {
-          // 360°系: 見せ方を3モードで切り替え（outpaintは再生成せず変換だけ）
-          const fovDeg = fov?.fov ?? 360;
-          const strength = Math.min(1.0, (fovDeg - 120) / 240);
-          const mode = viewModeRef.current;
-          if (mode === "panorama") {
-            applyPanoramaBand(ctx, w, h);
-          } else if (mode === "centered") {
-            applyCenteredDistortion(ctx, w, h, strength);
-          } else {
-            applyCircularFisheye(ctx, w, h, strength);
+        // --- STEP 6: 生き物ごとの幾何変換（マスター使用時のみ） ---
+        if (useMaster) {
+          switch (transform.kind) {
+            case "circular":
+              applyCircularFisheye(ctx, w, h, transform.strength);
+              break;
+            case "panorama":
+              applyPanoramaBand(ctx, w, h);
+              break;
+            case "centered":
+              applyCenteredDistortion(ctx, w, h, transform.strength);
+              break;
+            case "horse": {
+              // 円形魚眼 + 中心の盲点（真正面が見えない）
+              applyCircularFisheye(ctx, w, h, 0.96);
+              const cx = w / 2, cy = h / 2;
+              const blindR = Math.min(w, h) * 0.08;
+              ctx.beginPath();
+              ctx.arc(cx, cy, blindR, 0, Math.PI * 2);
+              ctx.fillStyle = "#000";
+              ctx.fill();
+              break;
+            }
+            case "eagle":
+              applyEagleCenterZoom(ctx, w, h);
+              break;
+            case "none":
+            default:
+              // 既存フィルターが形状も担当（分割眼・反転など）→追加変換なし
+              break;
           }
-          console.log("[view] 360 mode:", mode, "strength:", strength);
-        } else if (aiExpandSucceeded) {
-          // それ以外の広視野: 従来の弱い魚眼。
-          // 強すぎると中心が過剰に拡大＋四隅が黒つぶれし、せっかくAI拡張で
-          // 生成した左右の景色が見えなくなるため弱める。
-          const fisheyeStrength = Math.min(0.5, (exp - 1.0) * 0.3);
-          applyFisheye(ctx, w, h, fisheyeStrength);
-          console.log("[fisheye] strength:", fisheyeStrength);
-        } else if (exp > 1.0) {
-          console.log("[fisheye] Skipped — no AI expansion");
+          console.log("[view] transform:", transform.kind, "creature:", creatureId);
         }
       } catch (e) {
         console.error("[draw] Rendering pipeline failed:", e);
@@ -742,37 +748,6 @@ export default function ViewScreen({
           <div style={{ fontSize: 13, color: "#999" }}>{creature.en}</div>
         </div>
       </div>
-
-      {/* 360°系の見せ方 切り替えボタン（fov≧340 のときだけ表示） */}
-      {fovData && fovData.fov >= 340 && (
-        <div style={{ display: "flex", gap: 8, justifyContent: "center", margin: "12px 0" }}>
-          {([
-            { key: "circular", label: "⭕ 円形魚眼" },
-            { key: "panorama", label: "🎞 パノラマ帯" },
-            { key: "centered", label: "🎯 中心＋歪み" },
-          ] as const).map((m) => (
-            <button
-              key={m.key}
-              onClick={() => setViewMode(m.key)}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 100,
-                border: "none",
-                background: viewMode === m.key ? "#2D2D2D" : "#fff",
-                color: viewMode === m.key ? "#fff" : "#666",
-                fontWeight: 900,
-                fontSize: 13,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                transition: "all 0.2s",
-              }}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Canvas area */}
       <div

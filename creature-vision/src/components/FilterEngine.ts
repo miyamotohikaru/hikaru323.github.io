@@ -1913,3 +1913,34 @@ export function applyCenteredDistortion(
   }
   ctx.putImageData(dst, 0, 0);
 }
+
+// ④ ワシ: 全体は俯瞰的に、中央に望遠ズーム円（中心窩）
+export function applyEagleCenterZoom(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number
+): void {
+  const cx = w / 2, cy = h / 2;
+  const R = Math.min(w, h) * 0.22;
+  const zoom = 1.9;
+
+  const snap = document.createElement("canvas");
+  snap.width = w; snap.height = h;
+  snap.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
+
+  // 中央の円内だけ望遠ズーム
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.clip();
+  const srcR = R / zoom;
+  ctx.drawImage(snap, cx - srcR, cy - srcR, srcR * 2, srcR * 2, cx - R, cy - R, R * 2, R * 2);
+  ctx.restore();
+
+  // ズーム円の縁取り
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255,255,255,0.7)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}

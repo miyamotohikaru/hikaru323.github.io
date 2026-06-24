@@ -2,40 +2,23 @@ import { GoogleGenAI } from "@google/genai";
 
 export const maxDuration = 60;
 
-// 全プロンプト共通の「色を変えない」制約。
-// outpaint は視野角（広げる範囲）だけを担当し、色・質感・フィルター効果には触れない。
-// 色加工は後段の applyFilter（Canvas）が全部やるので、AIが色をいじると二重がけで不自然になる。
-const PRESERVE_RULE = `CRITICAL: Do NOT change colors, brightness, contrast, saturation, or style. The extended area must match the original photo EXACTLY in color and tone, as if the camera simply captured a wider angle of the same scene. This is a pure field-of-view extension — only add more of the surrounding real scenery. No color grading, no filters, no stylization. Seamless, photorealistic, no visible seams, no black areas — fill the entire canvas with real scenery that continues the original.`;
+// マスター拡張画像のプロンプト。写真1枚につき1回だけ生成し、全生き物で使い回す。
+// 元写真を中心に固定し、左右に360°ぶんのシーンを「色を変えずに」広げるだけ。
+// 色・質感の加工は後段の applyFilter（Canvas）が全部やる（AIに色を触らせない）。
+const MASTER_PROMPT = `Extend this photo horizontally to BOTH the left and right sides, creating a wide 360-degree panoramic field of view.
 
-// 生き物ごとの「視野角」プロンプト（広げる範囲の指示のみ・色には触れない）。{direction} は実行時に置換。
-const CREATURE_FOV_PROMPTS: Record<string, string> = {
-  // ━━━ 超広角パノラマ（330-350°）━━━
-  horse: `Extend this photo to {direction} into an almost complete 350-degree panoramic field of view — the wide wraparound range a horse sees with eyes on the sides of its head. Add much more of the same surrounding environment, covering nearly everything except directly behind.`,
-  goat: `Extend this photo to {direction} into a wide 340-degree horizontal panorama, keeping the horizon level — the wide horizontal range a goat sees. Add more of the same surrounding environment on the sides.`,
-  chameleon: `Extend this photo to {direction} into a very wide 342-degree field of view. Add much more of the same surrounding environment.`,
-  eagle: `Extend this photo to {direction} into a wide 340-degree field of view, as a soaring eagle surveys the landscape. Add much more of the same surrounding environment.`,
-  octopus: `Extend this photo to {direction} into a wide 340-degree wraparound field of view. Add much more of the same surrounding environment.`,
-  pigeon: `Extend this photo to {direction} into a wide 340-degree near-surround field of view, as a pigeon sees almost all around. Add much more of the same surrounding environment.`,
-  // ━━━ 全方位（360°）━━━
-  frog: `Extend this photo to {direction} into a full 360-degree surround field of view, as a frog sees with eyes on top of its head. Add much more of the same surrounding environment all around.`,
-  bat: `Extend this photo to {direction} into a full 360-degree surround field of view. Add much more of the same surrounding environment all around.`,
-  cockroach: `Extend this photo to {direction} into a full 360-degree all-around field of view, as an insect sees in every direction. Add much more of the same surrounding environment.`,
-  spider: `Extend this photo to {direction} into a full 360-degree surround field of view, as a spider sees with eight eyes. Add much more of the same surrounding environment all around.`,
-  shark: `Extend this photo to {direction} into a full 360-degree surround field of view. Add much more of the same surrounding environment all around.`,
-  foureyedfish: `Extend this photo {direction} into a 360-degree split field of view — add more of the scene above (toward the sky/surface) and below (toward the ground/underwater). Add much more of the same surrounding environment vertically.`,
-  mshrimp: `Extend this photo to {direction} into a full 360-degree surround field of view. Add much more of the same surrounding environment all around.`,
-  // ━━━ 中広角（270-300°）━━━
-  kosukuma: `Extend this photo to {direction} into a wide 270-degree field of view. Add much more of the same surrounding environment.`,
-  mantis: `Extend this photo to {direction} into a wide 300-degree field of view. Add much more of the same surrounding environment.`,
-  dolphin: `Extend this photo to {direction} into a wide 300-degree field of view. Add much more of the same surrounding environment.`,
-  snake: `Extend this photo to {direction} into a wide 300-degree field of view. Add much more of the same surrounding environment.`,
-  flamingo: `Extend this photo to {direction} into a wide 300-degree field of view. Add much more of the same surrounding environment.`,
-  // ━━━ やや広角（200-250°）━━━
-  dog: `Extend this photo to {direction} into a wide 250-degree field of view, as a dog sees with eyes angled to the sides. Add much more of the same surrounding environment.`,
-  koala: `Extend this photo to {direction} into a moderately wide 200-degree field of view. Add more of the same surrounding environment.`,
-};
+CRITICAL RULES:
+- The original photo MUST stay EXACTLY in the CENTER, completely unchanged and unmodified.
+- Generate new scenery ONLY on the left and right sides of the original.
+- The new content must naturally continue the existing scene (same environment, same perspective, same objects logically extended).
+- Do NOT change colors, brightness, contrast, saturation, or style. Match the original photo EXACTLY in tone.
+- This is a pure field-of-view extension — as if the camera simply captured a much wider angle of the same moment.
+- Seamless, photorealistic, no visible seams, no black areas. Fill the entire canvas with real scenery.
 
-const DEFAULT_FOV_PROMPT = `Extend this photo to {direction} into a wide field of view. Add much more of the same surrounding environment.`;
+The original stays centered and pristine; only the surroundings to the left and right are newly generated.`;
+
+// 縦方向（ヨツメウオ等の上下拡張）が必要な場合のフォールバック
+const MASTER_PROMPT_VERTICAL = `Extend this photo vertically, adding more scene ABOVE and BELOW the original. The original photo MUST stay EXACTLY in the CENTER, unchanged. Do NOT change colors, brightness, contrast, saturation, or style — match the original tone EXACTLY. Pure field-of-view extension. Seamless, photorealistic, no seams, no black areas — fill the entire canvas with real scenery.`;
 
 export async function POST(req: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -52,7 +35,6 @@ export async function POST(req: Request) {
     const imageFile = formData.get("image") as File | null;
     const direction = (formData.get("direction") as string) || "horizontal";
     const expansion = Number(formData.get("expansion") || 2.0);
-    const creatureId = (formData.get("creatureId") as string) || "";
 
     if (!imageFile) {
       return new Response(JSON.stringify({ error: "No image provided" }), {
@@ -71,18 +53,11 @@ export async function POST(req: Request) {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // 生き物ごとの「視野角」プロンプトを取得し、{direction} を置換
-    const directionText =
-      direction === "vertical" ? "above and below" : "the left and right";
-    const fovPrompt = (
-      CREATURE_FOV_PROMPTS[creatureId] || DEFAULT_FOV_PROMPT
-    ).replace("{direction}", directionText);
-
-    // 視野角プロンプト + 「色を変えない」共通制約 を結合（色加工は後段の applyFilter が担当）
-    const prompt = `${fovPrompt}\n\n${PRESERVE_RULE}`;
+    // マスター拡張プロンプト（写真1枚につき1回。全生き物で使い回す前提）
+    const prompt = direction === "vertical" ? MASTER_PROMPT_VERTICAL : MASTER_PROMPT;
 
     console.log(
-      `[expand] creature=${creatureId || "(default)"}, direction=${direction}, expansion=${expansion}`
+      `[expand] master expansion, direction=${direction}, expansion=${expansion}`
     );
 
     const response = await ai.models.generateContent({
