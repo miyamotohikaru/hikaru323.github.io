@@ -85,6 +85,7 @@ interface ClosedCircle {
   r: number;
   score: number;
   born: number;
+  reason: string;
 }
 interface RainbowParticle {
   x: number;
@@ -269,11 +270,13 @@ export default function MothFlameGame() {
       bestScore = parseInt(localStorage.getItem("mf_best") || "0", 10) || 0;
     } catch {}
     let firstCircleDone = bestScore > 0;
+    let reviveAt = -999; // time of last respawn (for brief invulnerability)
     let fireSCX = 0,
       fireSCY = 0,
       fireBaseR = 0;
     let liveScoreVal = 0;
     let liveDistInfo = { accuracy: 0, shape: 0 };
+    let liveReason = ""; // short "why this score" hint (weakest factor)
     let deathMX = 0,
       deathMY = 0;
     const deathBits: DeathBit[] = [];
@@ -336,6 +339,357 @@ export default function MothFlameGame() {
       ph: Math.random() * 6.28,
     }));
 
+    /* ── こすくまくん (hidden mascot): drifts in from off-screen toward the
+       fire, flaps, and bursts into embers on contact. Pure decoration. ── */
+    const kosuFrames: HTMLImageElement[] = [];
+    [
+      "/kosukuma_bae_1.png",
+      "/kosukuma_bae_2.png",
+      "/kosukuma_bae_3.png",
+      "/kosukuma_bae_4.png",
+    ].forEach((src) => {
+      const img = new Image();
+      img.src = src;
+      kosuFrames.push(img);
+    });
+    const FIRE_PAL = ["#fff7c2", "#ffb454", "#ff8a3d", "#ff5874"];
+    let kosu:
+      | {
+          x: number;
+          y: number;
+          vx: number;
+          vy: number;
+          wph: number;
+          wang: number;
+          age: number;
+          series: number;
+        }
+      | null = null;
+    let nextKosuT = 3 + Math.random() * 7; // first appearance within ~10s
+    const kosuParts: {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      decay: number;
+      col: string;
+    }[] = [];
+
+    // ── Celebration effects (scale with the score) ──
+    // All four mascot animation series, used for the burst confetti.
+    const KOSU_SERIES_SRCS = [
+      ["/kosukuma_bae_1.png", "/kosukuma_bae_2.png", "/kosukuma_bae_3.png", "/kosukuma_bae_4.png"],
+      ["/kosukuma_bae_loco_1.png", "/kosukuma_bae_loco_2.png", "/kosukuma_bae_loco_3.png", "/kosukuma_bae_loco_4.png"],
+      ["/kosukuma_bae_p03_1.png", "/kosukuma_bae_p03_2.png", "/kosukuma_bae_p03_3.png", "/kosukuma_bae_p03_4.png"],
+      ["/kosukuma_bae_p01_1.png", "/kosukuma_bae_p01_2.png", "/kosukuma_bae_p01_3.png", "/kosukuma_bae_p01_4.png"],
+    ];
+    const kosuSeries: HTMLImageElement[][] = KOSU_SERIES_SRCS.map((arr) =>
+      arr.map((src) => {
+        const im = new Image();
+        im.src = src;
+        return im;
+      })
+    );
+    interface CelebP {
+      kind: "kosu" | "spark" | "herald";
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      max: number;
+      grav: number;
+      scale: number;
+      series: number;
+      rot: number;
+      vrot: number;
+      col: string;
+    }
+    const celebParts: CelebP[] = [];
+
+    function kosuImg(series: number) {
+      const fr = kosuSeries[series][Math.floor((T * 1000) / 80) % 4];
+      return fr && fr.complete && fr.naturalWidth ? fr : null;
+    }
+    function drawKosuSprite(series: number, x: number, y: number, h: number, alpha: number, rot: number) {
+      const img = kosuImg(series);
+      if (!img) return;
+      const w = (img.naturalWidth / img.naturalHeight) * h;
+      otx.save();
+      otx.globalAlpha = Math.max(0, Math.min(1, alpha));
+      otx.translate(x, y);
+      if (rot) otx.rotate(rot);
+      otx.drawImage(img, -w / 2, -h / 2, w, h);
+      otx.restore();
+    }
+    function pushKosuP(x: number, y: number, vx: number, vy: number, scale: number, life: number, grav: number) {
+      celebParts.push({
+        kind: "kosu", x, y, vx, vy, life, max: life, grav, scale,
+        series: Math.floor(Math.random() * 4),
+        rot: (Math.random() - 0.5) * 0.6, vrot: (Math.random() - 0.5) * 3.5, col: "",
+      });
+    }
+    function pushSpark(x: number, y: number) {
+      const a = Math.random() * 6.28,
+        sp = 60 + Math.random() * 200;
+      const life = 0.6 + Math.random() * 0.7;
+      celebParts.push({
+        kind: "spark", x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 50,
+        life, max: life, grav: 220, scale: 0, series: 0, rot: 0, vrot: 0,
+        col: RCOLS[Math.floor(Math.random() * RCOLS.length)],
+      });
+    }
+    // A library of distinct burst patterns so completions don't all look the
+    // same "everything flies apart". Each lays out the kosukuma differently.
+    function pattern(name: string, cx: number, cy: number, count: number, size: number) {
+      const sz = () => size * (0.8 + Math.random() * 0.5);
+      if (name === "burst") {
+        for (let i = 0; i < count; i++) {
+          const a = Math.random() * 6.28,
+            sp = 80 + Math.random() * 190;
+          pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp - 55, sz(), 1.0 + Math.random() * 0.7, 210);
+        }
+      } else if (name === "fountain") {
+        // shoot up in a narrow cone, then rain back down
+        for (let i = 0; i < count; i++) {
+          const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.2,
+            sp = 220 + Math.random() * 240;
+          pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp, sz(), 1.3 + Math.random() * 0.8, 360);
+        }
+      } else if (name === "ring") {
+        // evenly-spaced clean expanding ring
+        const sp = 150 + size * 2;
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * 6.28;
+          pushKosuP(cx, cy, Math.cos(a) * sp, Math.sin(a) * sp, size, 1.3 + Math.random() * 0.4, 45);
+        }
+      } else if (name === "spiral") {
+        // radial + tangential velocity → swirling pinwheel
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * 6.28 * 2,
+            rad = 90 + Math.random() * 70,
+            tx = Math.cos(a),
+            ty = Math.sin(a);
+          pushKosuP(cx, cy, tx * rad - ty * 130, ty * rad + tx * 130, sz(), 1.4 + Math.random() * 0.5, 70);
+        }
+      } else if (name === "rain") {
+        // flutter down from the top of the screen like confetti
+        for (let i = 0; i < count; i++) {
+          const x = Math.random() * W,
+            y = -30 - Math.random() * 260;
+          pushKosuP(x, y, (Math.random() - 0.5) * 50, 30 + Math.random() * 70, sz(), 2.4 + Math.random(), 130);
+        }
+      }
+    }
+
+    function spawnMassScatter(cx: number, cy: number) {
+      // 95+: a huge shower of kosukuma rising from the fire like embers
+      // (fixed "fountain" so the 95+ payoff always looks the same)
+      pattern("fountain", cx, cy, 40, 16);
+      pattern("burst", cx, cy, 16, 16);
+      for (let i = 0; i < 60; i++) pushSpark(cx, cy);
+    }
+
+    function celebrate(score: number) {
+      const cx = fireSCX,
+        cy = fireSCY;
+      if (cx <= 0) return;
+      if (score >= 95) {
+        // A big kosukuma rises into the flame, then bursts (see herald handling)
+        celebParts.push({
+          kind: "herald", x: cx, y: cy + Math.min(H * 0.36, 280), vx: 0, vy: 0,
+          life: 1.6, max: 1.6, grav: 0, scale: Math.min(170, H * 0.24),
+          series: Math.floor(Math.random() * 4), rot: 0, vrot: 0, col: "",
+        });
+        return;
+      }
+      if (score < 70) {
+        // Base — same modest puff for every sub-70 circle
+        pattern("burst", cx, cy, 4, 14);
+        return;
+      }
+      // Fixed effect per 5-point band: same band → same effect, higher → grander
+      const band = Math.floor((score - 70) / 5); // 0:70-74, 1:75-79, ... 4:90-94
+      const specs = [
+        { name: "burst", count: 8, size: 18, sparks: 0 },   // 70–74 (控えめ)
+        { name: "fountain", count: 12, size: 20, sparks: 8 }, // 75–79
+        { name: "ring", count: 16, size: 22, sparks: 14 },    // 80–84
+        { name: "spiral", count: 20, size: 24, sparks: 20 },  // 85–89
+        { name: "rain", count: 26, size: 26, sparks: 28 },    // 90–94
+      ];
+      const s = specs[Math.min(band, specs.length - 1)];
+      pattern(s.name, cx, cy, s.count, s.size);
+      for (let i = 0; i < s.sparks; i++) pushSpark(cx, cy);
+    }
+    function drawCeleb(dt: number) {
+      for (let i = celebParts.length - 1; i >= 0; i--) {
+        const p = celebParts[i];
+        if (p.kind === "herald") {
+          const dx = fireSCX - p.x,
+            dy = fireSCY - p.y;
+          const d = Math.hypot(dx, dy) || 1;
+          p.x += (dx / d) * 260 * dt;
+          p.y += (dy / d) * 260 * dt;
+          p.life -= dt;
+          if (d < 28 || p.life <= 0) {
+            spawnMassScatter(fireSCX, fireSCY);
+            celebParts.splice(i, 1);
+            continue;
+          }
+          drawKosuSprite(p.series, p.x, p.y, p.scale, 1, Math.sin(T * 6) * 0.12);
+          continue;
+        }
+        p.life -= dt;
+        if (p.life <= 0) {
+          celebParts.splice(i, 1);
+          continue;
+        }
+        p.vy += p.grav * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.vrot * dt;
+        const alpha = Math.min(1, (p.life / p.max) * 1.3);
+        if (p.kind === "spark") {
+          otx.globalAlpha = alpha;
+          otx.fillStyle = p.col;
+          otx.fillRect(Math.round(p.x), Math.round(p.y), 4, 4);
+        } else {
+          drawKosuSprite(p.series, p.x, p.y, p.scale, alpha, p.rot);
+        }
+      }
+      otx.globalAlpha = 1;
+    }
+
+    function spawnKosu() {
+      const edge = Math.floor(Math.random() * 4);
+      const m = 60;
+      let sxp = 0,
+        syp = 0;
+      if (edge === 0) {
+        sxp = Math.random() * W;
+        syp = -m;
+      } else if (edge === 1) {
+        sxp = W + m;
+        syp = Math.random() * H;
+      } else if (edge === 2) {
+        sxp = Math.random() * W;
+        syp = H + m;
+      } else {
+        sxp = -m;
+        syp = Math.random() * H;
+      }
+      const dx = fireSCX - sxp,
+        dy = fireSCY - syp;
+      const dist = Math.hypot(dx, dy) || 1;
+      kosu = {
+        x: sxp,
+        y: syp,
+        vx: (dx / dist) * 120,
+        vy: (dy / dist) * 120,
+        wph: Math.random() * 6.28,
+        wang: Math.random() * 6.28,
+        age: 0,
+        series: Math.floor(Math.random() * 4), // random series each appearance
+      };
+    }
+
+    function kosukumaStep(dt: number) {
+      // Burst particles
+      for (let i = kosuParts.length - 1; i >= 0; i--) {
+        const p = kosuParts[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 220 * dt;
+        p.life -= p.decay;
+        if (p.life <= 0) {
+          kosuParts.splice(i, 1);
+          continue;
+        }
+        otx.globalAlpha = Math.max(0, p.life);
+        otx.fillStyle = p.col;
+        otx.fillRect(Math.round(p.x), Math.round(p.y), 4, 4);
+      }
+      otx.globalAlpha = 1;
+
+      // Spawn: rare, one at a time, never while the player is drawing
+      if (
+        !kosu &&
+        T >= nextKosuT &&
+        !isDown &&
+        !dead &&
+        fireSCX > 0 &&
+        kosuFrames.every((im) => im.complete && im.naturalWidth > 0)
+      ) {
+        spawnKosu();
+        nextKosuT = T + 45 + Math.random() * 30; // ~1 minute between appearances
+      }
+      if (!kosu) return;
+
+      // Irregular flight: a random "wander" force darts it around, while a
+      // fire-seeking pull that grows with age makes it home in quickly (short
+      // flight). The blend reads as erratic fluttering that ends at the flame.
+      kosu.age += dt;
+      const fdx = fireSCX - kosu.x,
+        fdy = fireSCY - kosu.y;
+      const fdist = Math.hypot(fdx, fdy) || 1;
+      kosu.wang += (Math.random() - 0.5) * 7 * dt; // drift the wander heading
+      const seek = Math.min(1.8, 0.4 + kosu.age * 0.55); // grows → converges
+      let dvx = (fdx / fdist) * seek + Math.cos(kosu.wang) * 1.0;
+      let dvy = (fdy / fdist) * seek + Math.sin(kosu.wang) * 1.0;
+      const dl = Math.hypot(dvx, dvy) || 1;
+      const cruise = 135;
+      dvx = (dvx / dl) * cruise;
+      dvy = (dvy / dl) * cruise;
+      const ease = Math.min(1, 4 * dt);
+      kosu.vx += (dvx - kosu.vx) * ease;
+      kosu.vy += (dvy - kosu.vy) * ease;
+      kosu.x += kosu.vx * dt;
+      kosu.y += kosu.vy * dt;
+
+      // Caught by the flame → burn and scatter (any time it touches the fire)
+      const d = Math.hypot(kosu.x - fireSCX, kosu.y - fireSCY);
+      if (d < fireBaseR * 1.5 * PX) {
+        const n = 15 + Math.floor(Math.random() * 6);
+        for (let i = 0; i < n; i++) {
+          const a = Math.random() * 6.28,
+            sp = 40 + Math.random() * 90;
+          kosuParts.push({
+            x: kosu.x,
+            y: kosu.y,
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp - 60,
+            life: 1,
+            decay: 0.012 + Math.random() * 0.02,
+            col: FIRE_PAL[Math.floor(Math.random() * FIRE_PAL.length)],
+          });
+        }
+        kosu = null;
+        return;
+      }
+      // Safety: drifted far off screen
+      if (kosu.x < -200 || kosu.x > W + 200 || kosu.y < -200 || kosu.y > H + 200) {
+        kosu = null;
+        return;
+      }
+
+      // Draw (random series, 4-frame flap @ 80ms, faces direction, soft wobble)
+      const img = kosuSeries[kosu.series][Math.floor((T * 1000) / 80) % 4];
+      if (!img || !img.complete || !img.naturalWidth) return;
+      const h = 34,
+        w = (img.naturalWidth / img.naturalHeight) * h;
+      const perp = Math.atan2(kosu.vy, kosu.vx) + Math.PI / 2;
+      const wob =
+        Math.sin(T * 3.3 + kosu.wph) * 13 + Math.sin(T * 1.7 + kosu.wph * 2) * 7;
+      const dxp = kosu.x + Math.cos(perp) * wob;
+      const dyp = kosu.y + Math.sin(perp) * wob + Math.sin(T * 5 + kosu.wph) * 5;
+      otx.save();
+      otx.translate(dxp, dyp);
+      if (kosu.vx < 0) otx.scale(-1, 1);
+      otx.drawImage(img, -w / 2, -h / 2, w, h);
+      otx.restore();
+    }
+
     /* ── Helpers ── */
     function getIdealR() {
       return fireBaseR * 3.5 * PX;
@@ -372,26 +726,34 @@ export default function MothFlameGame() {
        once (not multiple times). Threshold ~1.0rad (≈57°) catches slightly
        rounded, hand-drawn corners. 3–5 corners → square-ish. */
     function detectSquare(pts: Pt[]): boolean {
-      if (pts.length < 15) return false;
-      const step = Math.max(1, Math.floor(pts.length / 40));
+      if (pts.length < 24) return false;
+      const step = Math.max(1, Math.floor(pts.length / 48));
       let corners = 0;
       let inCorner = false;
+      let totalTurn = 0; // signed cumulative turning
+      let edgeTurn = 0; // turning that happens away from corners
       for (let i = step * 2; i < pts.length; i += step) {
         const ax = pts[i - step].x - pts[i - step * 2].x;
         const ay = pts[i - step].y - pts[i - step * 2].y;
         const bx = pts[i].x - pts[i - step].x;
         const by = pts[i].y - pts[i - step].y;
-        const angle = Math.abs(Math.atan2(ax * by - ay * bx, ax * bx + ay * by));
-        if (angle > 1.0) {
+        const turn = Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
+        totalTurn += turn;
+        if (Math.abs(turn) > 1.0) {
           if (!inCorner) {
             corners++;
             inCorner = true;
           }
         } else {
           inCorner = false;
+          edgeTurn += Math.abs(turn);
         }
       }
-      return corners >= 3 && corners <= 5;
+      // A real square: ~4 sharp corners, drawn as ONE closed loop
+      // (total turning ≈ 2π) with fairly straight edges between corners.
+      const oneLoop = Math.abs(totalTurn) > 4.5 && Math.abs(totalTurn) < 8.2;
+      const straightEdges = edgeTurn < 2.5;
+      return corners >= 4 && corners <= 5 && oneLoop && straightEdges;
     }
 
     function triggerStarEasterEgg() {
@@ -415,88 +777,135 @@ export default function MothFlameGame() {
     }
 
     /* ── Scoring ── */
-    function calcScore(pts: Pt[]) {
+    // live=true → a "quality so far" meter for the on-screen number: it does
+    // not punish an unfinished stroke (sweep / closeFit / off-centre centroid),
+    // so a good arc reads high from the start. live=false is the full final
+    // score (completeness + centring included). They converge on a finished,
+    // well-centred circle.
+    function calcScore(pts: Pt[], live = false) {
       liveDistInfo = { accuracy: 0, shape: 0 };
       if (pts.length < 8) return 0;
       const idealR = getIdealR();
       if (idealR < 30) return 0;
 
-      let sx2 = 0,
-        sy2 = 0;
-      pts.forEach((p) => {
-        sx2 += p.x;
-        sy2 += p.y;
-      });
-      const centX = sx2 / pts.length,
-        centY = sy2 / pts.length;
-      const centDist = Math.sqrt(
-        (centX - fireSCX) ** 2 + (centY - fireSCY) ** 2
-      );
-      // Soft centering factor: full credit when the trail is centred on the
-      // fire (within 0.6·idealR), tapering smoothly beyond. A partial arc
-      // early in the stroke now scores instead of showing a hard 0%, and a
-      // properly centred finished circle is unaffected (factor ≈ 1).
-      const centering = Math.max(
-        0,
-        Math.min(1, 1 - Math.max(0, centDist - idealR * 0.6) / (idealR * 0.8))
-      );
+      // Centroid of the drawn shape
+      let sx = 0,
+        sy = 0;
+      for (const p of pts) {
+        sx += p.x;
+        sy += p.y;
+      }
+      const cx = sx / pts.length,
+        cy = sy / pts.length;
 
+      /* ① Distance from the fire (weight 40%) */
       const fireDists = pts.map((p) =>
         Math.sqrt((p.x - fireSCX) ** 2 + (p.y - fireSCY) ** 2)
       );
-      const avgFireDist =
-        fireDists.reduce((a, b) => a + b, 0) / fireDists.length;
-      const distOffset = Math.abs(avgFireDist - idealR) / idealR;
-      const distAccuracy = Math.max(0, 1 - distOffset * 2);
-      const distDev = Math.sqrt(
-        fireDists.reduce((a, d) => a + (d - avgFireDist) ** 2, 0) /
-          fireDists.length
+      const avgD = fireDists.reduce((a, b) => a + b, 0) / fireDists.length;
+      const stdD = Math.sqrt(
+        fireDists.reduce((a, d) => a + (d - avgD) ** 2, 0) / fireDists.length
       );
-      const distConsistency = Math.max(0, 1 - (distDev / idealR) * 3);
-      const distanceScore = distAccuracy * 0.65 + distConsistency * 0.35;
+      const distAccuracy = Math.max(0, 1 - (Math.abs(avgD - idealR) / idealR) * 2);
+      const distConsistency = Math.max(0, 1 - (stdD / idealR) * 3);
+      const distScore = distAccuracy * 0.65 + distConsistency * 0.35;
 
-      let sx = 0,
-        sy = 0;
-      pts.forEach((p) => {
-        sx += p.x;
-        sy += p.y;
-      });
-      const cxx = sx / pts.length,
-        cyy = sy / pts.length;
+      /* ② Shape / circle-ness (weight 60%) */
       const ownDists = pts.map((p) =>
-        Math.sqrt((p.x - cxx) ** 2 + (p.y - cyy) ** 2)
+        Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2)
       );
       const ownR = ownDists.reduce((a, b) => a + b, 0) / ownDists.length;
       if (ownR < 15) return 0;
-
       const ownDev = Math.sqrt(
         ownDists.reduce((a, d) => a + (d - ownR) ** 2, 0) / ownDists.length
       );
       const roundness = Math.max(0, 1 - ownDev / ownR);
+
+      let totalAng = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const a1 = Math.atan2(pts[i - 1].y - cy, pts[i - 1].x - cx);
+        const a2 = Math.atan2(pts[i].y - cy, pts[i].x - cx);
+        let da = a2 - a1;
+        if (da > Math.PI) da -= 2 * Math.PI;
+        if (da < -Math.PI) da += 2 * Math.PI;
+        totalAng += da;
+      }
+      const sweep = Math.min(1, Math.abs(totalAng) / (2 * Math.PI));
 
       const p0 = pts[0],
         pN = pts[pts.length - 1];
       const closeDist = Math.sqrt((p0.x - pN.x) ** 2 + (p0.y - pN.y) ** 2);
       const closeFit = Math.max(0, 1 - closeDist / (ownR * 1.5));
 
-      let totalAng = 0;
-      for (let i = 1; i < pts.length; i++) {
-        const a1 = Math.atan2(pts[i - 1].y - cyy, pts[i - 1].x - cxx);
-        const a2 = Math.atan2(pts[i].y - cyy, pts[i].x - cxx);
-        let da = a2 - a1;
-        if (da > Math.PI) da -= 6.28;
-        if (da < -Math.PI) da += 6.28;
-        totalAng += da;
-      }
-      const sweep = Math.min(1, Math.abs(totalAng) / 6.28);
-      const shapeScore = roundness * 0.5 + closeFit * 0.25 + sweep * 0.25;
+      const shapeScore =
+        roundness * 0.55 + (live ? 1 : sweep) * 0.3 + (live ? 1 : closeFit) * 0.15;
 
-      const raw = (distanceScore * 0.5 + shapeScore * 0.5) * centering;
+      /* ③ Smoothness — punish sharp corners and direction reversals (×0.2–1.0).
+         Turning is measured over ~1/20-of-the-path windows, so a square's
+         corners concentrate into big turns while a circle stays gentle.
+         cornerPenalty SUMS the excess turn, so 4 corners stack up and crush
+         the score (a square lands ~0.4, a clean circle stays 1.0). */
+      const stp = Math.max(1, Math.floor(pts.length / 20));
+      let cornerPenalty = 0;
+      let reversalCount = 0;
+      let prevDa = 0;
+      let hasPrev = false;
+      for (let i = stp * 2; i < pts.length; i += stp) {
+        const ax = pts[i - stp].x - pts[i - stp * 2].x;
+        const ay = pts[i - stp].y - pts[i - stp * 2].y;
+        const bx = pts[i].x - pts[i - stp].x;
+        const by = pts[i].y - pts[i - stp].y;
+        if ((ax === 0 && ay === 0) || (bx === 0 && by === 0)) continue;
+        const da = Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
+        cornerPenalty += Math.max(0, Math.abs(da) - 0.6); // 0.6rad ≈ 34° (hand-wobble tolerant)
+        if (hasPrev && da * prevDa < 0 && Math.abs(da) > 0.3) reversalCount++;
+        prevDa = da;
+        hasPrev = true;
+      }
+      const cornerScore = Math.max(0, 1 - cornerPenalty * 0.5);
+      const reversalScore = Math.max(0, 1 - reversalCount * 0.25);
+      const smoothness = Math.max(0.2, cornerScore * 0.6 + reversalScore * 0.4);
+
+      /* ④ Centering — the shape must surround the fire (×0–1.0) */
+      const centerDist = Math.sqrt(
+        (cx - fireSCX) ** 2 + (cy - fireSCY) ** 2
+      );
+      const centering = live ? 1 : Math.max(0, 1 - centerDist / idealR);
+
+      /* ⑤ Combine and curve */
+      const raw = (distScore * 0.4 + shapeScore * 0.6) * centering * smoothness;
+      const score = Math.round(100 * Math.pow(Math.max(0, raw), 1.3));
+
       liveDistInfo = {
         accuracy: Math.round(distAccuracy * 100),
-        shape: Math.round(shapeScore * 100),
+        shape: Math.round(Math.min(1, shapeScore * smoothness) * 100),
       };
-      return Math.min(100, Math.round(100 * Math.pow(Math.max(0, raw), 1.3)));
+
+      // "Why this score": surface the weakest factor as a short hint
+      const factors: { v: number; k: string }[] = [
+        { v: distAccuracy, k: "acc" },
+        { v: distConsistency, k: "steady" },
+        { v: roundness, k: "round" },
+        { v: smoothness, k: "smooth" },
+      ];
+      let worst = factors[0];
+      for (const f of factors) if (f.v < worst.v) worst = f;
+      if (worst.k === "acc") {
+        liveReason =
+          avgD < idealR * 0.92
+            ? "TOO CLOSE TO THE FLAME"
+            : avgD > idealR * 1.08
+            ? "TOO FAR FROM THE FLAME"
+            : "WRONG SIZE";
+      } else if (worst.k === "steady") {
+        liveReason = "KEEP AN EVEN DISTANCE";
+      } else if (worst.k === "round") {
+        liveReason = "NOT ROUND ENOUGH";
+      } else {
+        liveReason = "TOO SHAKY";
+      }
+
+      return Math.max(1, Math.min(100, score));
     }
 
     function endTrail() {
@@ -510,7 +919,9 @@ export default function MothFlameGame() {
         return;
       }
 
-      const score = calcScore(trail);
+      // Final score uses the same "quality" calc shown live at the top, so the
+      // number on screen while drawing is exactly the number you end up with.
+      const score = calcScore(trail, true);
       if (score < 1) {
         trail = [];
         return;
@@ -527,7 +938,7 @@ export default function MothFlameGame() {
         Math.sqrt((p.x - cxx) ** 2 + (p.y - cyy) ** 2)
       );
       const r = dists.reduce((a, b) => a + b, 0) / dists.length;
-      lastClosed = { pts: [...trail], cx: cxx, cy: cyy, r, score, born: T };
+      lastClosed = { pts: [...trail], cx: cxx, cy: cyy, r, score, born: T, reason: liveReason };
       firstCircleDone = true;
       if (score > bestScore) {
         bestScore = score;
@@ -537,6 +948,7 @@ export default function MothFlameGame() {
       }
       setResult({ score });
       setCopied(false);
+      celebrate(score); // score-scaled kosukuma celebration
       trail = [];
       liveScoreVal = 0;
     }
@@ -558,7 +970,6 @@ export default function MothFlameGame() {
       lastClosed = null;
       setResult(null);
       setCopied(false);
-      if (dead && T - deadAt > 2.2) dead = false;
     }
     function onPointerUp() {
       isDown = false;
@@ -819,6 +1230,19 @@ export default function MothFlameGame() {
       grd.addColorStop(1, "rgba(255,247,194,0)");
       otx.fillStyle = grd;
       otx.fillRect(fireSCX - 10, fireSCY - 10, 20, 20);
+      // Soft "aim here" marker at the centre — a tiny pulsing glow with a
+      // bright core. A cool cyan accent reads as a target over the warm flame
+      // (instead of a black blemish) and matches the BEST / sound UI colour.
+      const mp = 0.6 + Math.sin(T * 2.2) * 0.4;
+      const mg = otx.createRadialGradient(fireSCX, fireSCY, 0, fireSCX, fireSCY, 9);
+      mg.addColorStop(0, `rgba(139,233,253,${0.4 * mp})`);
+      mg.addColorStop(1, "rgba(139,233,253,0)");
+      otx.fillStyle = mg;
+      otx.fillRect(fireSCX - 9, fireSCY - 9, 18, 18);
+      otx.beginPath();
+      otx.arc(fireSCX, fireSCY, 1.8, 0, 6.28);
+      otx.fillStyle = `rgba(255,255,255,${0.65 + 0.3 * mp})`;
+      otx.fill();
       otx.restore();
 
       return { cx, cy, baseR, SY };
@@ -987,9 +1411,9 @@ export default function MothFlameGame() {
       if (trail.length < 2) return;
 
       const idealR = getIdealR();
-      // Live score uses the exact same formula as the final score, so the
-      // number at the top converges to — and matches — the final result.
-      liveScoreVal = calcScore(trail);
+      // Live "quality" score: reads high from the start for a good arc and
+      // converges to the final score as the circle is completed.
+      liveScoreVal = calcScore(trail, true);
 
       const sc = liveScoreVal;
       otx.save();
@@ -1117,11 +1541,15 @@ export default function MothFlameGame() {
       const pts = lastClosed.pts;
       if (pts.length < 2) return;
       const fadeA = age > 1.8 ? 1 - (age - 1.8) / 0.4 : 1;
+      const sc = lastClosed.score;
+      // Rainbow only for 90+, otherwise a single colour by score
+      const rainbow = sc >= 90;
+      const solid = sc >= 70 ? "#9efbb6" : sc >= 50 ? "#ffb454" : "#fff7c2";
       otx.save();
       otx.lineCap = "round";
       otx.lineJoin = "round";
       otx.globalAlpha = 0.35 * fadeA;
-      otx.strokeStyle = RCOLS[Math.floor(T * 10) % RCOLS.length];
+      otx.strokeStyle = rainbow ? RCOLS[Math.floor(T * 10) % RCOLS.length] : solid;
       otx.lineWidth = 14;
       otx.beginPath();
       otx.moveTo(pts[0].x, pts[0].y);
@@ -1131,39 +1559,51 @@ export default function MothFlameGame() {
       otx.globalAlpha = fadeA;
       otx.lineWidth = 4;
       for (let i = 1; i < pts.length; i++) {
-        otx.strokeStyle = RCOLS[(i + Math.floor(T * 12)) % RCOLS.length];
+        otx.strokeStyle = rainbow
+          ? RCOLS[(i + Math.floor(T * 12)) % RCOLS.length]
+          : solid;
         otx.beginPath();
         otx.moveTo(pts[i - 1].x, pts[i - 1].y);
         otx.lineTo(pts[i].x, pts[i].y);
         otx.stroke();
       }
-      if (age < 1.2) {
+      if (age < 1.4) {
         const fl = Math.floor(T * 8) % 2;
-        otx.font = '20px "DotGothic16",monospace';
+        const tier =
+          sc >= 90
+            ? "PERFECT!"
+            : sc >= 75
+            ? "GREAT!"
+            : sc >= 55
+            ? "GOOD"
+            : sc >= 35
+            ? "OK"
+            : "KEEP TRYING";
         otx.textAlign = "center";
         otx.textBaseline = "middle";
+        // Score bar
         otx.fillStyle = fl ? "#fff7c2" : "#0e0d1a";
-        otx.fillRect(W / 2 - 160, H / 2 - 18, 320, 36);
+        otx.fillRect(W / 2 - 170, H / 2 - 20, 340, 40);
         otx.fillStyle = fl ? "#0e0d1a" : "#fff7c2";
-        const lb =
-          lastClosed.score >= 90
-            ? "FANTASTIC!"
-            : lastClosed.score >= 70
-            ? "GREAT!"
-            : "NICE";
-        otx.fillText(
-          `★ ${lastClosed.score} PT  ${lb} ★`,
-          W / 2,
-          H / 2
-        );
+        otx.font = '20px "DotGothic16",monospace';
+        otx.fillText(`★ ${sc} PT  ${tier} ★`, W / 2, H / 2);
+        // Small "why this score" hint below (skipped on a near-perfect circle)
+        if (sc < 90 && lastClosed.reason) {
+          otx.font = '13px "VT323",monospace';
+          otx.fillStyle = "#0e0d1a";
+          otx.fillText(lastClosed.reason, W / 2 + 1, H / 2 + 31);
+          otx.fillStyle = "#ffb454";
+          otx.fillText(lastClosed.reason, W / 2, H / 2 + 30);
+        }
       }
       otx.restore();
     }
 
     function checkDeath(fd: { cx: number; cy: number; baseR: number; SY: number }) {
-      // Only the moth in flight (while tracing) can burn or get lost,
-      // so moving the cursor to UI buttons never kills the player.
-      if (dead || !mouseIn || !isDown) return;
+      // Only the moth in flight (while tracing) can burn or get lost, so
+      // moving the cursor to UI buttons never kills the player. A brief
+      // post-respawn grace prevents the instant re-death "spiral".
+      if (dead || !mouseIn || !isDown || T - reviveAt < 0.7) return;
       const dx = mx - fireSCX,
         dy = my - fireSCY;
       const d = Math.sqrt(dx * dx + dy * dy);
@@ -1173,6 +1613,7 @@ export default function MothFlameGame() {
         dead = true;
         deadAt = T;
         deadReason = "BURN";
+        isDown = false; // drop the held press so it can't auto-respawn into death
         trail = [];
         deathMX = mx;
         deathMY = my;
@@ -1197,6 +1638,7 @@ export default function MothFlameGame() {
         dead = true;
         deadAt = T;
         deadReason = "LOST";
+        isDown = false; // drop the held press so it can't auto-respawn into death
         trail = [];
         deathMX = mx;
         deathMY = my;
@@ -1312,6 +1754,8 @@ export default function MothFlameGame() {
 
       if (age > 1.2 && isDown) {
         dead = false;
+        reviveAt = T; // brief invulnerability so you don't instantly re-die
+        trail = [];
         deathBits.length = 0;
         tongues = genTongues(); // new fire shape on every respawn
         oc.style.transform = "";
@@ -1467,6 +1911,8 @@ export default function MothFlameGame() {
       checkDeath(fd);
       if (dead) drawGameOver();
       drawEasterEgg(dt);
+      kosukumaStep(dt);
+      drawCeleb(dt);
       drawHUD();
       drawCRT();
 
@@ -1494,8 +1940,22 @@ export default function MothFlameGame() {
     const x = c.getContext("2d")!;
     let raf = 0;
     let t = 0;
+    // A swirling "ball of circles" — many overlapping hand-drawn loops.
+    const PAL = ["#8cfb7d", "#b6f25a", "#ffd23f", "#ffa63d", "#ff7a59", "#ff5874", "#9efbb6"];
+    const SCALE = isMobile ? 1.42 : 1.0; // mobile loops ~2 sizes larger
+    const RINGS = Array.from({ length: 16 }, (_, i) => ({
+      rf: 0.16 + Math.random() * 0.2,
+      aspect: 0.74 + Math.random() * 0.26,
+      rot0: Math.random() * Math.PI * 2,
+      rotSpd: (Math.random() - 0.5) * 0.12,
+      col: PAL[i % PAL.length],
+      lw: 1.5 + Math.random() * 1.8,
+      alpha: 0.22 + Math.random() * 0.5,
+      wob: 0.02 + Math.random() * 0.06,
+      harm: 2 + Math.floor(Math.random() * 3),
+      wph: Math.random() * 6.28,
+    }));
     const trail: { x: number; y: number; a: number }[] = [];
-    const RC = ["#ff5874", "#ffb454", "#fff7c2", "#9efbb6", "#7ecadf", "#7d3ac1"];
     function resize() {
       c!.width = window.innerWidth;
       c!.height = window.innerHeight;
@@ -1511,42 +1971,70 @@ export default function MothFlameGame() {
       x.fillRect(0, 0, W, H);
 
       const cx = W / 2,
-        cy = H / 2,
-        R = Math.min(W, H) * 0.26;
+        cy = H / 2;
+      const base = Math.min(W, H) * SCALE;
+
+      // Ball of overlapping, slowly swirling circles
+      x.lineCap = "round";
+      x.lineJoin = "round";
+      const STEPS = 90;
+      for (const r of RINGS) {
+        const rot = r.rot0 + t * r.rotSpd;
+        const cos = Math.cos(rot),
+          sin = Math.sin(rot);
+        x.globalAlpha = r.alpha;
+        x.strokeStyle = r.col;
+        x.lineWidth = r.lw;
+        x.beginPath();
+        for (let k = 0; k <= STEPS; k++) {
+          const th = (k / STEPS) * Math.PI * 2;
+          const rr = r.rf * base * (1 + r.wob * Math.sin(th * r.harm + r.wph + t * 0.4));
+          const px = Math.cos(th) * rr;
+          const py = Math.sin(th) * rr * r.aspect;
+          const X = cx + px * cos - py * sin;
+          const Y = cy + px * sin + py * cos;
+          if (k === 0) x.moveTo(X, Y);
+          else x.lineTo(X, Y);
+        }
+        x.closePath();
+        x.stroke();
+      }
+      x.globalAlpha = 1;
 
       // Flame glow at the centre
-      const flick = 0.16 + Math.sin(t * 7) * 0.03 + Math.sin(t * 13) * 0.02;
-      const g = x.createRadialGradient(cx, cy, 0, cx, cy, R * 0.7);
+      const flick = 0.18 + Math.sin(t * 7) * 0.03 + Math.sin(t * 13) * 0.02;
+      const R = base * 0.26;
+      const g = x.createRadialGradient(cx, cy, 0, cx, cy, R * 0.8);
       g.addColorStop(0, `rgba(255,180,84,${flick})`);
       g.addColorStop(0.5, "rgba(255,120,60,0.06)");
       g.addColorStop(1, "rgba(255,180,84,0)");
       x.fillStyle = g;
       x.fillRect(cx - R, cy - R, 2 * R, 2 * R);
 
-      // Moth position on a perfect circular orbit (equal X/Y radius, no wobble)
+      // A moth pen tracing the brightest loop, with a short glowing trail
       const ang = t * 1.0;
-      const mxp = cx + Math.cos(ang) * R;
-      const myp = cy + Math.sin(ang) * R;
-
+      const mr = base * 0.27;
+      const mxp = cx + Math.cos(ang) * mr;
+      const myp = cy + Math.sin(ang) * mr * 0.95;
       trail.push({ x: mxp, y: myp, a: 1 });
-      if (trail.length > 150) trail.shift();
+      if (trail.length > 60) trail.shift();
       for (let i = 0; i < trail.length; i++) {
         const p = trail[i];
-        p.a *= 0.985;
-        if (p.a < 0.04) continue;
-        x.globalAlpha = p.a * 0.6;
-        x.fillStyle = RC[(i + Math.floor(t * 12)) % RC.length];
-        x.fillRect(Math.floor(p.x / 4) * 4, Math.floor(p.y / 4) * 4, 4, 4);
+        p.a *= 0.93;
+        if (p.a < 0.05) continue;
+        x.globalAlpha = p.a * 0.8;
+        x.fillStyle = "#9efbb6";
+        x.fillRect(Math.round(p.x), Math.round(p.y), 3, 3);
       }
       x.globalAlpha = 1;
 
-      // Pixel moth
+      // Pixel moth (pen head)
       const s = 4;
-      const bx = Math.floor(mxp / s) * s,
-        by = Math.floor(myp / s) * s;
+      const bx = Math.round(mxp),
+        by = Math.round(myp);
       const flap = Math.floor(t * 12) % 2;
       const gr = x.createRadialGradient(bx, by, 0, bx, by, 22);
-      gr.addColorStop(0, "rgba(255,247,194,0.25)");
+      gr.addColorStop(0, "rgba(255,247,194,0.3)");
       gr.addColorStop(1, "rgba(255,247,194,0)");
       x.fillStyle = gr;
       x.fillRect(bx - 22, by - 22, 44, 44);
@@ -1633,14 +2121,26 @@ export default function MothFlameGame() {
           <div
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "clamp(16px, 3.5vw, 28px)",
+              fontSize: "clamp(11px, 2.2vw, 16px)",
               color: "#ffb454",
-              marginBottom: 28,
+              marginBottom: 14,
               lineHeight: 1.6,
               textShadow: "2px 2px 0 #0e0d1a",
             }}
           >
             MOTH &amp; FLAME
+          </div>
+          <div
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "clamp(20px, 5vw, 44px)",
+              color: "#fff7c2",
+              marginBottom: 36,
+              lineHeight: 1.4,
+              textShadow: "3px 3px 0 #0e0d1a",
+            }}
+          >
+            DRAW A CIRCLE
           </div>
           <button
             onClick={handleStart}
