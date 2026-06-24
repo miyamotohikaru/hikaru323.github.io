@@ -1554,6 +1554,32 @@ a:hover { color: var(--text-primary); }
   line-height: 1.8;
 }
 
+/* ===== 単語詳細(/word/[id])遷移時のローディング ===== */
+.word-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 50vh;
+  padding: 3rem 0;
+}
+.word-loading-spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--rule);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.word-loading-text {
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  letter-spacing: 0.12em;
+  color: var(--text-sub);
+}
+
 /* ===== Ranking Page ===== */
 .ranking-tabs {
   display: flex;
@@ -2485,15 +2511,74 @@ a:hover { color: var(--text-primary); }
   background: var(--bg);
 }
 
-.tategaki-search-input {
+/* 縦書き入力欄: 透明な横書きinput(実入力) + 縦書きdiv(表示ミラー) を重ねる。
+   display/inputはともに4辺0の絶対配置でfieldを埋める（flex項目への
+   height:100%はブラウザによって0/autoに潰れるため使わない） */
+.tategaki-search-field {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.tategaki-search-display {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  flex: 1;
-  width: 100%;
+  box-sizing: border-box;
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 16px;
+  letter-spacing: 0.15em;
+  padding: 12px 8px;
+  overflow: hidden;
+  pointer-events: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tategaki-search-display.is-placeholder {
+  color: var(--textMute);
+  font-size: 14px;
+}
+
+/* 縦書き入力欄の点滅キャレット（横バー）。フォーカス中だけ表示 */
+.tategaki-search-caret {
+  display: inline-block;
+  width: 1em;
+  height: 2px;
+  background: var(--text);
+  vertical-align: middle;
+  animation: tategakiCaretBlink 1.05s step-end infinite;
+}
+@keyframes tategakiCaretBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tategaki-search-caret { animation: none; }
+}
+
+.tategaki-search-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  /* iOSの縦書きinput IME崩れを避けるため入力自体は横書き。
+     文字とキャレットは透明にし、見た目は .tategaki-search-display に反映する */
+  writing-mode: horizontal-tb;
   background: transparent;
   border: none;
   outline: none;
-  color: var(--text);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: transparent;
   font-family: var(--font-main);
   font-size: 16px;
   letter-spacing: 0.15em;
@@ -2504,6 +2589,9 @@ a:hover { color: var(--text-primary); }
   color: var(--textMute);
   font-size: 14px;
 }
+/* 透明な入力文字が選択されると白い帯に見えるため、選択ハイライトも透明にする */
+.tategaki-search-input::selection { background: transparent; }
+.tategaki-search-input::-moz-selection { background: transparent; }
 
 .tategaki-search-input:disabled { opacity: 0.5; }
 
@@ -2728,6 +2816,58 @@ a:hover { color: var(--text-primary); }
 .h-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
 .h-scroll > * { direction: ltr; flex-shrink: 0; }
 
+/* ===== 左スクロール・ヒント（縦書きで左にコンテンツが続くことを示す） ===== */
+.scroll-hint {
+  position: fixed;
+  left: 0;
+  top: 64px;
+  bottom: 0;
+  width: 92px;
+  z-index: 60;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  /* 左端から内側へ向かうフェード＝「まだ左に続く」ことを示す */
+  background: linear-gradient(to right, rgba(31, 22, 16, 0.92) 0%, rgba(31, 22, 16, 0.55) 45%, rgba(31, 22, 16, 0) 100%);
+  animation: scrollHintFadeIn 0.45s ease both;
+}
+.scroll-hint-arrow {
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--accent);
+  animation: scrollHintNudge 1.3s ease-in-out infinite;
+}
+.scroll-hint-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(31, 22, 16, 0.9);
+}
+.scroll-hint.is-en .scroll-hint-text {
+  writing-mode: horizontal-tb;
+  max-width: 76px;
+  text-align: center;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+}
+@keyframes scrollHintNudge {
+  0%, 100% { transform: translateX(0); opacity: 0.5; }
+  50% { transform: translateX(-12px); opacity: 1; }
+}
+@keyframes scrollHintFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint-arrow { animation: none; opacity: 1; }
+}
+
 /* ── Rejected (existing word) ── */
 .h-scroll.is-rejected {
   justify-content: center;
@@ -2872,22 +3012,58 @@ a:hover { color: var(--text-primary); }
   letter-spacing: 0.2em;
 }
 
-/* 入力欄だと分かるよう、枠＋薄い背景の「入力ボックス」にする（掲載者名の場所を明確化） */
+/* 入力欄だと分かるよう、枠＋薄い背景の「入力ボックス」にする（掲載者名の場所を明確化）。
+   iOSの縦書きinputバグ対策で、実入力は透明な横書きinput(__field)、
+   見た目は縦書きの__displayに映すミラー構成にしている */
 .result-register-input {
-  writing-mode: vertical-rl;
+  position: relative;
+  width: 100%;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--rule);
   border-radius: 4px;
-  color: var(--text);
-  font-family: var(--font-main);
-  font-size: 15px;
-  padding: 10px 8px;
   min-height: 140px;
-  outline: none;
   transition: border-color 0.2s, background 0.2s;
 }
-.result-register-input:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.08); }
-.result-register-input::placeholder { color: var(--textMute); }
+.result-register-input:focus-within { border-color: var(--accent); background: rgba(255, 255, 255, 0.08); }
+
+.result-register-input__display {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 140px;
+  color: var(--text);
+  font-family: var(--font-main);
+  /* iOSは入力欄のfontが16px未満だとフォーカス時に自動ズームするため16pxにする */
+  font-size: 16px;
+  padding: 10px 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.result-register-input__display.is-placeholder { color: var(--textMute); }
+
+.result-register-input__field {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  writing-mode: horizontal-tb;
+  background: transparent;
+  border: none;
+  outline: none;
+  /* 入力文字とキャレットは透明にし、見た目は__displayに反映する */
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: transparent;
+  font-size: 16px;
+  padding: 10px 8px;
+}
+/* 透明な入力文字が選択されると白い帯に見えるため、選択ハイライトも透明にする */
+.result-register-input__field::selection { background: transparent; }
+.result-register-input__field::-moz-selection { background: transparent; }
 
 .result-register-textarea {
   writing-mode: vertical-rl;
@@ -2909,20 +3085,40 @@ a:hover { color: var(--text-primary); }
   writing-mode: vertical-rl;
   background: var(--accent);
   color: #fff;
-  border: none;
+  /* 金色の縁取りで「押せるボタン」だと一目で分かるように */
+  border: 2px solid #d8b36a;
+  border-radius: 6px;
   font-family: var(--font-main);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.4em;
   padding: 28px 24px;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
-  height: 80%;
-  width: 85px;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+  /* PCでは折り返さず一行（縦書きで一列）にする。モバイルは@mediaで通常折り返し */
+  white-space: nowrap;
+  height: auto;
+  width: 92px;
   box-shadow: 2px 2px 12px rgba(121, 46, 41, 0.3);
+  /* 注意を引くため、ほのかに明滅させて存在感を出す */
+  animation: ctaPulse 2.2s ease-in-out infinite;
 }
-.result-cta-button:hover:not(:disabled) { background: var(--accentDim); }
-.result-cta-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.result-cta-button:hover:not(:disabled) { background: var(--accentDim); transform: translateY(-2px); }
+.result-cta-button:active:not(:disabled) { transform: translateY(0); }
+.result-cta-button:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
+
+@keyframes ctaPulse {
+  0%, 100% {
+    box-shadow: 2px 2px 12px rgba(121, 46, 41, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(216, 179, 106, 0.28), 2px 2px 20px rgba(121, 46, 41, 0.55);
+  }
+}
+/* 「動きを減らす」設定の端末では明滅を止める */
+@media (prefers-reduced-motion: reduce) {
+  .result-cta-button { animation: none; }
+}
 
 .result-footer-bar {
   writing-mode: horizontal-tb;
@@ -2955,6 +3151,19 @@ a:hover { color: var(--text-primary); }
 }
 .result-edit-btn:hover { color: var(--textSoft); border-color: var(--textSoft); }
 
+/* 編集パネル上部に固定する「編集を終了」ボタン。スクロールしても常に押せる */
+.result-edit-done-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  width: 100%;
+  border-style: solid;
+  background: var(--bg);
+  color: var(--text);
+  padding: 10px 20px;
+  font-size: 13px;
+}
+
 .result-edit-fields {
   writing-mode: horizontal-tb;
   display: flex;
@@ -2975,7 +3184,8 @@ a:hover { color: var(--text-primary); }
   border: 1px solid var(--rule);
   color: var(--text);
   font-family: var(--font-main);
-  font-size: 14px;
+  /* iOSの自動ズーム防止のため16px */
+  font-size: 16px;
   line-height: 1.8;
   padding: 10px 12px;
   resize: vertical;
@@ -2983,6 +3193,39 @@ a:hover { color: var(--text-primary); }
 }
 .result-edit-textarea:focus {
   border-color: var(--textSoft);
+}
+
+.result-edit-input,
+.result-edit-select {
+  width: 100%;
+  min-width: 280px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--text);
+  font-family: var(--font-main);
+  /* iOSの自動ズーム防止のため16px */
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 10px 12px;
+  outline: none;
+}
+.result-edit-input:focus,
+.result-edit-select:focus {
+  border-color: var(--textSoft);
+}
+.result-edit-select {
+  /* ネイティブの矢印を活かしつつ背景を辞典トーンに */
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--textMute) 50%),
+    linear-gradient(135deg, var(--textMute) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+}
+.result-edit-select option {
+  color: #000;
 }
 
 .result-error {
@@ -3300,6 +3543,23 @@ a:hover { color: var(--text-primary); }
   height: auto;
 }
 
+/* 英語モードは横書きの通常inputをそのまま見せる（ミラーdivは隠す） */
+.tategaki-search-input-wrap.en-mode .tategaki-search-field {
+  position: static;
+  flex: none;
+  width: auto;
+  height: auto;
+}
+.tategaki-search-input-wrap.en-mode .tategaki-search-display {
+  display: none;
+}
+.tategaki-search-input-wrap.en-mode .tategaki-search-input {
+  position: static;
+  color: var(--text);
+  -webkit-text-fill-color: currentColor;
+  caret-color: auto;
+}
+
 .tategaki-search-input.en-mode {
   writing-mode: horizontal-tb;
   text-orientation: initial;
@@ -3447,16 +3707,23 @@ a:hover { color: var(--text-primary); }
     position: relative;
     margin: 0 auto;
   }
-  .tategaki-search-input {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
+  .tategaki-search-field {
     width: 2.75rem;
     height: calc(12.6rem + 21px);
-    font-size: 1rem;
-    border: none;
-    background: rgba(217, 212, 200, 0.03);
-    padding: 0.75rem 0.5rem;
     flex: none;
+  }
+  .tategaki-search-display {
+    font-size: 1rem;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    background: rgba(217, 212, 200, 0.03);
+  }
+  .tategaki-search-display.is-placeholder {
+    font-size: 0.875rem;
+  }
+  .tategaki-search-input {
+    font-size: 1rem;
+    padding: 0.75rem 0.5rem;
     text-align: center;
   }
   .tategaki-search-input::placeholder {
@@ -3510,6 +3777,12 @@ a:hover { color: var(--text-primary); }
     border-top: 1px solid var(--rule);
     gap: 0;
   }
+  .scroll-hint {
+    top: 48px;
+    width: 78px;
+  }
+  .scroll-hint-arrow { font-size: 2.2rem; }
+  .scroll-hint-text { font-size: 0.75rem; }
   .h-scroll > * {
     direction: ltr;
     flex-shrink: 0;
@@ -3545,10 +3818,14 @@ a:hover { color: var(--text-primary); }
     min-width: 200px;
     gap: 16px;
   }
-  .result-register-input { font-size: 14px; padding: 6px; }
+  /* font-sizeは16pxのまま（iOSの自動ズーム防止）。paddingのみ調整 */
+  .result-register-input__display,
+  .result-register-input__field { padding: 6px; }
   .result-cta-button {
-    padding: 16px 14px; font-size: 13px;
-    width: 60px; height: auto;
+    padding: 18px 14px; font-size: 15px;
+    width: 70px; height: auto;
+    /* モバイルは従来どおり折り返す（PCのみ一行化） */
+    white-space: normal;
   }
   .result-unpublished-badge { font-size: 12px; padding: 6px 10px; }
   .result-register-heading { font-size: 14px; }
@@ -4771,4 +5048,271 @@ a:hover { color: var(--text-primary); }
     max-width: 100%;
     overflow-wrap: break-word;
   }
+}
+
+/* ===== 無限スクロールのセンチネル ===== */
+.bookshelf-sentinel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  padding: 1rem 0;
+}
+
+/* ===== 登録上限（5単語）入れ替えモーダル ===== */
+.limit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(20, 16, 12, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  backdrop-filter: blur(2px);
+}
+/* 明るい紙色・濃い文字で、ダークモードでも確実に読みやすくする（テーマ非依存の固定色） */
+.limit-modal {
+  background: #f4efe3;
+  color: #2b2118;
+  width: 100%;
+  max-width: 440px;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid #d8cdb8;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  padding: 1.5rem 1.4rem 1.3rem;
+}
+.limit-modal-title {
+  font-family: var(--font-serif, serif);
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #2b2118;
+  margin: 0 0 0.5rem;
+}
+.limit-modal-desc {
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: #6b5d49;
+  margin: 0 0 1rem;
+}
+.limit-count-badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #792e29;
+  background: #f6e7e3;
+  border: 1px solid #e3c9c3;
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  margin-bottom: 0.85rem;
+}
+/* 5つちょうどでないとき（多すぎ/少なすぎ）は注意色に */
+.limit-count-badge.is-over {
+  color: #fff;
+  background: #b97a72;
+  border-color: #b97a72;
+}
+.limit-word-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.limit-word-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid #ddd2bd;
+  border-radius: 9px;
+  background: #fffdf8;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.limit-word-row:hover { background: #fffaf0; border-color: #c9bda3; }
+.limit-word-row.is-pending {
+  cursor: pointer;
+  background: #f7ece9;
+  border-style: dashed;
+  border-color: #b97a72;
+}
+.limit-word-check {
+  margin-top: 0.1rem;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  accent-color: #792e29;
+  cursor: pointer;
+}
+.limit-word-main { min-width: 0; flex: 1; }
+.limit-word-head {
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: #2b2118;
+  margin-bottom: 0.2rem;
+  word-break: break-word;
+}
+.limit-word-def {
+  font-size: 0.78rem;
+  color: #6b5d49;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.limit-word-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  color: #fff;
+  background: #792e29;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+/* インライン削除確認（window.confirmは使わない） */
+.limit-word-confirm {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed #ddd2bd;
+}
+.limit-word-confirm-text {
+  display: block;
+  font-size: 0.78rem;
+  color: #792e29;
+  margin-bottom: 0.5rem;
+}
+.limit-confirm-buttons { display: flex; gap: 0.5rem; }
+.limit-confirm-del {
+  background: #792e29;
+  color: #fff;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.5rem 0.95rem;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.limit-confirm-del:disabled { opacity: 0.6; cursor: default; }
+.limit-confirm-cancel {
+  background: transparent;
+  color: #6b5d49;
+  border: 1px solid #ddd2bd;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.limit-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+.limit-modal-cancel {
+  background: transparent;
+  border: 1px solid #ddd2bd;
+  color: #6b5d49;
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.limit-modal-cancel:hover { color: #2b2118; border-color: #c9bda3; }
+
+/* 「この5つの単語を登録」ボタン */
+.limit-register-btn {
+  background: #792e29;
+  color: #fff;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0.55rem 1.2rem;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.limit-register-btn:hover:not(:disabled) { background: #5f231f; }
+.limit-register-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* 最終確認（本当にこの単語にしますか？） */
+.limit-confirm-box {
+  border-top: 1px dashed #ddd2bd;
+  padding-top: 0.85rem;
+}
+.limit-confirm-q {
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: #792e29;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+}
+.limit-modal-error {
+  display: block;
+  color: #b00020;
+  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
+}
+
+/* 「この言葉を辞典に載せる」ボタンと登録数を縦に積む。
+   .result-register-col は vertical-rl のため flex-direction:row が「上下方向」になる */
+.result-cta-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+/* 検索結果欄の登録数表示（◯/5）。ボタンの下に横書きで小さく出す */
+.result-register-count {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  font-size: 0.78rem;
+  color: var(--textMute);
+  letter-spacing: 0.04em;
+}
+.result-register-count.is-full { color: var(--accent); font-weight: 700; }
+
+/* TOPの登録上限の控えめな注記。
+   デスクトップは縦書きで、下部の注意事項(.tategaki-search-note)の隣に並べる */
+.search-limit-note {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  position: absolute;
+  left: 84px;
+  bottom: 20px;
+  margin: 0;
+  font-size: 11px;
+  color: var(--textMute);
+  letter-spacing: 0.2em;
+  z-index: 1;
+}
+/* モバイルは静的・横書きにして、注意事項のすぐ上に詰めて表示 */
+@media (max-width: 640px) {
+  .search-limit-note {
+    writing-mode: horizontal-tb;
+    text-orientation: initial;
+    position: static;
+    left: auto;
+    bottom: auto;
+    text-align: center;
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    margin: 0.4rem 0 0;
+  }
+  /* 直下の注意事項との隙間を詰める */
+  .tategaki-search-note--tight { margin-top: 0.25rem; }
+}
+
+/* 3タブが狭い画面でも収まるように */
+@media (max-width: 640px) {
+  .ranking-tab { padding: 0.7rem 0.9rem; font-size: 0.82rem; }
+  .ranking-tabs { justify-content: center; }
 }

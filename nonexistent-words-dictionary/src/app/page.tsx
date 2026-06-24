@@ -4,13 +4,23 @@ import { useState, useEffect, useRef, FormEvent } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
 import FallingWords from "@/components/FallingWords";
+import VerticalTextInput from "@/components/VerticalTextInput";
 import { EmptyWordNotice } from "@/components/EmptyWordNotice";
 import { useI18n } from "@/lib/i18n";
+import { vDot, formatKojienBody } from "@/lib/format";
 import { useFooterVisibility } from "@/components/ClientProviders";
 
 // 登録時の文字数上限（サーバー側 words/route.ts と合わせる）
 const DEF_LIMIT = 600;
 const EX_LIMIT = 200;
+// 1人(端末=authorToken)あたりの登録上限（サーバー側 words/route.ts と合わせる）
+const REGISTER_LIMIT = 5;
+// 入れ替えモーダルで「これから登録する新語」を表すチェックボックスのID
+const NEW_WORD_ID = "__new__";
+
+// 品詞の選択肢（編集パネルのプルダウン用）
+const POS_OPTIONS_JA = ["名詞", "動詞", "形容詞", "形容動詞", "副詞", "感動詞", "連体詞", "接続詞", "感嘆詞"];
+const POS_OPTIONS_EN = ["noun", "verb", "adjective", "adverb", "conjunction", "interjection"];
 
 // カタカナをひらがなに変換
 function toHiragana(str: string): string {
@@ -48,6 +58,21 @@ interface SavedWordData {
   nickname: string;
 }
 
+// 自分が登録済みの単語（登録上限の入れ替えUI用）
+interface MyWord {
+  id: string;
+  word: string;
+  definition: string;
+  partOfSpeech: string;
+}
+
+// 上限到達時、削除後に登録するための保留データ
+interface PendingSave {
+  payload: Record<string, unknown>;
+  display: Omit<SavedWordData, "id">;
+  authorToken: string;
+}
+
 type Phase = "idle" | "loading" | "result" | "shared";
 
 export default function Home() {
@@ -56,6 +81,8 @@ export default function Home() {
   const wordLanguage = lang === "en" ? "en" : "ja";
   const isEnMode = wordLanguage === "en";
   const [word, setWord] = useState("");
+  // 検索欄フォーカス中フラグ（縦書きミラーに点滅キャレットを出すため）
+  const [searchFocused, setSearchFocused] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [savedWord, setSavedWord] = useState<SavedWordData | null>(null);
@@ -64,11 +91,25 @@ export default function Home() {
   const [editing, setEditing] = useState(false);
   const [editDef, setEditDef] = useState("");
   const [editExample, setEditExample] = useState("");
+  const [editPos, setEditPos] = useState("");
   const [reading, setReading] = useState("");
   const [nickname, setNickname] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const hScrollRef = useRef<HTMLDivElement>(null);
+  // 結果ページ（縦書き横スクロール）で「左へスクロールできる」ことを示すヒント
+  const [showScrollHint, setShowScrollHint] = useState(false);
+
+  // 登録上限（5単語）の入れ替えモーダル用
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitWords, setLimitWords] = useState<MyWord[]>([]);
+  const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
+  // 入れ替えモーダルで「残す5つ」として選択中のID（既存ID + 新語はNEW_WORD_ID）
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // 最終確認（「本当にこの単語にしますか？」）を表示中か
+  const [replaceConfirming, setReplaceConfirming] = useState(false);
+  // 自分の登録数（検索結果に「◯/5」表示）
+  const [myWordCount, setMyWordCount] = useState<number | null>(null);
 
   // フッター表示制御: idleの時だけフッターを表示
   useEffect(() => {
@@ -91,6 +132,50 @@ export default function Home() {
       document.documentElement.style.overflow = "";
     };
   }, [phase]);
+
+  // 結果ページで左にコンテンツが続く場合、「左へスクロール」ヒントを表示し、
+  // ユーザーが一度スクロールしたら（または一定時間で）消す
+  useEffect(() => {
+    if (phase !== "result") { setShowScrollHint(false); return; }
+    const el = hScrollRef.current;
+    if (!el) return;
+    let autoHide: number | undefined;
+    // レイアウト確定後にオーバーフロー判定
+    const checkId = window.setTimeout(() => {
+      const hasOverflow = el.scrollWidth - el.clientWidth > 40;
+      setShowScrollHint(hasOverflow);
+      if (hasOverflow) autoHide = window.setTimeout(() => setShowScrollHint(false), 8000);
+    }, 450);
+    // 縦書きはRTLスクロール（scrollLeftは初期0→左へ進むと負）。少し動いたら消す
+    const onScroll = () => {
+      if (Math.abs(el.scrollLeft) > 24) setShowScrollHint(false);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(checkId);
+      if (autoHide) window.clearTimeout(autoHide);
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, [phase, result]);
+
+  // 検索結果（登録可能な新語）が出たら、自分の登録数を取得して「◯/5」表示に使う
+  useEffect(() => {
+    const registerable =
+      phase === "result" && result && !result.exists && !result.alreadyRegistered && !!result.kojienEntry;
+    if (!registerable) return;
+    const token = localStorage.getItem("fictionary_author_token");
+    if (!token) { setMyWordCount(0); return; }
+    let aborted = false;
+    fetch("/api/words/mine", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ authorToken: token }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (!aborted) setMyWordCount((d.words || []).length); })
+      .catch(() => { if (!aborted) setMyWordCount(null); });
+    return () => { aborted = true; };
+  }, [phase, result]);
 
   // 掲載者名は毎回空欄にする（保存はするが自動入力しない）
 
@@ -123,6 +208,7 @@ export default function Home() {
         setEditDef(data.kojienEntry.definition);
         setEditExample(data.kojienEntry.example || "");
         setReading(isEnMode ? (data.kojienEntry.reading || "") : toHiragana(data.kojienEntry.reading || ""));
+        setEditPos(data.kojienEntry.partOfSpeech || "");
       }
       setPhase("result");
     } catch {
@@ -139,21 +225,87 @@ export default function Home() {
     setSaveError(null);
   };
 
+  const getAuthorToken = () => {
+    let authorToken = localStorage.getItem("fictionary_author_token");
+    if (!authorToken) {
+      authorToken = crypto.randomUUID();
+      localStorage.setItem("fictionary_author_token", authorToken);
+    }
+    return authorToken;
+  };
+
+  // 実際の登録（POST）。上限に達していたら入れ替えモーダルを開く
+  const doRegister = async (
+    payload: Record<string, unknown>,
+    display: Omit<SavedWordData, "id">,
+    authorToken: string
+  ) => {
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch("/api/words", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.limitReached) {
+          // サーバー側でも上限。自分の単語を取得して入れ替えモーダルを開く
+          await openLimitModal(payload, display, authorToken);
+          return;
+        }
+        setSaveError(data.error || "掲載に失敗しました。");
+        return;
+      }
+
+      const postsCount = parseInt(localStorage.getItem("fictionary_posts_count") || "0", 10);
+      localStorage.setItem("fictionary_posts_count", String(postsCount + 1));
+      localStorage.setItem("fictionary_nickname", display.nickname);
+
+      setShowLimitModal(false);
+      setPendingSave(null);
+      setSavedWord({ ...display, id: data.id });
+      setPhase("shared");
+    } catch {
+      setSaveError("通信に失敗しました。");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 自分の単語一覧を取得して入れ替えモーダルを開く
+  const openLimitModal = async (
+    payload: Record<string, unknown>,
+    display: Omit<SavedWordData, "id">,
+    authorToken: string
+  ) => {
+    let mine: MyWord[] = [];
+    try {
+      const res = await fetch("/api/words/mine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ authorToken }),
+      });
+      const data = await res.json();
+      mine = data.words || [];
+    } catch {
+      mine = [];
+    }
+    setLimitWords(mine);
+    setSelectedIds([...mine.map((w) => w.id), NEW_WORD_ID]);
+    setReplaceConfirming(false);
+    setPendingSave({ payload, display, authorToken });
+    setShowLimitModal(true);
+    setIsSaving(false);
+  };
+
   const handleSave = async () => {
     if (!result?.kojienEntry || isSaving) return;
     const trimmedNickname = nickname.trim();
     const trimmedReading = reading.trim();
     if (!isEnMode && !trimmedReading) { setSaveError("読み（ひらがな）を入力してください。"); return; }
     if (!trimmedNickname) { setSaveError(isEnMode ? "Please enter a nickname." : "掲載者名を入力してください。"); return; }
-
-    setIsSaving(true);
-    setSaveError(null);
-
-    let authorToken = localStorage.getItem("fictionary_author_token");
-    if (!authorToken) {
-      authorToken = crypto.randomUUID();
-      localStorage.setItem("fictionary_author_token", authorToken);
-    }
 
     const entry = result.kojienEntry;
     // 編集中フラグに関わらず、現在の編集値を保存する（編集を終了しても反映されるように）
@@ -165,67 +317,125 @@ export default function Home() {
       setSaveError(isEnMode
         ? `Definition must be ${DEF_LIMIT} characters or less. Currently ${def.length}. Cannot register.`
         : `定義は${DEF_LIMIT}字以内にしてください（現在${def.length}字）。このままでは登録できません。`);
-      setIsSaving(false);
       return;
     }
     if (example.length > EX_LIMIT) {
       setSaveError(isEnMode
         ? `Example must be ${EX_LIMIT} characters or less. Cannot register.`
         : `用例は${EX_LIMIT}字以内にしてください。このままでは登録できません。`);
-      setIsSaving(false);
       return;
     }
 
-    const partOfSpeech = entry.partOfSpeech;
+    const authorToken = getAuthorToken();
+    const partOfSpeech = editPos.trim() || entry.partOfSpeech;
     const formatted = isEnMode
       ? `${entry.word} (${partOfSpeech}) — ${def}${example ? `. Example: "${example}"` : ""}`
-      : `${entry.word}【${trimmedReading}】（${partOfSpeech}）${def}。▽用例「${example}」`;
+      : `${entry.word}【${trimmedReading}】（${partOfSpeech}）${formatKojienBody(def, example)}`;
 
+    const payload: Record<string, unknown> = {
+      word: entry.word,
+      reading: trimmedReading,
+      partOfSpeech,
+      definition: def,
+      etymology: "",
+      examples: example ? [example] : [],
+      synonyms: "",
+      nickname: trimmedNickname,
+      source: "user",
+      kojienFormatted: formatted,
+      authorToken,
+      language: wordLanguage,
+    };
+    const display: Omit<SavedWordData, "id"> = {
+      word: entry.word,
+      reading: trimmedReading,
+      partOfSpeech,
+      definition: def,
+      example: example || "",
+      nickname: trimmedNickname,
+    };
+
+    setIsSaving(true);
+    setSaveError(null);
+    // 登録上限(5単語)チェック: 先に自分の登録数を確認
     try {
-      const res = await fetch("/api/words", {
+      const res = await fetch("/api/words/mine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          word: entry.word,
-          reading: trimmedReading,
-          partOfSpeech,
-          definition: def,
-          etymology: "",
-          examples: example ? [example] : [],
-          synonyms: "",
-          nickname: trimmedNickname,
-          source: "user",
-          kojienFormatted: formatted,
-          authorToken,
-          language: wordLanguage,
-        }),
+        body: JSON.stringify({ authorToken }),
       });
-
       const data = await res.json();
-      if (!res.ok) {
-        setSaveError(data.error || "掲載に失敗しました。");
+      const mine: MyWord[] = data.words || [];
+      if (mine.length >= REGISTER_LIMIT) {
+        setLimitWords(mine);
+        setSelectedIds([...mine.map((w) => w.id), NEW_WORD_ID]);
+        setReplaceConfirming(false);
+        setPendingSave({ payload, display, authorToken });
+        setShowLimitModal(true);
+        setIsSaving(false);
         return;
       }
-
-      const postsCount = parseInt(localStorage.getItem("fictionary_posts_count") || "0", 10);
-      localStorage.setItem("fictionary_posts_count", String(postsCount + 1));
-      localStorage.setItem("fictionary_nickname", trimmedNickname);
-
-      setSavedWord({
-        id: data.id,
-        word: entry.word,
-        reading: trimmedReading,
-        partOfSpeech,
-        definition: def,
-        example: example || "",
-        nickname: trimmedNickname,
-      });
-      setPhase("shared");
     } catch {
-      setSaveError("通信に失敗しました。");
+      // 取得失敗時はサーバー側の制限に委ねてそのまま登録を試みる
+    }
+
+    await doRegister(payload, display, authorToken);
+  };
+
+  // 入れ替えモーダルのチェック切り替え（残す5つを選ぶ）
+  const toggleSelect = (id: string) => {
+    if (isSaving) return;
+    setSaveError(null);
+    setReplaceConfirming(false);
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // 「この5つの単語を登録」確定。チェックされていない既存語を削除し、
+  // 新語が選択されていれば登録する（アプリ内ブラウザ対策でwindow.confirmは使わない）
+  const handleConfirmReplace = async () => {
+    if (!pendingSave || isSaving) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      // チェックされていない既存語を削除
+      const toDelete = limitWords.filter((w) => !selectedIds.includes(w.id));
+      for (const w of toDelete) {
+        const res = await fetch(`/api/words/${w.id}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ authorToken: pendingSave.authorToken }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setSaveError(data.error || (isEnMode ? "Failed to delete." : "削除に失敗しました。"));
+          setIsSaving(false);
+          return;
+        }
+      }
+      if (selectedIds.includes(NEW_WORD_ID)) {
+        // 新語を登録（成功時にモーダルを閉じてsharedへ）
+        await doRegister(pendingSave.payload, pendingSave.display, pendingSave.authorToken);
+      } else {
+        // 新語は登録しない（既存の5つを選んだ）。モーダルを閉じる
+        setShowLimitModal(false);
+        setPendingSave(null);
+        setReplaceConfirming(false);
+        setMyWordCount(selectedIds.filter((id) => id !== NEW_WORD_ID).length);
+      }
+    } catch {
+      setSaveError(isEnMode ? "Network error." : "通信に失敗しました。");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const closeLimitModal = () => {
+    setShowLimitModal(false);
+    setPendingSave(null);
+    setReplaceConfirming(false);
+    setIsSaving(false);
   };
 
   const pageNumber = result ? `p.${Math.floor(Math.random() * 900) + 100}` : "";
@@ -254,14 +464,35 @@ export default function Home() {
             <form onSubmit={handleSearch} className="tategaki-search-form">
               <span className="tategaki-search-label">{isEnMode ? "Word" : "読み（ひらがな）"}</span>
               <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""}`}>
-                <input
-                  type="text"
-                  value={word}
-                  onChange={(e) => setWord(e.target.value)}
-                  placeholder={isEnMode ? "register a word" : "ことばを登録する"}
-                  className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
-                  maxLength={20}
-                />
+                <div className="tategaki-search-field">
+                  {/* 縦書きの見た目はこのdivで再現する。iOSでは縦書きinputに直接
+                      IME入力すると変換中の文字が崩れるため、実際の入力は下の
+                      横書きinput(透明)で受け、その値をここに映す */}
+                  <div
+                    className={`tategaki-search-display ${!word && !searchFocused ? "is-placeholder" : ""}`}
+                    aria-hidden="true"
+                  >
+                    {searchFocused ? (
+                      <>
+                        {word}
+                        <span className="tategaki-search-caret" />
+                      </>
+                    ) : (
+                      word || (isEnMode ? "register a word" : "ことばを登録する")
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={word}
+                    onChange={(e) => setWord(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
+                    aria-label={isEnMode ? "Word" : "読み（ひらがな）"}
+                    placeholder={isEnMode ? "register a word" : undefined}
+                    className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
+                    maxLength={20}
+                  />
+                </div>
                 <button
                   type="submit"
                   className="tategaki-search-button"
@@ -271,8 +502,13 @@ export default function Home() {
                 </button>
               </div>
             </form>
+            <p className="search-limit-note">
+              {isEnMode
+                ? `※ Up to ${REGISTER_LIMIT} words per person`
+                : `※1人、${REGISTER_LIMIT}つまで登録できます`}
+            </p>
           </div>
-          <p className="tategaki-search-note">{t("home.note")}</p>
+          <p className="tategaki-search-note tategaki-search-note--tight">{t("home.note")}</p>
         </div>
       )}
 
@@ -310,7 +546,7 @@ export default function Home() {
           <div className="word-detail-paper-wrapper">
             <div className="word-detail-paper word-detail-paper--share fade-in">
               <div className="wdp-head-group">
-                <span className="wdp-headword">{savedWord.word}</span>
+                <span className="wdp-headword">{vDot(savedWord.word)}</span>
                 <span className="wdp-reading">【{savedWord.reading}】</span>
                 <span className="wdp-pos">{posMap[savedWord.partOfSpeech] || `〘${savedWord.partOfSpeech}〙`}</span>
               </div>
@@ -362,7 +598,7 @@ export default function Home() {
         /* ── すでに辞典に登録済み ── */
         <div className="h-scroll is-rejected" ref={hScrollRef}>
           <div className="reject-headword-col fade-in-rtl">
-            <span className="result-reading">{result.word}</span>
+            <span className="result-reading">{vDot(result.word)}</span>
             <span className="stamp-unavailable">{isEnMode ? "Registered" : "登録済み"}</span>
           </div>
 
@@ -374,8 +610,8 @@ export default function Home() {
               </>
             ) : (
               <>
-                「{result.word}」はすでに存在しない<br />
-                言葉辞典に登録されています。
+                「{vDot(result.word)}」はすでに<br />
+                存在しない言葉辞典に登録されています。
               </>
             )}
           </div>
@@ -385,7 +621,7 @@ export default function Home() {
             <span className="result-reading">{result.kojienEntry.reading}</span>
             <span className="result-headword">
               <span className="result-headword-bracket">【</span>
-              {result.kojienEntry.word}
+              {vDot(result.kojienEntry.word)}
               <span className="result-headword-bracket">】</span>
             </span>
             <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
@@ -421,7 +657,7 @@ export default function Home() {
         <div className="h-scroll is-rejected" ref={hScrollRef}>
           {/* 見出し列 + スタンプ */}
           <div className="reject-headword-col fade-in-rtl">
-            <span className="result-reading">{result.word}</span>
+            <span className="result-reading">{vDot(result.word)}</span>
             <span className="stamp-unavailable">{isEnMode ? "Not eligible" : "掲載不可"}</span>
           </div>
 
@@ -436,7 +672,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                「{result.word}」は実在する言葉のため、<br />
+                「{vDot(result.word)}」は実在する言葉のため、<br />
                 本辞典には掲載できません。<br />
                 別の存在しない<br />
                 言葉を、お試しください。
@@ -474,15 +710,39 @@ export default function Home() {
 
           {/* 本文列 */}
           <div className="result-body-col fade-in-rtl">
-            <span className="result-reading">{result.kojienEntry.reading}</span>
+            <span className="result-reading">{reading || result.kojienEntry.reading}</span>
             <span className="result-headword">
               <span className="result-headword-bracket">【</span>
-              {result.kojienEntry.word}
+              {vDot(result.kojienEntry.word)}
               <span className="result-headword-bracket">】</span>
             </span>
-            <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
+            <span className="result-pos-label">{editPos || result.kojienEntry.partOfSpeech}</span>
             {editing ? (
               <div className="result-edit-fields">
+                <button onClick={() => setEditing(false)} className="result-edit-btn result-edit-done-top">
+                  {isEnMode ? "Done editing" : "編集を終了"}
+                </button>
+                <label className="result-edit-label">{isEnMode ? "Pronunciation" : "ふりがな（読み）"}</label>
+                <input
+                  type="text"
+                  value={reading}
+                  onChange={(e) => setReading(isEnMode ? e.target.value : toHiragana(e.target.value))}
+                  placeholder={isEnMode ? t("result.pronunciationPlaceholder") : t("result.readingPlaceholder")}
+                  className="result-edit-input"
+                  maxLength={isEnMode ? 50 : 30}
+                />
+                <label className="result-edit-label">{isEnMode ? "Part of speech" : "品詞"}</label>
+                <select
+                  value={editPos}
+                  onChange={(e) => setEditPos(e.target.value)}
+                  className="result-edit-select"
+                >
+                  {(() => {
+                    const opts = isEnMode ? POS_OPTIONS_EN : POS_OPTIONS_JA;
+                    const list = editPos && !opts.includes(editPos) ? [editPos, ...opts] : opts;
+                    return list.map((p) => <option key={p} value={p}>{p}</option>);
+                  })()}
+                </select>
                 <label className="result-edit-label">
                   {isEnMode ? `Definition (within ${DEF_LIMIT} chars)` : `定義（${DEF_LIMIT}字以内）`}
                 </label>
@@ -509,9 +769,6 @@ export default function Home() {
                   className="result-edit-textarea"
                   rows={4}
                 />
-                <button onClick={() => setEditing(false)} className="result-edit-btn" style={{ marginTop: "8px" }}>
-                  {isEnMode ? "Done editing" : "編集を終了"}
-                </button>
               </div>
             ) : (
               <>
@@ -538,26 +795,35 @@ export default function Home() {
 
             <div className="result-register-field">
               <span className="result-register-label">{isEnMode ? t("result.pronunciationLabel") : t("result.readingLabel")}</span>
-              <input
-                type="text" value={reading}
-                onChange={(e) => setReading(isEnMode ? e.target.value : toHiragana(e.target.value))}
+              <VerticalTextInput
+                value={reading}
+                onChange={(v) => setReading(isEnMode ? v : toHiragana(v))}
                 placeholder={isEnMode ? t("result.pronunciationPlaceholder") : t("result.readingPlaceholder")}
-                className="result-register-input" maxLength={isEnMode ? 50 : 30}
+                ariaLabel={isEnMode ? t("result.pronunciationLabel") : t("result.readingLabel")}
+                maxLength={isEnMode ? 50 : 30}
               />
             </div>
             <div className="result-register-field">
               <span className="result-register-label">{t("result.nicknameLabel")}</span>
-              <input
-                type="text" value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+              <VerticalTextInput
+                value={nickname}
+                onChange={setNickname}
                 placeholder={t("result.nicknamePlaceholder")}
-                className="result-register-input" maxLength={15}
+                ariaLabel={t("result.nicknameLabel")}
+                maxLength={15}
               />
             </div>
 
-            <button onClick={handleSave} disabled={isSaving} className="result-cta-button">
-              {isSaving ? t("result.submitting") : t("result.submit")}
-            </button>
+            <div className="result-cta-wrap">
+              <button onClick={handleSave} disabled={isSaving} className="result-cta-button">
+                {isSaving ? t("result.submitting") : t("result.submit")}
+              </button>
+              {myWordCount !== null && (
+                <span className={`result-register-count${myWordCount >= REGISTER_LIMIT ? " is-full" : ""}`}>
+                  {myWordCount}/{REGISTER_LIMIT}
+                </span>
+              )}
+            </div>
 
             {saveError && <span className="result-error">{saveError}</span>}
           </div>
@@ -567,6 +833,114 @@ export default function Home() {
             <button onClick={handleReset} className="reject-retry-btn">
               {isEnMode ? "Look up another word" : "別の言葉を引く"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 縦書き横スクロールのヒント（左へ続くことを示す） */}
+      {phase === "result" && showScrollHint && (
+        <div className={`scroll-hint${isEnMode ? " is-en" : ""}`} aria-hidden="true">
+          <span className="scroll-hint-arrow">‹</span>
+          <span className="scroll-hint-text">
+            {isEnMode ? "Scroll left to read on" : "左へスクロール"}
+          </span>
+        </div>
+      )}
+
+      {/* ===== 登録上限（5単語）入れ替えモーダル ===== */}
+      {showLimitModal && pendingSave && (
+        <div className="limit-modal-overlay" onClick={closeLimitModal}>
+          <div className="limit-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="limit-modal-title">
+              {isEnMode
+                ? `Up to ${REGISTER_LIMIT} words per person`
+                : `登録は1人${REGISTER_LIMIT}単語までです`}
+            </p>
+            <p className="limit-modal-desc">
+              {isEnMode
+                ? `Choose the ${REGISTER_LIMIT} words to keep. Unchecked words will be deleted.`
+                : `残したい言葉を${REGISTER_LIMIT}つ選んでください。チェックを外した言葉は削除されます。`}
+            </p>
+
+            <span className={`limit-count-badge${selectedIds.length === REGISTER_LIMIT ? "" : " is-over"}`}>
+              {isEnMode
+                ? `${selectedIds.length} / ${REGISTER_LIMIT} selected`
+                : `選択中 ${selectedIds.length} / ${REGISTER_LIMIT}`}
+            </span>
+
+            <div className="limit-word-list">
+              {/* これから登録したい新語 */}
+              <label className="limit-word-row is-pending">
+                <input
+                  type="checkbox"
+                  className="limit-word-check"
+                  checked={selectedIds.includes(NEW_WORD_ID)}
+                  disabled={isSaving}
+                  onChange={() => toggleSelect(NEW_WORD_ID)}
+                />
+                <span className="limit-word-main">
+                  <span className="limit-word-head">
+                    <span className="limit-word-tag">{isEnMode ? "New" : "登録したい言葉"}</span>
+                    {pendingSave.display.word}
+                  </span>
+                  <span className="limit-word-def">{pendingSave.display.definition}</span>
+                </span>
+              </label>
+
+              {/* 登録済みの単語（チェックを外すと削除対象） */}
+              {limitWords.map((w) => (
+                <label key={w.id} className="limit-word-row">
+                  <input
+                    type="checkbox"
+                    className="limit-word-check"
+                    checked={selectedIds.includes(w.id)}
+                    disabled={isSaving}
+                    onChange={() => toggleSelect(w.id)}
+                  />
+                  <span className="limit-word-main">
+                    <span className="limit-word-head">{w.word}</span>
+                    <span className="limit-word-def">{w.definition}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            {saveError && <span className="limit-modal-error">{saveError}</span>}
+
+            {replaceConfirming ? (
+              <div className="limit-confirm-box">
+                <p className="limit-confirm-q">
+                  {isEnMode
+                    ? "Are you sure these are your words? Unchecked words will be deleted."
+                    : "本当にこの単語にしますか？チェックされていない言葉は削除されます。"}
+                </p>
+                <div className="limit-modal-actions">
+                  <button className="limit-modal-cancel" onClick={() => setReplaceConfirming(false)} disabled={isSaving}>
+                    {isEnMode ? "Back" : "やめる"}
+                  </button>
+                  <button className="limit-register-btn" onClick={handleConfirmReplace} disabled={isSaving}>
+                    {isSaving
+                      ? (isEnMode ? "Saving…" : "登録中…")
+                      : (isEnMode ? "Yes, register" : "はい、登録する")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="limit-modal-actions">
+                <button className="limit-modal-cancel" onClick={closeLimitModal} disabled={isSaving}>
+                  {isEnMode ? "Cancel" : "やめる"}
+                </button>
+                <button
+                  className="limit-register-btn"
+                  onClick={() => setReplaceConfirming(true)}
+                  disabled={isSaving || selectedIds.length !== REGISTER_LIMIT}
+                >
+                  {isEnMode
+                    ? `Register these ${REGISTER_LIMIT} words`
+                    : `この${REGISTER_LIMIT}つの単語を登録`}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

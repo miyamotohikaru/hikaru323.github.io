@@ -1,11 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getFieldValue, isFirebaseAvailable } from "@/lib/firebase";
-import { addWord, findByWord, listWords } from "@/lib/in-memory-store";
+import { addWord, findByWord, listWords, listWordsByAuthor } from "@/lib/in-memory-store";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { checkAllFieldsForNG } from "@/lib/ng-words";
 
 const HIRAGANA_REGEX = /^[ぁ-ゖー]+$/;
 const EN_WORD_REGEX = /^[a-zA-Z][a-zA-Z\s\-']*$/;
+
+// 1人(端末=authorToken)あたりの登録上限
+const REGISTER_LIMIT = 5;
+
+interface RankableWord {
+  likes?: number;
+  viewCount?: number;
+  createdAt?: string | null;
+}
+
+// 「おすすめ」用スコア: 新しさのわりに反応がある＝伸びている単語を上位に。
+// さらに毎回のリクエストごとにランダム要素で並びが変わる（Xの For You 風の発掘枠）。
+function rankRecommend<T extends RankableWord>(words: T[]): T[] {
+  const now = Date.now();
+  return words
+    .map((w) => {
+      const created = w.createdAt
+        ? new Date(w.createdAt).getTime()
+        : now - 1000 * 60 * 60 * 24 * 30; // 不明は30日前扱い
+      const ageHours = Math.max(2, (now - created) / (1000 * 60 * 60));
+      // 反応量（いいねを重め）。0でも埋もれないよう +1 のスムージング
+      const engagement = (w.likes || 0) * 3 + (w.viewCount || 0) + 1;
+      // 勢い＝反応量 ÷ 経過時間^0.7（新しくて反応があるほど高い）
+      const velocity = engagement / Math.pow(ageHours, 0.7);
+      // 0.5〜1.5 のランダム係数で毎回少しシャッフル
+      const score = velocity * (0.5 + Math.random());
+      return { w, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.w);
+}
 
 export async function POST(request: NextRequest) {
   const ip =
@@ -103,6 +134,30 @@ export async function POST(request: NextRequest) {
         const db = await getDb();
         const FieldValue = await getFieldValue();
 
+        // 1人(端末=authorToken)あたり5単語まで
+        if (authorToken) {
+          const mineSnap = await db
+            .collection("words")
+            .where("authorToken", "==", authorToken)
+            .get();
+          const myCount = mineSnap.docs.filter(
+            (d) => d.data().isVisible !== false
+          ).length;
+          if (myCount >= REGISTER_LIMIT) {
+            return NextResponse.json(
+              {
+                error:
+                  language === "en"
+                    ? `You can register up to ${REGISTER_LIMIT} words. Please delete one of your existing words.`
+                    : `登録できるのは1人${REGISTER_LIMIT}単語までです。既存の言葉をどれか削除してください。`,
+                limitReached: true,
+                count: myCount,
+              },
+              { status: 403 }
+            );
+          }
+        }
+
         // Duplicate check: same word + same language
         const existing = await db
           .collection("words")
@@ -134,6 +189,21 @@ export async function POST(request: NextRequest) {
     }
 
     // インメモリモード
+    // 1人(端末=authorToken)あたり5単語まで
+    if (authorToken && listWordsByAuthor(authorToken).length >= REGISTER_LIMIT) {
+      return NextResponse.json(
+        {
+          error:
+            language === "en"
+              ? `You can register up to ${REGISTER_LIMIT} words. Please delete one of your existing words.`
+              : `登録できるのは1人${REGISTER_LIMIT}単語までです。既存の言葉をどれか削除してください。`,
+          limitReached: true,
+          count: listWordsByAuthor(authorToken).length,
+        },
+        { status: 403 }
+      );
+    }
+
     const existing = findByWord(word, language);
     if (existing) {
       return NextResponse.json(
@@ -181,6 +251,7 @@ export async function GET(request: NextRequest) {
         if (sort === "popular") {
           query = query.orderBy("likes", "desc");
         } else {
+          // recommend も新しめの候補を母集団にするため createdAt 降順
           if (!kana) {
             query = query.orderBy("createdAt", "desc");
           } else {
@@ -188,7 +259,9 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        query = query.limit(limit);
+        // 「おすすめ」は広めの母集団(150件)を取ってからスコアで上位を選ぶ
+        const fetchLimit = sort === "recommend" ? Math.max(150, limit) : limit;
+        query = query.limit(fetchLimit);
 
         if (cursor) {
           const cursorDoc = await db.collection("words").doc(cursor).get();
@@ -226,6 +299,11 @@ export async function GET(request: NextRequest) {
           words = words.filter((w) => (w.language === "en") && w.word.charAt(0).toUpperCase() === upperLetter);
         }
 
+        // 「おすすめ」: 勢いスコア＋ランダムで上位 limit 件に絞る
+        if (sort === "recommend") {
+          words = rankRecommend(words).slice(0, limit);
+        }
+
         return NextResponse.json({ words });
       } catch (fbError) {
         console.error("Firebase error, falling back to in-memory:", fbError);
@@ -233,6 +311,12 @@ export async function GET(request: NextRequest) {
     }
 
     // インメモリモード
+    if (sort === "recommend") {
+      const pool = listWords({ sort: "newest", limit: 150 });
+      const ranked = rankRecommend(pool).slice(0, limit);
+      const words = ranked.map(({ authorToken: _at, ...rest }) => rest);
+      return NextResponse.json({ words });
+    }
     const rawWords = listWords({ kana, letter, sort, limit, cursor });
     const words = rawWords.map(({ authorToken: _at, ...rest }) => rest);
     return NextResponse.json({ words });

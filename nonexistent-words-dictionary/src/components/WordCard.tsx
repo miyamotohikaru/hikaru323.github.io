@@ -1,6 +1,7 @@
 "use client";
 
 import { WordEntry } from "@/lib/types";
+import { vDot } from "@/lib/format";
 import Link from "next/link";
 import LikeButton from "@/components/LikeButton";
 
@@ -16,7 +17,7 @@ export default function WordCard({ entry, showLink = true, compact = false }: Wo
       <article className="word-card-compact">
         <Link href={`/word/${entry.id}`} className="word-card-compact-link">
           <div className="word-card-compact-header">
-            <span className="word-list-word">{entry.word}</span>
+            <span className="word-list-word">{vDot(entry.word)}</span>
           </div>
           <p className="word-list-def">
             {entry.definition.length > 40
@@ -40,10 +41,10 @@ export default function WordCard({ entry, showLink = true, compact = false }: Wo
         <h2 className="word-title">
           {showLink && entry.id ? (
             <Link href={`/word/${entry.id}`} className="word-link">
-              {entry.word}
+              {vDot(entry.word)}
             </Link>
           ) : (
-            entry.word
+            vDot(entry.word)
           )}
         </h2>
         <span className="word-reading">【{entry.reading}】</span>
