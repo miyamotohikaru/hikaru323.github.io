@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getFieldValue, isFirebaseAvailable } from "@/lib/firebase";
 import { getWord, incrementView, updateWord, deleteWord } from "@/lib/in-memory-store";
+import { formatKojienBody } from "@/lib/format";
 
 export async function GET(
   _request: NextRequest,
@@ -109,7 +110,7 @@ export async function PATCH(
       const lang = data.language || "ja";
       const formatted = lang === "en"
         ? `${data.word} (${data.partOfSpeech}) — ${newDef}${ex ? `. Example: "${ex}"` : ""}`
-        : `${data.word}【${newReading}】（${data.partOfSpeech}）${newDef}。▽用例「${ex}」`;
+        : `${data.word}【${newReading}】（${data.partOfSpeech}）${formatKojienBody(newDef, ex)}`;
 
       await docRef.update({ ...allowedFields, kojienFormatted: formatted });
 

@@ -7,7 +7,7 @@ import FallingWords from "@/components/FallingWords";
 import VerticalTextInput from "@/components/VerticalTextInput";
 import { EmptyWordNotice } from "@/components/EmptyWordNotice";
 import { useI18n } from "@/lib/i18n";
-import { vDot } from "@/lib/format";
+import { vDot, formatKojienBody } from "@/lib/format";
 import { useFooterVisibility } from "@/components/ClientProviders";
 
 // 登録時の文字数上限（サーバー側 words/route.ts と合わせる）
@@ -330,7 +330,7 @@ export default function Home() {
     const partOfSpeech = editPos.trim() || entry.partOfSpeech;
     const formatted = isEnMode
       ? `${entry.word} (${partOfSpeech}) — ${def}${example ? `. Example: "${example}"` : ""}`
-      : `${entry.word}【${trimmedReading}】（${partOfSpeech}）${def}。▽用例「${example}」`;
+      : `${entry.word}【${trimmedReading}】（${partOfSpeech}）${formatKojienBody(def, example)}`;
 
     const payload: Record<string, unknown> = {
       word: entry.word,

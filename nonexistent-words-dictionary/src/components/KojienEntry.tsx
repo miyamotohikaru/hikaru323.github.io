@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { WordEntry } from "@/lib/types";
-import { vDot } from "@/lib/format";
+import { vDot, tidyFormatted, formatKojienBody } from "@/lib/format";
 import LikeButton from "@/components/LikeButton";
 import ShareButtons from "@/components/ShareButtons";
 
@@ -30,16 +30,14 @@ export default function KojienEntry({ entry, showMeta = false }: KojienEntryProp
         >
           <span className="lang-badge">{wordLang === "en" ? "EN" : "JA"}</span>
           {formatted ? (
-            <p className="kojien-entry-text">{formatted}</p>
+            <p className="kojien-entry-text">{tidyFormatted(formatted)}</p>
           ) : (
             <p className="kojien-entry-text">
               <span className="kojien-word">{vDot(entry.word)}</span>
               {wordLang === "ja" ? (
                 <>
-                  【{entry.reading}】（{entry.partOfSpeech}）{entry.definition}
-                  {entry.examples && entry.examples.length > 0 && entry.examples[0] && (
-                    <>。▽用例「{entry.examples[0]}」</>
-                  )}
+                  【{entry.reading}】（{entry.partOfSpeech}）
+                  {formatKojienBody(entry.definition, entry.examples?.[0] || "")}
                 </>
               ) : (
                 <>
