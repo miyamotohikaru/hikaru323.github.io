@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { WordEntry } from "@/lib/types";
+import { vDot } from "@/lib/format";
 import LikeButton from "@/components/LikeButton";
 
 export default function DailyWord() {
@@ -48,7 +49,7 @@ export default function DailyWord() {
         <p className="daily-word-text">
           {word.kojienFormatted || (
             <>
-              {word.word}【{word.reading}】（{word.partOfSpeech}）{word.definition}
+              {vDot(word.word)}【{word.reading}】（{word.partOfSpeech}）{word.definition}
             </>
           )}
         </p>

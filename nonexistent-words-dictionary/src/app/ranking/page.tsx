@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { WordEntry } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
+import { vDot } from "@/lib/format";
 import LikeButton from "@/components/LikeButton";
 
 type Tab = "popular" | "recommend" | "newest";
@@ -260,7 +261,7 @@ export default function RankingPage() {
                   const color = getPosColor(w.partOfSpeech);
                   const width = BOOK_WIDTH;
                   const isSelected = selectedWord?.id === w.id;
-                  const titleLines = splitSpineTitle(w.word);
+                  const titleLines = splitSpineTitle(vDot(w.word));
                   const titleFs = spineFontSize(titleLines);
                   return (
                     <button
@@ -303,7 +304,7 @@ export default function RankingPage() {
                     <div className="open-book-spine" />
                     <div className="open-book-right">
                       <div className="open-book-header">
-                        <div className="open-book-word">{selectedWord.word}</div>
+                        <div className="open-book-word">{vDot(selectedWord.word)}</div>
                         <div className="open-book-meta">
                           <span className="open-book-reading">
                             【{selectedWord.reading}】

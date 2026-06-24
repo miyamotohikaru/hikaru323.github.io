@@ -10,6 +10,7 @@ import AdSense from "@/components/AdSense";
 import WordCard from "@/components/WordCard";
 import { WordEntry } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
+import { vDot } from "@/lib/format";
 
 interface Props {
   word: WordEntry | null;
@@ -142,7 +143,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
             <div className="word-detail-paper-wrapper">
               <div className="word-detail-paper word-detail-paper--share fade-in">
                 <div className="wdp-head-group">
-                  <span className="wdp-headword">{word.word}</span>
+                  <span className="wdp-headword">{vDot(word.word)}</span>
                   <span className="wdp-reading">【{word.reading}】</span>
                   <span className="wdp-pos">{posMap[word.partOfSpeech] || `〘${word.partOfSpeech}〙`}</span>
                 </div>
@@ -255,7 +256,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
         <div className="word-detail-paper-wrapper">
           <div className="word-detail-paper fade-in">
             <div className="wdp-head-group">
-              <span className="wdp-headword">{word.word}</span>
+              <span className="wdp-headword">{vDot(word.word)}</span>
               <span className="wdp-reading">【{currentReading}】</span>
               <span className="wdp-pos">{posMap[word.partOfSpeech] || `〘${word.partOfSpeech}〙`}</span>
             </div>

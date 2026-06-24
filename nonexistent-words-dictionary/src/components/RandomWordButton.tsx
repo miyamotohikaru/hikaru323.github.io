@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import ShareButtons from "@/components/ShareButtons";
 import { useI18n } from "@/lib/i18n";
+import { vDot } from "@/lib/format";
 
 interface RandomWord {
   id: string;
@@ -95,7 +96,7 @@ export default function RandomWordButton() {
                 </p>
               )}
 
-              <h2 className="random-modal-word">{word.word}</h2>
+              <h2 className="random-modal-word">{vDot(word.word)}</h2>
               <div className="random-modal-meta">
                 <span className="random-modal-reading">【{word.reading}】</span>
                 <span className="random-modal-pos">{word.partOfSpeech}</span>

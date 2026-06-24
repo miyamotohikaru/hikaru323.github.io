@@ -7,6 +7,7 @@ import FallingWords from "@/components/FallingWords";
 import VerticalTextInput from "@/components/VerticalTextInput";
 import { EmptyWordNotice } from "@/components/EmptyWordNotice";
 import { useI18n } from "@/lib/i18n";
+import { vDot } from "@/lib/format";
 import { useFooterVisibility } from "@/components/ClientProviders";
 
 // 登録時の文字数上限（サーバー側 words/route.ts と合わせる）
@@ -545,7 +546,7 @@ export default function Home() {
           <div className="word-detail-paper-wrapper">
             <div className="word-detail-paper word-detail-paper--share fade-in">
               <div className="wdp-head-group">
-                <span className="wdp-headword">{savedWord.word}</span>
+                <span className="wdp-headword">{vDot(savedWord.word)}</span>
                 <span className="wdp-reading">【{savedWord.reading}】</span>
                 <span className="wdp-pos">{posMap[savedWord.partOfSpeech] || `〘${savedWord.partOfSpeech}〙`}</span>
               </div>
@@ -597,7 +598,7 @@ export default function Home() {
         /* ── すでに辞典に登録済み ── */
         <div className="h-scroll is-rejected" ref={hScrollRef}>
           <div className="reject-headword-col fade-in-rtl">
-            <span className="result-reading">{result.word}</span>
+            <span className="result-reading">{vDot(result.word)}</span>
             <span className="stamp-unavailable">{isEnMode ? "Registered" : "登録済み"}</span>
           </div>
 
@@ -609,8 +610,8 @@ export default function Home() {
               </>
             ) : (
               <>
-                「{result.word}」はすでに存在しない<br />
-                言葉辞典に登録されています。
+                「{vDot(result.word)}」はすでに<br />
+                存在しない言葉辞典に登録されています。
               </>
             )}
           </div>
@@ -620,7 +621,7 @@ export default function Home() {
             <span className="result-reading">{result.kojienEntry.reading}</span>
             <span className="result-headword">
               <span className="result-headword-bracket">【</span>
-              {result.kojienEntry.word}
+              {vDot(result.kojienEntry.word)}
               <span className="result-headword-bracket">】</span>
             </span>
             <span className="result-pos-label">{result.kojienEntry.partOfSpeech}</span>
@@ -656,7 +657,7 @@ export default function Home() {
         <div className="h-scroll is-rejected" ref={hScrollRef}>
           {/* 見出し列 + スタンプ */}
           <div className="reject-headword-col fade-in-rtl">
-            <span className="result-reading">{result.word}</span>
+            <span className="result-reading">{vDot(result.word)}</span>
             <span className="stamp-unavailable">{isEnMode ? "Not eligible" : "掲載不可"}</span>
           </div>
 
@@ -671,7 +672,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                「{result.word}」は実在する言葉のため、<br />
+                「{vDot(result.word)}」は実在する言葉のため、<br />
                 本辞典には掲載できません。<br />
                 別の存在しない<br />
                 言葉を、お試しください。
@@ -712,7 +713,7 @@ export default function Home() {
             <span className="result-reading">{reading || result.kojienEntry.reading}</span>
             <span className="result-headword">
               <span className="result-headword-bracket">【</span>
-              {result.kojienEntry.word}
+              {vDot(result.kojienEntry.word)}
               <span className="result-headword-bracket">】</span>
             </span>
             <span className="result-pos-label">{editPos || result.kojienEntry.partOfSpeech}</span>
