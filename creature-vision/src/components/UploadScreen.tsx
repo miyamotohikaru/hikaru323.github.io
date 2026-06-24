@@ -359,40 +359,40 @@ export default function UploadScreen({ creatures, onFile, preselectedCreature }:
           display: flex; transform: scale(0.72); transform-origin: center;
         }
 
-        /* ── Desktop ── 画面幅に応じて拡大し、大画面でも中央に小さくならないように */
+        /* ── Desktop ── */
         @media (min-width: 768px) {
           .kosukuma-icon {
-            width: clamp(120px, 9vw, 180px); height: clamp(120px, 9vw, 180px);
+            width: 120px; height: 120px;
           }
           .cv-badge {
-            margin-top: clamp(16px, 1.6vw, 26px); font-size: clamp(11px, 0.9vw, 15px); padding: clamp(5px, 0.5vw, 8px) clamp(18px, 1.6vw, 28px);
+            margin-top: 16px; font-size: 11px; padding: 5px 18px;
           }
           .title-line1, .title-highlight {
-            font-size: clamp(56px, 8.5vw, 156px);
+            font-size: clamp(38px, 8vw, 84px);
           }
           .subcopy {
-            font-size: clamp(14px, 1.3vw, 22px); max-width: none;
+            font-size: 14px; max-width: none;
           }
           .upload-card {
-            width: min(90vw, 660px); padding: clamp(26px, 2.4vw, 40px) clamp(32px, 3vw, 48px); margin-top: clamp(28px, 3vw, 48px) !important;
+            width: min(90vw, 520px); padding: 26px 32px; margin-top: 28px !important;
           }
           .hero-section {
-            padding: clamp(40px, 5vw, 80px) 20px clamp(24px, 3vw, 48px);
+            padding: 48px 20px 24px;
           }
           .belt-container {
-            height: clamp(150px, 11vw, 210px); padding-top: 16px;
+            height: 140px; padding-top: 16px;
           }
           .belt-icon {
-            width: clamp(90px, 6vw, 120px); height: clamp(90px, 6vw, 120px);
+            width: 88px; height: 88px;
           }
           .belt-item {
-            width: clamp(104px, 7vw, 140px);
+            width: 100px;
           }
           .belt-label {
-            font-size: clamp(11px, 0.95vw, 15px) !important;
+            font-size: 11px !important;
           }
           .belt-icon-inner {
-            transform: scale(1.2);
+            transform: scale(1);
           }
         }
         .upload-card:hover {
