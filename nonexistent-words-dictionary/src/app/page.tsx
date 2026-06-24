@@ -96,6 +96,8 @@ export default function Home() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const hScrollRef = useRef<HTMLDivElement>(null);
+  // 結果ページ（縦書き横スクロール）で「左へスクロールできる」ことを示すヒント
+  const [showScrollHint, setShowScrollHint] = useState(false);
 
   // 登録上限（5単語）の入れ替えモーダル用
   const [showLimitModal, setShowLimitModal] = useState(false);
@@ -129,6 +131,31 @@ export default function Home() {
       document.documentElement.style.overflow = "";
     };
   }, [phase]);
+
+  // 結果ページで左にコンテンツが続く場合、「左へスクロール」ヒントを表示し、
+  // ユーザーが一度スクロールしたら（または一定時間で）消す
+  useEffect(() => {
+    if (phase !== "result") { setShowScrollHint(false); return; }
+    const el = hScrollRef.current;
+    if (!el) return;
+    let autoHide: number | undefined;
+    // レイアウト確定後にオーバーフロー判定
+    const checkId = window.setTimeout(() => {
+      const hasOverflow = el.scrollWidth - el.clientWidth > 40;
+      setShowScrollHint(hasOverflow);
+      if (hasOverflow) autoHide = window.setTimeout(() => setShowScrollHint(false), 8000);
+    }, 450);
+    // 縦書きはRTLスクロール（scrollLeftは初期0→左へ進むと負）。少し動いたら消す
+    const onScroll = () => {
+      if (Math.abs(el.scrollLeft) > 24) setShowScrollHint(false);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(checkId);
+      if (autoHide) window.clearTimeout(autoHide);
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, [phase, result]);
 
   // 検索結果（登録可能な新語）が出たら、自分の登録数を取得して「◯/5」表示に使う
   useEffect(() => {
@@ -806,6 +833,16 @@ export default function Home() {
               {isEnMode ? "Look up another word" : "別の言葉を引く"}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* 縦書き横スクロールのヒント（左へ続くことを示す） */}
+      {phase === "result" && showScrollHint && (
+        <div className={`scroll-hint${isEnMode ? " is-en" : ""}`} aria-hidden="true">
+          <span className="scroll-hint-arrow">‹</span>
+          <span className="scroll-hint-text">
+            {isEnMode ? "Scroll left to read on" : "左へスクロール"}
+          </span>
         </div>
       )}
 

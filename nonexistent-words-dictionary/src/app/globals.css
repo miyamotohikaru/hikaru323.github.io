@@ -2790,6 +2790,58 @@ a:hover { color: var(--text-primary); }
 .h-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
 .h-scroll > * { direction: ltr; flex-shrink: 0; }
 
+/* ===== 左スクロール・ヒント（縦書きで左にコンテンツが続くことを示す） ===== */
+.scroll-hint {
+  position: fixed;
+  left: 0;
+  top: 64px;
+  bottom: 0;
+  width: 92px;
+  z-index: 60;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  /* 左端から内側へ向かうフェード＝「まだ左に続く」ことを示す */
+  background: linear-gradient(to right, rgba(31, 22, 16, 0.92) 0%, rgba(31, 22, 16, 0.55) 45%, rgba(31, 22, 16, 0) 100%);
+  animation: scrollHintFadeIn 0.45s ease both;
+}
+.scroll-hint-arrow {
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--accent);
+  animation: scrollHintNudge 1.3s ease-in-out infinite;
+}
+.scroll-hint-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(31, 22, 16, 0.9);
+}
+.scroll-hint.is-en .scroll-hint-text {
+  writing-mode: horizontal-tb;
+  max-width: 76px;
+  text-align: center;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+}
+@keyframes scrollHintNudge {
+  0%, 100% { transform: translateX(0); opacity: 0.5; }
+  50% { transform: translateX(-12px); opacity: 1; }
+}
+@keyframes scrollHintFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint-arrow { animation: none; opacity: 1; }
+}
+
 /* ── Rejected (existing word) ── */
 .h-scroll.is-rejected {
   justify-content: center;
@@ -3699,6 +3751,12 @@ a:hover { color: var(--text-primary); }
     border-top: 1px solid var(--rule);
     gap: 0;
   }
+  .scroll-hint {
+    top: 48px;
+    width: 78px;
+  }
+  .scroll-hint-arrow { font-size: 2.2rem; }
+  .scroll-hint-text { font-size: 0.75rem; }
   .h-scroll > * {
     direction: ltr;
     flex-shrink: 0;
