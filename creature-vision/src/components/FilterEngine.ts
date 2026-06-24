@@ -1032,7 +1032,14 @@ const filterPanorama: CtxFilter = (ctx, w, h, fp) => {
           );
         }
       } else {
-        px[idx] = 0; px[idx + 1] = 0; px[idx + 2] = 0;
+        // Out of bounds: clamp to the nearest edge pixel instead of black,
+        // so the AI-outpainted periphery shows through rather than a void.
+        const csx = sx < 0 ? 0 : sx > w - 1 ? w - 1 : sx;
+        const csy = sy < 0 ? 0 : sy > h - 1 ? h - 1 : sy;
+        const ci = ((csy | 0) * w + (csx | 0)) * 4;
+        px[idx]     = snapshot[ci];
+        px[idx + 1] = snapshot[ci + 1];
+        px[idx + 2] = snapshot[ci + 2];
       }
     }
   }
@@ -1699,8 +1706,10 @@ export function applyFisheye(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
-  strength: number // 0.0 = no distortion, 1.0 = strong fisheye
+  strength: number // 0.0 = no distortion, larger = stronger wide-angle bulge
 ): void {
+  if (strength <= 0) return;
+
   const src = ctx.getImageData(0, 0, w, h);
   const dst = ctx.createImageData(w, h);
   const sd = src.data;
@@ -1709,7 +1718,13 @@ export function applyFisheye(
   const cx = w / 2;
   const cy = h / 2;
   const maxR = Math.sqrt(cx * cx + cy * cy);
-  const k = strength * 0.8; // distortion coefficient
+  const RMAX = Math.SQRT2; // max normalized radius (corner), since nx,ny ∈ [-1,1]
+
+  // Center-magnifying barrel mapping. The per-pixel sampling scale is rn^p,
+  // which is always ≤ 1, so every sample stays inside the frame — no black
+  // wedges. The AI-outpainted edges stay visible (compressed toward the rim)
+  // instead of being pushed off-frame and replaced with black.
+  const p = Math.min(1.2, strength) * 0.5;
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -1718,32 +1733,35 @@ export function applyFisheye(
       const ny = (y - cy) / cy;
       const r = Math.sqrt(nx * nx + ny * ny);
 
-      // Barrel distortion: push pixels outward from center
-      let nr: number;
+      let sx: number, sy: number;
       if (r === 0) {
-        nr = 0;
+        sx = cx;
+        sy = cy;
       } else {
-        nr = r * (1 + k * r * r);
+        const scale = Math.pow(r / RMAX, p); // ≤ 1 → keeps samples in-bounds
+        sx = cx + nx * scale * cx;
+        sy = cy + ny * scale * cy;
       }
 
-      // Map back to source pixel
-      const srcX = Math.round(cx + (nx / r) * nr * cx);
-      const srcY = Math.round(cy + (ny / r) * nr * cy);
+      // Bilinear sample with edge clamp (no out-of-bounds, no black)
+      const fx = sx < 0 ? 0 : sx > w - 1 ? w - 1 : sx;
+      const fy = sy < 0 ? 0 : sy > h - 1 ? h - 1 : sy;
+      const x0 = fx | 0, y0 = fy | 0;
+      const x1 = x0 + 1 < w ? x0 + 1 : x0;
+      const y1 = y0 + 1 < h ? y0 + 1 : y0;
+      const tx = fx - x0, ty = fy - y0;
 
+      const i00 = (y0 * w + x0) * 4;
+      const i10 = (y0 * w + x1) * 4;
+      const i01 = (y1 * w + x0) * 4;
+      const i11 = (y1 * w + x1) * 4;
       const di = (y * w + x) * 4;
-
-      if (srcX >= 0 && srcX < w && srcY >= 0 && srcY < h) {
-        const si = (srcY * w + srcX) * 4;
-        dd[di] = sd[si];
-        dd[di + 1] = sd[si + 1];
-        dd[di + 2] = sd[si + 2];
-        dd[di + 3] = sd[si + 3];
-      } else {
-        // Out of bounds — black
-        dd[di] = 0;
-        dd[di + 1] = 0;
-        dd[di + 2] = 0;
-        dd[di + 3] = 255;
+      for (let c = 0; c < 4; c++) {
+        dd[di + c] =
+          sd[i00 + c] * (1 - tx) * (1 - ty) +
+          sd[i10 + c] * tx * (1 - ty) +
+          sd[i01 + c] * (1 - tx) * ty +
+          sd[i11 + c] * tx * ty;
       }
     }
   }

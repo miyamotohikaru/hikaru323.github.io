@@ -222,17 +222,19 @@ async function normalizeImage(
 
 async function callExpandAPI(
   normalizedBlob: Blob,
-  expansion: number
+  expansion: number,
+  creatureId: string
 ): Promise<HTMLImageElement | null> {
   const bitmap = await createImageBitmap(normalizedBlob);
   const direction = bitmap.height > bitmap.width ? "vertical" : "horizontal";
 
-  console.log(`[expand] ${bitmap.width}x${bitmap.height}, direction=${direction}, expansion=${expansion}`);
+  console.log(`[expand] ${bitmap.width}x${bitmap.height}, direction=${direction}, expansion=${expansion}, creature=${creatureId}`);
 
   const formData = new FormData();
   formData.append("image", normalizedBlob, "photo.jpg");
   formData.append("expansion", String(expansion));
   formData.append("direction", direction);
+  formData.append("creatureId", creatureId);
 
   try {
     const res = await fetch("/api/expand", { method: "POST", body: formData });
@@ -420,7 +422,7 @@ export default function ViewScreen({
           setLoadingText("🔭 視界をひろげてるよ...");
           setExpanding(true);
           try {
-            const expandedImg = await callExpandAPI(normalizedBlobRef.current, exp);
+            const expandedImg = await callExpandAPI(normalizedBlobRef.current, exp, creatureId);
             if (expandedImg) {
               expandCacheRef.current.set(creatureId, expandedImg);
               sourceImg = expandedImg;
