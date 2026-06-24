@@ -88,6 +88,13 @@ function FacebookIcon() {
 
 /* ── Share image generation ── */
 
+/** Canvas を PNG Blob 化（長押し切り替え用の個別画像アップロードに使う） */
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob!), "image/png", 0.92);
+  });
+}
+
 async function generateShareImage(
   creatureCanvas: HTMLCanvasElement,
   humanCanvas: HTMLCanvasElement,
@@ -527,9 +534,16 @@ export default function ViewScreen({
     const humanCanvas = humanCanvasRef.current;
     if (!creatureCanvas || !humanCanvas) return null;
     try {
-      const blob = await generateShareImage(creatureCanvas, humanCanvas, creature);
+      // OGP用の合成画像と、長押し切り替え用の個別画像（生き物のめ／人間のめ）を生成
+      const [composite, creatureImg, humanImg] = await Promise.all([
+        generateShareImage(creatureCanvas, humanCanvas, creature),
+        canvasToBlob(creatureCanvas),
+        canvasToBlob(humanCanvas),
+      ]);
       const fd = new FormData();
-      fd.append("image", blob, `${creature.id}.png`);
+      fd.append("image", composite, `${creature.id}.png`);
+      fd.append("creatureImage", creatureImg, `${creature.id}-creature.png`);
+      fd.append("humanImage", humanImg, `${creature.id}-human.png`);
       fd.append("creatureId", creature.id);
       const res = await fetch("/api/share", { method: "POST", body: fd });
       if (!res.ok) {

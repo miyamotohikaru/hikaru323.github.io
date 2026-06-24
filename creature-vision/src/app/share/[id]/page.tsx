@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { CREATURES } from "@/data/creatures";
+import { CATEGORY_COLORS } from "@/styles/theme";
 import { Metadata } from "next";
 import Link from "next/link";
 import { getSql } from "@/lib/db";
+import ShareCompare from "./ShareCompare";
 
 // DBアクセスがあるため毎リクエスト動的に評価する
 export const dynamic = "force-dynamic";
@@ -11,6 +13,8 @@ interface Share {
   id: string;
   creature_id: string;
   image_url: string;
+  creature_url: string | null;
+  human_url: string | null;
   original_url: string | null;
   created_at: string;
   view_count: number;
@@ -113,13 +117,26 @@ export default async function SharePage({
         {creature.name}の目で見た世界
       </h1>
 
-      <div style={{ borderRadius: 18, overflow: "hidden", marginBottom: 20 }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={share.image_url}
-          alt={`${creature.name}の視点`}
-          style={{ width: "100%", height: "auto", display: "block" }}
-        />
+      <div style={{ marginBottom: 20 }}>
+        {share.creature_url && share.human_url ? (
+          // 長押し切り替え（メイン画面と同じ操作）
+          <ShareCompare
+            creatureUrl={share.creature_url}
+            humanUrl={share.human_url}
+            creatureName={creature.name}
+            accent={CATEGORY_COLORS[creature.cat]?.accent ?? creature.color}
+          />
+        ) : (
+          // 旧シェア（個別画像なし）は従来の合成画像を表示
+          <div style={{ borderRadius: 18, overflow: "hidden" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={share.image_url}
+              alt={`${creature.name}の視点`}
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
+          </div>
+        )}
       </div>
 
       <div
