@@ -837,8 +837,11 @@ export default function MothFlameGame() {
       const closeDist = Math.sqrt((p0.x - pN.x) ** 2 + (p0.y - pN.y) ** 2);
       const closeFit = Math.max(0, 1 - closeDist / (ownR * 1.5));
 
+      // sweep (how much of a full turn was drawn) ALWAYS counts — even live —
+      // so a half-circle / arc that stops short can never read as a high score.
+      // closeFit stays live-exempt (an in-progress stroke isn't closed yet).
       const shapeScore =
-        roundness * 0.55 + (live ? 1 : sweep) * 0.3 + (live ? 1 : closeFit) * 0.15;
+        roundness * 0.55 + sweep * 0.3 + (live ? 1 : closeFit) * 0.15;
 
       /* ③ Smoothness — punish sharp corners and direction reversals (×0.2–1.0).
          Turning is measured over ~1/20-of-the-path windows, so a square's
@@ -1469,11 +1472,12 @@ export default function MothFlameGame() {
       if (trail.length > 1) {
         const tx = W / 2;
         const ty = 36;
+        // Only 90+ flashes (rainbow cycling). Everything below is a calm, solid
+        // colour so the "special" feel is reserved for a near-perfect circle.
         let scoreCol = "#6272a4";
         if (sc >= 90) scoreCol = RCOLS[Math.floor(T * 10) % RCOLS.length];
         else if (sc >= 70) scoreCol = "#9efbb6";
         else if (sc >= 50) scoreCol = "#ffb454";
-        else if (sc >= 30) scoreCol = "#ff8a3d";
 
         otx.globalAlpha = 1;
         otx.font = 'bold 28px "VT323",monospace';
@@ -1496,10 +1500,12 @@ export default function MothFlameGame() {
 
         otx.globalAlpha = 1;
         if (sc >= 90) {
+          // PERFECT — the only label that flashes (rainbow), reserved for 90+
           otx.font = '11px "VT323",monospace';
-          otx.fillStyle = "#9efbb6";
+          otx.fillStyle = RCOLS[Math.floor(T * 10) % RCOLS.length];
           otx.fillText("★ PERFECT! ★", tx, ty + 28);
         } else if (sc >= 70) {
+          // GREAT — calm solid green, no flashing
           otx.font = '11px "VT323",monospace';
           otx.fillStyle = "#9efbb6";
           otx.fillText("GREAT", tx, ty + 28);
@@ -1568,7 +1574,6 @@ export default function MothFlameGame() {
         otx.stroke();
       }
       if (age < 1.4) {
-        const fl = Math.floor(T * 8) % 2;
         const tier =
           sc >= 90
             ? "PERFECT!"
@@ -1581,11 +1586,21 @@ export default function MothFlameGame() {
             : "KEEP TRYING";
         otx.textAlign = "center";
         otx.textBaseline = "middle";
-        // Score bar
-        otx.fillStyle = fl ? "#fff7c2" : "#0e0d1a";
-        otx.fillRect(W / 2 - 170, H / 2 - 20, 340, 40);
-        otx.fillStyle = fl ? "#0e0d1a" : "#fff7c2";
+        // Score bar — only 90+ flashes (rainbow). Below 90 is a calm, solid
+        // bar with the label in the TIER colour (no blinking).
         otx.font = '20px "DotGothic16",monospace';
+        if (sc >= 90) {
+          const fl = Math.floor(T * 8) % 2;
+          otx.fillStyle = fl ? "#fff7c2" : "#0e0d1a";
+          otx.fillRect(W / 2 - 170, H / 2 - 20, 340, 40);
+          otx.fillStyle = RCOLS[Math.floor(T * 10) % RCOLS.length];
+        } else {
+          const tierCol =
+            sc >= 75 ? "#9efbb6" : sc >= 55 ? "#ffb454" : sc >= 35 ? "#fff7c2" : "#6272a4";
+          otx.fillStyle = "#0e0d1a";
+          otx.fillRect(W / 2 - 170, H / 2 - 20, 340, 40);
+          otx.fillStyle = tierCol;
+        }
         otx.fillText(`★ ${sc} PT  ${tier} ★`, W / 2, H / 2);
         // Small "why this score" hint below (skipped on a near-perfect circle)
         if (sc < 90 && lastClosed.reason) {
