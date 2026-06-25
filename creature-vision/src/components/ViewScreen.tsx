@@ -341,6 +341,8 @@ export default function ViewScreen({
   const masterImgRef = useRef<HTMLImageElement | null>(null);
   const masterPromiseRef = useRef<Promise<HTMLImageElement | null> | null>(null);
   const normalizedBlobRef = useRef<Blob | null>(null);
+  // 正規化（API送信用画像の用意）の進行中Promise。描画がこれを await できる。
+  const normalizedBlobPromiseRef = useRef<Promise<Blob> | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const renderVersionRef = useRef(0);
   // シェアメニューを開いた時点で先読み生成したシェアURLをキャッシュ（about:blankの待ち時間を消すため）
@@ -386,9 +388,13 @@ export default function ViewScreen({
     // 写真が変わったらマスター拡張画像を破棄（次の生き物選択で1回だけ再生成）
     masterImgRef.current = null;
     masterPromiseRef.current = null;
-    normalizeImage(mediaFile, 1024).then(({ blob }) => {
+    // 正規化のPromiseをrefに保持。描画が正規化より先に走っても、
+    // handleCreatureChange側でこのPromiseを await できる（レース対策）。
+    const p = normalizeImage(mediaFile, 1024).then(({ blob }) => {
       if (!cancelled) normalizedBlobRef.current = blob;
+      return blob;
     });
+    normalizedBlobPromiseRef.current = p;
     return () => { cancelled = true; };
   }, [mediaFile]);
 
@@ -461,20 +467,30 @@ export default function ViewScreen({
       if (exp > 1.0) {
         if (masterImgRef.current) {
           master = masterImgRef.current; // 生成済み → 即座に使い回し
-        } else if (normalizedBlobRef.current) {
-          setLoadingText("🔭 視界をひろげてるよ...");
-          setExpanding(true);
-          try {
-            // 多重生成防止: 生成Promiseを共有
-            if (!masterPromiseRef.current) {
-              masterPromiseRef.current = generateMaster(normalizedBlobRef.current);
+        } else {
+          // 正規化が描画より遅れて完了するレースがある（最初の生き物で発生）。
+          // ここで正規化の完了を待ってから生成する（待たないとマスターが永久にスキップされる）。
+          let blob = normalizedBlobRef.current;
+          if (!blob && normalizedBlobPromiseRef.current) {
+            setLoadingText("🔭 視界をひろげてるよ...");
+            setExpanding(true);
+            try { blob = await normalizedBlobPromiseRef.current; } catch { blob = null; }
+          }
+          if (blob) {
+            setLoadingText("🔭 視界をひろげてるよ...");
+            setExpanding(true);
+            try {
+              // 多重生成防止: 生成Promiseを共有
+              if (!masterPromiseRef.current) {
+                masterPromiseRef.current = generateMaster(blob);
+              }
+              master = await masterPromiseRef.current;
+              if (master) masterImgRef.current = master;
+              else masterPromiseRef.current = null; // 失敗時は次回リトライ可
+            } catch (e) {
+              console.error("[master] failed:", e);
+              masterPromiseRef.current = null;
             }
-            master = await masterPromiseRef.current;
-            if (master) masterImgRef.current = master;
-            else masterPromiseRef.current = null; // 失敗時は次回リトライ可
-          } catch (e) {
-            console.error("[master] failed:", e);
-            masterPromiseRef.current = null;
           }
           setExpanding(false);
         }
