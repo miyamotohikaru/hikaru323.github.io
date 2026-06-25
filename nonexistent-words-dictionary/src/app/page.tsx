@@ -83,6 +83,9 @@ export default function Home() {
   const [word, setWord] = useState("");
   // 検索欄フォーカス中フラグ（縦書きミラーに点滅キャレットを出すため）
   const [searchFocused, setSearchFocused] = useState(false);
+  // PC(マウス・非タッチ)かどうか。PCではミラー方式をやめ、見える縦書きinputを直接使う
+  // （ミラーはiOSのIME崩れ対策。PCではバックスペースや途中編集ができず操作しづらいため）
+  const [isDesktop, setIsDesktop] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [savedWord, setSavedWord] = useState<SavedWordData | null>(null);
@@ -110,6 +113,15 @@ export default function Home() {
   const [replaceConfirming, setReplaceConfirming] = useState(false);
   // 自分の登録数（検索結果に「◯/5」表示）
   const [myWordCount, setMyWordCount] = useState<number | null>(null);
+
+  // PC(ホバー可＝マウス)判定。タッチ端末では従来のミラー方式を維持する
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   // フッター表示制御: idleの時だけフッターを表示
   useEffect(() => {
@@ -463,7 +475,7 @@ export default function Home() {
             <div className="tategaki-search-rule" />
             <form onSubmit={handleSearch} className="tategaki-search-form">
               <span className="tategaki-search-label">{isEnMode ? "Word" : "読み（ひらがな）"}</span>
-              <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""}`}>
+              <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""} ${isDesktop ? "is-desktop" : ""}`}>
                 <div className="tategaki-search-field">
                   {/* 縦書きの見た目はこのdivで再現する。iOSでは縦書きinputに直接
                       IME入力すると変換中の文字が崩れるため、実際の入力は下の
@@ -488,7 +500,7 @@ export default function Home() {
                     onFocus={() => setSearchFocused(true)}
                     onBlur={() => setSearchFocused(false)}
                     aria-label={isEnMode ? "Word" : "読み（ひらがな）"}
-                    placeholder={isEnMode ? "register a word" : undefined}
+                    placeholder={isEnMode ? "register a word" : (isDesktop ? "ことばを登録する" : undefined)}
                     className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
                     maxLength={20}
                   />
