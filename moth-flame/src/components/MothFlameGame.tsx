@@ -843,16 +843,18 @@ export default function MothFlameGame() {
       const shapeScore =
         roundness * 0.55 + sweep * 0.3 + (live ? 1 : closeFit) * 0.15;
 
-      /* ③ Smoothness — punish sharp corners and direction reversals (×0.2–1.0).
+      /* ③ Smoothness — punish sharp corners and direction reversals (×0.15–1.0).
          Turning is measured over ~1/20-of-the-path windows, so a square's
          corners concentrate into big turns while a circle stays gentle.
-         cornerPenalty SUMS the excess turn, so 4 corners stack up and crush
-         the score (a square lands ~0.4, a clean circle stays 1.0). */
+         cornerPenalty SUMS the excess turn, so corners stack up and crush the
+         score. maxTurn additionally catches a single very sharp angle (a V),
+         which one summed corner alone might not. A clean circle stays 1.0. */
       const stp = Math.max(1, Math.floor(pts.length / 20));
       let cornerPenalty = 0;
       let reversalCount = 0;
       let prevDa = 0;
       let hasPrev = false;
+      let maxTurn = 0;
       for (let i = stp * 2; i < pts.length; i += stp) {
         const ax = pts[i - stp].x - pts[i - stp * 2].x;
         const ay = pts[i - stp].y - pts[i - stp * 2].y;
@@ -861,13 +863,18 @@ export default function MothFlameGame() {
         if ((ax === 0 && ay === 0) || (bx === 0 && by === 0)) continue;
         const da = Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
         cornerPenalty += Math.max(0, Math.abs(da) - 0.6); // 0.6rad ≈ 34° (hand-wobble tolerant)
+        if (Math.abs(da) > maxTurn) maxTurn = Math.abs(da);
         if (hasPrev && da * prevDa < 0 && Math.abs(da) > 0.3) reversalCount++;
         prevDa = da;
         hasPrev = true;
       }
-      const cornerScore = Math.max(0, 1 - cornerPenalty * 0.5);
+      // Stronger corner coefficient (0.5 → 0.9) so a spiky / V shape can't keep
+      // a high shape score.
+      let cornerScore = Math.max(0, 1 - cornerPenalty * 0.9);
+      // One very sharp angle (a V vertex, >~63°) is enough to gut smoothness.
+      if (maxTurn > 1.1) cornerScore *= Math.max(0.2, 1 - (maxTurn - 1.1));
       const reversalScore = Math.max(0, 1 - reversalCount * 0.25);
-      const smoothness = Math.max(0.2, cornerScore * 0.6 + reversalScore * 0.4);
+      const smoothness = Math.max(0.15, cornerScore * 0.6 + reversalScore * 0.4);
 
       /* ④ Centering — the shape must surround the fire (×0–1.0) */
       const centerDist = Math.sqrt(
@@ -876,7 +883,14 @@ export default function MothFlameGame() {
       const centering = live ? 1 : Math.max(0, 1 - centerDist / idealR);
 
       /* ⑤ Combine and curve */
-      const raw = (distScore * 0.4 + shapeScore * 0.6) * centering * smoothness;
+      // Sweep gate: the stroke must travel almost all the way around to score
+      // well. An arc (half-circle, quarter, near-straight line) reads a low
+      // sweep and is capped HARD here, so "an arc that stops short" can never
+      // pass for a clean circle. A full circle reads sweep ≈ 1 → gate ≈ 1, so
+      // it is unaffected. (0.62→0.90 ramp tuned so: half≈0.2, quarter/line≈0.)
+      const sweepGate = Math.max(0, Math.min(1, (sweep - 0.62) / (0.9 - 0.62)));
+      const raw =
+        (distScore * 0.4 + shapeScore * 0.6) * centering * smoothness * sweepGate;
       const score = Math.round(100 * Math.pow(Math.max(0, raw), 1.3));
 
       liveDistInfo = {
