@@ -277,6 +277,17 @@ export default function MothFlameGame() {
     let liveScoreVal = 0;
     let liveDistInfo = { accuracy: 0, shape: 0 };
     let liveReason = ""; // short "why this score" hint (weakest factor)
+
+    /* ── DEMO MODE (preview only) ──
+       Open with ?fx=NN (e.g. ?fx=97) to auto-replay the score-NN celebration on
+       a loop, so the 95+ finale can be seen without drawing a perfect circle.
+       No effect without the query param (production unaffected). */
+    let demoFx = 0;
+    try {
+      const v = new URLSearchParams(window.location.search).get("fx");
+      if (v) demoFx = Math.max(0, Math.min(100, parseInt(v, 10) || 0));
+    } catch {}
+    let nextDemoT = 1.2;
     let deathMX = 0,
       deathMY = 0;
     const deathBits: DeathBit[] = [];
@@ -1941,7 +1952,20 @@ export default function MothFlameGame() {
       if (dead) drawGameOver();
       drawEasterEgg(dt);
       kosukumaStep(dt);
+      // DEMO MODE: auto-replay the requested celebration on a loop
+      if (demoFx > 0 && fireSCX > 0 && T >= nextDemoT) {
+        celebrate(demoFx);
+        nextDemoT = T + 5;
+      }
       drawCeleb(dt);
+      if (demoFx > 0) {
+        otx.save();
+        otx.textAlign = "center";
+        otx.font = '12px "VT323",monospace';
+        otx.fillStyle = "#8be9fd";
+        otx.fillText(`DEMO: replaying score ${demoFx} celebration`, W / 2, 60);
+        otx.restore();
+      }
       drawHUD();
       drawCRT();
 
