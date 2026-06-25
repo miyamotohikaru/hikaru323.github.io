@@ -1032,7 +1032,14 @@ const filterPanorama: CtxFilter = (ctx, w, h, fp) => {
           );
         }
       } else {
-        px[idx] = 0; px[idx + 1] = 0; px[idx + 2] = 0;
+        // Out of bounds: clamp to the nearest edge pixel instead of black,
+        // so the AI-outpainted periphery shows through rather than a void.
+        const csx = sx < 0 ? 0 : sx > w - 1 ? w - 1 : sx;
+        const csy = sy < 0 ? 0 : sy > h - 1 ? h - 1 : sy;
+        const ci = ((csy | 0) * w + (csx | 0)) * 4;
+        px[idx]     = snapshot[ci];
+        px[idx + 1] = snapshot[ci + 1];
+        px[idx + 2] = snapshot[ci + 2];
       }
     }
   }
@@ -1699,8 +1706,10 @@ export function applyFisheye(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
-  strength: number // 0.0 = no distortion, 1.0 = strong fisheye
+  strength: number // 0.0 = no distortion, larger = stronger wide-angle bulge
 ): void {
+  if (strength <= 0) return;
+
   const src = ctx.getImageData(0, 0, w, h);
   const dst = ctx.createImageData(w, h);
   const sd = src.data;
@@ -1709,7 +1718,13 @@ export function applyFisheye(
   const cx = w / 2;
   const cy = h / 2;
   const maxR = Math.sqrt(cx * cx + cy * cy);
-  const k = strength * 0.8; // distortion coefficient
+  const RMAX = Math.SQRT2; // max normalized radius (corner), since nx,ny ∈ [-1,1]
+
+  // Center-magnifying barrel mapping. The per-pixel sampling scale is rn^p,
+  // which is always ≤ 1, so every sample stays inside the frame — no black
+  // wedges. The AI-outpainted edges stay visible (compressed toward the rim)
+  // instead of being pushed off-frame and replaced with black.
+  const p = Math.min(1.2, strength) * 0.5;
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -1718,32 +1733,35 @@ export function applyFisheye(
       const ny = (y - cy) / cy;
       const r = Math.sqrt(nx * nx + ny * ny);
 
-      // Barrel distortion: push pixels outward from center
-      let nr: number;
+      let sx: number, sy: number;
       if (r === 0) {
-        nr = 0;
+        sx = cx;
+        sy = cy;
       } else {
-        nr = r * (1 + k * r * r);
+        const scale = Math.pow(r / RMAX, p); // ≤ 1 → keeps samples in-bounds
+        sx = cx + nx * scale * cx;
+        sy = cy + ny * scale * cy;
       }
 
-      // Map back to source pixel
-      const srcX = Math.round(cx + (nx / r) * nr * cx);
-      const srcY = Math.round(cy + (ny / r) * nr * cy);
+      // Bilinear sample with edge clamp (no out-of-bounds, no black)
+      const fx = sx < 0 ? 0 : sx > w - 1 ? w - 1 : sx;
+      const fy = sy < 0 ? 0 : sy > h - 1 ? h - 1 : sy;
+      const x0 = fx | 0, y0 = fy | 0;
+      const x1 = x0 + 1 < w ? x0 + 1 : x0;
+      const y1 = y0 + 1 < h ? y0 + 1 : y0;
+      const tx = fx - x0, ty = fy - y0;
 
+      const i00 = (y0 * w + x0) * 4;
+      const i10 = (y0 * w + x1) * 4;
+      const i01 = (y1 * w + x0) * 4;
+      const i11 = (y1 * w + x1) * 4;
       const di = (y * w + x) * 4;
-
-      if (srcX >= 0 && srcX < w && srcY >= 0 && srcY < h) {
-        const si = (srcY * w + srcX) * 4;
-        dd[di] = sd[si];
-        dd[di + 1] = sd[si + 1];
-        dd[di + 2] = sd[si + 2];
-        dd[di + 3] = sd[si + 3];
-      } else {
-        // Out of bounds — black
-        dd[di] = 0;
-        dd[di + 1] = 0;
-        dd[di + 2] = 0;
-        dd[di + 3] = 255;
+      for (let c = 0; c < 4; c++) {
+        dd[di + c] =
+          sd[i00 + c] * (1 - tx) * (1 - ty) +
+          sd[i10 + c] * tx * (1 - ty) +
+          sd[i01 + c] * (1 - tx) * ty +
+          sd[i11 + c] * tx * ty;
       }
     }
   }
@@ -1756,4 +1774,173 @@ export function applyFisheye(
   vg.addColorStop(1, "rgba(0,0,0,0.3)");
   ctx.fillStyle = vg;
   ctx.fillRect(0, 0, w, h);
+}
+
+// ---------------------------------------------------------------------------
+// 360°系の見せ方を3つ切り替えて比較するための変換
+// 余白・四隅はすべてクリーム色(#FFF9F2 = アプリ背景)で統一する
+// ---------------------------------------------------------------------------
+const CREAM = { r: 0xff, g: 0xf9, b: 0xf2 }; // #FFF9F2
+
+// ① 円形魚眼: 真円に丸めて全方位を1枚に圧縮
+export function applyCircularFisheye(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  strength: number
+): void {
+  const src = ctx.getImageData(0, 0, w, h);
+  const dst = ctx.createImageData(w, h);
+  const cx = w / 2, cy = h / 2;
+  const R = Math.min(w, h) / 2;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const di = (y * w + x) * 4;
+      const dx = x - cx, dy = y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist > R) {
+        dst.data[di] = CREAM.r; dst.data[di + 1] = CREAM.g;
+        dst.data[di + 2] = CREAM.b; dst.data[di + 3] = 255;
+        continue;
+      }
+
+      const theta = Math.atan2(dy, dx);
+      const nr = dist / R;
+      // 球面投影: 周辺ほど圧縮
+      const k = 1 + strength * 0.5;
+      const mapped = Math.sin((nr * Math.PI) / 2 * k) / k;
+      const srcDist = mapped * R;
+      let sx = cx + Math.cos(theta) * srcDist;
+      let sy = cy + Math.sin(theta) * srcDist;
+      sx = sx < 0 ? 0 : sx > w - 1 ? w - 1 : sx;
+      sy = sy < 0 ? 0 : sy > h - 1 ? h - 1 : sy;
+
+      const si = (Math.round(sy) * w + Math.round(sx)) * 4;
+      dst.data[di] = src.data[si]; dst.data[di + 1] = src.data[si + 1];
+      dst.data[di + 2] = src.data[si + 2]; dst.data[di + 3] = 255;
+    }
+  }
+  ctx.putImageData(dst, 0, 0);
+
+  // フチをクリーム色でなじませる
+  const grad = ctx.createRadialGradient(cx, cy, R * 0.92, cx, cy, R);
+  grad.addColorStop(0, "rgba(255,249,242,0)");
+  grad.addColorStop(1, "rgba(255,249,242,0.6)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+}
+
+// ② パノラマ帯: 360°を横長の帯にして「ぐるっと一周」を平らに
+export function applyPanoramaBand(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number
+): void {
+  const src = ctx.getImageData(0, 0, w, h);
+  const dst = ctx.createImageData(w, h);
+
+  // 帯の高さは画面の60%、上下20%ずつクリーム色
+  const bandTop = h * 0.2;
+  const bandH = h * 0.6;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const di = (y * w + x) * 4;
+
+      // 帯の外（上下）→ クリーム色
+      if (y < bandTop || y > bandTop + bandH) {
+        dst.data[di] = CREAM.r; dst.data[di + 1] = CREAM.g;
+        dst.data[di + 2] = CREAM.b; dst.data[di + 3] = 255;
+        continue;
+      }
+
+      // 帯の中 → 元画像を縦に圧縮してマッピング
+      const ny = (y - bandTop) / bandH; // 0〜1
+      const sy = ny * h;
+      // 横方向は端をわずかに湾曲（パノラマ感）
+      const curve = Math.sin((x / w) * Math.PI) * 0.04;
+      let sx = x + (x - w / 2) * curve;
+      sx = sx < 0 ? 0 : sx > w - 1 ? w - 1 : sx;
+
+      const si = (Math.round(sy) * w + Math.round(sx)) * 4;
+      dst.data[di] = src.data[si]; dst.data[di + 1] = src.data[si + 1];
+      dst.data[di + 2] = src.data[si + 2]; dst.data[di + 3] = 255;
+    }
+  }
+  ctx.putImageData(dst, 0, 0);
+}
+
+// ③ 元写真中心＋周囲を丸く歪ませる（中心40%はそのまま、外側だけ歪む）
+export function applyCenteredDistortion(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  strength: number
+): void {
+  const src = ctx.getImageData(0, 0, w, h);
+  const dst = ctx.createImageData(w, h);
+  const cx = w / 2, cy = h / 2;
+  const radius = Math.sqrt(cx * cx + cy * cy);
+  const innerRatio = 0.4;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const di = (y * w + x) * 4;
+      const dx = (x - cx) / radius;
+      const dy = (y - cy) / radius;
+      const r = Math.sqrt(dx * dx + dy * dy);
+
+      let sx = x, sy = y;
+      if (r > innerRatio) {
+        const t = (r - innerRatio) / (1 - innerRatio); // 0〜1
+        const factor = 1.0 - strength * t * 0.4;
+        sx = cx + (x - cx) * factor;
+        sy = cy + (y - cy) * factor;
+      }
+
+      if (sx < 0 || sx >= w || sy < 0 || sy >= h) {
+        dst.data[di] = CREAM.r; dst.data[di + 1] = CREAM.g;
+        dst.data[di + 2] = CREAM.b; dst.data[di + 3] = 255;
+        continue;
+      }
+
+      const si = (Math.round(sy) * w + Math.round(sx)) * 4;
+      dst.data[di] = src.data[si]; dst.data[di + 1] = src.data[si + 1];
+      dst.data[di + 2] = src.data[si + 2]; dst.data[di + 3] = 255;
+    }
+  }
+  ctx.putImageData(dst, 0, 0);
+}
+
+// ④ ワシ: 全体は俯瞰的に、中央に望遠ズーム円（中心窩）
+export function applyEagleCenterZoom(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number
+): void {
+  const cx = w / 2, cy = h / 2;
+  const R = Math.min(w, h) * 0.22;
+  const zoom = 1.9;
+
+  const snap = document.createElement("canvas");
+  snap.width = w; snap.height = h;
+  snap.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
+
+  // 中央の円内だけ望遠ズーム
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.clip();
+  const srcR = R / zoom;
+  ctx.drawImage(snap, cx - srcR, cy - srcR, srcR * 2, srcR * 2, cx - R, cy - R, R * 2, R * 2);
+  ctx.restore();
+
+  // ズーム円の縁取り
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255,255,255,0.7)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
 }

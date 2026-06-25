@@ -2,6 +2,24 @@ import { GoogleGenAI } from "@google/genai";
 
 export const maxDuration = 60;
 
+// マスター拡張画像のプロンプト。写真1枚につき1回だけ生成し、全生き物で使い回す。
+// 元写真を中心に固定し、左右に360°ぶんのシーンを「色を変えずに」広げるだけ。
+// 色・質感の加工は後段の applyFilter（Canvas）が全部やる（AIに色を触らせない）。
+const MASTER_PROMPT = `Extend this photo horizontally to BOTH the left and right sides, creating a wide 360-degree panoramic field of view.
+
+CRITICAL RULES:
+- The original photo MUST stay EXACTLY in the CENTER, completely unchanged and unmodified.
+- Generate new scenery ONLY on the left and right sides of the original.
+- The new content must naturally continue the existing scene (same environment, same perspective, same objects logically extended).
+- Do NOT change colors, brightness, contrast, saturation, or style. Match the original photo EXACTLY in tone.
+- This is a pure field-of-view extension — as if the camera simply captured a much wider angle of the same moment.
+- Seamless, photorealistic, no visible seams, no black areas. Fill the entire canvas with real scenery.
+
+The original stays centered and pristine; only the surroundings to the left and right are newly generated.`;
+
+// 縦方向（ヨツメウオ等の上下拡張）が必要な場合のフォールバック
+const MASTER_PROMPT_VERTICAL = `Extend this photo vertically, adding more scene ABOVE and BELOW the original. The original photo MUST stay EXACTLY in the CENTER, unchanged. Do NOT change colors, brightness, contrast, saturation, or style — match the original tone EXACTLY. Pure field-of-view extension. Seamless, photorealistic, no seams, no black areas — fill the entire canvas with real scenery.`;
+
 export async function POST(req: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -35,19 +53,12 @@ export async function POST(req: Request) {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    const expansionDesc =
-      expansion >= 2.8
-        ? "extremely wide"
-        : expansion >= 2.0
-          ? "much wider"
-          : "wider";
+    // マスター拡張プロンプト（写真1枚につき1回。全生き物で使い回す前提）
+    const prompt = direction === "vertical" ? MASTER_PROMPT_VERTICAL : MASTER_PROMPT;
 
-    const prompt =
-      direction === "vertical"
-        ? `Expand this image vertically by extending the scene above and below the original frame. The new vertical content should appear as ${expansionDesc} continuation of the existing scene. Maintain the exact same lighting, color palette, atmosphere, time of day, and artistic style as the original. The original image must remain centered and unmodified. Make the boundaries seamless and natural — no visible seams, no distortion. Generate realistic content that logically extends what's already there (e.g., more sky above, more ground below).`
-        : `Expand this image horizontally by extending the scene to the left and right of the original frame. The new horizontal content should appear as ${expansionDesc} continuation of the existing scene. Maintain the exact same lighting, color palette, atmosphere, time of day, and artistic style as the original. The original image must remain centered and unmodified. Make the boundaries seamless and natural — no visible seams, no distortion. Generate realistic content that logically extends what's already there (e.g., more landscape on the sides).`;
-
-    console.log("[expand] Calling Gemini...", prompt.substring(0, 80) + "...");
+    console.log(
+      `[expand] master expansion, direction=${direction}, expansion=${expansion}`
+    );
 
     const response = await ai.models.generateContent({
       model: "gemini-3.1-flash-image-preview",

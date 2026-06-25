@@ -2,7 +2,14 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Icon from "./Icon";
-import { applyFilter, FOV_DATA, applyFisheye } from "./FilterEngine";
+import {
+  applyFilter,
+  FOV_DATA,
+  applyCircularFisheye,
+  applyPanoramaBand,
+  applyCenteredDistortion,
+  applyEagleCenterZoom,
+} from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
 import { SHARE_TEXTS } from "@/data/shareTexts";
 
@@ -87,6 +94,13 @@ function FacebookIcon() {
 }
 
 /* ── Share image generation ── */
+
+/** Canvas を PNG Blob 化（長押し切り替え用の個別画像アップロードに使う） */
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob!), "image/png", 0.92);
+  });
+}
 
 async function generateShareImage(
   creatureCanvas: HTMLCanvasElement,
@@ -211,56 +225,94 @@ async function normalizeImage(
   return { blob, width: w, height: h, orientation };
 }
 
-/* ── Expand API call (simplified, PxBee-style) ── */
+/* ── マスター拡張画像の生成（写真1枚につき1回・360°ぶん・全生き物で使い回す） ── */
 
-async function callExpandAPI(
-  normalizedBlob: Blob,
-  expansion: number
-): Promise<HTMLImageElement | null> {
-  const bitmap = await createImageBitmap(normalizedBlob);
-  const direction = bitmap.height > bitmap.width ? "vertical" : "horizontal";
-
-  console.log(`[expand] ${bitmap.width}x${bitmap.height}, direction=${direction}, expansion=${expansion}`);
-
+async function generateMaster(normalizedBlob: Blob): Promise<HTMLImageElement | null> {
   const formData = new FormData();
   formData.append("image", normalizedBlob, "photo.jpg");
-  formData.append("expansion", String(expansion));
-  formData.append("direction", direction);
+  formData.append("expansion", "3.0"); // 360°ぶん固定
+  formData.append("direction", "horizontal");
 
   try {
     const res = await fetch("/api/expand", { method: "POST", body: formData });
     if (!res.ok) {
-      console.error("[expand] API error:", res.status, await res.text());
+      console.error("[master] API error:", res.status, await res.text());
       return null;
     }
-
     const blob = await res.blob();
     if (blob.size < 1000) {
-      console.error("[expand] Tiny blob:", blob.size);
+      console.error("[master] Tiny blob:", blob.size);
       return null;
     }
-
-    console.log(`[expand] Success: ${blob.size}B`);
     const img = new Image();
-    const objectUrl = URL.createObjectURL(blob);
-    img.src = objectUrl;
+    img.src = URL.createObjectURL(blob);
     try {
       await img.decode();
     } catch {
-      console.error("[expand] Failed to decode image, discarding");
-      URL.revokeObjectURL(objectUrl);
+      console.error("[master] Failed to decode image");
       return null;
     }
-    if (!img.naturalWidth || !img.naturalHeight) {
-      console.error("[expand] Image has no dimensions after decode");
-      URL.revokeObjectURL(objectUrl);
-      return null;
-    }
+    if (!img.naturalWidth || !img.naturalHeight) return null;
+    console.log(`[master] ready: ${img.naturalWidth}x${img.naturalHeight}`);
     return img;
   } catch (err) {
-    console.error("[expand] Exception:", err);
+    console.error("[master] Exception:", err);
     return null;
   }
+}
+
+/* ── 見え方の仕様（全24種） ── */
+// 色フィルターの上書き（既存filterTypeが形状まで焼くもの→純色フィルターに分離）
+const VISION_COLOR: Record<string, string> = {
+  horse: "dichro", // 既存"panorama"は形状込み→色のみdichroにして幾何は変換側で
+  goat: "dichro", // 既存"horizoneye"も同様
+};
+
+type ViewTransform =
+  | { kind: "circular"; strength: number }
+  | { kind: "panorama" }
+  | { kind: "centered"; strength: number }
+  | { kind: "horse" } // 円形魚眼 + 中心の盲点(黒)
+  | { kind: "eagle" } // 中央に望遠ズーム円
+  | { kind: "none" }; // 既存フィルターが形状も担当（分割眼など）→追加変換なし
+
+// 幾何変換の割り当て（マスター画像を使う広視野の生き物のみ）。
+// 未登録(human/owl/deepsea/mole)は変換なし＝既存の狭視野ズーム等にフォールバック。
+const VISION_TRANSFORM: Record<string, ViewTransform> = {
+  kosukuma: { kind: "circular", strength: 0.625 },
+  dog: { kind: "centered", strength: 0.54 },
+  horse: { kind: "horse" },
+  goat: { kind: "panorama" },
+  chameleon: { kind: "none" }, // dualeyeが左右分割を担当
+  frog: { kind: "circular", strength: 1.0 },
+  eagle: { kind: "eagle" },
+  bat: { kind: "circular", strength: 1.0 },
+  cockroach: { kind: "circular", strength: 1.0 },
+  mantis: { kind: "centered", strength: 0.75 },
+  spider: { kind: "none" }, // multieyeが8眼を担当
+  koala: { kind: "centered", strength: 0.33 },
+  dolphin: { kind: "circular", strength: 0.75 },
+  shark: { kind: "circular", strength: 1.0 },
+  octopus: { kind: "circular", strength: 0.96 },
+  foureyedfish: { kind: "none" }, // spliteyeが上下分割を担当
+  snake: { kind: "centered", strength: 0.75 },
+  mshrimp: { kind: "circular", strength: 1.0 },
+  flamingo: { kind: "circular", strength: 0.75 }, // upsidedownフィルターが上下反転を担当
+  pigeon: { kind: "circular", strength: 0.96 },
+};
+
+// マスター画像を fov に応じて中心からクロップして ctx いっぱいに描画
+function cropMasterForFov(
+  ctx: CanvasRenderingContext2D,
+  master: HTMLImageElement,
+  fov: number,
+  w: number,
+  h: number
+): void {
+  const cropRatio = Math.min(1.0, Math.max(0.33, fov / 360));
+  const cropW = master.naturalWidth * cropRatio;
+  const cropX = (master.naturalWidth - cropW) / 2; // 中心基準（元写真は中央）
+  ctx.drawImage(master, cropX, 0, cropW, master.naturalHeight, 0, 0, w, h);
 }
 
 /* ── Main component ── */
@@ -285,10 +337,15 @@ export default function ViewScreen({
   const [expanding, setExpanding] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
-  const expandCacheRef = useRef<Map<string, CanvasImageSource>>(new Map());
+  // マスター拡張画像（写真1枚につき1回生成し全生き物で使い回す）と生成中Promise（多重生成防止）
+  const masterImgRef = useRef<HTMLImageElement | null>(null);
+  const masterPromiseRef = useRef<Promise<HTMLImageElement | null> | null>(null);
   const normalizedBlobRef = useRef<Blob | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const renderVersionRef = useRef(0);
+  // シェアメニューを開いた時点で先読み生成したシェアURLをキャッシュ（about:blankの待ち時間を消すため）
+  const sharePrepRef = useRef<{ url: string; creatureId: string } | null>(null);
+  const [preparingShare, setPreparingShare] = useState(false);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
@@ -326,6 +383,9 @@ export default function ViewScreen({
   // Normalize image for API on mount
   useEffect(() => {
     let cancelled = false;
+    // 写真が変わったらマスター拡張画像を破棄（次の生き物選択で1回だけ再生成）
+    masterImgRef.current = null;
+    masterPromiseRef.current = null;
     normalizeImage(mediaFile, 1024).then(({ blob }) => {
       if (!cancelled) normalizedBlobRef.current = blob;
     });
@@ -396,34 +456,27 @@ export default function ViewScreen({
       setLoadingText(`${c.name}に転生中...`);
       setProcessing(true);
 
-      // --- STEP 2: Determine image source ---
-      let sourceImg: CanvasImageSource = originalImage;
-      let aiExpandSucceeded = false;
-
+      // --- STEP 2: マスター拡張画像を用意（広視野=exp>1.0 のときだけ。写真1枚に1回生成し全生き物で使い回す） ---
+      let master: HTMLImageElement | null = null;
       if (exp > 1.0) {
-        const cached = expandCacheRef.current.get(creatureId);
-        if (cached) {
-          console.log("[expand] Cache hit:", creatureId);
-          sourceImg = cached;
-          aiExpandSucceeded = true;
+        if (masterImgRef.current) {
+          master = masterImgRef.current; // 生成済み → 即座に使い回し
         } else if (normalizedBlobRef.current) {
           setLoadingText("🔭 視界をひろげてるよ...");
           setExpanding(true);
           try {
-            const expandedImg = await callExpandAPI(normalizedBlobRef.current, exp);
-            if (expandedImg) {
-              expandCacheRef.current.set(creatureId, expandedImg);
-              sourceImg = expandedImg;
-              aiExpandSucceeded = true;
-            } else {
-              console.warn("[expand] AI returned null, using original");
+            // 多重生成防止: 生成Promiseを共有
+            if (!masterPromiseRef.current) {
+              masterPromiseRef.current = generateMaster(normalizedBlobRef.current);
             }
+            master = await masterPromiseRef.current;
+            if (master) masterImgRef.current = master;
+            else masterPromiseRef.current = null; // 失敗時は次回リトライ可
           } catch (e) {
-            console.error("[expand] AI failed:", e);
+            console.error("[master] failed:", e);
+            masterPromiseRef.current = null;
           }
           setExpanding(false);
-        } else {
-          console.warn("[expand] Normalized blob not ready, using original");
         }
       }
 
@@ -433,12 +486,22 @@ export default function ViewScreen({
         return;
       }
 
+      const useMaster = exp > 1.0 && !!master;
+      const transform = VISION_TRANSFORM[creatureId] ?? { kind: "none" as const };
+      const colorFilter = VISION_COLOR[creatureId] ?? c.filterType;
+      // 色のみのフィルターに差し替えた場合は fp を渡さない（既定値を使う）
+      const colorFp = colorFilter === c.filterType ? c.fp : {};
+
       try {
-        // --- STEP 3: Draw source image ---
+        // --- STEP 3: マスター画像を fov でクロップ（広視野）／元写真（狭視野） ---
         try {
-          ctx.drawImage(sourceImg, 0, 0, w, h);
+          if (useMaster && master) {
+            cropMasterForFov(ctx, master, fov?.fov ?? 360, w, h);
+          } else {
+            ctx.drawImage(originalImage, 0, 0, w, h);
+          }
         } catch (e) {
-          console.error("[draw] sourceImg failed, falling back to original:", e);
+          console.error("[draw] source failed, falling back to original:", e);
           ctx.drawImage(originalImage, 0, 0, w, h);
         }
 
@@ -449,10 +512,10 @@ export default function ViewScreen({
           ctx.drawImage(originalImage, 0, 0, w, h);
         }
 
-        // --- STEP 4: Apply creature filter ---
-        applyFilter(ctx, w, h, c.filterType, c.fp);
+        // --- STEP 4: 色・質感フィルター（色はここで全部やる） ---
+        applyFilter(ctx, w, h, colorFilter, colorFp);
 
-        // --- STEP 5: Narrow FOV zoom + vignette (expansion < 1.0) ---
+        // --- STEP 5: 狭視野(exp<1.0)は中央ズーム＋周辺暗転 ---
         if (exp > 0 && exp < 1.0) {
           const filtered = document.createElement("canvas");
           filtered.width = w;
@@ -475,13 +538,38 @@ export default function ViewScreen({
           ctx.fillRect(0, 0, w, h);
         }
 
-        // --- STEP 6: Fisheye ONLY when AI expansion succeeded ---
-        if (aiExpandSucceeded) {
-          const fisheyeStrength = Math.min(1.2, exp - 1.0);
-          applyFisheye(ctx, w, h, fisheyeStrength);
-          console.log("[fisheye] strength:", fisheyeStrength);
-        } else if (exp > 1.0) {
-          console.log("[fisheye] Skipped — no AI expansion");
+        // --- STEP 6: 生き物ごとの幾何変換（マスター使用時のみ） ---
+        if (useMaster) {
+          switch (transform.kind) {
+            case "circular":
+              applyCircularFisheye(ctx, w, h, transform.strength);
+              break;
+            case "panorama":
+              applyPanoramaBand(ctx, w, h);
+              break;
+            case "centered":
+              applyCenteredDistortion(ctx, w, h, transform.strength);
+              break;
+            case "horse": {
+              // 円形魚眼 + 中心の盲点（真正面が見えない）
+              applyCircularFisheye(ctx, w, h, 0.96);
+              const cx = w / 2, cy = h / 2;
+              const blindR = Math.min(w, h) * 0.08;
+              ctx.beginPath();
+              ctx.arc(cx, cy, blindR, 0, Math.PI * 2);
+              ctx.fillStyle = "#000";
+              ctx.fill();
+              break;
+            }
+            case "eagle":
+              applyEagleCenterZoom(ctx, w, h);
+              break;
+            case "none":
+            default:
+              // 既存フィルターが形状も担当（分割眼・反転など）→追加変換なし
+              break;
+          }
+          console.log("[view] transform:", transform.kind, "creature:", creatureId);
         }
       } catch (e) {
         console.error("[draw] Rendering pipeline failed:", e);
@@ -496,23 +584,80 @@ export default function ViewScreen({
     [creatures]
   );
 
+  // 比較画像を生成→アップロードしてOGP付きシェアページURLを返す（失敗時はnull）
+  const createShareUrl = useCallback(async (): Promise<string | null> => {
+    const creatureCanvas = canvasRef.current;
+    const humanCanvas = humanCanvasRef.current;
+    if (!creatureCanvas || !humanCanvas) return null;
+    try {
+      // OGP用の合成画像と、長押し切り替え用の個別画像（生き物のめ／人間のめ）を生成
+      const [composite, creatureImg, humanImg] = await Promise.all([
+        generateShareImage(creatureCanvas, humanCanvas, creature),
+        canvasToBlob(creatureCanvas),
+        canvasToBlob(humanCanvas),
+      ]);
+      const fd = new FormData();
+      fd.append("image", composite, `${creature.id}.png`);
+      fd.append("creatureImage", creatureImg, `${creature.id}-creature.png`);
+      fd.append("humanImage", humanImg, `${creature.id}-human.png`);
+      fd.append("creatureId", creature.id);
+      const res = await fetch("/api/share", { method: "POST", body: fd });
+      if (!res.ok) {
+        console.error("[share] create failed:", res.status);
+        return null;
+      }
+      const data = await res.json();
+      return data.shareUrl ?? null;
+    } catch (e) {
+      console.error("[share] create error:", e);
+      return null;
+    }
+  }, [creature]);
+
+  // シェアメニューを開いた瞬間にURLを先読み生成しておく（about:blankの待ち時間を消す）
+  const prepareShareUrl = useCallback(async () => {
+    if (sharePrepRef.current?.creatureId === creature.id) return; // この生き物は生成済み
+    setPreparingShare(true);
+    const url = await createShareUrl();
+    if (url) sharePrepRef.current = { url, creatureId: creature.id };
+    setPreparingShare(false);
+  }, [creature, createShareUrl]);
+
   // Share to specific SNS
   const shareToSns = useCallback(
     async (sns: "x" | "line" | "facebook") => {
       const shareText = SHARE_TEXTS[creature.id] || "";
       const fullText = `${shareText}\n\n👁 生き物の目で世界を見よう`;
-      const url = "https://creature-vision.vercel.app";
+      // 共有するURL。シェアページ作成に失敗したら従来どおりトップURLにフォールバック
+      let url = "https://creature-vision.vercel.app";
 
-      const creatureCanvas = canvasRef.current;
-      const humanCanvas = humanCanvasRef.current;
-      if (creatureCanvas && humanCanvas) {
-        const blob = await generateShareImage(creatureCanvas, humanCanvas, creature);
-        const dlUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = dlUrl;
-        a.download = `creature-vision-${creature.id}.png`;
-        a.click();
-        URL.revokeObjectURL(dlUrl);
+      // 先読み済みならタブを開かず即遷移できる（about:blankの空白が出ない）
+      const prepared =
+        sharePrepRef.current?.creatureId === creature.id
+          ? sharePrepRef.current.url
+          : null;
+
+      let win: Window | null = null;
+      if (prepared) {
+        url = prepared;
+      } else {
+        // 未生成: タブを先に開き「準備中…」を表示してからURLを差し込む
+        // （アップロード後に window.open するとポップアップブロックされるため。特にSafari対策）
+        win = window.open("about:blank", "_blank");
+        if (win) {
+          win.opener = null;
+          win.document.write(
+            `<!doctype html><meta charset="utf-8"><title>準備中…</title>` +
+              `<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#FFF9F2;font-family:sans-serif;color:#666">` +
+              `<div style="text-align:center"><div style="font-size:44px">🐾</div>` +
+              `<div style="margin-top:12px;font-size:14px">シェアリンクを準備中…</div></div></body>`
+          );
+        }
+        const created = await createShareUrl();
+        if (created) {
+          url = created;
+          sharePrepRef.current = { url: created, creatureId: creature.id };
+        }
       }
 
       let shareUrl = "";
@@ -527,10 +672,15 @@ export default function ViewScreen({
           shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(fullText)}`;
           break;
       }
-      window.open(shareUrl, "_blank", "noopener,noreferrer");
+      if (win) {
+        win.location.href = shareUrl;
+      } else {
+        // 先読み済み or タブを開けなかった場合
+        window.open(shareUrl, "_blank", "noopener,noreferrer");
+      }
       setShowShareMenu(false);
     },
-    [creature]
+    [creature, createShareUrl]
   );
 
   const isFav = favs.includes(selectedId);
@@ -694,7 +844,9 @@ export default function ViewScreen({
               animation: "fadeUp 0.2s ease-out", zIndex: 10,
             }}
           >
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>シェアする</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>
+              {preparingShare ? "リンク準備中…" : "シェアする"}
+            </p>
             <div className="flex gap-5">
               {([["x", <XIcon key="x" />, "X"], ["line", <LineIcon key="l" />, "LINE"], ["facebook", <FacebookIcon key="f" />, "Facebook"]] as const).map(([sns, icon, label]) => (
                 <button
@@ -719,7 +871,11 @@ export default function ViewScreen({
           </div>
         )}
         <button
-          onClick={() => setShowShareMenu((v) => !v)}
+          onClick={() => {
+            const next = !showShareMenu;
+            setShowShareMenu(next);
+            if (next) prepareShareUrl(); // 開いた瞬間にリンクを先読み生成
+          }}
           style={{
             width: "100%", padding: "14px 20px", borderRadius: 16,
             border: "2px solid rgba(0,0,0,0.06)",
