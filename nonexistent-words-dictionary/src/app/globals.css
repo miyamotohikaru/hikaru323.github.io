@@ -2595,6 +2595,33 @@ a:hover { color: var(--text-primary); }
 
 .tategaki-search-input:disabled { opacity: 0.5; }
 
+/* ===== PC(マウス)時の縦書き検索input =====
+   タッチ端末はミラー方式（透明input＋表示div）を維持するが、PCでは実カーソルが
+   見えずバックスペース/途中編集ができないため、ミラーをやめて「見える縦書きinput」を
+   直接編集できるようにする。日本語モードのみ対象（英語はen-modeの横書き設定を使う）。 */
+.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-display {
+  display: none;
+}
+.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  /* 文字とキャレットを実際に見えるようにする（ミラーへの転写をやめる） */
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--accent);
+}
+.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input::placeholder {
+  color: var(--textMute);
+  font-size: 14px;
+}
+/* PCでは通常どおり選択ハイライトを見せる（透明化を打ち消す） */
+.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input::selection {
+  background: var(--textSoft);
+}
+.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input::-moz-selection {
+  background: var(--textSoft);
+}
+
 .tategaki-search-button {
   writing-mode: vertical-rl;
   text-orientation: mixed;
