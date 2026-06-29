@@ -6,7 +6,7 @@
   --bgSoft: #241a13;
   --text: #e8d9bf;
   --textSoft: #b8a584;
-  --textMute: #7a6953;
+  --textMute: #9a8568; /* 暗背景でWCAG AA(4.5:1)を満たす明度に引き上げ（旧#7a6953は約3.4:1で不足） */
   --rule: #46362a;
   --accent: #b3392a;
   --accentDim: #8e2a1e;
@@ -37,6 +37,19 @@
 /* ===== Reset & Base ===== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* スクリーンリーダ専用（視覚的に隠すが読み上げ・見出しナビには出す） */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 body {
   background-color: var(--bg);
   color: var(--text);
@@ -61,6 +74,25 @@ body > * { position: relative; z-index: 1; }
 
 a { color: var(--text-body); text-decoration: none; transition: color 0.2s; }
 a:hover { color: var(--text-primary); }
+
+/* ===== キーボードフォーカスの可視化（WCAG 2.4.7）=====
+   多数の要素で outline:none にしているため、キーボード操作時のフォーカス位置が
+   見えなくなっていた。:focus-visible（キーボード由来のフォーカスのみ）でリングを復活。
+   マウスクリック時には出ないので見た目への影響は最小。 */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :where(a, button) { transition: color 0.2s, outline-color 0.2s; }
+}
 
 /* ===== Header ===== */
 .site-header {
@@ -1229,6 +1261,7 @@ a:hover { color: var(--text-primary); }
   writing-mode: vertical-rl;
   text-orientation: mixed;
   height: calc(100vh - 12rem);
+  height: calc(100dvh - 12rem); /* iOS Safariのツールバー表示時に末尾列が隠れるのを防ぐ（dvhは可視領域に追従） */
   width: max-content;
   max-width: none;
   display: block;
@@ -3800,7 +3833,8 @@ a:hover { color: var(--text-primary); }
     z-index: 50;
     background: var(--bg);
     margin: 0;
-    padding: 8px 0 0 0;
+    /* 下端のホームインジケータ帯と内容が重ならないようsafe-area分を確保 */
+    padding: 8px 0 env(safe-area-inset-bottom) 0;
     border-top: 1px solid var(--rule);
     gap: 0;
   }
@@ -3896,6 +3930,7 @@ a:hover { color: var(--text-primary); }
   }
   .word-detail-paper {
     height: calc(100vh - 10rem);
+    height: calc(100dvh - 10rem); /* iOS Safariのツールバー分を可視領域に追従 */
     padding: 1.5rem 1.5rem;
     font-size: 0.875rem;
   }

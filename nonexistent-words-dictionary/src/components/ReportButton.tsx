@@ -33,7 +33,7 @@ export default function ReportButton({ wordId }: ReportButtonProps) {
   };
 
   if (reported) {
-    return <p className="report-done">通報を受け付けました。ご協力ありがとうございます。</p>;
+    return <p className="report-done" role="status" aria-live="polite">通報を受け付けました。ご協力ありがとうございます。</p>;
   }
 
   return (
@@ -60,7 +60,7 @@ export default function ReportButton({ wordId }: ReportButtonProps) {
               キャンセル
             </button>
           </div>
-          {submitError && <p style={{ fontSize: "11px", color: "var(--accent)", marginTop: "4px" }}>送信に失敗しました。</p>}
+          {submitError && <p role="alert" style={{ fontSize: "11px", color: "var(--accent)", marginTop: "4px" }}>送信に失敗しました。</p>}
         </div>
       )}
     </div>

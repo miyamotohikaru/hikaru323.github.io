@@ -10,6 +10,13 @@ const EN_WORD_REGEX = /^[a-zA-Z][a-zA-Z\s\-']*$/;
 // 1人(端末=authorToken)あたりの登録上限
 const REGISTER_LIMIT = 5;
 
+// 一覧APIのキャッシュ方針。recommend は毎回ランダムにシャッフルするためキャッシュ不可。
+// それ以外(newest/popular/索引)はCDNで短時間キャッシュし、Firestore読取とレイテンシを削減。
+function cacheHeaders(sort: string): Record<string, string> {
+  if (sort === "recommend") return { "Cache-Control": "no-store" };
+  return { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" };
+}
+
 interface RankableWord {
   likes?: number;
   viewCount?: number;
@@ -241,18 +248,30 @@ export async function GET(request: NextRequest) {
     if (isFirebaseAvailable()) {
       try {
         const db = await getDb();
-        let query = db.collection("words").where("isVisible", "==", true);
+        const upperLetter = letter ? letter.toUpperCase() : null;
+        let query;
 
-        if (kana) {
-          const nextChar = String.fromCharCode(kana.charCodeAt(0) + 1);
-          query = query.where("reading", ">=", kana).where("reading", "<", nextChar);
-        }
-
-        if (sort === "popular") {
-          query = query.orderBy("likes", "desc");
+        if (upperLetter) {
+          // letter(英字頭文字)指定時は word の範囲クエリで母集団から確実に絞る。
+          // 旧実装は .limit() 後にクライアント側 filter していたため、母集団に該当英単語が
+          // 無いと0件になる取りこぼしがあった。word は単一フィールドindexで range+orderBy が
+          // 完結するため複合indexは不要（isVisible は後段でフィルタ）。
+          const nextL = String.fromCharCode(upperLetter.charCodeAt(0) + 1);
+          query = db
+            .collection("words")
+            .where("word", ">=", upperLetter)
+            .where("word", "<", nextL)
+            .orderBy("word", "asc");
         } else {
-          // recommend も新しめの候補を母集団にするため createdAt 降順
-          if (!kana) {
+          query = db.collection("words").where("isVisible", "==", true);
+          if (kana) {
+            const nextChar = String.fromCharCode(kana.charCodeAt(0) + 1);
+            query = query.where("reading", ">=", kana).where("reading", "<", nextChar);
+          }
+          if (sort === "popular") {
+            query = query.orderBy("likes", "desc");
+          } else if (!kana) {
+            // recommend も新しめの候補を母集団にするため createdAt 降順
             query = query.orderBy("createdAt", "desc");
           } else {
             query = query.orderBy("reading", "asc");
@@ -261,7 +280,7 @@ export async function GET(request: NextRequest) {
 
         // 「おすすめ」は広めの母集団(150件)を取ってからスコアで上位を選ぶ
         const fetchLimit = sort === "recommend" ? Math.max(150, limit) : limit;
-        query = query.limit(fetchLimit);
+        query = query.limit(upperLetter ? Math.max(fetchLimit, 200) : fetchLimit);
 
         if (cursor) {
           const cursorDoc = await db.collection("words").doc(cursor).get();
@@ -286,17 +305,18 @@ export async function GET(request: NextRequest) {
             kojienFormatted: data.kojienFormatted || "",
             likes: data.likes || 0,
             viewCount: data.viewCount || 0,
-            isVisible: true,
+            isVisible: data.isVisible !== false,
             source: data.source || "user",
             language: data.language || "ja",
             createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
           };
         });
 
-        // Client-side filter for letter (A-Z) since Firestore doesn't support range on word easily
-        if (letter) {
-          const upperLetter = letter.toUpperCase();
-          words = words.filter((w) => (w.language === "en") && w.word.charAt(0).toUpperCase() === upperLetter);
+        // letter分岐ではクエリに含めなかった可視判定・英語限定を後段で適用
+        if (upperLetter) {
+          words = words
+            .filter((w) => w.isVisible && w.language === "en" && w.word.charAt(0).toUpperCase() === upperLetter)
+            .slice(0, limit);
         }
 
         // 「おすすめ」: 勢いスコア＋ランダムで上位 limit 件に絞る
@@ -304,7 +324,7 @@ export async function GET(request: NextRequest) {
           words = rankRecommend(words).slice(0, limit);
         }
 
-        return NextResponse.json({ words });
+        return NextResponse.json({ words }, { headers: cacheHeaders(sort) });
       } catch (fbError) {
         console.error("Firebase error, falling back to in-memory:", fbError);
       }
@@ -312,14 +332,15 @@ export async function GET(request: NextRequest) {
 
     // インメモリモード
     if (sort === "recommend") {
-      const pool = listWords({ sort: "newest", limit: 150 });
+      // kana/letter 指定時はそれを尊重して母集団を絞る（Firebase版と契約を揃える）
+      const pool = listWords({ kana, letter, sort: "newest", limit: 150 });
       const ranked = rankRecommend(pool).slice(0, limit);
       const words = ranked.map(({ authorToken: _at, ...rest }) => rest);
-      return NextResponse.json({ words });
+      return NextResponse.json({ words }, { headers: cacheHeaders(sort) });
     }
     const rawWords = listWords({ kana, letter, sort, limit, cursor });
     const words = rawWords.map(({ authorToken: _at, ...rest }) => rest);
-    return NextResponse.json({ words });
+    return NextResponse.json({ words }, { headers: cacheHeaders(sort) });
   } catch (error) {
     console.error("Words fetch error:", error);
     return NextResponse.json(

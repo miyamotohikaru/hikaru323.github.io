@@ -53,14 +53,19 @@ export default function Header() {
               className="lang-switcher-btn"
               onClick={() => setShowLangMenu(!showLangMenu)}
               title="Language"
+              aria-label="言語を選択 / Select language"
+              aria-haspopup="menu"
+              aria-expanded={showLangMenu}
             >
               {SUPPORTED_LANGS.find((l) => l.code === lang)?.label || "日本語"} ▾
             </button>
             {showLangMenu && (
-              <div className="lang-menu">
+              <div className="lang-menu" role="menu">
                 {SUPPORTED_LANGS.map((l) => (
                   <button
                     key={l.code}
+                    role="menuitemradio"
+                    aria-checked={lang === l.code}
                     className={`lang-menu-item ${lang === l.code ? "active" : ""}`}
                     onClick={() => {
                       setLang(l.code);
@@ -80,6 +85,8 @@ export default function Header() {
           className="mobile-hamburger"
           onClick={() => setMenuOpen(true)}
           aria-label="メニューを開く"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
         >
           <span className="hamburger-line" />
           <span className="hamburger-line" />
@@ -119,6 +126,7 @@ export default function Header() {
             {SUPPORTED_LANGS.map((l) => (
               <button
                 key={l.code}
+                aria-pressed={lang === l.code}
                 className={`mobile-lang-item ${lang === l.code ? "active" : ""}`}
                 onClick={() => {
                   setLang(l.code);

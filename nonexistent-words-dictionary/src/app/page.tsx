@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, FormEvent } from "react";
+import { useState, useEffect, useRef, useMemo, FormEvent } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
 import FallingWords from "@/components/FallingWords";
@@ -100,6 +100,7 @@ export default function Home() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const hScrollRef = useRef<HTMLDivElement>(null);
+  const limitModalRef = useRef<HTMLDivElement>(null);
   // 結果ページ（縦書き横スクロール）で「左へスクロールできる」ことを示すヒント
   const [showScrollHint, setShowScrollHint] = useState(false);
 
@@ -413,6 +414,7 @@ export default function Home() {
     try {
       // チェックされていない既存語を削除
       const toDelete = limitWords.filter((w) => !selectedIds.includes(w.id));
+      const deletedIds: string[] = [];
       for (const w of toDelete) {
         const res = await fetch(`/api/words/${w.id}`, {
           method: "DELETE",
@@ -421,10 +423,22 @@ export default function Home() {
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          setSaveError(data.error || (isEnMode ? "Failed to delete." : "削除に失敗しました。"));
+          // 途中失敗時：既に削除できた分だけ状態へ反映し、UIが「消えた語」を残存表示しないようにする
+          if (deletedIds.length > 0) {
+            setLimitWords((prev) => prev.filter((x) => !deletedIds.includes(x.id)));
+            setSelectedIds((prev) => prev.filter((id) => !deletedIds.includes(id)));
+            setMyWordCount((c) => (c == null ? c : Math.max(0, c - deletedIds.length)));
+          }
+          const base = data.error || (isEnMode ? "Failed to delete." : "削除に失敗しました。");
+          setSaveError(
+            deletedIds.length > 0
+              ? base + (isEnMode ? ` (${deletedIds.length} already deleted)` : `（${deletedIds.length}件は削除済み）`)
+              : base
+          );
           setIsSaving(false);
           return;
         }
+        deletedIds.push(w.id);
       }
       if (selectedIds.includes(NEW_WORD_ID)) {
         // 新語を登録（成功時にモーダルを閉じてsharedへ）
@@ -450,7 +464,43 @@ export default function Home() {
     setIsSaving(false);
   };
 
-  const pageNumber = result ? `p.${Math.floor(Math.random() * 900) + 100}` : "";
+  // 登録上限モーダル: 開いている間はフォーカスをモーダル内に閉じ込め、Escapeで閉じる（a11y）
+  useEffect(() => {
+    if (!showLimitModal) return;
+    const modal = limitModalRef.current;
+    if (!modal) return;
+    const prevFocus = document.activeElement as HTMLElement | null;
+    modal.focus();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeLimitModal();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusables = modal.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      if (prevFocus && typeof prevFocus.focus === "function") prevFocus.focus();
+    };
+  }, [showLimitModal]);
+
+  // シェア画面のページ番号は語ごとに一度だけ決め、再レンダーで毎回変わらないようにする
+  const sharePageNum = useMemo(() => Math.floor(Math.random() * 900) + 100, [savedWord?.id]);
 
   // 品詞の広辞苑表記
   const posMap: Record<string, string> = {
@@ -552,7 +602,7 @@ export default function Home() {
         <div className="share-dict-page fade-in">
           <div className="share-dict-header">
             <span className="share-dict-label">{t("share.title") || "存在しない言葉辞典"}</span>
-            <span className="share-dict-page-num">p.{Math.floor(Math.random() * 900) + 100}</span>
+            <span className="share-dict-page-num">p.{sharePageNum}</span>
           </div>
 
           <div className="word-detail-paper-wrapper">
@@ -837,7 +887,7 @@ export default function Home() {
               )}
             </div>
 
-            {saveError && <span className="result-error">{saveError}</span>}
+            {saveError && <span className="result-error" role="alert">{saveError}</span>}
           </div>
 
           {/* TOPに戻るボタン */}
@@ -862,8 +912,16 @@ export default function Home() {
       {/* ===== 登録上限（5単語）入れ替えモーダル ===== */}
       {showLimitModal && pendingSave && (
         <div className="limit-modal-overlay" onClick={closeLimitModal}>
-          <div className="limit-modal" onClick={(e) => e.stopPropagation()}>
-            <p className="limit-modal-title">
+          <div
+            className="limit-modal"
+            onClick={(e) => e.stopPropagation()}
+            ref={limitModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="limit-modal-title"
+            tabIndex={-1}
+          >
+            <p className="limit-modal-title" id="limit-modal-title">
               {isEnMode
                 ? `Up to ${REGISTER_LIMIT} words per person`
                 : `登録は1人${REGISTER_LIMIT}単語までです`}
@@ -917,7 +975,7 @@ export default function Home() {
               ))}
             </div>
 
-            {saveError && <span className="limit-modal-error">{saveError}</span>}
+            {saveError && <span className="limit-modal-error" role="alert">{saveError}</span>}
 
             {replaceConfirming ? (
               <div className="limit-confirm-box">
