@@ -3078,13 +3078,14 @@ select:focus-visible,
 .result-register-input {
   position: relative;
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
+  /* 枠が背景に溶けて入力欄に見えなかったため、はっきり視認できる枠＋薄い塗りにする */
+  background: rgba(232, 217, 191, 0.06);
+  border: 1px solid var(--textMute);
+  border-radius: 6px;
   min-height: 140px;
   transition: border-color 0.2s, background 0.2s;
 }
-.result-register-input:focus-within { border-color: var(--accent); background: rgba(255, 255, 255, 0.08); }
+.result-register-input:focus-within { border-color: var(--accent); background: rgba(255, 255, 255, 0.09); }
 
 .result-register-input__display {
   writing-mode: vertical-rl;
