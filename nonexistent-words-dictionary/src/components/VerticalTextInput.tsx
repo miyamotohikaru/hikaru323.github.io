@@ -6,7 +6,7 @@
 //
 // 加えて、透明inputは実カーソルが見えず「今どこを編集しているか」「戻って直す」が
 // しづらいので、selectionStart を追跡してミラー上の実際の位置に点滅バー(横バー)を出す。
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface VerticalTextInputProps {
   value: string;
@@ -48,7 +48,17 @@ export default function VerticalTextInput({
   // 変換中はバーを隠す（render用state）＋位置追跡を止める（同期判定用ref）。
   const [composing, setComposing] = useState(false);
   const [caret, setCaret] = useState(0);
+  // PC(マウス)では実カーソルが見える縦書きinputを直接使う。タッチ端末はミラー方式を維持。
+  const [isDesktop, setIsDesktop] = useState(false);
   const composingRef = useRef(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const syncCaret = (el: HTMLInputElement | null) => {
     if (!el || composingRef.current) return;
@@ -58,13 +68,14 @@ export default function VerticalTextInput({
     setCaret(Math.max(0, Math.min(pos, el.value.length)));
   };
 
-  const showCaret = focused && !composing;
+  // 点滅バーはミラー方式(タッチ)のときだけ。PCは実inputの実カーソルが見えるので不要。
+  const showCaret = focused && !composing && !isDesktop;
   const safeCaret = snapBoundary(value, Math.max(0, Math.min(caret, value.length)));
   const head = value.slice(0, safeCaret);
   const tail = value.slice(safeCaret);
 
   return (
-    <div className="result-register-input">
+    <div className={`result-register-input${isDesktop ? " is-desktop" : ""}`}>
       <div
         className={`result-register-input__display ${value ? "" : "is-placeholder"}`}
         aria-hidden="true"
@@ -113,6 +124,7 @@ export default function VerticalTextInput({
           syncCaret(e.currentTarget);
         }}
         aria-label={ariaLabel ?? placeholder}
+        placeholder={isDesktop ? placeholder : undefined}
         maxLength={maxLength}
         className="result-register-input__field"
       />

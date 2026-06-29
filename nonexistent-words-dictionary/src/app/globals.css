@@ -3110,7 +3110,10 @@ select:focus-visible,
   right: 0;
   bottom: 0;
   box-sizing: border-box;
-  writing-mode: horizontal-tb;
+  /* 入力欄の文字方向をミラー(縦書き)に揃える。横書きのままだと矢印キーやタップ位置が
+     見た目の縦並びと食い違い、「上＝一文字戻る」「途中をタップして挿入」ができなかった。 */
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
   background: transparent;
   border: none;
   outline: none;
@@ -3118,8 +3121,24 @@ select:focus-visible,
   color: transparent;
   -webkit-text-fill-color: transparent;
   caret-color: transparent;
+  font-family: var(--font-main);
   font-size: 16px;
   padding: 10px 8px;
+}
+
+/* PC(マウス)では透明ミラーをやめ、見える縦書きinputを直接編集（実カーソル表示）。
+   タッチ端末(iOS)はミラー方式を維持（縦書きIME崩れ対策のため）。 */
+.result-register-input.is-desktop .result-register-input__display { display: none; }
+.result-register-input.is-desktop .result-register-input__field {
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--accent);
+}
+.result-register-input.is-desktop .result-register-input__field::selection { background: var(--textSoft); }
+.result-register-input.is-desktop .result-register-input__field::-moz-selection { background: var(--textSoft); }
+.result-register-input.is-desktop .result-register-input__field::placeholder {
+  color: var(--textMute);
+  -webkit-text-fill-color: var(--textMute);
 }
 /* 透明な入力文字が選択されると白い帯に見えるため、選択ハイライトも透明にする */
 .result-register-input__field::selection { background: transparent; }
