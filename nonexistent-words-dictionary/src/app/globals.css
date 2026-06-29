@@ -3125,6 +3125,20 @@ select:focus-visible,
 .result-register-input__field::selection { background: transparent; }
 .result-register-input__field::-moz-selection { background: transparent; }
 
+/* 縦書きミラー上の点滅キャレット（横バー）。実カーソル位置(selectionStart)に表示し、
+   タップ/矢印キーでの位置移動にも追従する。縦書きでは行送りに沿う横向きのバー。 */
+.result-register-caret {
+  display: inline-block;
+  width: 1em;
+  height: 2px;
+  background: var(--accent);
+  vertical-align: middle;
+  animation: tategakiCaretBlink 1.05s step-end infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .result-register-caret { animation: none; }
+}
+
 .result-register-textarea {
   writing-mode: vertical-rl;
   background: transparent;
