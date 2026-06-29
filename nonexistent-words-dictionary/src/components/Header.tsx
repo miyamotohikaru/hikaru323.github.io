@@ -3,13 +3,35 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n, SUPPORTED_LANGS } from "@/lib/i18n";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 export default function Header() {
   const { lang, setLang, t } = useI18n();
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const langSwitcherRef = useRef<HTMLDivElement>(null);
+
+  // 言語メニューを Escape と外側クリックで閉じる（a11y）
+  useEffect(() => {
+    if (!showLangMenu) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowLangMenu(false);
+    };
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      if (langSwitcherRef.current && !langSwitcherRef.current.contains(e.target as Node)) {
+        setShowLangMenu(false);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [showLangMenu]);
 
   // Close menu on route change
   useEffect(() => {
@@ -48,7 +70,7 @@ export default function Header() {
             {t("nav.ranking")}
           </Link>
           <span className="header-divider" />
-          <div className="lang-switcher">
+          <div className="lang-switcher" ref={langSwitcherRef}>
             <button
               className="lang-switcher-btn"
               onClick={() => setShowLangMenu(!showLangMenu)}

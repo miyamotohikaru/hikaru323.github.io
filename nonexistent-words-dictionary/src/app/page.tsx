@@ -99,6 +99,8 @@ export default function Home() {
   const [nickname, setNickname] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // TOPの検索/判定が失敗したときにユーザーへ見せるエラー（旧実装は無言でidleに戻っていた）
+  const [lookupError, setLookupError] = useState<string | null>(null);
   const hScrollRef = useRef<HTMLDivElement>(null);
   const limitModalRef = useRef<HTMLDivElement>(null);
   // 結果ページ（縦書き横スクロール）で「左へスクロールできる」ことを示すヒント
@@ -202,6 +204,7 @@ export default function Home() {
     setSavedWord(null);
     setEditing(false);
     setSaveError(null);
+    setLookupError(null);
 
     try {
       const res = await fetch("/api/submit", {
@@ -209,9 +212,15 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ word: trimmed, language: wordLanguage }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
+        setLookupError(
+          data.error ||
+            (isEnMode
+              ? "Something went wrong. Please try again."
+              : "うまくいきませんでした。少し時間をおいて、もう一度お試しください。")
+        );
         setPhase("idle");
         return;
       }
@@ -225,6 +234,11 @@ export default function Home() {
       }
       setPhase("result");
     } catch {
+      setLookupError(
+        isEnMode
+          ? "Network error. Please check your connection and try again."
+          : "通信に失敗しました。接続を確認して、もう一度お試しください。"
+      );
       setPhase("idle");
     }
   };
@@ -564,6 +578,9 @@ export default function Home() {
                 </button>
               </div>
             </form>
+            {lookupError && (
+              <p className="search-lookup-error" role="alert">{lookupError}</p>
+            )}
             <p className="search-limit-note">
               {isEnMode
                 ? `※ Up to ${REGISTER_LIMIT} words per person`

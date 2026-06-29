@@ -5356,6 +5356,27 @@ select:focus-visible,
   letter-spacing: 0.2em;
   z-index: 1;
 }
+
+/* TOP検索の失敗メッセージ（無言でidleに戻る挙動の解消）。縦書きレイアウト上で
+   確実に目に入るよう、横書き・中央寄せ・アクセント色の帯で表示する。 */
+.search-lookup-error {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  max-width: min(92vw, 420px);
+  margin: 0;
+  padding: 10px 16px;
+  writing-mode: horizontal-tb;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  background: rgba(179, 57, 42, 0.16);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  z-index: 3;
+}
 /* モバイルは静的・横書きにして、注意事項のすぐ上に詰めて表示 */
 @media (max-width: 640px) {
   .search-limit-note {
