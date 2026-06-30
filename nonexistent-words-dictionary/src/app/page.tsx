@@ -194,8 +194,8 @@ export default function Home() {
 
   // 掲載者名は毎回空欄にする（保存はするが自動入力しない）
 
-  const handleSearch = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (e?: { preventDefault?: () => void }) => {
+    e?.preventDefault?.();
     const trimmed = word.trim();
     if (!trimmed) return;
 
@@ -541,33 +541,53 @@ export default function Home() {
               <span className="tategaki-search-label">{isEnMode ? "Word" : "読み（ひらがな）"}</span>
               <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""} ${isDesktop ? "is-desktop" : ""}`}>
                 <div className="tategaki-search-field">
-                  {/* 縦書きの見た目はこのdivで再現する。iOSでは縦書きinputに直接
-                      IME入力すると変換中の文字が崩れるため、実際の入力は下の
-                      横書きinput(透明)で受け、その値をここに映す */}
-                  <div
-                    className={`tategaki-search-display ${!word && !searchFocused ? "is-placeholder" : ""}`}
-                    aria-hidden="true"
-                  >
-                    {searchFocused ? (
-                      <>
-                        {word}
-                        <span className="tategaki-search-caret" />
-                      </>
-                    ) : (
-                      word || (isEnMode ? "register a word" : "ことばを登録する")
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={word}
-                    onChange={(e) => setWord(e.target.value)}
-                    onFocus={() => setSearchFocused(true)}
-                    onBlur={() => setSearchFocused(false)}
-                    aria-label={isEnMode ? "Word" : "読み（ひらがな）"}
-                    placeholder={isEnMode ? "register a word" : (isDesktop ? "ことばを登録する" : undefined)}
-                    className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
-                    maxLength={20}
-                  />
+                  {/* iOS17.4+/モダンブラウザは縦書きinput/textareaをネイティブ対応。
+                      携帯(タッチ)は単一行inputだとタップで途中にカーソルを置けないため
+                      textareaを使い、PCは単一行inputを使う（どちらも実カーソルが見える） */}
+                  {isEnMode ? (
+                    <input
+                      type="text"
+                      value={word}
+                      onChange={(e) => setWord(e.target.value)}
+                      onFocus={() => setSearchFocused(true)}
+                      onBlur={() => setSearchFocused(false)}
+                      aria-label="Word"
+                      placeholder="register a word"
+                      className="tategaki-search-input en-mode"
+                      maxLength={20}
+                    />
+                  ) : isDesktop ? (
+                    <input
+                      type="text"
+                      value={word}
+                      onChange={(e) => setWord(e.target.value)}
+                      onFocus={() => setSearchFocused(true)}
+                      onBlur={() => setSearchFocused(false)}
+                      aria-label="読み（ひらがな）"
+                      placeholder="ことばを登録する"
+                      className="tategaki-search-input"
+                      maxLength={20}
+                    />
+                  ) : (
+                    <textarea
+                      value={word}
+                      onChange={(e) => setWord(e.target.value.replace(/\n/g, ""))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSearch(e);
+                        }
+                      }}
+                      onFocus={() => setSearchFocused(true)}
+                      onBlur={() => setSearchFocused(false)}
+                      aria-label="読み（ひらがな）"
+                      placeholder="ことばを登録する"
+                      className="tategaki-search-input"
+                      maxLength={20}
+                      rows={1}
+                      enterKeyHint="search"
+                    />
+                  )}
                 </div>
                 <button
                   type="submit"

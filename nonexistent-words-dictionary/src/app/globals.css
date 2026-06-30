@@ -2552,108 +2552,42 @@ select:focus-visible,
   flex: 1;
   min-height: 0;
   width: 100%;
+  display: flex;
 }
 
-.tategaki-search-display {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+/* ネイティブの縦書き検索入力。iOS17.4+/モダンブラウザは input/textarea の
+   writing-mode: vertical-rl をネイティブ対応するため、透明input＋ミラー＋末尾固定
+   キャレットの旧方式をやめ、実際に編集できる縦書き入力を直接使う
+   （実カーソルが見え、タップで途中にカーソルを置ける／選択・IMEもネイティブ）。 */
+.tategaki-search-input {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-writing-mode: vertical-rl;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  box-sizing: border-box;
-  color: var(--text);
-  font-family: var(--font-main);
-  font-size: 16px;
-  letter-spacing: 0.15em;
-  padding: 12px 8px;
-  overflow: hidden;
-  pointer-events: none;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.tategaki-search-display.is-placeholder {
-  color: var(--textMute);
-  font-size: 14px;
-}
-
-/* 縦書き入力欄の点滅キャレット（横バー）。フォーカス中だけ表示 */
-.tategaki-search-caret {
-  display: inline-block;
-  width: 1em;
-  height: 2px;
-  background: var(--text);
-  vertical-align: middle;
-  animation: tategakiCaretBlink 1.05s step-end infinite;
-}
-@keyframes tategakiCaretBlink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tategaki-search-caret { animation: none; }
-}
-
-.tategaki-search-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  box-sizing: border-box;
-  /* iOSの縦書きinput IME崩れを避けるため入力自体は横書き。
-     文字とキャレットは透明にし、見た目は .tategaki-search-display に反映する */
-  writing-mode: horizontal-tb;
   background: transparent;
   border: none;
   outline: none;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  caret-color: transparent;
+  resize: none;
+  overflow: hidden;
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+  /* カーソルを背景に溶けない明るい色にして位置を分かりやすく */
+  caret-color: var(--text);
   font-family: var(--font-main);
   font-size: 16px;
   letter-spacing: 0.15em;
   padding: 12px 8px;
 }
-
 .tategaki-search-input::placeholder {
   color: var(--textMute);
+  -webkit-text-fill-color: var(--textMute);
   font-size: 14px;
 }
-/* 透明な入力文字が選択されると白い帯に見えるため、選択ハイライトも透明にする */
-.tategaki-search-input::selection { background: transparent; }
-.tategaki-search-input::-moz-selection { background: transparent; }
-
+.tategaki-search-input::selection { background: var(--textSoft); color: var(--bg); }
+.tategaki-search-input::-moz-selection { background: var(--textSoft); color: var(--bg); }
 .tategaki-search-input:disabled { opacity: 0.5; }
-
-/* ===== PC(マウス)時の縦書き検索input =====
-   タッチ端末はミラー方式（透明input＋表示div）を維持するが、PCでは実カーソルが
-   見えずバックスペース/途中編集ができないため、ミラーをやめて「見える縦書きinput」を
-   直接編集できるようにする。日本語モードのみ対象（英語はen-modeの横書き設定を使う）。 */
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-display {
-  display: none;
-}
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  /* 文字とキャレットを実際に見えるようにする（ミラーへの転写をやめる） */
-  color: var(--text);
-  -webkit-text-fill-color: var(--text);
-  caret-color: var(--accent);
-}
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input::placeholder {
-  color: var(--textMute);
-  font-size: 14px;
-}
-/* PCでは通常どおり選択ハイライトを見せる（透明化を打ち消す） */
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input::selection {
-  background: var(--textSoft);
-}
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input::-moz-selection {
-  background: var(--textSoft);
-}
 
 .tategaki-search-button {
   writing-mode: vertical-rl;
@@ -3771,15 +3705,6 @@ textarea.result-register-input__native {
     width: 2.75rem;
     height: calc(12.6rem + 21px);
     flex: none;
-  }
-  .tategaki-search-display {
-    font-size: 1rem;
-    padding: 0.75rem 0.5rem;
-    text-align: center;
-    background: rgba(217, 212, 200, 0.03);
-  }
-  .tategaki-search-display.is-placeholder {
-    font-size: 0.875rem;
   }
   .tategaki-search-input {
     font-size: 1rem;
