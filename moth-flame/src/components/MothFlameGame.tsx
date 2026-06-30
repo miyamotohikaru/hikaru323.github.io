@@ -396,14 +396,16 @@ export default function MothFlameGame() {
     // 70–89 use a pastel set, 90+ a neon/vivid set. The HIGHER the score, the
     // MORE of the palette is used, so a celebration grows more colourful with
     // skill (≤70 stays the natural cream). Each kosukuma is one solid colour.
-    // Sprites are tinted in code (multiply + alpha mask) — no extra assets.
+    // Sprites are tinted in code (per-pixel) — no extra assets.
     const KOSU_PASTEL = [
       "#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff",
       "#a0c4ff", "#bdb2ff", "#ffc6ff", "#ffb5e8", "#b5ead7",
     ];
+    // 90+ : bright, evenly-luminous vivid set (the old neons had dim members —
+    // navy / deep purple / brown-orange — that read muddy on the dark scene).
     const KOSU_NEON = [
-      "#ff2d6f", "#ff6a00", "#ffe600", "#39ff14", "#00fff0",
-      "#1f9bff", "#b14bff", "#ff36c8", "#ff003c", "#00ff7b",
+      "#ff6ec7", "#ff9f4d", "#ffe65c", "#6bff5d", "#5cffd6",
+      "#5cc8ff", "#c08bff", "#ff84ef", "#ff7a91", "#9dff5c",
     ];
     let celebColors: string[] = []; // active tint set ([] = natural cream)
     function setCelebPalette(score: number) {
@@ -453,7 +455,7 @@ export default function MothFlameGame() {
         if (d[i + 3] === 0) continue; // transparent
         const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
         if (lum < 0.35) continue; // dark outline / eyes → keep as-is
-        const k = Math.min(1, 0.6 + lum * 0.45); // bright body, faint shading
+        const k = Math.min(1, 0.72 + lum * 0.4); // bright body, faint shading
         d[i] = cr * k;
         d[i + 1] = cg * k;
         d[i + 2] = cb * k;
