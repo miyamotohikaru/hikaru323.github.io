@@ -31,6 +31,7 @@ export default function VerticalTextInput({
 }: VerticalTextInputProps) {
   const [isTouch, setIsTouch] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const composingRef = useRef(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(pointer: coarse)");
@@ -43,8 +44,27 @@ export default function VerticalTextInput({
   // 外部からvalueが変わった時だけtextareaへ反映（通常のキー入力ではカーソルを動かさない）。
   useEffect(() => {
     const el = taRef.current;
-    if (el && el.value !== value) el.value = value;
+    if (el && !composingRef.current && el.value !== value) el.value = value;
   }, [value]);
+
+  // iOSの縦書きtextareaは中間削除で再レイアウトされないWebKitバグがある(値は正しいが画面が
+  // 更新されない)。縦書きを一瞬だけ内部的に解除→復帰させて text-run を作り直させ強制再描画する。
+  // 同一処理内（ペイント前）に元へ戻すので横書きは画面に出ない。カーソル位置は維持する。
+  const forceReflow = (el: HTMLTextAreaElement) => {
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    el.style.setProperty("writing-mode", "horizontal-tb");
+    el.style.setProperty("-webkit-writing-mode", "horizontal-tb");
+    void el.offsetHeight;
+    el.style.removeProperty("writing-mode");
+    el.style.removeProperty("-webkit-writing-mode");
+    void el.offsetHeight;
+    try {
+      el.setSelectionRange(start, end);
+    } catch {
+      /* 無視 */
+    }
+  };
 
   const ariaLbl = ariaLabel ?? placeholder;
   const isSearch = variant === "search";
@@ -73,12 +93,24 @@ export default function VerticalTextInput({
       ref={taRef}
       className={cls}
       defaultValue={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        onChange(e.target.value);
+        // 変換中は触らない（IMEを乱さない）。確定後の入力・削除でのみ強制再描画。
+        if (!composingRef.current) forceReflow(e.currentTarget);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           e.preventDefault();
           onEnter?.();
         }
+      }}
+      onCompositionStart={() => {
+        composingRef.current = true;
+      }}
+      onCompositionEnd={(e) => {
+        composingRef.current = false;
+        onChange(e.currentTarget.value);
+        forceReflow(e.currentTarget);
       }}
       placeholder={placeholder}
       aria-label={ariaLbl}
