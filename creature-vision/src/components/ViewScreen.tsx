@@ -12,6 +12,7 @@ import {
 } from "./FilterEngine";
 import { CATEGORY_COLORS } from "@/styles/theme";
 import { SHARE_TEXTS } from "@/data/shareTexts";
+import { TRIVIA } from "@/data/trivia";
 
 interface Creature {
   id: string;
@@ -337,6 +338,7 @@ export default function ViewScreen({
   const [expanding, setExpanding] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
+  const [trivia, setTrivia] = useState("");
   // マスター拡張画像（写真1枚につき1回生成し全生き物で使い回す）と生成中Promise（多重生成防止）
   const masterImgRef = useRef<HTMLImageElement | null>(null);
   const masterPromiseRef = useRef<Promise<HTMLImageElement | null> | null>(null);
@@ -376,6 +378,20 @@ export default function ViewScreen({
     }, 1800);
     return () => clearInterval(interval);
   }, [expanding]);
+
+  // 変換中の豆知識（ランダムで開始→2.5秒ごとに3つをローテーション）
+  useEffect(() => {
+    if (!(processing || expanding)) return;
+    const list = TRIVIA[creature.id] || [];
+    if (list.length === 0) { setTrivia(""); return; }
+    let i = Math.floor(Math.random() * list.length);
+    setTrivia(list[i]);
+    const interval = setInterval(() => {
+      i = (i + 1) % list.length;
+      setTrivia(list[i]);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [processing, expanding, creature.id]);
 
   const loadingTexts = [
     `🐕 ${creature.name}の視点に変換中...`,
@@ -827,6 +843,29 @@ export default function ViewScreen({
             >
               {expanding ? loadingTexts[loadingTextIndex] : loadingText}
             </p>
+
+            {/* 豆知識カード */}
+            {trivia && (
+              <div
+                key={trivia}
+                style={{
+                  marginTop: 20,
+                  background: "#fff",
+                  borderRadius: 16,
+                  padding: "16px 20px",
+                  maxWidth: 320,
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                  animation: "fadeInText 0.5s ease",
+                }}
+              >
+                <p style={{ fontSize: 13, fontWeight: 900, color: "#E8A838", marginBottom: 6 }}>
+                  💡 豆知識
+                </p>
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#5F5E5A" }}>
+                  {trivia}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
