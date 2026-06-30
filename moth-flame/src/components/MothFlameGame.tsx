@@ -436,12 +436,29 @@ export default function MothFlameGame() {
       if (!c) return null;
       c.imageSmoothingEnabled = false;
       c.drawImage(img, 0, 0, WW, HH);
-      c.globalCompositeOperation = "multiply"; // colourise the pale body
-      c.fillStyle = col;
-      c.fillRect(0, 0, WW, HH);
-      c.globalCompositeOperation = "destination-in"; // clip back to the sprite shape
-      c.drawImage(img, 0, 0, WW, HH);
-      c.globalCompositeOperation = "source-over";
+      // Per-pixel tint: the pale body/wings become the FULL bright palette
+      // colour (not a multiply-darkened version, which read too dim — esp. the
+      // neons), while the dark outline pixels are kept for definition.
+      const cr = parseInt(col.slice(1, 3), 16);
+      const cg = parseInt(col.slice(3, 5), 16);
+      const cb = parseInt(col.slice(5, 7), 16);
+      let id: ImageData;
+      try {
+        id = c.getImageData(0, 0, WW, HH);
+      } catch {
+        return null; // tainted canvas (shouldn't happen — same-origin assets)
+      }
+      const d = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] === 0) continue; // transparent
+        const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
+        if (lum < 0.35) continue; // dark outline / eyes → keep as-is
+        const k = Math.min(1, 0.6 + lum * 0.45); // bright body, faint shading
+        d[i] = cr * k;
+        d[i + 1] = cg * k;
+        d[i + 2] = cb * k;
+      }
+      c.putImageData(id, 0, 0);
       if (tintCache.size > 400) tintCache.clear(); // safety cap
       tintCache.set(key, cv);
       return cv;
