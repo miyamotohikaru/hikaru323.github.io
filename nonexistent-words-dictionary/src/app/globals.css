@@ -3050,73 +3050,19 @@ select:focus-visible,
 .result-register-input__native::selection { background: var(--textSoft); color: var(--bg); }
 .result-register-input__native::-moz-selection { background: var(--textSoft); color: var(--bg); }
 
-/* ===== 携帯(タッチ): 透明横書きinput + 縦書きミラー + カスタムカーソルバー =====
-   縦書きtextareaの削除未反映バグを避けるため、編集は透明な横書きinput(.rri-hidden)で受け、
-   見た目は縦書きミラー(.rri-mirror)に映す。カーソルは自前のバー(.rri-caret)。文字サイズは元のまま16px。 */
-.rri-mirror {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 140px;
-  -webkit-writing-mode: vertical-rl;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  color: var(--text);
-  font-family: var(--font-main);
-  font-size: 16px;
-  letter-spacing: 0.08em;
-  padding: 10px 8px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  pointer-events: none;
+/* ===== 携帯(タッチ): ネイティブ縦書きtextarea =====
+   変換中の青背景・スペースキー長押しでのカーソル移動・削除・タップ位置決めがOS標準で
+   効くよう、見えるネイティブtextareaを使う。非制御運用でカーソルは飛ばず削除は一文字ずつ。
+   文字サイズは元の16pxのまま。カーソルは標準だが色を明るくして見やすくする。 */
+textarea.result-register-input__native {
+  resize: none;
+  overflow: hidden;
+  line-height: 1.7;
+  caret-color: var(--text);
 }
-.rri-ph { color: var(--textMute); }
-.rri-char { white-space: pre; }
-/* 自前のカーソルバー: 縦書きでは「横向きの線」。長さ(width)・太さ(height)・色を自由に。 */
-.rri-caret {
-  display: inline-block;
-  width: 1.4em;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--text);
-  vertical-align: middle;
-  animation: tategakiCaretBlink 1.05s step-end infinite;
-}
-@keyframes tategakiCaretBlink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .rri-caret { animation: none; }
-}
-/* 実入力を受ける透明な横書きinput（削除・IMEがネイティブで確実）。ミラーに重ねる。 */
-.rri-hidden {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  box-sizing: border-box;
-  writing-mode: horizontal-tb;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  caret-color: transparent;
-  font-size: 16px;
-  padding: 10px 8px;
-}
-.rri-hidden::selection { background: transparent; }
-.rri-hidden::-moz-selection { background: transparent; }
-
-/* TOP検索(縦長の細い枠)用にミラーを親いっぱいに広げ、中央寄せにする */
-.rri-mirror--search {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  text-align: center;
-  letter-spacing: 0.15em;
-  padding: 12px 6px;
+textarea.tategaki-search-input {
+  resize: none;
+  overflow: hidden;
 }
 
 .result-register-textarea {

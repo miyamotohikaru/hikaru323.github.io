@@ -544,6 +544,7 @@ export default function Home() {
                       variant="search"
                       value={word}
                       onChange={setWord}
+                      onEnter={() => handleSearch()}
                       placeholder="ことばを登録する"
                       ariaLabel="読み（ひらがな）"
                       maxLength={20}
