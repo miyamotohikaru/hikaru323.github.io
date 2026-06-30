@@ -81,11 +81,6 @@ export default function Home() {
   const wordLanguage = lang === "en" ? "en" : "ja";
   const isEnMode = wordLanguage === "en";
   const [word, setWord] = useState("");
-  // 検索欄フォーカス中フラグ（縦書きミラーに点滅キャレットを出すため）
-  const [searchFocused, setSearchFocused] = useState(false);
-  // PC(マウス・非タッチ)かどうか。PCではミラー方式をやめ、見える縦書きinputを直接使う
-  // （ミラーはiOSのIME崩れ対策。PCではバックスペースや途中編集ができず操作しづらいため）
-  const [isDesktop, setIsDesktop] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [savedWord, setSavedWord] = useState<SavedWordData | null>(null);
@@ -116,15 +111,6 @@ export default function Home() {
   const [replaceConfirming, setReplaceConfirming] = useState(false);
   // 自分の登録数（検索結果に「◯/5」表示）
   const [myWordCount, setMyWordCount] = useState<number | null>(null);
-
-  // PC(ホバー可＝マウス)判定。タッチ端末では従来のミラー方式を維持する
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const update = () => setIsDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
 
   // フッター表示制御: idleの時だけフッターを表示
   useEffect(() => {
@@ -539,53 +525,28 @@ export default function Home() {
             <div className="tategaki-search-rule" />
             <form onSubmit={handleSearch} className="tategaki-search-form">
               <span className="tategaki-search-label">{isEnMode ? "Word" : "読み（ひらがな）"}</span>
-              <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""} ${isDesktop ? "is-desktop" : ""}`}>
+              <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""}`}>
                 <div className="tategaki-search-field">
-                  {/* iOS17.4+/モダンブラウザは縦書きinput/textareaをネイティブ対応。
-                      携帯(タッチ)は単一行inputだとタップで途中にカーソルを置けないため
-                      textareaを使い、PCは単一行inputを使う（どちらも実カーソルが見える） */}
                   {isEnMode ? (
                     <input
                       type="text"
                       value={word}
                       onChange={(e) => setWord(e.target.value)}
-                      onFocus={() => setSearchFocused(true)}
-                      onBlur={() => setSearchFocused(false)}
                       aria-label="Word"
                       placeholder="register a word"
                       className="tategaki-search-input en-mode"
                       maxLength={20}
                     />
-                  ) : isDesktop ? (
-                    <input
-                      type="text"
-                      value={word}
-                      onChange={(e) => setWord(e.target.value)}
-                      onFocus={() => setSearchFocused(true)}
-                      onBlur={() => setSearchFocused(false)}
-                      aria-label="読み（ひらがな）"
-                      placeholder="ことばを登録する"
-                      className="tategaki-search-input"
-                      maxLength={20}
-                    />
                   ) : (
-                    <textarea
+                    /* PCはネイティブ縦書きinput、携帯は透明横書きinput＋縦書きミラー＋
+                       カスタムカーソルバー（削除・IME・途中タップ挿入がネイティブで確実） */
+                    <VerticalTextInput
+                      variant="search"
                       value={word}
-                      onChange={(e) => setWord(e.target.value.replace(/\n/g, ""))}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleSearch(e);
-                        }
-                      }}
-                      onFocus={() => setSearchFocused(true)}
-                      onBlur={() => setSearchFocused(false)}
-                      aria-label="読み（ひらがな）"
+                      onChange={setWord}
                       placeholder="ことばを登録する"
-                      className="tategaki-search-input"
+                      ariaLabel="読み（ひらがな）"
                       maxLength={20}
-                      rows={1}
-                      enterKeyHint="search"
                     />
                   )}
                 </div>
