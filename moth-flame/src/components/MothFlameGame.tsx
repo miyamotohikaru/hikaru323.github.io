@@ -977,14 +977,14 @@ export default function MothFlameGame() {
         (distScore * 0.4 + shapeScore * 0.6) * centering * smoothness * sweepGate;
 
       // Score curve. Low/mid range keeps the original ^1.3 shape, but the very
-      // top (curved > 0.9) is re-stretched so 95–98 becomes a real "almost
-      // legendary" gradient instead of every good circle clustering at 100.
-      // Practical ceiling = 98; 100 is reserved as an essentially-unreachable
-      // legend (needs a near-perfect raw hand-drawing can't realistically hit).
+      // top (curved > 0.9) is re-stretched into the 90–98 band. A generous
+      // exponent (0.45) makes a good circle climb into the mid-90s quickly
+      // (a former ~91 now reads ~95), while the ceiling stays 98. 100 is still
+      // an essentially-unreachable legend (raw > 0.999).
       let curved = Math.pow(Math.max(0, raw), 1.3);
       if (curved > 0.9) {
         const t = (curved - 0.9) / 0.1; // 0..1 across the top decile
-        curved = 0.9 + Math.pow(t, 1.7) * 0.085; // map 0.9..1.0 → 0.9..0.985
+        curved = 0.9 + Math.pow(t, 0.45) * 0.08; // map 0.9..1.0 → 0.9..0.98
       }
       const score = Math.round(100 * curved);
 
