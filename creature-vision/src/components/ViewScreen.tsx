@@ -394,7 +394,7 @@ export default function ViewScreen({
   }, [processing, expanding, creature.id]);
 
   const loadingTexts = [
-    `🐕 ${creature.name}の視点に変換中...`,
+    `${creature.name}の視点に変換中...`,
     `🔭 視界を広げているよ...`,
   ];
 
