@@ -3113,7 +3113,10 @@ select:focus-visible,
 textarea.result-register-input__native {
   resize: none;
   overflow: hidden;
-  line-height: 1.6;
+  line-height: 1.8;
+  /* カーソルを背景に溶けない明るい色＋太めにして位置を分かりやすく */
+  caret-color: var(--text);
+  caret-shape: bar;
 }
 .result-register-input__native::placeholder {
   color: var(--textMute);
