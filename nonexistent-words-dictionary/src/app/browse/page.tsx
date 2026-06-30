@@ -25,14 +25,31 @@ export default function BrowsePage() {
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   useEffect(() => {
-    fetch("/api/words?limit=500&sort=newest", { cache: "no-store" })
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then((data) => setAllWords(data.words || []))
-      .catch(() => { setAllWords([]); setFetchError(true); })
-      .finally(() => setLoading(false));
+    let aborted = false;
+    (async () => {
+      try {
+        // APIは1クエリ最大100件にクランプされるため、cursorで送りながら全件取得する
+        // （旧実装は limit=500 を要求していたが100件で頭打ち＝101件目以降が一覧から漏れていた）
+        const all: WordEntry[] = [];
+        let cursor: string | null = null;
+        for (let page = 0; page < 100; page++) { // 上限100ページ=1万件の安全弁
+          const url = `/api/words?limit=100&sort=newest${cursor ? `&cursor=${cursor}` : ""}`;
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          const batch: WordEntry[] = data.words || [];
+          all.push(...batch);
+          if (batch.length < 100) break;
+          cursor = batch[batch.length - 1].id;
+        }
+        if (!aborted) setAllWords(all);
+      } catch {
+        if (!aborted) { setAllWords([]); setFetchError(true); }
+      } finally {
+        if (!aborted) setLoading(false);
+      }
+    })();
+    return () => { aborted = true; };
   }, []);
 
   // Split words by language

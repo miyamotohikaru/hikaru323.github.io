@@ -535,6 +535,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // 表示言語に合わせて <html lang> を更新（スクリーンリーダの読み上げ言語を一致させる・WCAG3.1）
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = lang;
+    }
+  }, [lang]);
+
   const setLang = (newLang: Lang) => {
     setLangState(newLang);
     localStorage.setItem("fictionary_lang", newLang);

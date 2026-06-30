@@ -30,26 +30,35 @@ export interface DictionaryCheckResult {
   source?: "neologd" | "local";
 }
 
-// Bloom filterのシングルトン（遅延ロード）
+// Bloom filterのシングルトン（遅延ロード）。
+// 13MBのJSONを同期readするとイベントループをブロックするため、非同期read＋
+// ロード中Promiseを共有して二重ロードを防ぐ（初回のみ実体ロード、以降は再利用）。
 let bloomFilter: InstanceType<typeof BloomFilter> | null = null;
 let bloomLoadFailed = false;
+let bloomLoadPromise: Promise<InstanceType<typeof BloomFilter> | null> | null = null;
 
-function getBloomFilter(): InstanceType<typeof BloomFilter> | null {
-  if (bloomFilter) return bloomFilter;
-  if (bloomLoadFailed) return null;
+function getBloomFilter(): Promise<InstanceType<typeof BloomFilter> | null> {
+  if (bloomFilter) return Promise.resolve(bloomFilter);
+  if (bloomLoadFailed) return Promise.resolve(null);
+  if (bloomLoadPromise) return bloomLoadPromise;
 
-  try {
-    const bloomPath = path.join(process.cwd(), "src/lib/neologd-bloom.json");
-    const raw = fs.readFileSync(bloomPath, "utf-8");
-    const data = JSON.parse(raw);
-    bloomFilter = BloomFilter.fromJSON(data);
-    console.log("[Dictionary] NEologd Bloom filter loaded (5.16M words)");
-    return bloomFilter;
-  } catch (err) {
-    console.warn("[Dictionary] Failed to load Bloom filter, falling back to basic set:", err);
-    bloomLoadFailed = true;
-    return null;
-  }
+  bloomLoadPromise = (async () => {
+    try {
+      const bloomPath = path.join(process.cwd(), "src/lib/neologd-bloom.json");
+      const raw = await fs.promises.readFile(bloomPath, "utf-8");
+      const data = JSON.parse(raw);
+      bloomFilter = BloomFilter.fromJSON(data);
+      console.log("[Dictionary] NEologd Bloom filter loaded (5.16M words)");
+      return bloomFilter;
+    } catch (err) {
+      console.warn("[Dictionary] Failed to load Bloom filter, falling back to basic set:", err);
+      bloomLoadFailed = true;
+      return null;
+    } finally {
+      bloomLoadPromise = null;
+    }
+  })();
+  return bloomLoadPromise;
 }
 
 // フォールバック用の基本語セット（Bloom filterが読めない場合）
@@ -69,8 +78,8 @@ const BASIC_WORDS = new Set([
  * NEologd辞書チェック（Bloom filter, O(1)）
  * 入力語・ひらがな変換・カタカナ変換の3パターンで照合
  */
-export function existsInLocalDictionary(word: string): DictionaryCheckResult {
-  const filter = getBloomFilter();
+export async function existsInLocalDictionary(word: string): Promise<DictionaryCheckResult> {
+  const filter = await getBloomFilter();
 
   if (filter) {
     // Bloom filterで高速チェック

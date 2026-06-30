@@ -1,3 +1,4 @@
+import { cache, Suspense } from "react";
 import { getDb, isFirebaseAvailable } from "@/lib/firebase";
 import { getWord as getMemWord, listWords } from "@/lib/in-memory-store";
 import { Metadata } from "next";
@@ -8,7 +9,8 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-async function getWord(id: string): Promise<WordEntry | null> {
+// React cache() で1リクエスト内の重複呼び出し(generateMetadata と WordPage)を1回に集約
+const getWord = cache(async (id: string): Promise<WordEntry | null> => {
   if (isFirebaseAvailable()) {
     try {
       const db = await getDb();
@@ -61,7 +63,7 @@ async function getWord(id: string): Promise<WordEntry | null> {
     source: doc.source as "user" | "ai",
     createdAt: doc.createdAt,
   };
-}
+});
 
 async function getRelatedWords(word: WordEntry): Promise<WordEntry[]> {
   if (isFirebaseAvailable()) {
@@ -159,5 +161,10 @@ export default async function WordPage({ params }: PageProps) {
   const word = await getWord(id);
   const relatedWords = word ? await getRelatedWords(word) : [];
 
-  return <WordDetailClient word={word} relatedWords={relatedWords} />;
+  // WordDetailClient は useSearchParams を使うため Suspense 境界で包む
+  return (
+    <Suspense fallback={<main className="main-content"><div className="word-loading"><span className="word-loading-spinner" /></div></main>}>
+      <WordDetailClient word={word} relatedWords={relatedWords} />
+    </Suspense>
+  );
 }
