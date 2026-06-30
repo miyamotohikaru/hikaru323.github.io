@@ -3109,6 +3109,12 @@ select:focus-visible,
   letter-spacing: 0.08em;
   padding: 10px 8px;
 }
+/* 携帯はタップ位置決めが確実な textarea を使う（単一行運用なのでリサイズ/スクロールは無効） */
+textarea.result-register-input__native {
+  resize: none;
+  overflow: hidden;
+  line-height: 1.6;
+}
 .result-register-input__native::placeholder {
   color: var(--textMute);
   -webkit-text-fill-color: var(--textMute);
