@@ -90,14 +90,6 @@ const EXISTS_PROMPT_JA = `あなたは日本語の辞書編纂者です。
   "reason": "その言葉の意味・由来・語源を100-200文字で詳述する"
 }`;
 
-const EXISTS_PROMPT_EN = `You are an English dictionary editor.
-Explain the meaning, origin, and etymology of the word the user sends.
-
-Output ONLY the following JSON. No other text:
-{
-  "reason": "Meaning, origin, and etymology in 30-50 words"
-}`;
-
 interface RegisteredWord {
   id: string;
   word: string;

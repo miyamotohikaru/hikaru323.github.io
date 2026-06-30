@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import ShareButtons from "@/components/ShareButtons";
 import { useI18n } from "@/lib/i18n";

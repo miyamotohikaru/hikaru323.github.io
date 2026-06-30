@@ -1,7 +1,6 @@
 import type { Firestore, FieldValue as FieldValueType } from "firebase-admin/firestore";
 
 let _db: Firestore | null = null;
-let _firebaseAvailable: boolean | null = null;
 
 export function isFirebaseAvailable(): boolean {
   // 環境変数が全て揃っているか
