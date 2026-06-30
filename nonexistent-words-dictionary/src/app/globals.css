@@ -3047,10 +3047,12 @@ select:focus-visible,
 textarea.result-register-input__native {
   resize: none;
   overflow: hidden;
-  line-height: 1.8;
-  /* カーソルを背景に溶けない明るい色＋太めにして位置を分かりやすく */
+  /* 文字を大きめ＋行間広めにして、ネイティブのカーソルバーを長く・見やすくする */
+  font-size: 19px;
+  line-height: 2;
+  letter-spacing: 0.06em;
+  /* カーソルを背景に溶けない明るい色にして位置を分かりやすく */
   caret-color: var(--text);
-  caret-shape: bar;
 }
 .result-register-input__native::placeholder {
   color: var(--textMute);
@@ -3707,8 +3709,10 @@ textarea.result-register-input__native {
     flex: none;
   }
   .tategaki-search-input {
-    font-size: 1rem;
-    padding: 0.75rem 0.5rem;
+    /* 文字を大きめにしてネイティブのカーソルバーを長く・見やすくする */
+    font-size: 1.25rem;
+    letter-spacing: 0.18em;
+    padding: 0.75rem 0.4rem;
     text-align: center;
   }
   .tategaki-search-input::placeholder {
