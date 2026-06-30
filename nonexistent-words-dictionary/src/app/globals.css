@@ -3087,77 +3087,34 @@ select:focus-visible,
 }
 .result-register-input:focus-within { border-color: var(--accent); background: rgba(255, 255, 255, 0.09); }
 
-.result-register-input__display {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
+/* ネイティブの縦書きinput。iOS Safari 17.4+ / モダンブラウザは input の
+   writing-mode: vertical-rl をネイティブ対応するため、透明input＋ミラーの旧方式をやめ、
+   実際に編集できる縦書きinputを直接使う（カーソル・タップ・選択・IMEがネイティブで効く）。 */
+.result-register-input__native {
   box-sizing: border-box;
   width: 100%;
   min-height: 140px;
-  color: var(--text);
-  font-family: var(--font-main);
-  /* iOSは入力欄のfontが16px未満だとフォーカス時に自動ズームするため16pxにする */
-  font-size: 16px;
-  padding: 10px 8px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  pointer-events: none;
-}
-.result-register-input__display.is-placeholder { color: var(--textMute); }
-
-.result-register-input__field {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  box-sizing: border-box;
-  /* 入力欄の文字方向をミラー(縦書き)に揃える。横書きのままだと矢印キーやタップ位置が
-     見た目の縦並びと食い違い、「上＝一文字戻る」「途中をタップして挿入」ができなかった。 */
+  -webkit-writing-mode: vertical-rl;
   writing-mode: vertical-rl;
   text-orientation: mixed;
   background: transparent;
   border: none;
   outline: none;
-  /* 入力文字とキャレットは透明にし、見た目は__displayに反映する */
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  caret-color: transparent;
-  font-family: var(--font-main);
-  font-size: 16px;
-  padding: 10px 8px;
-}
-
-/* PC(マウス)では透明ミラーをやめ、見える縦書きinputを直接編集（実カーソル表示）。
-   タッチ端末(iOS)はミラー方式を維持（縦書きIME崩れ対策のため）。 */
-.result-register-input.is-desktop .result-register-input__display { display: none; }
-.result-register-input.is-desktop .result-register-input__field {
   color: var(--text);
   -webkit-text-fill-color: var(--text);
   caret-color: var(--accent);
+  font-family: var(--font-main);
+  /* iOSは入力欄のfontが16px未満だとフォーカス時に自動ズームするため16pxにする */
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  padding: 10px 8px;
 }
-.result-register-input.is-desktop .result-register-input__field::selection { background: var(--textSoft); }
-.result-register-input.is-desktop .result-register-input__field::-moz-selection { background: var(--textSoft); }
-.result-register-input.is-desktop .result-register-input__field::placeholder {
+.result-register-input__native::placeholder {
   color: var(--textMute);
   -webkit-text-fill-color: var(--textMute);
 }
-/* 透明な入力文字が選択されると白い帯に見えるため、選択ハイライトも透明にする */
-.result-register-input__field::selection { background: transparent; }
-.result-register-input__field::-moz-selection { background: transparent; }
-
-/* 縦書きミラー上の点滅キャレット（横バー）。実カーソル位置(selectionStart)に表示し、
-   タップ/矢印キーでの位置移動にも追従する。縦書きでは行送りに沿う横向きのバー。 */
-.result-register-caret {
-  display: inline-block;
-  width: 1em;
-  height: 2px;
-  background: var(--accent);
-  vertical-align: middle;
-  animation: tategakiCaretBlink 1.05s step-end infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .result-register-caret { animation: none; }
-}
+.result-register-input__native::selection { background: var(--textSoft); color: var(--bg); }
+.result-register-input__native::-moz-selection { background: var(--textSoft); color: var(--bg); }
 
 .result-register-textarea {
   writing-mode: vertical-rl;
@@ -3914,8 +3871,7 @@ select:focus-visible,
     gap: 16px;
   }
   /* font-sizeは16pxのまま（iOSの自動ズーム防止）。paddingのみ調整 */
-  .result-register-input__display,
-  .result-register-input__field { padding: 6px; }
+  .result-register-input__native { padding: 6px; }
   .result-cta-button {
     padding: 18px 14px; font-size: 15px;
     width: 70px; height: auto;
