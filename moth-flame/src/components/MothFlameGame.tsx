@@ -891,7 +891,18 @@ export default function MothFlameGame() {
       const sweepGate = Math.max(0, Math.min(1, (sweep - 0.62) / (0.9 - 0.62)));
       const raw =
         (distScore * 0.4 + shapeScore * 0.6) * centering * smoothness * sweepGate;
-      const score = Math.round(100 * Math.pow(Math.max(0, raw), 1.3));
+
+      // Score curve. Low/mid range keeps the original ^1.3 shape, but the very
+      // top (curved > 0.9) is re-stretched so 95–98 becomes a real "almost
+      // legendary" gradient instead of every good circle clustering at 100.
+      // Practical ceiling = 98; 100 is reserved as an essentially-unreachable
+      // legend (needs a near-perfect raw hand-drawing can't realistically hit).
+      let curved = Math.pow(Math.max(0, raw), 1.3);
+      if (curved > 0.9) {
+        const t = (curved - 0.9) / 0.1; // 0..1 across the top decile
+        curved = 0.9 + Math.pow(t, 1.7) * 0.085; // map 0.9..1.0 → 0.9..0.985
+      }
+      const score = Math.round(100 * curved);
 
       liveDistInfo = {
         accuracy: Math.round(distAccuracy * 100),
@@ -922,7 +933,10 @@ export default function MothFlameGame() {
         liveReason = "TOO SHAKY";
       }
 
-      return Math.max(1, Math.min(100, score));
+      // Practical ceiling is 98; a true 100 only for a near-perfect raw that
+      // hand-drawing essentially can't reach — kept as a legendary payoff.
+      if (raw > 0.999) return 100;
+      return Math.max(1, Math.min(98, score));
     }
 
     function endTrail() {
