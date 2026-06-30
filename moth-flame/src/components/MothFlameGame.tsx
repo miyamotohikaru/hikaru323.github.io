@@ -444,6 +444,14 @@ export default function MothFlameGame() {
       const cr = parseInt(col.slice(1, 3), 16);
       const cg = parseInt(col.slice(3, 5), 16);
       const cb = parseInt(col.slice(5, 7), 16);
+      // Boost the palette colour (HSV-style): SAT deepens it (more 彩度), VAL
+      // scales it up (more 明度). Done once per colour, then shaded per pixel.
+      const SAT = 1.45; // >1 = more saturated / punchier
+      const VAL = 1.18; // >1 = brighter
+      const M = Math.max(cr, cg, cb) || 1;
+      const bR = Math.max(0, Math.min(255, (M - (M - cr) * SAT) * VAL));
+      const bG = Math.max(0, Math.min(255, (M - (M - cg) * SAT) * VAL));
+      const bB = Math.max(0, Math.min(255, (M - (M - cb) * SAT) * VAL));
       let id: ImageData;
       try {
         id = c.getImageData(0, 0, WW, HH);
@@ -455,10 +463,10 @@ export default function MothFlameGame() {
         if (d[i + 3] === 0) continue; // transparent
         const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
         if (lum < 0.35) continue; // dark outline / eyes → keep as-is
-        const k = Math.min(1, 0.72 + lum * 0.4); // bright body, faint shading
-        d[i] = cr * k;
-        d[i + 1] = cg * k;
-        d[i + 2] = cb * k;
+        const k = Math.min(1, 0.82 + lum * 0.35); // bright body, faint shading
+        d[i] = bR * k;
+        d[i + 1] = bG * k;
+        d[i + 2] = bB * k;
       }
       c.putImageData(id, 0, 0);
       if (tintCache.size > 400) tintCache.clear(); // safety cap
