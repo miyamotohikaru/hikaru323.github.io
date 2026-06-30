@@ -3,13 +3,35 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n, SUPPORTED_LANGS } from "@/lib/i18n";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 export default function Header() {
   const { lang, setLang, t } = useI18n();
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const langSwitcherRef = useRef<HTMLDivElement>(null);
+
+  // 言語メニューを Escape と外側クリックで閉じる（a11y）
+  useEffect(() => {
+    if (!showLangMenu) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowLangMenu(false);
+    };
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      if (langSwitcherRef.current && !langSwitcherRef.current.contains(e.target as Node)) {
+        setShowLangMenu(false);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [showLangMenu]);
 
   // Close menu on route change
   useEffect(() => {
@@ -48,19 +70,24 @@ export default function Header() {
             {t("nav.ranking")}
           </Link>
           <span className="header-divider" />
-          <div className="lang-switcher">
+          <div className="lang-switcher" ref={langSwitcherRef}>
             <button
               className="lang-switcher-btn"
               onClick={() => setShowLangMenu(!showLangMenu)}
               title="Language"
+              aria-label="言語を選択 / Select language"
+              aria-haspopup="menu"
+              aria-expanded={showLangMenu}
             >
               {SUPPORTED_LANGS.find((l) => l.code === lang)?.label || "日本語"} ▾
             </button>
             {showLangMenu && (
-              <div className="lang-menu">
+              <div className="lang-menu" role="menu">
                 {SUPPORTED_LANGS.map((l) => (
                   <button
                     key={l.code}
+                    role="menuitemradio"
+                    aria-checked={lang === l.code}
                     className={`lang-menu-item ${lang === l.code ? "active" : ""}`}
                     onClick={() => {
                       setLang(l.code);
@@ -80,6 +107,8 @@ export default function Header() {
           className="mobile-hamburger"
           onClick={() => setMenuOpen(true)}
           aria-label="メニューを開く"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
         >
           <span className="hamburger-line" />
           <span className="hamburger-line" />
@@ -119,6 +148,7 @@ export default function Header() {
             {SUPPORTED_LANGS.map((l) => (
               <button
                 key={l.code}
+                aria-pressed={lang === l.code}
                 className={`mobile-lang-item ${lang === l.code ? "active" : ""}`}
                 onClick={() => {
                   setLang(l.code);

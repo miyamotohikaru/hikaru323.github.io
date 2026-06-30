@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, FormEvent } from "react";
+import { useState, useEffect, useRef, useMemo, FormEvent } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
 import FallingWords from "@/components/FallingWords";
@@ -81,11 +81,6 @@ export default function Home() {
   const wordLanguage = lang === "en" ? "en" : "ja";
   const isEnMode = wordLanguage === "en";
   const [word, setWord] = useState("");
-  // 検索欄フォーカス中フラグ（縦書きミラーに点滅キャレットを出すため）
-  const [searchFocused, setSearchFocused] = useState(false);
-  // PC(マウス・非タッチ)かどうか。PCではミラー方式をやめ、見える縦書きinputを直接使う
-  // （ミラーはiOSのIME崩れ対策。PCではバックスペースや途中編集ができず操作しづらいため）
-  const [isDesktop, setIsDesktop] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [savedWord, setSavedWord] = useState<SavedWordData | null>(null);
@@ -99,7 +94,10 @@ export default function Home() {
   const [nickname, setNickname] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // TOPの検索/判定が失敗したときにユーザーへ見せるエラー（旧実装は無言でidleに戻っていた）
+  const [lookupError, setLookupError] = useState<string | null>(null);
   const hScrollRef = useRef<HTMLDivElement>(null);
+  const limitModalRef = useRef<HTMLDivElement>(null);
   // 結果ページ（縦書き横スクロール）で「左へスクロールできる」ことを示すヒント
   const [showScrollHint, setShowScrollHint] = useState(false);
 
@@ -113,15 +111,6 @@ export default function Home() {
   const [replaceConfirming, setReplaceConfirming] = useState(false);
   // 自分の登録数（検索結果に「◯/5」表示）
   const [myWordCount, setMyWordCount] = useState<number | null>(null);
-
-  // PC(ホバー可＝マウス)判定。タッチ端末では従来のミラー方式を維持する
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const update = () => setIsDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
 
   // フッター表示制御: idleの時だけフッターを表示
   useEffect(() => {
@@ -191,8 +180,8 @@ export default function Home() {
 
   // 掲載者名は毎回空欄にする（保存はするが自動入力しない）
 
-  const handleSearch = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (e?: { preventDefault?: () => void }) => {
+    e?.preventDefault?.();
     const trimmed = word.trim();
     if (!trimmed) return;
 
@@ -201,6 +190,7 @@ export default function Home() {
     setSavedWord(null);
     setEditing(false);
     setSaveError(null);
+    setLookupError(null);
 
     try {
       const res = await fetch("/api/submit", {
@@ -208,9 +198,15 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ word: trimmed, language: wordLanguage }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
+        setLookupError(
+          data.error ||
+            (isEnMode
+              ? "Something went wrong. Please try again."
+              : "うまくいきませんでした。少し時間をおいて、もう一度お試しください。")
+        );
         setPhase("idle");
         return;
       }
@@ -224,6 +220,11 @@ export default function Home() {
       }
       setPhase("result");
     } catch {
+      setLookupError(
+        isEnMode
+          ? "Network error. Please check your connection and try again."
+          : "通信に失敗しました。接続を確認して、もう一度お試しください。"
+      );
       setPhase("idle");
     }
   };
@@ -413,6 +414,7 @@ export default function Home() {
     try {
       // チェックされていない既存語を削除
       const toDelete = limitWords.filter((w) => !selectedIds.includes(w.id));
+      const deletedIds: string[] = [];
       for (const w of toDelete) {
         const res = await fetch(`/api/words/${w.id}`, {
           method: "DELETE",
@@ -421,10 +423,22 @@ export default function Home() {
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          setSaveError(data.error || (isEnMode ? "Failed to delete." : "削除に失敗しました。"));
+          // 途中失敗時：既に削除できた分だけ状態へ反映し、UIが「消えた語」を残存表示しないようにする
+          if (deletedIds.length > 0) {
+            setLimitWords((prev) => prev.filter((x) => !deletedIds.includes(x.id)));
+            setSelectedIds((prev) => prev.filter((id) => !deletedIds.includes(id)));
+            setMyWordCount((c) => (c == null ? c : Math.max(0, c - deletedIds.length)));
+          }
+          const base = data.error || (isEnMode ? "Failed to delete." : "削除に失敗しました。");
+          setSaveError(
+            deletedIds.length > 0
+              ? base + (isEnMode ? ` (${deletedIds.length} already deleted)` : `（${deletedIds.length}件は削除済み）`)
+              : base
+          );
           setIsSaving(false);
           return;
         }
+        deletedIds.push(w.id);
       }
       if (selectedIds.includes(NEW_WORD_ID)) {
         // 新語を登録（成功時にモーダルを閉じてsharedへ）
@@ -450,7 +464,43 @@ export default function Home() {
     setIsSaving(false);
   };
 
-  const pageNumber = result ? `p.${Math.floor(Math.random() * 900) + 100}` : "";
+  // 登録上限モーダル: 開いている間はフォーカスをモーダル内に閉じ込め、Escapeで閉じる（a11y）
+  useEffect(() => {
+    if (!showLimitModal) return;
+    const modal = limitModalRef.current;
+    if (!modal) return;
+    const prevFocus = document.activeElement as HTMLElement | null;
+    modal.focus();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeLimitModal();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusables = modal.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      if (prevFocus && typeof prevFocus.focus === "function") prevFocus.focus();
+    };
+  }, [showLimitModal]);
+
+  // シェア画面のページ番号は語ごとに一度だけ決め、再レンダーで毎回変わらないようにする
+  const sharePageNum = useMemo(() => Math.floor(Math.random() * 900) + 100, [savedWord?.id]);
 
   // 品詞の広辞苑表記
   const posMap: Record<string, string> = {
@@ -475,35 +525,31 @@ export default function Home() {
             <div className="tategaki-search-rule" />
             <form onSubmit={handleSearch} className="tategaki-search-form">
               <span className="tategaki-search-label">{isEnMode ? "Word" : "読み（ひらがな）"}</span>
-              <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""} ${isDesktop ? "is-desktop" : ""}`}>
+              <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""}`}>
                 <div className="tategaki-search-field">
-                  {/* 縦書きの見た目はこのdivで再現する。iOSでは縦書きinputに直接
-                      IME入力すると変換中の文字が崩れるため、実際の入力は下の
-                      横書きinput(透明)で受け、その値をここに映す */}
-                  <div
-                    className={`tategaki-search-display ${!word && !searchFocused ? "is-placeholder" : ""}`}
-                    aria-hidden="true"
-                  >
-                    {searchFocused ? (
-                      <>
-                        {word}
-                        <span className="tategaki-search-caret" />
-                      </>
-                    ) : (
-                      word || (isEnMode ? "register a word" : "ことばを登録する")
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={word}
-                    onChange={(e) => setWord(e.target.value)}
-                    onFocus={() => setSearchFocused(true)}
-                    onBlur={() => setSearchFocused(false)}
-                    aria-label={isEnMode ? "Word" : "読み（ひらがな）"}
-                    placeholder={isEnMode ? "register a word" : (isDesktop ? "ことばを登録する" : undefined)}
-                    className={`tategaki-search-input ${isEnMode ? "en-mode" : ""}`}
-                    maxLength={20}
-                  />
+                  {isEnMode ? (
+                    <input
+                      type="text"
+                      value={word}
+                      onChange={(e) => setWord(e.target.value)}
+                      aria-label="Word"
+                      placeholder="register a word"
+                      className="tategaki-search-input en-mode"
+                      maxLength={20}
+                    />
+                  ) : (
+                    /* PCはネイティブ縦書きinput、携帯は透明横書きinput＋縦書きミラー＋
+                       カスタムカーソルバー（削除・IME・途中タップ挿入がネイティブで確実） */
+                    <VerticalTextInput
+                      variant="search"
+                      value={word}
+                      onChange={setWord}
+                      onEnter={() => handleSearch()}
+                      placeholder="ことばを登録する"
+                      ariaLabel="読み（ひらがな）"
+                      maxLength={20}
+                    />
+                  )}
                 </div>
                 <button
                   type="submit"
@@ -514,6 +560,9 @@ export default function Home() {
                 </button>
               </div>
             </form>
+            {lookupError && (
+              <p className="search-lookup-error" role="alert">{lookupError}</p>
+            )}
             <p className="search-limit-note">
               {isEnMode
                 ? `※ Up to ${REGISTER_LIMIT} words per person`
@@ -552,7 +601,7 @@ export default function Home() {
         <div className="share-dict-page fade-in">
           <div className="share-dict-header">
             <span className="share-dict-label">{t("share.title") || "存在しない言葉辞典"}</span>
-            <span className="share-dict-page-num">p.{Math.floor(Math.random() * 900) + 100}</span>
+            <span className="share-dict-page-num">p.{sharePageNum}</span>
           </div>
 
           <div className="word-detail-paper-wrapper">
@@ -837,7 +886,7 @@ export default function Home() {
               )}
             </div>
 
-            {saveError && <span className="result-error">{saveError}</span>}
+            {saveError && <span className="result-error" role="alert">{saveError}</span>}
           </div>
 
           {/* TOPに戻るボタン */}
@@ -862,8 +911,16 @@ export default function Home() {
       {/* ===== 登録上限（5単語）入れ替えモーダル ===== */}
       {showLimitModal && pendingSave && (
         <div className="limit-modal-overlay" onClick={closeLimitModal}>
-          <div className="limit-modal" onClick={(e) => e.stopPropagation()}>
-            <p className="limit-modal-title">
+          <div
+            className="limit-modal"
+            onClick={(e) => e.stopPropagation()}
+            ref={limitModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="limit-modal-title"
+            tabIndex={-1}
+          >
+            <p className="limit-modal-title" id="limit-modal-title">
               {isEnMode
                 ? `Up to ${REGISTER_LIMIT} words per person`
                 : `登録は1人${REGISTER_LIMIT}単語までです`}
@@ -917,7 +974,7 @@ export default function Home() {
               ))}
             </div>
 
-            {saveError && <span className="limit-modal-error">{saveError}</span>}
+            {saveError && <span className="limit-modal-error" role="alert">{saveError}</span>}
 
             {replaceConfirming ? (
               <div className="limit-confirm-box">

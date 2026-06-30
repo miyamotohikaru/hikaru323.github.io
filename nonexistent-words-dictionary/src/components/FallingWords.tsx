@@ -85,6 +85,14 @@ export default function FallingWords() {
   }, []);
 
   useEffect(() => {
+    // 視差・モーション低減を希望するユーザーには降ってくる演出を出さない（a11y / 省電力）
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");

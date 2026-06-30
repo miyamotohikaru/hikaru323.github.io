@@ -6,7 +6,7 @@
   --bgSoft: #241a13;
   --text: #e8d9bf;
   --textSoft: #b8a584;
-  --textMute: #7a6953;
+  --textMute: #9a8568; /* 暗背景でWCAG AA(4.5:1)を満たす明度に引き上げ（旧#7a6953は約3.4:1で不足） */
   --rule: #46362a;
   --accent: #b3392a;
   --accentDim: #8e2a1e;
@@ -37,6 +37,19 @@
 /* ===== Reset & Base ===== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* スクリーンリーダ専用（視覚的に隠すが読み上げ・見出しナビには出す） */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 body {
   background-color: var(--bg);
   color: var(--text);
@@ -61,6 +74,25 @@ body > * { position: relative; z-index: 1; }
 
 a { color: var(--text-body); text-decoration: none; transition: color 0.2s; }
 a:hover { color: var(--text-primary); }
+
+/* ===== キーボードフォーカスの可視化（WCAG 2.4.7）=====
+   多数の要素で outline:none にしているため、キーボード操作時のフォーカス位置が
+   見えなくなっていた。:focus-visible（キーボード由来のフォーカスのみ）でリングを復活。
+   マウスクリック時には出ないので見た目への影響は最小。 */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :where(a, button) { transition: color 0.2s, outline-color 0.2s; }
+}
 
 /* ===== Header ===== */
 .site-header {
@@ -1229,6 +1261,7 @@ a:hover { color: var(--text-primary); }
   writing-mode: vertical-rl;
   text-orientation: mixed;
   height: calc(100vh - 12rem);
+  height: calc(100dvh - 12rem); /* iOS Safariのツールバー表示時に末尾列が隠れるのを防ぐ（dvhは可視領域に追従） */
   width: max-content;
   max-width: none;
   display: block;
@@ -2519,108 +2552,42 @@ a:hover { color: var(--text-primary); }
   flex: 1;
   min-height: 0;
   width: 100%;
+  display: flex;
 }
 
-.tategaki-search-display {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+/* ネイティブの縦書き検索入力。iOS17.4+/モダンブラウザは input/textarea の
+   writing-mode: vertical-rl をネイティブ対応するため、透明input＋ミラー＋末尾固定
+   キャレットの旧方式をやめ、実際に編集できる縦書き入力を直接使う
+   （実カーソルが見え、タップで途中にカーソルを置ける／選択・IMEもネイティブ）。 */
+.tategaki-search-input {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-writing-mode: vertical-rl;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  box-sizing: border-box;
-  color: var(--text);
-  font-family: var(--font-main);
-  font-size: 16px;
-  letter-spacing: 0.15em;
-  padding: 12px 8px;
-  overflow: hidden;
-  pointer-events: none;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.tategaki-search-display.is-placeholder {
-  color: var(--textMute);
-  font-size: 14px;
-}
-
-/* 縦書き入力欄の点滅キャレット（横バー）。フォーカス中だけ表示 */
-.tategaki-search-caret {
-  display: inline-block;
-  width: 1em;
-  height: 2px;
-  background: var(--text);
-  vertical-align: middle;
-  animation: tategakiCaretBlink 1.05s step-end infinite;
-}
-@keyframes tategakiCaretBlink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tategaki-search-caret { animation: none; }
-}
-
-.tategaki-search-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  box-sizing: border-box;
-  /* iOSの縦書きinput IME崩れを避けるため入力自体は横書き。
-     文字とキャレットは透明にし、見た目は .tategaki-search-display に反映する */
-  writing-mode: horizontal-tb;
   background: transparent;
   border: none;
   outline: none;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  caret-color: transparent;
+  resize: none;
+  overflow: hidden;
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+  /* カーソルを背景に溶けない明るい色にして位置を分かりやすく */
+  caret-color: var(--text);
   font-family: var(--font-main);
   font-size: 16px;
   letter-spacing: 0.15em;
   padding: 12px 8px;
 }
-
 .tategaki-search-input::placeholder {
   color: var(--textMute);
+  -webkit-text-fill-color: var(--textMute);
   font-size: 14px;
 }
-/* 透明な入力文字が選択されると白い帯に見えるため、選択ハイライトも透明にする */
-.tategaki-search-input::selection { background: transparent; }
-.tategaki-search-input::-moz-selection { background: transparent; }
-
+.tategaki-search-input::selection { background: var(--textSoft); color: var(--bg); }
+.tategaki-search-input::-moz-selection { background: var(--textSoft); color: var(--bg); }
 .tategaki-search-input:disabled { opacity: 0.5; }
-
-/* ===== PC(マウス)時の縦書き検索input =====
-   タッチ端末はミラー方式（透明input＋表示div）を維持するが、PCでは実カーソルが
-   見えずバックスペース/途中編集ができないため、ミラーをやめて「見える縦書きinput」を
-   直接編集できるようにする。日本語モードのみ対象（英語はen-modeの横書き設定を使う）。 */
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-display {
-  display: none;
-}
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  /* 文字とキャレットを実際に見えるようにする（ミラーへの転写をやめる） */
-  color: var(--text);
-  -webkit-text-fill-color: var(--text);
-  caret-color: var(--accent);
-}
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input::placeholder {
-  color: var(--textMute);
-  font-size: 14px;
-}
-/* PCでは通常どおり選択ハイライトを見せる（透明化を打ち消す） */
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input::selection {
-  background: var(--textSoft);
-}
-.tategaki-search-input-wrap.is-desktop:not(.en-mode) .tategaki-search-input::-moz-selection {
-  background: var(--textSoft);
-}
 
 .tategaki-search-button {
   writing-mode: vertical-rl;
@@ -3045,52 +3012,58 @@ a:hover { color: var(--text-primary); }
 .result-register-input {
   position: relative;
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
+  /* 枠が背景に溶けて入力欄に見えなかったため、はっきり視認できる枠＋薄い塗りにする */
+  background: rgba(232, 217, 191, 0.06);
+  border: 1px solid var(--textMute);
+  border-radius: 6px;
   min-height: 140px;
   transition: border-color 0.2s, background 0.2s;
 }
-.result-register-input:focus-within { border-color: var(--accent); background: rgba(255, 255, 255, 0.08); }
+.result-register-input:focus-within { border-color: var(--accent); background: rgba(255, 255, 255, 0.09); }
 
-.result-register-input__display {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
+/* ネイティブの縦書きinput。iOS Safari 17.4+ / モダンブラウザは input の
+   writing-mode: vertical-rl をネイティブ対応するため、透明input＋ミラーの旧方式をやめ、
+   実際に編集できる縦書きinputを直接使う（カーソル・タップ・選択・IMEがネイティブで効く）。 */
+.result-register-input__native {
   box-sizing: border-box;
   width: 100%;
   min-height: 140px;
-  color: var(--text);
-  font-family: var(--font-main);
-  /* iOSは入力欄のfontが16px未満だとフォーカス時に自動ズームするため16pxにする */
-  font-size: 16px;
-  padding: 10px 8px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  pointer-events: none;
-}
-.result-register-input__display.is-placeholder { color: var(--textMute); }
-
-.result-register-input__field {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  box-sizing: border-box;
-  writing-mode: horizontal-tb;
+  -webkit-writing-mode: vertical-rl;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
   background: transparent;
   border: none;
   outline: none;
-  /* 入力文字とキャレットは透明にし、見た目は__displayに反映する */
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  caret-color: transparent;
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--accent);
+  font-family: var(--font-main);
+  /* iOSは入力欄のfontが16px未満だとフォーカス時に自動ズームするため16pxにする */
   font-size: 16px;
+  letter-spacing: 0.08em;
   padding: 10px 8px;
 }
-/* 透明な入力文字が選択されると白い帯に見えるため、選択ハイライトも透明にする */
-.result-register-input__field::selection { background: transparent; }
-.result-register-input__field::-moz-selection { background: transparent; }
+.result-register-input__native::placeholder {
+  color: var(--textMute);
+  -webkit-text-fill-color: var(--textMute);
+}
+.result-register-input__native::selection { background: var(--textSoft); color: var(--bg); }
+.result-register-input__native::-moz-selection { background: var(--textSoft); color: var(--bg); }
+
+/* ===== 携帯(タッチ): ネイティブ縦書きtextarea =====
+   変換中の青背景・スペースキー長押しでのカーソル移動・削除・タップ位置決めがOS標準で
+   効くよう、見えるネイティブtextareaを使う。非制御運用でカーソルは飛ばず削除は一文字ずつ。
+   文字サイズは元の16pxのまま。カーソルは標準だが色を明るくして見やすくする。 */
+textarea.result-register-input__native {
+  resize: none;
+  overflow: hidden;
+  line-height: 1.7;
+  caret-color: var(--text);
+}
+textarea.tategaki-search-input {
+  resize: none;
+  overflow: hidden;
+}
 
 .result-register-textarea {
   writing-mode: vertical-rl;
@@ -3739,15 +3712,6 @@ a:hover { color: var(--text-primary); }
     height: calc(12.6rem + 21px);
     flex: none;
   }
-  .tategaki-search-display {
-    font-size: 1rem;
-    padding: 0.75rem 0.5rem;
-    text-align: center;
-    background: rgba(217, 212, 200, 0.03);
-  }
-  .tategaki-search-display.is-placeholder {
-    font-size: 0.875rem;
-  }
   .tategaki-search-input {
     font-size: 1rem;
     padding: 0.75rem 0.5rem;
@@ -3800,7 +3764,8 @@ a:hover { color: var(--text-primary); }
     z-index: 50;
     background: var(--bg);
     margin: 0;
-    padding: 8px 0 0 0;
+    /* 下端のホームインジケータ帯と内容が重ならないようsafe-area分を確保 */
+    padding: 8px 0 env(safe-area-inset-bottom) 0;
     border-top: 1px solid var(--rule);
     gap: 0;
   }
@@ -3846,8 +3811,7 @@ a:hover { color: var(--text-primary); }
     gap: 16px;
   }
   /* font-sizeは16pxのまま（iOSの自動ズーム防止）。paddingのみ調整 */
-  .result-register-input__display,
-  .result-register-input__field { padding: 6px; }
+  .result-register-input__native { padding: 6px; }
   .result-cta-button {
     padding: 18px 14px; font-size: 15px;
     width: 70px; height: auto;
@@ -3896,6 +3860,7 @@ a:hover { color: var(--text-primary); }
   }
   .word-detail-paper {
     height: calc(100vh - 10rem);
+    height: calc(100dvh - 10rem); /* iOS Safariのツールバー分を可視領域に追従 */
     padding: 1.5rem 1.5rem;
     font-size: 0.875rem;
   }
@@ -5320,6 +5285,27 @@ a:hover { color: var(--text-primary); }
   color: var(--textMute);
   letter-spacing: 0.2em;
   z-index: 1;
+}
+
+/* TOP検索の失敗メッセージ（無言でidleに戻る挙動の解消）。縦書きレイアウト上で
+   確実に目に入るよう、横書き・中央寄せ・アクセント色の帯で表示する。 */
+.search-lookup-error {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  max-width: min(92vw, 420px);
+  margin: 0;
+  padding: 10px 16px;
+  writing-mode: horizontal-tb;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  background: rgba(179, 57, 42, 0.16);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  z-index: 3;
 }
 /* モバイルは静的・横書きにして、注意事項のすぐ上に詰めて表示 */
 @media (max-width: 640px) {

@@ -228,7 +228,7 @@ async function handleJapanese(word: string, meaning: string | undefined, apiKey:
   const fallbackDef = meaning || `まだ誰にも定義されていない言葉。「${word}」という響きの中に、新しい概念が眠っている。`;
 
   // Layer 1: ローカル辞書チェック（O(1)）
-  const localResult = existsInLocalDictionary(word);
+  const localResult = await existsInLocalDictionary(word);
 
   if (localResult.exists) {
     if (!apiKey) {
