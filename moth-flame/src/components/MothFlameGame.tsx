@@ -391,6 +391,61 @@ export default function MothFlameGame() {
         return im;
       })
     );
+
+    // ── Kosukuma tint (score-driven colours) ──
+    // 70–89 use a pastel set, 90+ a neon/vivid set. The HIGHER the score, the
+    // MORE of the palette is used, so a celebration grows more colourful with
+    // skill (≤70 stays the natural cream). Each kosukuma is one solid colour.
+    // Sprites are tinted in code (multiply + alpha mask) — no extra assets.
+    const KOSU_PASTEL = [
+      "#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff",
+      "#a0c4ff", "#bdb2ff", "#ffc6ff", "#ffb5e8", "#b5ead7",
+    ];
+    const KOSU_NEON = [
+      "#ff2d6f", "#ff6a00", "#ffe600", "#39ff14", "#00fff0",
+      "#1f9bff", "#b14bff", "#ff36c8", "#ff003c", "#00ff7b",
+    ];
+    let celebColors: string[] = []; // active tint set ([] = natural cream)
+    function setCelebPalette(score: number) {
+      if (score < 70) {
+        celebColors = [];
+        return;
+      }
+      const pal = score >= 90 ? KOSU_NEON : KOSU_PASTEL;
+      // colour count grows with score: 70-74:2 75-79:4 80-84:5 85-89:7 90-94:8 95+:10
+      const count =
+        score >= 95 ? 10 : score >= 90 ? 8 : score >= 85 ? 7 : score >= 80 ? 5 : score >= 75 ? 4 : 2;
+      celebColors = pal.slice(0, count);
+    }
+    function pickCelebColor() {
+      return celebColors.length
+        ? celebColors[Math.floor(Math.random() * celebColors.length)]
+        : "";
+    }
+    const tintCache = new Map<string, HTMLCanvasElement>();
+    function tintedSprite(img: HTMLImageElement, col: string): HTMLCanvasElement | null {
+      const key = img.src + "|" + col;
+      const hit = tintCache.get(key);
+      if (hit) return hit;
+      const HH = 128;
+      const WW = Math.max(1, Math.round((img.naturalWidth / img.naturalHeight) * HH));
+      const cv = document.createElement("canvas");
+      cv.width = WW;
+      cv.height = HH;
+      const c = cv.getContext("2d");
+      if (!c) return null;
+      c.imageSmoothingEnabled = false;
+      c.drawImage(img, 0, 0, WW, HH);
+      c.globalCompositeOperation = "multiply"; // colourise the pale body
+      c.fillStyle = col;
+      c.fillRect(0, 0, WW, HH);
+      c.globalCompositeOperation = "destination-in"; // clip back to the sprite shape
+      c.drawImage(img, 0, 0, WW, HH);
+      c.globalCompositeOperation = "source-over";
+      if (tintCache.size > 400) tintCache.clear(); // safety cap
+      tintCache.set(key, cv);
+      return cv;
+    }
     interface CelebP {
       kind: "kosu" | "spark" | "herald";
       x: number;
@@ -412,22 +467,23 @@ export default function MothFlameGame() {
       const fr = kosuSeries[series][Math.floor((T * 1000) / 80) % 4];
       return fr && fr.complete && fr.naturalWidth ? fr : null;
     }
-    function drawKosuSprite(series: number, x: number, y: number, h: number, alpha: number, rot: number) {
+    function drawKosuSprite(series: number, x: number, y: number, h: number, alpha: number, rot: number, col = "") {
       const img = kosuImg(series);
       if (!img) return;
+      const sprite: CanvasImageSource = col ? tintedSprite(img, col) ?? img : img;
       const w = (img.naturalWidth / img.naturalHeight) * h;
       otx.save();
       otx.globalAlpha = Math.max(0, Math.min(1, alpha));
       otx.translate(x, y);
       if (rot) otx.rotate(rot);
-      otx.drawImage(img, -w / 2, -h / 2, w, h);
+      otx.drawImage(sprite, -w / 2, -h / 2, w, h);
       otx.restore();
     }
     function pushKosuP(x: number, y: number, vx: number, vy: number, scale: number, life: number, grav: number) {
       celebParts.push({
         kind: "kosu", x, y, vx, vy, life, max: life, grav, scale,
         series: Math.floor(Math.random() * 4),
-        rot: (Math.random() - 0.5) * 0.6, vrot: (Math.random() - 0.5) * 3.5, col: "",
+        rot: (Math.random() - 0.5) * 0.6, vrot: (Math.random() - 0.5) * 3.5, col: pickCelebColor(),
       });
     }
     function pushSpark(x: number, y: number) {
@@ -495,12 +551,13 @@ export default function MothFlameGame() {
       const cx = fireSCX,
         cy = fireSCY;
       if (cx <= 0) return;
+      setCelebPalette(score); // decide this celebration's colour set (≤70 = cream)
       if (score >= 95) {
         // A big kosukuma rises into the flame, then bursts (see herald handling)
         celebParts.push({
           kind: "herald", x: cx, y: cy + Math.min(H * 0.36, 280), vx: 0, vy: 0,
           life: 1.6, max: 1.6, grav: 0, scale: Math.min(170, H * 0.24),
-          series: Math.floor(Math.random() * 4), rot: 0, vrot: 0, col: "",
+          series: Math.floor(Math.random() * 4), rot: 0, vrot: 0, col: pickCelebColor(),
         });
         return;
       }
@@ -537,7 +594,7 @@ export default function MothFlameGame() {
             celebParts.splice(i, 1);
             continue;
           }
-          drawKosuSprite(p.series, p.x, p.y, p.scale, 1, Math.sin(T * 6) * 0.12);
+          drawKosuSprite(p.series, p.x, p.y, p.scale, 1, Math.sin(T * 6) * 0.12, p.col);
           continue;
         }
         p.life -= dt;
@@ -555,7 +612,7 @@ export default function MothFlameGame() {
           otx.fillStyle = p.col;
           otx.fillRect(Math.round(p.x), Math.round(p.y), 4, 4);
         } else {
-          drawKosuSprite(p.series, p.x, p.y, p.scale, alpha, p.rot);
+          drawKosuSprite(p.series, p.x, p.y, p.scale, alpha, p.rot, p.col);
         }
       }
       otx.globalAlpha = 1;
