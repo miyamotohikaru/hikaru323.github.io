@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, FormEvent } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import ShareButtons from "@/components/ShareButtons";
 import FallingWords from "@/components/FallingWords";
@@ -499,7 +499,9 @@ export default function Home() {
     };
   }, [showLimitModal]);
 
-  // シェア画面のページ番号は語ごとに一度だけ決め、再レンダーで毎回変わらないようにする
+  // シェア画面のページ番号は語ごとに一度だけ決め、再レンダーで毎回変わらないようにする。
+  // savedWord.id を依存に持たせて「語が変わったら振り直す」ため、本体未使用でも意図的に残す。
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const sharePageNum = useMemo(() => Math.floor(Math.random() * 900) + 100, [savedWord?.id]);
 
   // 品詞の広辞苑表記

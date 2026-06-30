@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       try {
         const db = await getDb();
         let myWords: Record<string, unknown>[] = [];
-        let likedWords: Record<string, unknown>[] = [];
+        const likedWords: Record<string, unknown>[] = [];
 
         // 自分が投稿した語（authorTokenで照合）
         if (authorToken) {

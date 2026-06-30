@@ -97,6 +97,15 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
     }
   };
 
+  // ページ番号は word.id から決定論的に算出（render中Math.random()によるhydration不一致を回避）。
+  // フックは早期returnより前で必ず呼ぶ（rules-of-hooks）。wordがnullの場合はダミー値。
+  const sharePageNum = useMemo(() => {
+    if (!word) return 100;
+    let h = 0;
+    for (let i = 0; i < word.id.length; i++) h = (h * 31 + word.id.charCodeAt(i)) >>> 0;
+    return (h % 900) + 100;
+  }, [word]);
+
   if (!word) {
     return null;
   }
@@ -107,13 +116,6 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
   const shareUrl = typeof window !== "undefined"
     ? window.location.origin + `/word/${word.id}`
     : `${process.env.NEXT_PUBLIC_BASE_URL || "https://fictionary.vercel.app"}/word/${word.id}`;
-
-  // ページ番号は word.id から決定論的に算出（render中Math.random()によるhydration不一致を回避）
-  const sharePageNum = useMemo(() => {
-    let h = 0;
-    for (let i = 0; i < word.id.length; i++) h = (h * 31 + word.id.charCodeAt(i)) >>> 0;
-    return (h % 900) + 100;
-  }, [word.id]);
 
   // 掲載直後の辞書風シェアページ
   if (showSharePage) {

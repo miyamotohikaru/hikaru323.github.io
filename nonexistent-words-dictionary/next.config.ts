@@ -5,12 +5,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // 型チェック・Lintをビルドで有効化（以前は両方 ignore で握り潰していた）。
+  // 型エラー/Lintエラーがあるとビルドが失敗するので、不具合の作り込みを防げる。
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = config.externals || [];

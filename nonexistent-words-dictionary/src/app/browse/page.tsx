@@ -149,9 +149,6 @@ export default function BrowsePage() {
     ? searchResults.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
     : [];
 
-  // Order: show primary index first based on UI language
-  const showJaFirst = lang !== "en";
-
   const jaSection = (
     <div key="ja-index">
       <h2 className="page-title" style={{ marginTop: indexMode === "ja" ? 0 : "2rem" }}>
