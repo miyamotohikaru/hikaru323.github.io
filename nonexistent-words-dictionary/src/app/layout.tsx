@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
 import ClientProviders from "@/components/ClientProviders";
@@ -14,6 +14,13 @@ export const metadata: Metadata = {
     description: "存在しない言葉だけを受け付ける参加型辞書。",
     type: "website",
   },
+};
+
+// ノッチ/ホームインジケータ領域に env(safe-area-inset-*) が効くよう viewport-fit:cover を指定
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const gaId = process.env.NEXT_PUBLIC_GA_ID;

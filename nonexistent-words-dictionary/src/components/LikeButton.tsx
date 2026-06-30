@@ -51,12 +51,13 @@ export default function LikeButton({ wordId, initialLikes }: LikeButtonProps) {
         className={`like-button ${liked ? "liked" : ""} ${liked ? "like-pop" : ""}`}
         onClick={handleLike}
         disabled={liked || isLoading}
-        aria-label="いいね"
+        aria-pressed={liked}
+        aria-label={`いいね${likes > 0 ? `（${likes}件）` : ""}${liked ? "・済み" : ""}`}
       >
-        <span className="like-heart">{liked ? "♥" : "♡"}</span>
+        <span className="like-heart" aria-hidden="true">{liked ? "♥" : "♡"}</span>
         <span className="like-count">{likes > 0 ? likes : ""}</span>
       </button>
-      {error && <span style={{ fontSize: "11px", color: "var(--accent)", marginLeft: "4px" }}>失敗</span>}
+      {error && <span role="alert" style={{ fontSize: "11px", color: "var(--accent)", marginLeft: "4px" }}>失敗</span>}
     </span>
   );
 }

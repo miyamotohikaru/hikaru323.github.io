@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getDb, isFirebaseAvailable } from "@/lib/firebase";
 import { listWords } from "@/lib/in-memory-store";
 
+// 「今日の一語」は更新頻度が低いのでCDNで長めにキャッシュ（Firestore読取・レイテンシ削減）
+const DAILY_CACHE = { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" };
+
 export async function GET() {
   try {
     // 過去7日間でいいねが最も多い語を「今日の一語」として選出
@@ -36,7 +39,7 @@ export async function GET() {
               source: data.source || "user",
               createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
             },
-          });
+          }, { headers: DAILY_CACHE });
         }
       } catch (fbError) {
         console.error("Firebase error in daily:", fbError);
@@ -53,7 +56,7 @@ export async function GET() {
           kojienFormatted: safeWord.kojienFormatted || "",
           source: safeWord.source as "user" | "ai",
         },
-      });
+      }, { headers: DAILY_CACHE });
     }
 
     return NextResponse.json({ word: null });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import LikeButton from "@/components/LikeButton";
@@ -106,7 +106,14 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
 
   const shareUrl = typeof window !== "undefined"
     ? window.location.origin + `/word/${word.id}`
-    : `https://fictionary.vercel.app/word/${word.id}`;
+    : `${process.env.NEXT_PUBLIC_BASE_URL || "https://fictionary.vercel.app"}/word/${word.id}`;
+
+  // ページ番号は word.id から決定論的に算出（render中Math.random()によるhydration不一致を回避）
+  const sharePageNum = useMemo(() => {
+    let h = 0;
+    for (let i = 0; i < word.id.length; i++) h = (h * 31 + word.id.charCodeAt(i)) >>> 0;
+    return (h % 900) + 100;
+  }, [word.id]);
 
   // 掲載直後の辞書風シェアページ
   if (showSharePage) {
@@ -115,7 +122,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
         <div className="share-dict-page fade-in">
           <div className="share-dict-header">
             <span className="share-dict-label">{t("share.title")}</span>
-            <span className="share-dict-page-num">p.{Math.floor(Math.random() * 900) + 100}</span>
+            <span className="share-dict-page-num">p.{sharePageNum}</span>
           </div>
 
           {isEn ? (
@@ -185,6 +192,8 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
 
   return (
     <main className="main-content word-detail-content">
+      {/* スクリーンリーダ/見出しナビ用のページ見出し（視覚的には縦書き紙面が見出し相当） */}
+      <h1 className="sr-only">{word.word}【{currentReading}】</h1>
       <div className="word-detail-header">
         <Link href="/" className="back-link">
           {t("common.backToDict")}
@@ -227,7 +236,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
               キャンセル
             </button>
           </div>
-          {saveMsg && <p style={{ marginTop: "8px", fontSize: "13px", color: "var(--textSoft)" }}>{saveMsg}</p>}
+          {saveMsg && <p role="status" aria-live="polite" style={{ marginTop: "8px", fontSize: "13px", color: "var(--textSoft)" }}>{saveMsg}</p>}
         </div>
       ) : isEn ? (
         /* English word detail - horizontal layout */
@@ -290,7 +299,7 @@ export default function WordDetailClient({ word, relatedWords }: Props) {
             </button>
           )}
         </div>
-        {saveMsg && !editing && <p style={{ fontSize: "13px", color: "var(--accent)", marginTop: "4px" }}>{saveMsg}</p>}
+        {saveMsg && !editing && <p role="status" aria-live="polite" style={{ fontSize: "13px", color: "var(--accent)", marginTop: "4px" }}>{saveMsg}</p>}
       </div>
 
       <AdSense slot="word-detail-1" />
