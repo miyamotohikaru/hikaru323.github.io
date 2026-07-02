@@ -51,14 +51,14 @@ function FeaturedEntry() {
         <CardTile card={card} />
       </div>
       <div className="min-w-0">
-        <p className="font-mono text-[10px] tracking-[0.25em] text-da-accent">{tx(UI.weeklyEntry)}</p>
+        <p className="font-mono text-[10px] tracking-[0.25em] text-da-accent-text">{tx(UI.weeklyEntry)}</p>
         <h3 className="font-mincho mt-1.5 text-2xl font-semibold leading-tight">{t.name}</h3>
         <p className="mt-1 truncate font-mono text-[10px] tracking-[0.15em] text-da-muted">
           {yearLabel(card)} · {card.code}
         </p>
         <Link
           href={`/entry/${card.id}`}
-          className="font-mincho mt-3 inline-block text-[15px] italic text-da-accent underline-offset-4 hover:underline"
+          className="font-mincho mt-3 inline-block text-[15px] italic text-da-accent-text underline-offset-4 hover:underline"
         >
           {tx(UI.readMore)}
         </Link>
@@ -72,7 +72,7 @@ function Hero() {
   return (
     <section className="mx-auto grid max-w-6xl gap-8 px-4 pb-6 pt-10 sm:px-6 md:grid-cols-[1.1fr_1fr] md:items-center md:pt-14">
       <div>
-        <p className="font-mono text-[11px] tracking-[0.3em] text-da-accent">{tx(UI.issue)}</p>
+        <p className="font-mono text-[11px] tracking-[0.3em] text-da-accent-text">{tx(UI.issue)}</p>
         <h1 className="font-display mt-3 text-5xl font-medium italic leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
           Diagnosis<span className="text-da-accent">.</span> Archive
         </h1>
@@ -158,7 +158,7 @@ function ExplorerInner() {
         <Hero />
       ) : (
         <section className="mx-auto max-w-6xl px-4 pb-4 pt-10 sm:px-6">
-          <p className="font-mono text-[11px] tracking-[0.3em] text-da-accent">
+          <p className="font-mono text-[11px] tracking-[0.3em] text-da-accent-text">
             VIEW · {view === "timeline" ? "TIMELINE" : "LINEAGE"}
           </p>
           <div className="mt-2 flex flex-wrap items-end justify-between gap-3 border-b-2 border-da-ink pb-4">
@@ -182,7 +182,7 @@ function ExplorerInner() {
                 onClick={() => setPanelOpen((o) => !o)}
                 aria-expanded={panelOpen}
                 className={`font-mincho flex items-center gap-1 rounded px-1.5 py-0.5 text-[13px] tracking-normal transition-colors hover:bg-da-ink/8 ${
-                  isFiltered(filters) ? "text-da-accent" : "text-da-ink"
+                  isFiltered(filters) ? "text-da-accent-text" : "text-da-ink"
                 }`}
               >
                 {tx(UI.filter)}
@@ -193,12 +193,12 @@ function ExplorerInner() {
             </div>
 
             {view !== "lineage" && (
-              <div className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)]">
                 <button
                   type="button"
                   onClick={() => setStatus(null)}
                   aria-pressed={filters.status === null}
-                  className={`font-mincho shrink-0 rounded-full px-3.5 py-1 text-[13px] transition-colors ${
+                  className={`font-mincho shrink-0 rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
                     filters.status === null ? "bg-da-ink text-da-paper" : "hover:text-da-accent"
                   }`}
                 >
@@ -210,7 +210,7 @@ function ExplorerInner() {
                     type="button"
                     onClick={() => setStatus(filters.status === s ? null : s)}
                     aria-pressed={filters.status === s}
-                    className={`font-mincho shrink-0 rounded-full px-3.5 py-1 text-[13px] transition-colors ${
+                    className={`font-mincho shrink-0 rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
                       filters.status === s ? "bg-da-ink text-da-paper" : "hover:text-da-accent"
                     }`}
                   >
@@ -234,7 +234,7 @@ function ExplorerInner() {
                   onClick={() => setView(v)}
                   aria-pressed={view === v}
                   aria-label={viewTitle[v].label}
-                  className={`grid h-8 w-8 place-items-center rounded transition-colors ${
+                  className={`grid h-10 w-10 place-items-center rounded transition-colors sm:h-8 sm:w-8 ${
                     view === v ? "bg-da-accent/15 text-da-accent" : "text-da-muted hover:text-da-ink"
                   }`}
                 >

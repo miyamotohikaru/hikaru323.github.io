@@ -5,26 +5,33 @@ import { REGION_LABELS, STATUS_META, cardText, yearLabel } from "@/lib/meta";
 const INK = "#252a4a";
 const PAPER = "#f3f0e6";
 const ACCENT = "#e4506e";
-const MUTED = "#70738a";
+const ACCENT_TEXT = "#b23a55";
+const MUTED = "#565971";
 const LINE = "#c9c5b6";
 
-/** 日本語対応の文字単位折り返し */
+/** next/font が発行する実フォントファミリー名をCSS変数から取得 */
+function fontFamily(varName: string, fallback: string): string {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return v ? `${v}, ${fallback}` : fallback;
+}
+
+/** 日本語対応の文字単位折り返し（あふれた場合は末尾を…にする） */
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
   const lines: string[] = [];
   let line = "";
   for (const ch of text) {
     if (ctx.measureText(line + ch).width > maxWidth && line) {
+      if (lines.length === maxLines - 1) {
+        lines.push(line.slice(0, -1) + "…");
+        return lines;
+      }
       lines.push(line);
       line = ch;
-      if (lines.length === maxLines) return lines;
     } else {
       line += ch;
     }
   }
-  if (line && lines.length < maxLines) lines.push(line);
-  if (lines.length === maxLines && ctx.measureText(text).width > maxWidth * maxLines) {
-    lines[maxLines - 1] = lines[maxLines - 1].slice(0, -1) + "…";
-  }
+  if (line) lines.push(line);
   return lines;
 }
 
@@ -36,11 +43,17 @@ export async function saveCardPng(card: Card, lang: Lang): Promise<void> {
   const SHADOW = 9;
   const S = 3; // 解像度
 
+  const DISPLAY = fontFamily("--font-display", "serif");
+  const MINCHO = fontFamily("--font-mincho", "'Hiragino Mincho ProN', serif");
+  const MONO = fontFamily("--font-mono", "monospace");
+  const SANS = "'Hiragino Kaku Gothic ProN', sans-serif";
+
   await Promise.all([
-    document.fonts.load('italic 600 30px "Playfair Display"'),
-    document.fonts.load('700 24px "Shippori Mincho"'),
-    document.fonts.load('500 11px "IBM Plex Mono"'),
+    document.fonts.load(`italic 600 30px ${DISPLAY}`),
+    document.fonts.load(`700 24px ${MINCHO}`),
+    document.fonts.load(`500 11px ${MONO}`),
   ]).catch(() => {});
+  await document.fonts.ready.catch(() => {});
 
   const canvas = document.createElement("canvas");
   canvas.width = W * S;
@@ -65,11 +78,11 @@ export async function saveCardPng(card: Card, lang: Lang): Promise<void> {
 
   // № と年
   ctx.fillStyle = ACCENT;
-  ctx.font = 'italic 600 28px "Playfair Display", serif';
+  ctx.font = `italic 600 28px ${DISPLAY}`;
   ctx.textBaseline = "alphabetic";
   ctx.fillText(`№${card.num}`, P, P + 26);
   ctx.fillStyle = INK;
-  ctx.font = '500 11px "IBM Plex Mono", monospace';
+  ctx.font = `500 11px ${MONO}`;
   ctx.textAlign = "right";
   ctx.fillText(yearLabel(card), cw - P, P + 22);
   ctx.textAlign = "left";
@@ -123,13 +136,13 @@ export async function saveCardPng(card: Card, lang: Lang): Promise<void> {
 
   y += 20;
   ctx.fillStyle = MUTED;
-  ctx.font = '500 9px "IBM Plex Mono", monospace';
+  ctx.font = `500 9px ${MONO}`;
   const en = t.enName.toUpperCase();
   ctx.fillText(en.length > 40 ? en.slice(0, 39) + "…" : en, P, y);
 
   y += 10;
   ctx.fillStyle = INK;
-  ctx.font = '700 23px "Shippori Mincho", serif';
+  ctx.font = `700 23px ${MINCHO}`;
   const nameLines = wrapText(ctx, t.name, cw - P * 2, 2);
   for (const line of nameLines) {
     y += 30;
@@ -139,7 +152,7 @@ export async function saveCardPng(card: Card, lang: Lang): Promise<void> {
   // 要約
   y += 22;
   ctx.fillStyle = MUTED;
-  ctx.font = '400 11.5px "Hiragino Kaku Gothic ProN", sans-serif';
+  ctx.font = `400 11.5px ${SANS}`;
   const meaningLines = wrapText(ctx, t.meaning, cw - P * 2, nameLines.length > 1 ? 2 : 3);
   for (const line of meaningLines) {
     ctx.fillText(line, P, y);
@@ -153,12 +166,12 @@ export async function saveCardPng(card: Card, lang: Lang): Promise<void> {
   ctx.moveTo(P, fy);
   ctx.lineTo(cw - P, fy);
   ctx.stroke();
-  ctx.font = '500 10px "IBM Plex Mono", monospace';
-  ctx.fillStyle = ACCENT;
+  ctx.font = `500 10px ${MONO}`;
+  ctx.fillStyle = ACCENT_TEXT;
   ctx.fillText("−", P, fy + 20);
   ctx.fillStyle = INK;
   ctx.fillText(STATUS_META[card.cat].label[lang], P + 14, fy + 20);
-  ctx.fillStyle = ACCENT;
+  ctx.fillStyle = ACCENT_TEXT;
   ctx.textAlign = "right";
   ctx.fillText(REGION_LABELS[card.region][lang], cw - P, fy + 20);
   ctx.textAlign = "left";

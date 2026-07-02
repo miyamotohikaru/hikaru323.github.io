@@ -14,7 +14,10 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const saved = window.localStorage.getItem("da-lang");
-    if (saved === "en") setLangState("en");
+    if (saved === "en") {
+      setLangState("en");
+      document.documentElement.lang = "en";
+    }
   }, []);
 
   const setLang = useCallback((l: Lang) => {

@@ -36,9 +36,9 @@ export default function CardTile({
         <CardIcon card={card} className="mx-auto my-2 aspect-square w-[72%] max-w-[150px]" />
 
         <div className="border-t da-hairline pt-2">
-          <p className="truncate font-mono text-[9px] uppercase tracking-[0.18em] text-da-muted">{t.enName}</p>
-          <h3 className="font-mincho mt-0.5 truncate text-lg font-semibold leading-snug">{t.name}</h3>
-          <p className="da-clamp-2 mt-1 min-h-[2.6em] text-[11px] leading-relaxed text-da-muted">{t.meaning}</p>
+          <p title={t.enName} className="truncate font-mono text-[10px] uppercase tracking-[0.15em] text-da-muted">{t.enName}</p>
+          <h3 title={t.name} className="font-mincho da-clamp-2 mt-0.5 min-h-[2.75em] text-base font-semibold leading-snug sm:text-lg">{t.name}</h3>
+          <p className="da-clamp-2 mt-1 min-h-[3.3em] text-[11px] leading-relaxed text-da-muted">{t.meaning}</p>
         </div>
 
         <footer className="mt-auto flex items-center justify-between border-t da-hairline pt-1.5">
@@ -46,7 +46,7 @@ export default function CardTile({
             <span className="mr-1 text-da-accent">−</span>
             {tx(STATUS_META[card.cat].label)}
           </span>
-          <span className="font-mono text-[10px] tracking-[0.12em] text-da-accent">{tx(REGION_LABELS[card.region])}</span>
+          <span className="font-mono text-[10px] tracking-[0.12em] text-da-accent-text">{tx(REGION_LABELS[card.region])}</span>
         </footer>
       </article>
     </Link>

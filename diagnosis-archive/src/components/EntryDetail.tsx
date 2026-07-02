@@ -57,7 +57,12 @@ export default function EntryDetail({ card }: { card: Card }) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         void save();
-      } else if (e.key === "ArrowLeft") {
+        return;
+      }
+      // 修飾キー付き（Alt+←の戻る等）や、検索などのモーダル表示中は奪わない
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      if (e.key === "ArrowLeft") {
         router.push(`/entry/${prev.id}`);
       } else if (e.key === "ArrowRight") {
         router.push(`/entry/${next.id}`);
@@ -84,7 +89,7 @@ export default function EntryDetail({ card }: { card: Card }) {
         <span className="text-da-muted">/</span>
         <span className="text-da-muted">{tx(STATUS_META[card.cat].label)}</span>
         <span className="text-da-muted">/</span>
-        <span className="text-da-accent">{card.id}</span>
+        <span className="text-da-accent-text">{card.id}</span>
         <span className="ml-auto text-da-muted">
           №{String(card.num).padStart(3, "0")} / {STATS.entries}
         </span>
@@ -92,14 +97,14 @@ export default function EntryDetail({ card }: { card: Card }) {
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[330px_minmax(0,1fr)] xl:grid-cols-[330px_minmax(0,1fr)_280px]">
         {/* 左: ホロカード */}
-        <div>
+        <div className="mx-auto w-full max-w-[360px] lg:mx-0 lg:max-w-none">
           <HoloCard card={card} />
-          <p className="mt-2 text-center font-mono text-[9px] tracking-[0.15em] text-da-muted">↑ {tx(UI.cardDrag)}</p>
+          <p className="mt-2 text-center font-mono text-[10px] tracking-[0.15em] text-da-muted">↑ {tx(UI.cardDrag)}</p>
 
           {card.power.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5">
               {card.power.map((p) => (
-                <span key={p} className="font-mincho rounded-full border border-da-accent/60 px-3 py-0.5 text-xs text-da-accent">
+                <span key={p} className="font-mincho rounded-full border border-da-accent/60 px-3 py-1 text-xs text-da-accent-text">
                   {tx(POWER_LABELS[p])}
                 </span>
               ))}
@@ -110,12 +115,20 @@ export default function EntryDetail({ card }: { card: Card }) {
             {[
               { label: UI.named, value: String(card.year) },
               { label: UI.lifespan, value: lifespanLabel(card) },
-              { label: UI.origin, value: tx(REGION_LABELS[card.region]) },
+              { label: UI.origin, value: tx(REGION_LABELS[card.region]), upright: lang === "ja" },
               { label: UI.classification, value: card.code, small: true },
             ].map((row) => (
               <div key={row.label.ja}>
-                <dt className="font-mono text-[9px] tracking-[0.25em] text-da-muted">{tx(row.label)}</dt>
-                <dd className={`font-display mt-1 italic ${row.small ? "font-mincho text-[13px] not-italic leading-snug" : "text-2xl"}`}>
+                <dt className="font-mono text-[10px] tracking-[0.25em] text-da-muted">{tx(row.label)}</dt>
+                <dd
+                  className={`mt-1 ${
+                    row.small
+                      ? "font-mincho text-[13px] leading-snug"
+                      : row.upright
+                        ? "font-mincho text-xl font-semibold"
+                        : "font-display text-2xl italic"
+                  }`}
+                >
                   {row.value}
                 </dd>
               </div>
@@ -133,13 +146,13 @@ export default function EntryDetail({ card }: { card: Card }) {
 
         {/* 中央: 本文 */}
         <article>
-          <p className="font-mono text-[11px] tracking-[0.25em] text-da-accent">
+          <p className="font-mono text-[11px] tracking-[0.25em] text-da-accent-text">
             {tx(STATUS_META[card.cat].label)} · {yearLabel(card)}
           </p>
           <h1 className="font-mincho mt-3 text-4xl font-bold leading-tight sm:text-5xl">{t.name}</h1>
           <p className="font-display mt-3 text-xl italic text-da-muted">{t.enName}</p>
           {lang === "en" && !card.en.meaning && (
-            <p className="mt-3 font-mono text-[10px] tracking-[0.1em] text-da-accent">{tx(UI.notTranslated)}</p>
+            <p className="mt-3 font-mono text-[10px] tracking-[0.1em] text-da-accent-text">{tx(UI.notTranslated)}</p>
           )}
 
           <div className="mt-4">
@@ -147,7 +160,7 @@ export default function EntryDetail({ card }: { card: Card }) {
               (sec) =>
                 sec.text && (
                   <section key={sec.label.ja} className="border-t da-hairline py-6 first:border-t-2 first:border-da-ink">
-                    <h2 className="font-mono text-[11px] tracking-[0.25em] text-da-accent">
+                    <h2 className="font-mono text-[11px] tracking-[0.25em] text-da-accent-text">
                       <span className="mr-2">−</span>
                       {tx(sec.label)}
                     </h2>
@@ -170,7 +183,7 @@ export default function EntryDetail({ card }: { card: Card }) {
           )}
 
           <div>
-            <h2 className="border-t-[1.5px] border-da-ink pt-3 font-mono text-[10px] tracking-[0.25em] text-da-accent">
+            <h2 className="border-t-[1.5px] border-da-ink pt-3 font-mono text-[10px] tracking-[0.25em] text-da-accent-text">
               <span className="mr-1.5">−</span>
               {tx(UI.adjacent)}
             </h2>

@@ -19,9 +19,9 @@ export default function TimelineView({ cards }: { cards: Card[] }) {
     <div className="da-fade">
       {sections.map(({ era, items }) => (
         <section key={era.from} className="relative">
-          <header className="sticky top-[106px] z-10 -mx-1 border-b da-hairline bg-da-bg/95 px-1 py-2.5 backdrop-blur-sm">
+          <header className="sticky top-[calc(6.5rem+2px)] z-10 -mx-1 border-b da-hairline bg-da-bg/95 px-1 py-2.5 backdrop-blur-sm">
             <div className="flex items-baseline gap-3">
-              <span className="font-mono text-[10px] tracking-[0.25em] text-da-accent">
+              <span className="font-mono text-[10px] tracking-[0.25em] text-da-accent-text">
                 {era.from}—{Math.min(era.to, 2025)}
               </span>
               <h3 className="font-mincho text-base font-semibold">{tx(era.label)}</h3>

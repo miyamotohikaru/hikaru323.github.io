@@ -5,8 +5,9 @@
   --da-bg: #e8e5dd; /* 全体の生成り背景 */
   --da-paper: #f3f0e6; /* カード紙面 */
   --da-ink: #252a4a; /* 濃紺インク */
-  --da-accent: #e4506e; /* 赤ピンク */
-  --da-muted: #70738a; /* 補助テキスト */
+  --da-accent: #e4506e; /* 赤ピンク（装飾・大きな文字用） */
+  --da-accent-text: #b23a55; /* 小さな文字用の濃いピンク（コントラスト確保） */
+  --da-muted: #565971; /* 補助テキスト（AAコントラスト） */
   --da-line: #c9c5b6; /* 罫線 */
 }
 
@@ -15,6 +16,7 @@
   --color-da-paper: var(--da-paper);
   --color-da-ink: var(--da-ink);
   --color-da-accent: var(--da-accent);
+  --color-da-accent-text: var(--da-accent-text);
   --color-da-muted: var(--da-muted);
   --color-da-line: var(--da-line);
   --font-display: var(--font-display), "Didot", serif;

@@ -29,7 +29,7 @@ function NodeRow({ card, rel, currentId }: { card: Card; rel?: string; currentId
         href={`/entry/${card.id}`}
         aria-current={isCurrent ? "page" : undefined}
         className={`font-mincho truncate text-[15px] leading-snug transition-colors hover:text-da-accent ${
-          isCurrent ? "font-semibold text-da-accent" : ""
+          isCurrent ? "font-semibold text-da-accent-text" : ""
         }`}
       >
         {t.name}
@@ -46,25 +46,26 @@ function NodeRow({ card, rel, currentId }: { card: Card; rel?: string; currentId
 export function ChainBlock({ chain, currentId }: { chain: Chain; currentId?: string }) {
   const { tx } = useLang();
   const [head, ...rest] = chain.nodes;
+  const branchCls = chain.kind === "fan" ? "border-dashed" : "";
   const headCard = CARD_BY_ID.get(head.id);
   if (!headCard) return null;
 
   return (
     <section className="border-t-[1.5px] border-da-ink pt-3">
-      <h3 className="font-mono text-[10px] tracking-[0.25em] text-da-accent">
+      <h3 className="font-mono text-[10px] tracking-[0.25em] text-da-accent-text">
         <span className="mr-1.5">−</span>
         {tx(chain.title)}
       </h3>
       <div className="mt-1.5">
         <NodeRow card={headCard} currentId={currentId} />
-        <div className={chain.kind === "fan" ? "ml-1 border-l-[1.5px] border-da-line pl-4" : "ml-1 border-l-[1.5px] border-da-line pl-4"}>
+        <div className={`ml-1 border-l-[1.5px] border-da-line pl-4 ${branchCls}`}>
           {rest.map((node) => {
             const card = CARD_BY_ID.get(node.id);
             if (!card) return null;
             return <NodeRow key={node.id} card={card} rel={node.rel ? tx(RELATION_LABELS[node.rel]) : undefined} currentId={currentId} />;
           })}
           {chain.terminus && (
-            <p className="py-2 font-mono text-[10px] tracking-[0.1em] text-da-accent">✕ {tx(chain.terminus.label)}</p>
+            <p className="py-2 font-mono text-[10px] tracking-[0.1em] text-da-accent-text">✕ {tx(chain.terminus.label)}</p>
           )}
         </div>
       </div>

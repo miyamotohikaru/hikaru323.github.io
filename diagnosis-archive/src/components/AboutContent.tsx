@@ -12,12 +12,12 @@ export default function AboutContent() {
 
   return (
     <div className="da-fade mx-auto max-w-3xl px-4 pb-24 pt-12 sm:px-6">
-      <p className="font-mono text-[11px] tracking-[0.3em] text-da-accent">ABOUT · {tx(UI.issue)}</p>
+      <p className="font-mono text-[11px] tracking-[0.3em] text-da-accent-text">ABOUT · {tx(UI.issue)}</p>
       <h1 className="font-mincho mt-4 text-4xl font-bold leading-snug sm:text-5xl">{tx(UI.aboutTitle)}</h1>
       <p className="font-mincho mt-6 text-base leading-[2] text-da-ink sm:text-lg">{tx(UI.aboutLead)}</p>
 
       <section className="mt-12 border-t-2 border-da-ink pt-5">
-        <h2 className="font-mono text-[11px] tracking-[0.25em] text-da-accent">
+        <h2 className="font-mono text-[11px] tracking-[0.25em] text-da-accent-text">
           <span className="mr-2">−</span>
           {tx(UI.aboutStatuses)}
         </h2>
@@ -34,7 +34,7 @@ export default function AboutContent() {
       </section>
 
       <section className="mt-12 border-t-2 border-da-ink pt-5">
-        <h2 className="font-mono text-[11px] tracking-[0.25em] text-da-accent">
+        <h2 className="font-mono text-[11px] tracking-[0.25em] text-da-accent-text">
           <span className="mr-2">−</span>
           {tx(UI.aboutData)}
         </h2>
@@ -42,7 +42,7 @@ export default function AboutContent() {
           {[
             { n: STATS.entries, label: UI.statEntries },
             { n: STATS.statuses, label: UI.statStatuses },
-            { n: `${YEAR_MIN}—${YEAR_MAX}`, label: UI.statYears },
+            { n: STATS.years, label: UI.statYears },
             { n: STATS.regions, label: UI.statRegions },
           ].map((s) => (
             <div key={s.label.ja}>

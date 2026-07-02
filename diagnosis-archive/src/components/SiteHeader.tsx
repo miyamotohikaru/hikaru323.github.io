@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { UI, useLang } from "@/lib/i18n";
 import { STATS } from "@/lib/meta";
 import SearchOverlay from "@/components/SearchOverlay";
@@ -11,7 +11,8 @@ function NavLink({ href, label, active }: { href: string; label: string; active:
   return (
     <Link
       href={href}
-      className={`font-display text-[15px] italic transition-colors hover:text-da-accent ${
+      aria-current={active ? "page" : undefined}
+      className={`font-display px-1 py-2 text-[15px] italic transition-colors hover:text-da-accent ${
         active ? "text-da-ink underline decoration-da-accent decoration-2 underline-offset-4" : "text-da-muted"
       }`}
     >
@@ -20,16 +21,71 @@ function NavLink({ href, label, active }: { href: string; label: string; active:
   );
 }
 
+function DesktopNav({ view }: { view: string | null }) {
+  const { tx } = useLang();
+  const pathname = usePathname();
+  return (
+    <nav className="ml-auto hidden items-center gap-4 sm:flex" aria-label="Main">
+      <NavLink
+        href="/"
+        label={tx(UI.navIndex)}
+        active={(pathname === "/" && view !== "lineage") || pathname.startsWith("/entry")}
+      />
+      <NavLink href="/?view=lineage" label={tx(UI.navLineage)} active={pathname === "/" && view === "lineage"} />
+      <NavLink href="/about" label={tx(UI.navAbout)} active={pathname === "/about"} />
+    </nav>
+  );
+}
+
+function MobileTabs({ view }: { view: string | null }) {
+  const { lang, tx } = useLang();
+  const pathname = usePathname();
+  const tabs = [
+    { href: "/", label: tx(UI.backToIndex), active: pathname === "/" && !view },
+    { href: "/?view=timeline", label: lang === "ja" ? "年表" : "Timeline", active: pathname === "/" && view === "timeline" },
+    { href: "/?view=lineage", label: lang === "ja" ? "系譜" : "Lineage", active: pathname === "/" && view === "lineage" },
+    { href: "/about", label: "About", active: pathname === "/about" },
+  ];
+  return (
+    <nav
+      aria-label="Mobile"
+      className="fixed inset-x-0 bottom-0 z-40 flex border-t da-hairline bg-da-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm sm:hidden"
+    >
+      {tabs.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          aria-current={item.active ? "page" : undefined}
+          className={`font-mincho flex-1 border-t-2 py-3 text-center text-[13px] transition-colors ${
+            item.active ? "border-da-accent text-da-ink" : "border-transparent text-da-muted active:text-da-accent"
+          }`}
+        >
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function DesktopNavWithParams() {
+  const view = useSearchParams().get("view");
+  return <DesktopNav view={view} />;
+}
+
+function MobileTabsWithParams() {
+  const view = useSearchParams().get("view");
+  return <MobileTabs view={view} />;
+}
+
 export default function SiteHeader() {
   const { lang, setLang, tx } = useLang();
-  const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <>
       <header className="sticky top-0 z-40 border-b da-hairline bg-da-bg/95 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
-          <Link href="/" className="flex items-baseline gap-3 outline-none">
+          <Link href="/" className="flex items-baseline gap-3">
             <span className="font-display text-xl font-semibold italic tracking-tight">
               Diagnosis<span className="text-da-accent">.</span>
             </span>
@@ -38,18 +94,16 @@ export default function SiteHeader() {
             </span>
           </Link>
 
-          <nav className="ml-auto hidden items-center gap-5 sm:flex" aria-label="Main">
-            <NavLink href="/" label={tx(UI.navIndex)} active={pathname === "/" || pathname.startsWith("/entry")} />
-            <NavLink href="/?view=lineage" label={tx(UI.navLineage)} active={false} />
-            <NavLink href="/about" label={tx(UI.navAbout)} active={pathname === "/about"} />
-          </nav>
+          <Suspense fallback={<DesktopNav view={null} />}>
+            <DesktopNavWithParams />
+          </Suspense>
 
           <div className="ml-auto flex items-center gap-1 border-l da-hairline pl-3 sm:ml-0">
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
               aria-label={tx(UI.search)}
-              className="grid h-8 w-8 place-items-center rounded-full text-da-ink transition-colors hover:bg-da-ink/8"
+              className="grid h-10 w-10 place-items-center rounded-full text-da-ink transition-colors hover:bg-da-ink/8"
             >
               <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
                 <circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.7" />
@@ -59,7 +113,7 @@ export default function SiteHeader() {
             <button
               type="button"
               onClick={() => setLang(lang === "ja" ? "en" : "ja")}
-              className="rounded px-2 py-1 font-mono text-[11px] tracking-[0.2em] transition-colors hover:bg-da-ink/8"
+              className="rounded px-2.5 py-2.5 font-mono text-[11px] tracking-[0.2em] transition-colors hover:bg-da-ink/8"
               aria-label={lang === "ja" ? "Switch to English" : "日本語に切り替え"}
             >
               {lang === "ja" ? "JA" : "EN"} ▾
@@ -70,26 +124,9 @@ export default function SiteHeader() {
 
       {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
 
-      {/* モバイル下部タブ */}
-      <nav
-        aria-label="Mobile"
-        className="fixed inset-x-0 bottom-0 z-40 flex border-t da-hairline bg-da-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm sm:hidden"
-      >
-        {[
-          { href: "/", label: tx(UI.backToIndex) },
-          { href: "/?view=timeline", label: lang === "ja" ? "年表" : "Timeline" },
-          { href: "/?view=lineage", label: lang === "ja" ? "系譜" : "Lineage" },
-          { href: "/about", label: "About" },
-        ].map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="font-mincho flex-1 py-3 text-center text-[13px] text-da-ink transition-colors active:text-da-accent"
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+      <Suspense fallback={<MobileTabs view={null} />}>
+        <MobileTabsWithParams />
+      </Suspense>
     </>
   );
 }

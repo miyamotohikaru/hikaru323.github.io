@@ -28,7 +28,7 @@ export default function HoloCard({ card }: { card: Card }) {
       if (sheenRef.current) {
         sheenRef.current.style.background = `radial-gradient(360px circle at ${50 + s.cx * 45}% ${
           42 + s.cy * 45
-        }%, rgb(255 255 255 / 0.35), transparent 55%)`;
+        }%, rgb(248 242 230 / 0.42), transparent 55%)`;
         sheenRef.current.style.opacity = s.active ? "1" : "0";
       }
       if (Math.abs(s.tx - s.cx) > 0.001 || Math.abs(s.ty - s.cy) > 0.001 || s.active) {
@@ -71,8 +71,8 @@ export default function HoloCard({ card }: { card: Card }) {
   const t = cardText(card, lang);
 
   return (
-    <div ref={wrapRef} className="touch-none select-none" style={{ perspective: "900px" }}>
-      <div ref={cardRef} className="da-card relative px-6 pb-5 pt-5 will-change-transform" style={{ transformStyle: "preserve-3d" }}>
+    <div ref={wrapRef} className="select-none [touch-action:pan-y]" style={{ perspective: "900px" }}>
+      <div ref={cardRef} className="da-card relative px-6 pb-5 pt-5 will-change-transform" style={{ transformStyle: "preserve-3d", transition: "none" }}>
         <div ref={sheenRef} className="pointer-events-none absolute inset-0 z-[2] opacity-0 transition-opacity duration-300" />
 
         <header className="flex items-baseline justify-between">
@@ -96,7 +96,7 @@ export default function HoloCard({ card }: { card: Card }) {
             <span className="mr-1.5 text-da-accent">−</span>
             {tx(STATUS_META[card.cat].label)}
           </span>
-          <span className="font-mono text-[11px] tracking-[0.12em] text-da-accent">{tx(REGION_LABELS[card.region])}</span>
+          <span className="font-mono text-[11px] tracking-[0.12em] text-da-accent-text">{tx(REGION_LABELS[card.region])}</span>
         </footer>
       </div>
     </div>

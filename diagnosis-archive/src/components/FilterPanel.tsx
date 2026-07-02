@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { Power, Region } from "@/data/cards";
 import { UI, useLang } from "@/lib/i18n";
 import {
@@ -27,9 +28,9 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-full border px-3 py-1 font-mincho text-[13px] transition-colors ${
+      className={`rounded-full border px-3 py-1.5 font-mincho text-[13px] transition-colors ${
         active
-          ? "border-da-accent bg-da-accent/12 text-da-accent"
+          ? "border-da-accent bg-da-accent/12 text-da-accent-text"
           : "border-da-line text-da-ink hover:border-da-ink"
       }`}
     >
@@ -57,6 +58,8 @@ function YearRange({
   onChange: (from: number, to: number) => void;
 }) {
   const pct = (v: number) => ((v - YEAR_MIN) / (YEAR_MAX - YEAR_MIN)) * 100;
+  // 両ツマミが右端で重なると下のツマミが掴めなくなるため、後半では from を上に重ねる
+  const fromOnTop = from > (YEAR_MIN + YEAR_MAX) / 2;
   return (
     <div>
       <div className="relative h-8">
@@ -68,6 +71,7 @@ function YearRange({
         <input
           type="range"
           className="da-range"
+          style={{ zIndex: fromOnTop ? 5 : 3 }}
           min={YEAR_MIN}
           max={YEAR_MAX}
           value={from}
@@ -77,6 +81,7 @@ function YearRange({
         <input
           type="range"
           className="da-range"
+          style={{ zIndex: 4 }}
           min={YEAR_MIN}
           max={YEAR_MAX}
           value={to}
@@ -111,6 +116,32 @@ export default function FilterPanel({
   resultCount: number;
 }) {
   const { tx } = useLang();
+  const sheetRef = useRef<HTMLElement>(null);
+
+  // Escで閉じる／モバイルシート時はスクロールロック＋フォーカス移動＋復帰
+  useEffect(() => {
+    if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const isSheet = window.matchMedia("(max-width: 639px)").matches;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    let prevOverflow = "";
+    if (isSheet) {
+      prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      sheetRef.current?.focus();
+    }
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      if (isSheet) {
+        document.body.style.overflow = prevOverflow;
+        opener?.focus();
+      }
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const togglePower = (p: Power) =>
@@ -134,8 +165,10 @@ export default function FilterPanel({
         onClick={onClose}
       />
       <section
+        ref={sheetRef}
         aria-label={tx(UI.filter)}
-        className="da-fade fixed inset-x-0 bottom-0 z-50 max-h-[78vh] overflow-y-auto rounded-t-2xl border-t-2 border-da-ink bg-da-bg px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4 sm:static sm:z-auto sm:mt-4 sm:max-h-none sm:rounded-none sm:border da-hairline sm:border-x sm:border-b sm:border-t sm:p-5"
+        tabIndex={-1}
+        className="da-fade fixed inset-x-0 bottom-0 z-50 max-h-[78vh] overflow-y-auto rounded-t-2xl border-t-2 border-da-ink bg-da-bg px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4 outline-none sm:static sm:z-auto sm:mt-4 sm:max-h-none sm:rounded-none sm:border da-hairline sm:border-x sm:border-b sm:border-t sm:p-5"
       >
         <div className="mb-4 flex items-baseline justify-between sm:hidden">
           <h3 className="font-mincho text-xl font-semibold">{tx(UI.filter)}</h3>
