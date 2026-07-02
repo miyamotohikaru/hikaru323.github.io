@@ -37,7 +37,7 @@ export default function ArchiveCard({ card, depth = false }: { card: Card; depth
           </p>
           <h3
             title={t.name}
-            className="font-mincho da-clamp-2 mt-[1cqw] min-h-[2.6em] font-semibold leading-[1.3] text-[max(6cqw,12px)]"
+            className="font-mincho da-clamp-2 mt-[1cqw] min-h-[2.6em] font-bold leading-[1.3] text-[max(7.6cqw,15px)]"
           >
             {t.name}
           </h3>
@@ -47,10 +47,17 @@ export default function ArchiveCard({ card, depth = false }: { card: Card; depth
         <footer
           className={`mt-[2cqw] flex items-center justify-between border-t da-hairline pt-[2cqw] ${depth ? "[transform:translateZ(10px)]" : ""}`}
         >
-          <span className="font-mono tracking-[0.12em] text-[max(3cqw,8px)]">
-            <span className="mr-[1cqw] text-da-accent">−</span>
-            {tx(STATUS_META[card.cat].label)}
-          </span>
+          {/* ステータスは「廃止」のみカードに表示する（ユーザー指定） */}
+          {card.cat === "RETIRED" ? (
+            <span className="font-mono tracking-[0.12em] text-[max(3cqw,8px)]">
+              <span className="mr-[1cqw] text-da-accent">−</span>
+              {tx(STATUS_META[card.cat].label)}
+            </span>
+          ) : (
+            <span aria-hidden="true" className="font-mono text-[max(3cqw,8px)]">
+              &nbsp;
+            </span>
+          )}
           <span className="font-mono tracking-[0.12em] text-da-accent-text text-[max(3cqw,8px)]">
             {tx(REGION_LABELS[card.region])}
           </span>
