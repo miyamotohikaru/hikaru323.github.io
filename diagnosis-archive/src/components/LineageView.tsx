@@ -1,0 +1,83 @@
+"use client";
+
+import Link from "next/link";
+import type { Card, Status } from "@/data/cards";
+import { CHAINS, RELATION_LABELS, type Chain } from "@/data/lineage";
+import { useLang } from "@/lib/i18n";
+import { CARD_BY_ID, STATUS_META, cardText, yearLabel } from "@/lib/meta";
+
+/** ピンク＋インクの2色だけでステータスを描き分けるドット */
+export function StatusDot({ cat }: { cat: Status }) {
+  const cls: Record<Status, string> = {
+    CURRENT: "bg-da-accent border-da-accent",
+    PROMOTED: "bg-da-ink border-da-ink",
+    DISPUTED: "bg-transparent border-da-accent",
+    RETIRED: "bg-transparent border-da-ink",
+    "CULTURE-BOUND": "bg-da-accent/30 border-da-accent",
+  };
+  return <span aria-hidden="true" className={`inline-block h-[9px] w-[9px] shrink-0 rounded-full border-[1.5px] ${cls[cat]}`} />;
+}
+
+function NodeRow({ card, rel, currentId }: { card: Card; rel?: string; currentId?: string }) {
+  const { lang, tx } = useLang();
+  const t = cardText(card, lang);
+  const isCurrent = card.id === currentId;
+  return (
+    <div className="flex items-center gap-2.5 py-2">
+      <StatusDot cat={card.cat} />
+      <Link
+        href={`/entry/${card.id}`}
+        aria-current={isCurrent ? "page" : undefined}
+        className={`font-mincho truncate text-[15px] leading-snug transition-colors hover:text-da-accent ${
+          isCurrent ? "font-semibold text-da-accent" : ""
+        }`}
+      >
+        {t.name}
+      </Link>
+      {rel && <span className="shrink-0 rounded-sm bg-da-ink/8 px-1.5 py-0.5 font-mono text-[9px] tracking-[0.1em] text-da-muted">{rel}</span>}
+      <span className="ml-auto shrink-0 font-mono text-[10px] text-da-muted">
+        {tx(STATUS_META[card.cat].label)}
+        <span className="ml-2 text-da-ink">{yearLabel(card)}</span>
+      </span>
+    </div>
+  );
+}
+
+export function ChainBlock({ chain, currentId }: { chain: Chain; currentId?: string }) {
+  const { tx } = useLang();
+  const [head, ...rest] = chain.nodes;
+  const headCard = CARD_BY_ID.get(head.id);
+  if (!headCard) return null;
+
+  return (
+    <section className="border-t-[1.5px] border-da-ink pt-3">
+      <h3 className="font-mono text-[10px] tracking-[0.25em] text-da-accent">
+        <span className="mr-1.5">−</span>
+        {tx(chain.title)}
+      </h3>
+      <div className="mt-1.5">
+        <NodeRow card={headCard} currentId={currentId} />
+        <div className={chain.kind === "fan" ? "ml-1 border-l-[1.5px] border-da-line pl-4" : "ml-1 border-l-[1.5px] border-da-line pl-4"}>
+          {rest.map((node) => {
+            const card = CARD_BY_ID.get(node.id);
+            if (!card) return null;
+            return <NodeRow key={node.id} card={card} rel={node.rel ? tx(RELATION_LABELS[node.rel]) : undefined} currentId={currentId} />;
+          })}
+          {chain.terminus && (
+            <p className="py-2 font-mono text-[10px] tracking-[0.1em] text-da-accent">✕ {tx(chain.terminus.label)}</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default function LineageView() {
+  return (
+    <div className="da-fade grid gap-x-10 gap-y-8 md:grid-cols-2">
+      {CHAINS.map((chain) => (
+        <ChainBlock key={chain.key} chain={chain} />
+      ))}
+    </div>
+  );
+}
