@@ -13,16 +13,16 @@ const STATUS_GUIDE: { cat: Status; term: Bi; desc: Bi }[] = [
     cat: "CURRENT",
     term: { ja: "現行", en: "Current" },
     desc: {
-      ja: "DSM-5-TR（米国精神医学会の診断マニュアル最新版）またはICD-11（WHOの国際疾病分類）に、現在も正式な診断として収載されているもの。",
-      en: "Diagnoses currently listed in DSM-5-TR (the American Psychiatric Association's manual) or ICD-11 (the WHO's international classification).",
+      ja: "DSM-5-TR（米国精神医学会の診断マニュアル最新版）またはICD-11（WHOの国際疾病分類）に正式な診断として収載され、以前から定着しているもの。",
+      en: "Long-established diagnoses currently listed in DSM-5-TR (the American Psychiatric Association's manual) or ICD-11 (the WHO's international classification).",
     },
   },
   {
     cat: "PROMOTED",
     term: { ja: "新規昇格", en: "Promoted" },
     desc: {
-      ja: "かつては俗称や研究上の概念だったが、近年の改訂で正式な診断として採用されたもの。ゲーム障害（2019年・ICD-11）や複雑性PTSDなどが該当する。",
-      en: "Concepts that began as informal or research terms and were recently promoted to official diagnoses — e.g. gaming disorder (ICD-11, 2019) and complex PTSD.",
+      ja: "かつては俗称や研究上の概念だったが、近年の改訂で正式な診断として採用されたもの。今の身分は「現行」と同じ正式診断だが、このアーカイブでは“正式になった”という出来事に注目して別枠で扱う。ゲーム障害（2019年・ICD-11）や複雑性PTSDなどが該当する。",
+      en: "Concepts that began as informal or research terms and were recently promoted to official diagnoses. Today they are just as official as “Current” entries — this archive sets them apart to spotlight the moment of promotion. E.g. gaming disorder (ICD-11, 2019) and complex PTSD.",
     },
   },
   {
