@@ -91,6 +91,8 @@ function ExplorerInner() {
   const [sort, setSort] = useState<SortKey>("num");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [panelOpen, setPanelOpen] = useState(false);
+  // 詳細から戻ってきた直後は出現アニメーションを止め、位置へ即座に復帰する
+  const [returning] = useState(() => typeof window !== "undefined" && window.sessionStorage.getItem("da-return") != null);
 
   const filtered = useMemo(() => applyFilters(CARDS, filters), [filters]);
   const sorted = useMemo(() => sortCards(filtered, sort, lang), [filtered, sort, lang]);
@@ -122,7 +124,8 @@ function ExplorerInner() {
         const card = CARD_BY_ID.get(id);
         if (card) el = visible(`[data-year="${card.year}"]`);
       }
-      el?.scrollIntoView({ block: "start", inline: "center" });
+      // モーションなしで即座に位置を合わせる
+      el?.scrollIntoView({ behavior: "instant", block: "start", inline: "center" });
     });
   }, [view]);
 
@@ -218,7 +221,7 @@ function ExplorerInner() {
               >
                 {sorted.map((card, i) => (
                   <div key={card.id} data-card-id={card.id}>
-                    <CardTile card={card} priorityIndex={i} />
+                    <CardTile card={card} priorityIndex={returning ? -1 : i} />
                   </div>
                 ))}
               </div>
