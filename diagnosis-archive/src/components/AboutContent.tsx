@@ -130,7 +130,7 @@ export default function AboutContent() {
       </section>
 
       {/* DSMとは */}
-      <section className="mt-12 border-t-2 border-da-ink pt-5">
+      <section id="dsm-guide" className="mt-12 scroll-mt-24 border-t-2 border-da-ink pt-5">
         <SectionLabel>{lang === "ja" ? "DSMとは" : "What is the DSM?"}</SectionLabel>
         <p className="mt-3 text-[14px] leading-[1.9]">{tx(DSM_INTRO)}</p>
         <dl className="mt-5">
@@ -145,7 +145,7 @@ export default function AboutContent() {
       </section>
 
       {/* ICDとは */}
-      <section className="mt-12 border-t-2 border-da-ink pt-5">
+      <section id="icd-guide" className="mt-12 scroll-mt-24 border-t-2 border-da-ink pt-5">
         <SectionLabel>{lang === "ja" ? "ICDとは" : "What is the ICD?"}</SectionLabel>
         <p className="mt-3 text-[14px] leading-[1.9]">{tx(ICD_INTRO)}</p>
       </section>

@@ -15,6 +15,38 @@ const ORDERED = [...CARDS].sort((a, b) => a.num - b.num);
 
 type From = "timeline" | "lineage" | null;
 
+// 本文中の DSM-III / DSM-5-TR / ICD-11 などを用語リンク化する
+const TERM_RE = /(DSM(?:-(?:[IV]+(?:-R)?|5(?:-TR)?))?|ICD(?:-\d+)?)/g;
+
+function TermText({ text, lang }: { text: string; lang: "ja" | "en" }) {
+  const parts = text.split(TERM_RE);
+  return (
+    <>
+      {parts.map((p, i) => {
+        if (i % 2 === 0) return p;
+        const isDsm = p.startsWith("DSM");
+        const title = isDsm
+          ? lang === "ja"
+            ? "DSM＝米国精神医学会の診断マニュアル（クリックで解説へ）"
+            : "DSM — the American Psychiatric Association's diagnostic manual (click for more)"
+          : lang === "ja"
+            ? "ICD＝WHOの国際疾病分類（クリックで解説へ）"
+            : "ICD — the WHO's International Classification of Diseases (click for more)";
+        return (
+          <Link
+            key={i}
+            href={isDsm ? "/about#dsm-guide" : "/about#icd-guide"}
+            title={title}
+            className="underline decoration-da-accent/50 decoration-dotted underline-offset-[3px] transition-colors hover:text-da-accent-text"
+          >
+            {p}
+          </Link>
+        );
+      })}
+    </>
+  );
+}
+
 function AdjacentRow({ card, dir, q }: { card: Card; dir: "prev" | "next"; q: string }) {
   const { lang, tx } = useLang();
   const t = cardText(card, lang);
@@ -159,7 +191,9 @@ export default function EntryDetail({ card }: { card: Card }) {
                       <span className="mr-2">−</span>
                       {tx(sec.label)}
                     </h2>
-                    <p className="mt-3 text-[15px] leading-[1.9]">{sec.text}</p>
+                    <p className="mt-3 text-[15px] leading-[1.9]">
+                      <TermText text={sec.text} lang={lang} />
+                    </p>
                   </section>
                 ),
             )}
