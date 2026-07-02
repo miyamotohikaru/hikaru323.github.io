@@ -93,6 +93,5 @@ export const UI = {
   aboutStatuses: { ja: "ステータス（5種）", en: "Statuses (5)" },
   aboutData: { ja: "収録データ", en: "The data" },
   langLabel: { ja: "JA", en: "EN" },
-  cardDrag: { ja: "ドラッグするとカードが動く", en: "Drag to tilt the card" },
   notTranslated: { ja: "", en: "Japanese text — English translation coming in the next batch." },
 } as const;

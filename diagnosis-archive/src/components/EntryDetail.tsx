@@ -142,7 +142,6 @@ export default function EntryDetail({ card }: { card: Card }) {
         {/* 左: ホロカード */}
         <div className="mx-auto w-full max-w-[300px] lg:mx-0 lg:max-w-none">
           <HoloCard card={card} />
-          <p className="mt-2 text-center font-mono text-[10px] tracking-[0.15em] text-da-muted">↑ {tx(UI.cardDrag)}</p>
 
           {card.power.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5">
