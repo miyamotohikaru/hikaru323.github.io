@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  /* Diagnosis. Archive 基本トーン（モック準拠） */
+  --da-bg: #e8e5dd; /* 全体の生成り背景 */
+  --da-paper: #f2efe6; /* カード紙面 */
+  --da-ink: #252a4a; /* 濃紺インク */
+  --da-accent: #e4506e; /* 赤ピンク */
+  --da-muted: #6b6f80; /* 補助テキスト */
+  --da-line: #c9c5b8; /* 罫線 */
+}
+
+@theme inline {
+  --color-da-bg: var(--da-bg);
+  --color-da-paper: var(--da-paper);
+  --color-da-ink: var(--da-ink);
+  --color-da-accent: var(--da-accent);
+  --color-da-muted: var(--da-muted);
+  --color-da-line: var(--da-line);
+  --font-display: var(--font-display);
+  --font-mincho: var(--font-mincho);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background: var(--da-bg);
+  color: var(--da-ink);
+}
