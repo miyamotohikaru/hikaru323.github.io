@@ -42,7 +42,7 @@ export const CARDS: Card[] = [
       history: '1943年に米国のレオ・カナーが「早期幼児自閉症」を、翌1944年にオーストリアのハンス・アスペルガーが知的遅れを伴わない一群を記載した。1980年代にローナ・ウィングが「自閉症スペクトラム」概念を提唱し、連続体として捉える見方が広まった。2013年のDSM-5は、自閉性障害・アスペルガー症候群・特定不能の広汎性発達障害（PDD-NOS）などを「自閉スペクトラム症」へ統合した。',
       debate: '当事者を中心とする神経多様性（ニューロダイバーシティ）運動は、ASDを「治すべき障害」ではなく人間の多様性の一形態とみなすべきだと主張する。2013年の統合は、「アスペルガー」という自己認識をもっていた人々のアイデンティティの拠り所を失わせたとして反発も生んだ。さらに2018年にはアスペルガーがナチス政権下の児童政策に関与していた疑いが研究で示され、人名を冠した診断名の妥当性が問い直された。',
     },
-    en: { name: 'Autism Spectrum Disorder', enName: '自閉スペクトラム症', reading: '', meaning: '' },
+    en: { name: 'Autism Spectrum Disorder', enName: '自閉スペクトラム症', reading: '', meaning: 'A neurodevelopmental condition marked by difficulties in social communication and restricted, repetitive patterns of behavior.', symptom: 'Two core features: persistent deficits in social communication and interaction (difficulty with nonverbal communication, with building and keeping relationships) and restricted, repetitive behaviors, interests, and activities (stereotyped movements, insistence on sameness, intense narrow interests, sensory hyper- or hyposensitivity). DSM-5 rates severity on three levels by the support required.', history: 'Leo Kanner in the United States described \'early infantile autism\' in 1943; Hans Asperger in Austria described a group without intellectual delay in 1944. In the 1980s Lorna Wing proposed the \'autism spectrum,\' spreading the view of a continuum. DSM-5 (2013) merged autistic disorder, Asperger\'s syndrome, and PDD-NOS into \'autism spectrum disorder.\'', debate: 'The neurodiversity movement, led by autistic people themselves, argues ASD should be seen as a form of human variation, not a disorder to be cured. The 2013 merger drew backlash for stripping away the \'Asperger\'s\' identity many had built on. In 2018, research suggested Asperger had been complicit in Nazi child policy, calling into question the validity of eponymous diagnoses themselves.' },
   },
   {
     id: 'DA-003', num: 3, cat: 'CURRENT',
@@ -56,7 +56,7 @@ export const CARDS: Card[] = [
       history: '1902年のジョージ・スティルの記述に源流をもち、DSM-II（1968）の「小児期の多動性反応」を経て、DSM-III（1980）で「注意欠陥障害（ADD）」、DSM-III-R（1987）で「ADHD」となった。当初は小児に限られたが、成人期まで持続する例の認識が広まり成人ADHDの概念が拡大した。',
       debate: '診断率と中枢刺激薬の処方が国・時代で大きく異なり、過剰診断・過剰投薬への懸念が根強い。学級で早生まれの子が診断されやすいなど社会的要因の関与も指摘され、「個性か障害か」「教育環境の問題を個人に帰していないか」という問いが続く。',
     },
-    en: { name: 'ADHD', enName: 'ADHD', reading: '', meaning: '' },
+    en: { name: 'ADHD', enName: 'ADHD', reading: '', meaning: 'A neurodevelopmental condition of persistent inattention, hyperactivity, and impulsivity.', symptom: 'Inattention (difficulty sustaining attention, forgetfulness), hyperactivity (restlessness), and impulsivity (inability to wait one\'s turn, interrupting) persist across multiple settings, out of proportion to developmental level. Several symptoms must appear before age 12 and impair social, academic, or occupational functioning.', history: 'Traced to George Still\'s 1902 description, it passed through DSM-II\'s (1968) \'hyperkinetic reaction of childhood\' to become \'attention deficit disorder (ADD)\' in DSM-III (1980) and \'ADHD\' in DSM-III-R (1987). Once limited to children, the concept of adult ADHD expanded as cases persisting into adulthood were recognized.', debate: 'Diagnosis rates and stimulant prescriptions vary widely by country and era, and concerns about overdiagnosis and overmedication persist. The youngest children in a class are more likely to be diagnosed, pointing to social factors — the questions endure: individuality or disorder, and is a problem of the educational environment being pinned on the individual?' },
   },
   {
     id: 'DA-004', num: 4, cat: 'CURRENT',
@@ -70,7 +70,7 @@ export const CARDS: Card[] = [
       history: '「精神薄弱」「精神遅滞」など蔑称化した語の系譜をもち、20世紀初頭にはIQに基づく「白痴・痴愚・魯鈍」の段階分類が用いられた。DSM-5（2013）で「精神遅滞」から「知的発達症（知的能力障害）」へ改称された。',
       debate: '過去の医学用語が次々と蔑称化して廃棄されてきた歴史は、命名そのものがスティグマを帯びる構造を示す。20世紀前半には優生学運動と結びつき、断種政策の対象とされた負の歴史をもつ。',
     },
-    en: { name: 'Intellectual Developmental Disorder', enName: '知的発達症', reading: '', meaning: '' },
+    en: { name: 'Intellectual Developmental Disorder', enName: '知的発達症', reading: '', meaning: 'A condition of clear limitations in intellectual functioning and everyday adaptive skills.', symptom: 'Clear limitations in both intellectual and adaptive functioning across conceptual, social, and practical domains, with onset in the developmental period. Severity is increasingly judged not by IQ alone but by the level of support required (adaptive functioning).', history: 'Its lineage runs through terms that turned into slurs — \'feeblemindedness,\' \'mental retardation\' — and the early-twentieth-century IQ-based grades of \'idiot, imbecile, moron.\' DSM-5 (2013) renamed \'mental retardation\' as \'intellectual developmental disorder (intellectual disability).\'', debate: 'The history of medical terms repeatedly turning into slurs and being discarded reveals how naming itself acquires stigma. In the first half of the twentieth century the diagnosis was bound up with the eugenics movement and made a target of sterilization policies.' },
   },
   {
     id: 'DA-005', num: 5, cat: 'CURRENT',
@@ -84,7 +84,7 @@ export const CARDS: Card[] = [
       history: 'かつては「怠け」「努力不足」とされた状態が、20世紀後半に脳機能に基づく学習の障害として概念化された。DSM-5（2013）で読字・書字・算数の下位類型を統合して「限局性学習症」となった。',
       debate: '能力主義社会が定める標準的な学習速度を前提に「逸脱」を定義している面があり、何を「正常な学び」とするかが問われる。診断が支援につながる一方、ラベリングの影響も論じられる。',
     },
-    en: { name: 'Specific Learning Disorder', enName: '限局性学習症', reading: '', meaning: '' },
+    en: { name: 'Specific Learning Disorder', enName: '限局性学習症', reading: '', meaning: 'Marked difficulty acquiring specific skills such as reading, writing, or arithmetic despite normal intelligence.', symptom: 'Despite intact general intelligence, mastery of a specific learning domain — reading (dyslexia), writing, or arithmetic — is markedly difficult relative to age and educational opportunity. Difficulties must persist for at least six months and impair schoolwork or daily life.', history: 'Conditions once dismissed as laziness or lack of effort were reconceived in the late twentieth century as brain-based disorders of learning. DSM-5 (2013) merged the reading, writing, and arithmetic subtypes into \'specific learning disorder.\'', debate: 'It defines \'deviance\' against the standard learning pace set by a meritocratic society, raising the question of what counts as normal learning. Diagnosis can open the way to support, but the effects of labeling are also debated.' },
   },
   {
     id: 'DA-006', num: 6, cat: 'CURRENT',
@@ -98,7 +98,7 @@ export const CARDS: Card[] = [
       history: '1885年、フランスの神経科医ジル・ド・ラ・トゥレットが症例を報告し、師シャルコーが彼の名を冠した。それ以前は「悪魔憑き」や道徳的退廃とみなされることもあった。',
       debate: '人名を冠した固有名診断であり、症状の幅が広いため診断の境界が問われる。メディアで誇張されがちな汚言症（不適切発語）は一部の症例にすぎず、ステレオタイプ化が問題視される。',
     },
-    en: { name: 'Tourette\'s Disorder', enName: 'トゥレット症', reading: '', meaning: '' },
+    en: { name: 'Tourette\'s Disorder', enName: 'トゥレット症', reading: '', meaning: 'A neurological condition of persistent multiple motor tics and vocal tics.', symptom: 'Multiple motor tics (blinking, head jerking) and one or more vocal tics (throat clearing, vocalizations, rarely inappropriate speech) persisting for more than a year. Tics cannot be fully suppressed by will, and temporary suppression can worsen them later.', history: 'In 1885 the French neurologist Gilles de la Tourette reported cases of the condition, and his teacher Charcot attached his name to them. Before that, the condition was sometimes read as demonic possession or moral degeneracy.', debate: 'An eponymous diagnosis with a wide symptom range, its boundaries are contested. Coprolalia (inappropriate speech), exaggerated in the media, occurs in only a fraction of cases, and the stereotyping is criticized.' },
   },
   {
     id: 'DA-007', num: 7, cat: 'CURRENT',
@@ -112,7 +112,7 @@ export const CARDS: Card[] = [
       history: '19世紀末にクレペリンが「早発性痴呆」として進行性・不可逆的な経過を想定したが、1908年にブロイラーが連合の弛緩を中核とみて「統合失調症」と命名した。日本では2002年に、スティグマの強い「精神分裂病」から「統合失調症」へ呼称変更された。',
       debate: '診断の信頼性や生物学的基盤をめぐる議論が続き、文化により幻聴の内容や予後が異なることも報告される。当事者運動や反精神医学は、診断概念そのものや強制入院のあり方を問うてきた。',
     },
-    en: { name: 'Schizophrenia', enName: '統合失調症', reading: '', meaning: '' },
+    en: { name: 'Schizophrenia', enName: '統合失調症', reading: '', meaning: 'A psychotic disorder combining positive symptoms such as hallucinations and delusions with negative symptoms such as loss of motivation.', symptom: 'Positive symptoms — hallucinations (especially voices), delusions, disorganized thought and speech — alongside negative symptoms such as diminished motivation, flattened affect, and social withdrawal. These persist (with duration requirements) and bring marked functional decline.', history: 'In the late nineteenth century Kraepelin framed it as \'dementia praecox\' with a progressive, irreversible course; in 1908 Bleuler, seeing loosening of associations as the core, coined \'schizophrenia.\' In Japan the heavily stigmatized name seishin bunretsu-byō (\'split-mind disease\') was changed to tōgō shitchō-shō in 2002.', debate: 'Debate continues over diagnostic reliability and biological basis, and the content of voices and prognoses are reported to differ across cultures. Service-user movements and anti-psychiatry have challenged the diagnostic concept itself and the practice of involuntary hospitalization.' },
   },
   {
     id: 'DA-008', num: 8, cat: 'CURRENT',
@@ -126,7 +126,7 @@ export const CARDS: Card[] = [
       history: '1933年に米国のヤコブ・カサニンが「統合失調感情精神病」として記載した。統合失調症と双極性障害という二大分類の「境界」に置かれ、両者の連続性をめぐる議論の象徴となってきた。',
       debate: '診断の信頼性が低く、評価者によって判断が分かれやすいことが知られる。独立した病か、二つの病の併存か、それとも分類の便宜的な隙間かという問いを体現する。',
     },
-    en: { name: 'Schizoaffective Disorder', enName: '統合失調感情症', reading: '', meaning: '' },
+    en: { name: 'Schizoaffective Disorder', enName: '統合失調感情症', reading: '', meaning: 'A condition in which symptoms of schizophrenia and a mood disorder coexist.', symptom: 'Periods meeting criteria for schizophrenia coexist with depressive or manic mood episodes within a single course of illness. Hallucinations or delusions lasting two weeks or more in the absence of mood symptoms distinguish it from a mood disorder.', history: 'Described in 1933 by the American Jacob Kasanin as \'schizoaffective psychosis.\' Placed on the \'border\' between the two great categories of schizophrenia and bipolar disorder, it became emblematic of debates over their continuity.', debate: 'Its diagnostic reliability is known to be low, with judgments varying from rater to rater. It embodies the question: an independent disease, two diseases coexisting, or a convenient gap in the classification?' },
   },
   {
     id: 'DA-009', num: 9, cat: 'CURRENT',
@@ -140,7 +140,7 @@ export const CARDS: Card[] = [
       history: 'クレペリンの「パラノイア」概念に由来し、DSM-III-R（1987）で「妄想性障害」として整理された。',
       debate: '妄想の内容は時代・文化に強く依存し、何が「訂正困難な誤った信念」かの線引きが難しい。被害妄想と現実の差別・監視体験の区別など、社会的文脈との関係も問われる。',
     },
-    en: { name: 'Delusional Disorder', enName: '妄想性障害', reading: '', meaning: '' },
+    en: { name: 'Delusional Disorder', enName: '妄想性障害', reading: '', meaning: 'Persistent, uncorrectable delusions without hallucinations.', symptom: 'Delusions resistant to correction (persecutory, jealous, grandiose, somatic, erotomanic) persist for a month or more, without hallucinations or disorganized thinking. Outside the domain of the delusion, behavior and functioning remain relatively intact.', history: 'Derived from Kraepelin\'s concept of \'paranoia\' and codified as \'delusional disorder\' in DSM-III-R (1987).', debate: 'Delusional content depends heavily on era and culture, making it hard to draw the line on what counts as an \'uncorrectable false belief.\' Its relation to social context is also at issue — distinguishing persecutory delusion from real experiences of discrimination and surveillance.' },
   },
   {
     id: 'DA-010', num: 10, cat: 'CURRENT',
@@ -154,7 +154,7 @@ export const CARDS: Card[] = [
       history: 'DSM-III（1980）の「気分変調症（dysthymia）」と慢性大うつ病を、DSM-5（2013）で「持続性抑うつ障害」として統合した。',
       debate: '慢性的な軽い抑うつを「性格」とみなすか「病」とみなすかの境界が曖昧で、医療化の議論がある。診断の再編により、概念の連続性が問われた。',
     },
-    en: { name: 'Persistent Depressive Disorder', enName: '持続性抑うつ障害', reading: '', meaning: '' },
+    en: { name: 'Persistent Depressive Disorder', enName: '持続性抑うつ障害', reading: '', meaning: 'Mild-to-moderate depression that runs chronically for two years or more.', symptom: 'A chronic state in which mild-to-moderate depressed mood persists most of the day, most days, for at least two years (one year in children). Less severe than a major depressive episode, but impairing over the long term.', history: 'DSM-5 (2013) merged DSM-III\'s (1980) \'dysthymia\' with chronic major depression into \'persistent depressive disorder.\'', debate: 'The boundary between chronic mild depression as \'personality\' and as \'illness\' is blurred, fueling debates over medicalization. The reclassification also raised questions of conceptual continuity.' },
   },
   {
     id: 'DA-011', num: 11, cat: 'CURRENT',
@@ -168,7 +168,7 @@ export const CARDS: Card[] = [
       history: 'クレペリンの「躁うつ病」概念に由来し、DSM-III（1980）で単極性うつ病と区別された。',
       debate: '躁の創造性との関連が語られる一方、過剰診断や、抗うつ薬による躁転リスクの議論がある。',
     },
-    en: { name: 'Bipolar I', enName: '双極性障害I型', reading: '', meaning: '' },
+    en: { name: 'Bipolar I', enName: '双極性障害I型', reading: '', meaning: 'A mood disorder cycling between mania and depression.', symptom: 'Centered on manic episodes of abnormally elevated mood and activity (lasting a week or more, or requiring hospitalization), usually accompanied by depressive episodes. Mania brings grandiosity, decreased need for sleep, pressured speech, spending sprees, and risky behavior.', history: 'Derived from Kraepelin\'s concept of \'manic-depressive illness\' and separated from unipolar depression in DSM-III (1980).', debate: 'While mania\'s link to creativity is often invoked, there are ongoing arguments over overdiagnosis and the risk of antidepressant-induced switching into mania.' },
   },
   {
     id: 'DA-012', num: 12, cat: 'CURRENT',
@@ -182,7 +182,7 @@ export const CARDS: Card[] = [
       history: 'DSM-IV（1994）でI型から独立した比較的新しい区分である。',
       debate: '軽躁の閾値をどこに置くかで診断数が大きく変わり、過剰診断・過小診断の双方が論じられる。気分の波の「正常」と「病」の境界を問う。',
     },
-    en: { name: 'Bipolar II', enName: '双極性障害II型', reading: '', meaning: '' },
+    en: { name: 'Bipolar II', enName: '双極性障害II型', reading: '', meaning: 'A mood disorder cycling between hypomania and depression.', symptom: 'Alternating hypomanic episodes — not severe enough to require hospitalization — and depressive episodes. Because patients and those around them read hypomania as simply \'a good stretch,\' it is easily missed and often misdiagnosed as depression.', history: 'A relatively new category, split off from Bipolar I in DSM-IV (1994).', debate: 'Where the threshold for hypomania is set drastically changes diagnosis counts, and both overdiagnosis and underdiagnosis are argued. It probes the boundary between normal mood swings and illness.' },
   },
   {
     id: 'DA-013', num: 13, cat: 'CURRENT',
@@ -196,7 +196,7 @@ export const CARDS: Card[] = [
       history: '「不安神経症」を不安症群へ分解する過程で、DSM-III（1980）に成立した。',
       debate: '心配は誰もが経験する正常な反応でもあり、「どこからが病か」の線引きが本質的に難しい。',
     },
-    en: { name: 'Generalized Anxiety Disorder', enName: '全般性不安症', reading: '', meaning: '' },
+    en: { name: 'Generalized Anxiety Disorder', enName: '全般性不安症', reading: '', meaning: 'Excessive, uncontrollable worry that spreads across many concerns and will not stop.', symptom: 'Excessive, hard-to-control worry spanning many domains (work, health, family) rather than any single object, present nearly every day for six months or more, with restlessness, fatigability, poor concentration, irritability, muscle tension, and sleep disturbance.', history: 'Established in DSM-III (1980) as \'anxiety neurosis\' was broken apart into the anxiety disorders.', debate: 'Worry is also a normal experience shared by everyone, making the line between health and disorder inherently hard to draw.' },
   },
   {
     id: 'DA-014', num: 14, cat: 'CURRENT',
@@ -210,7 +210,7 @@ export const CARDS: Card[] = [
       history: '「不安神経症」から分離され、DSM-III（1980）で独立した。広場恐怖症との関連が長く議論されてきた。',
       debate: '身体感覚への過敏な解釈をめぐる認知モデルと、生物学的モデルの間で理解が分かれる。',
     },
-    en: { name: 'Panic Disorder', enName: 'パニック症', reading: '', meaning: '' },
+    en: { name: 'Panic Disorder', enName: 'パニック症', reading: '', meaning: 'Recurrent panic attacks — sudden surges of intense palpitations and fear.', symptom: 'Recurrent panic attacks of sudden intense palpitations, sweating, trembling, choking sensations, and fear of dying or going mad, followed by persistent anticipatory anxiety and behavioral change. Attacks often strike without reason.', history: 'Split off from \'anxiety neurosis\' and made an independent diagnosis in DSM-III (1980). Its relation to agoraphobia has long been debated.', debate: 'Understanding is divided between cognitive models centered on oversensitive interpretation of bodily sensations and biological models.' },
   },
   {
     id: 'DA-015', num: 15, cat: 'CURRENT',
@@ -224,7 +224,7 @@ export const CARDS: Card[] = [
       history: 'DSM-III（1980）の「社会恐怖」に由来し、1990年代後半にSSRI（パロキセチン等）の適応取得と大規模な疾患啓発キャンペーンを通じて広く知られるようになった。',
       debate: '「内気・恥ずかしがり」という気質の病理化、製薬マーケティングによる需要喚起が批判された（Christopher Lane『Shyness』）。日本の対人恐怖症と方向が逆の構造をもつ点でも比較される。',
     },
-    en: { name: 'Social Anxiety Disorder', enName: '社交不安症', reading: '', meaning: '' },
+    en: { name: 'Social Anxiety Disorder', enName: '社交不安症', reading: '', meaning: 'Intense fear and avoidance of situations where one is watched and judged by others.', symptom: 'Intense fear and avoidance of social situations involving scrutiny and evaluation (speaking in public, eating with others). The fear is out of proportion to the situation, lasts six months or more, and impairs daily life.', history: 'Descended from DSM-III\'s (1980) \'social phobia,\' it became widely known in the late 1990s through SSRI approvals (paroxetine and others) and large-scale disease-awareness campaigns.', debate: 'Critics charged that it pathologized the temperament of shyness and that pharmaceutical marketing manufactured demand (Christopher Lane, Shyness). It is also compared with Japan\'s taijin kyōfushō, whose fear runs structurally in the opposite direction.' },
   },
   {
     id: 'DA-016', num: 16, cat: 'CURRENT',
@@ -238,7 +238,7 @@ export const CARDS: Card[] = [
       history: '1871年にウェストファルが命名した古い概念で、長くパニック症の随伴とされたが、DSM-5（2013）で独立診断となった。',
       debate: 'パニック症との関係や、どこまでを病とするかの線引きが論じられる。',
     },
-    en: { name: 'Agoraphobia', enName: '広場恐怖症', reading: '', meaning: '' },
+    en: { name: 'Agoraphobia', enName: '広場恐怖症', reading: '', meaning: 'Fear and avoidance of situations with no easy escape, such as trains and crowds.', symptom: 'Intense fear and avoidance of situations felt to be hard to escape or where help might not come — public transport, open spaces, crowds, being outside the home alone. Fear across multiple situations is required.', history: 'An old concept named by Westphal in 1871, long treated as an accompaniment of panic disorder until DSM-5 (2013) made it an independent diagnosis.', debate: 'Its relation to panic disorder, and where to draw the line of illness, remain debated.' },
   },
   {
     id: 'DA-017', num: 17, cat: 'CURRENT',
@@ -252,7 +252,7 @@ export const CARDS: Card[] = [
       history: '恐怖症の体系的分類の一環としてDSM-III（1980）以降整理された。',
       debate: '恐怖は生存に有用な正常反応でもあり、病的な恐怖との境界の設定が問われる。',
     },
-    en: { name: 'Specific Phobia', enName: '限局性恐怖症', reading: '', meaning: '' },
+    en: { name: 'Specific Phobia', enName: '限局性恐怖症', reading: '', meaning: 'Intense fear of a specific object or situation, such as heights or animals.', symptom: 'Excessive, persistent fear and avoidance of a specific object or situation — heights, animals, needles or blood, enclosed spaces, flying. The fear must be out of proportion to the actual danger.', history: 'Organized from DSM-III (1980) onward as part of the systematic classification of the phobias.', debate: 'Fear is also a normal response useful for survival, raising the question of where the line with pathological fear should be drawn.' },
   },
   {
     id: 'DA-018', num: 18, cat: 'CURRENT',
@@ -266,7 +266,7 @@ export const CARDS: Card[] = [
       history: 'DSM-III（1980）では小児の障害だったが、DSM-5（2013）で成人にも診断されるよう適用が拡大した。',
       debate: '成人への適用拡大は、正常な愛着や心配の病理化につながらないかという議論を生んだ。',
     },
-    en: { name: 'Separation Anxiety Disorder', enName: '分離不安症', reading: '', meaning: '' },
+    en: { name: 'Separation Anxiety Disorder', enName: '分離不安症', reading: '', meaning: 'Excessive anxiety about separation from attachment figures.', symptom: 'Anxiety about separation from attachment figures that is excessive for one\'s developmental stage — distress at separation, worry about losing the figure, refusal to attend school or leave home, nightmares, and physical symptoms.', history: 'A childhood disorder in DSM-III (1980); DSM-5 (2013) extended the diagnosis to adults.', debate: 'The extension to adults raised the question of whether normal attachment and worry were being pathologized.' },
   },
   {
     id: 'DA-019', num: 19, cat: 'CURRENT',
@@ -280,7 +280,7 @@ export const CARDS: Card[] = [
       history: 'DSM-III（1980）では不安症に分類されたが、DSM-5（2013）で「強迫症および関連症群」として独立カテゴリ化された。',
       debate: '几帳面さや習慣との境界、関連症群（ためこみ・抜毛・皮膚むしり・醜形恐怖）の括り方が論じられる。',
     },
-    en: { name: 'OCD', enName: '強迫症', reading: '', meaning: '' },
+    en: { name: 'OCD', enName: '強迫症', reading: '', meaning: 'Recurring obsessions and compulsions, such as handwashing and checking.', symptom: 'Recurrent, intrusive obsessions (distressing thoughts of contamination, harm, symmetry) paired with compulsions performed to neutralize them (washing, checking, rituals). Sufferers recognize them as senseless yet cannot stop, and lose large amounts of time to them.', history: 'Classified as an anxiety disorder in DSM-III (1980); DSM-5 (2013) gave it its own category, obsessive-compulsive and related disorders.', debate: 'Debated: the boundary with orderliness and habit, and how the related disorders — hoarding, hair-pulling, skin-picking, body dysmorphia — should be grouped.' },
   },
   {
     id: 'DA-020', num: 20, cat: 'CURRENT',
@@ -294,7 +294,7 @@ export const CARDS: Card[] = [
       history: '19世紀末の「醜形恐怖（dysmorphophobia）」に由来し、DSM-III-R（1987）で収載、DSM-5で強迫関連症群に位置づけられた。',
       debate: '美の基準は文化・時代に依存し、美容整形産業との関係も深い。何を「歪んだ自己像」とするかは社会的文脈と不可分である。',
     },
-    en: { name: 'Body Dysmorphic Disorder', enName: '醜形恐怖症', reading: '', meaning: '' },
+    en: { name: 'Body Dysmorphic Disorder', enName: '醜形恐怖症', reading: '', meaning: 'Excessive preoccupation with perceived flaws in one\'s own appearance.', symptom: 'Preoccupation with appearance flaws that are objectively slight or invisible to others, with repetitive behaviors — checking, camouflaging, pursuing cosmetic procedures. Social functioning and mood are seriously affected.', history: 'Derives from late-nineteenth-century dysmorphophobia; entered DSM-III-R (1987) and was placed among the obsessive-compulsive related disorders in DSM-5.', debate: 'Standards of beauty depend on culture and era, and the diagnosis is deeply entangled with the cosmetic surgery industry; what counts as a \'distorted self-image\' is inseparable from social context.' },
   },
   {
     id: 'DA-021', num: 21, cat: 'CURRENT',
@@ -308,7 +308,7 @@ export const CARDS: Card[] = [
       history: '1889年にフランスのアロポーが命名し、DSM-III-R（1987）で収載、DSM-5で強迫関連症群に再分類された。',
       debate: '癖・習慣との境界や、強迫症・衝動制御障害のどこに位置づけるかが論じられてきた。',
     },
-    en: { name: 'Trichotillomania', enName: '抜毛症', reading: '', meaning: '' },
+    en: { name: 'Trichotillomania', enName: '抜毛症', reading: '', meaning: 'Recurrent pulling out of one\'s own hair.', symptom: 'Repeatedly pulling out one\'s own hair, eyebrows, or eyelashes to the point of visible hair loss, sometimes with tension before pulling and relief or pleasure afterward.', history: 'Named in 1889 by Hallopeau in France; entered DSM-III-R (1987) and was reclassified under the obsessive-compulsive related disorders in DSM-5.', debate: 'Debated: the boundary with mere habit, and whether it belongs with obsessive-compulsive disorder or the impulse-control disorders.' },
   },
   {
     id: 'DA-022', num: 22, cat: 'CURRENT',
@@ -322,7 +322,7 @@ export const CARDS: Card[] = [
       history: '第一次大戦の「シェルショック」、第二次大戦の「戦争神経症」「戦闘疲労」など、戦争のたびに別の名で記述されてきた。ベトナム戦争帰還兵の集団的経験と、反戦運動・退役軍人運動による働きかけが、1980年のDSM-IIIへの収載を後押しした。収載後は戦争に限らず、性暴力・虐待・事故・災害などの被害にも適用が拡大した。',
       debate: 'DSM-5で診断基準が拡大したことにより、過剰診断や「トラウマ概念の拡散」を懸念する声がある。症状の表れ方は文化により異なり（解離症状の比重など）、診断の普遍性が問われる。ICD-11は長期反復的トラウマを対象とする「複雑性PTSD」を独立カテゴリとして採用したが、DSMは採用しておらず、国際的な分類の不一致が生じている。',
     },
-    en: { name: 'PTSD', enName: '心的外傷後ストレス障害', reading: '', meaning: '' },
+    en: { name: 'PTSD', enName: '心的外傷後ストレス障害', reading: '', meaning: 'Flashbacks, avoidance, and hyperarousal that persist after a traumatic experience.', symptom: 'After exposure to actual or threatened death, serious injury, or sexual violence: intrusion symptoms (re-experiencing through flashbacks and nightmares), avoidance of related stimuli, negative changes in cognition and mood, and marked alterations in arousal and reactivity (hypervigilance, irritability, exaggerated startle), persisting for more than one month. The symptoms must impair functioning.', history: 'Described under a new name with each war — \'shell shock\' in the First World War, \'war neurosis\' and \'combat fatigue\' in the Second. The collective experience of Vietnam veterans and pressure from the antiwar and veterans\' movements pushed it into DSM-III in 1980. The diagnosis then expanded beyond war to sexual violence, abuse, accidents, and disasters.', debate: 'The broadened criteria of DSM-5 raised fears of overdiagnosis and of a diffusion of the trauma concept. Symptoms present differently across cultures (the weight of dissociative symptoms, for example), putting the diagnosis\'s universality in question. ICD-11 adopted complex PTSD, for prolonged and repeated trauma, as a separate category; the DSM did not, leaving the international classifications at odds.' },
   },
   {
     id: 'DA-023', num: 23, cat: 'CURRENT',
@@ -336,7 +336,7 @@ export const CARDS: Card[] = [
       history: 'DSM-IV（1994）で、PTSDの前段階・急性反応を捉える枠組みとして新設された。',
       debate: 'トラウマ後の苦痛の多くは時間とともに自然回復する正常な反応であり、それを病として早期に枠づけることの是非が議論される。',
     },
-    en: { name: 'Acute Stress Disorder', enName: '急性ストレス障害', reading: '', meaning: '' },
+    en: { name: 'Acute Stress Disorder', enName: '急性ストレス障害', reading: '', meaning: 'An acute PTSD-like reaction arising within the first month after trauma.', symptom: 'After exposure to a traumatic event, symptoms of intrusion, negative mood, dissociation, avoidance, and hyperarousal appear in the immediate aftermath (three days to one month). If they persist beyond a month, the diagnosis becomes PTSD.', history: 'Introduced in DSM-IV (1994) as a framework for capturing the acute, pre-PTSD reaction.', debate: 'Much post-traumatic distress is a normal reaction that resolves naturally with time; whether to frame it as illness so early is contested.' },
   },
   {
     id: 'DA-024', num: 24, cat: 'CURRENT',
@@ -350,7 +350,7 @@ export const CARDS: Card[] = [
       history: 'DSM-III（1980）以降、軽症で分類しにくいストレス反応の受け皿として機能してきた。',
       debate: '「正常なストレス反応」と「病」の境界が全診断のなかで最も曖昧とされ、生きづらさの医療化の象徴ともいわれる。',
     },
-    en: { name: 'Adjustment Disorder', enName: '適応障害', reading: '', meaning: '' },
+    en: { name: 'Adjustment Disorder', enName: '適応障害', reading: '', meaning: 'A maladaptive emotional or behavioral reaction to an identifiable stressor.', symptom: 'In response to an identifiable stressor — separation, job loss, illness — disproportionate depression, anxiety, or behavioral problems appear and impair daily functioning, without meeting the criteria for any other mental disorder.', history: 'Since DSM-III (1980) it has served as the catchall for mild stress reactions that resist classification.', debate: 'Its boundary between normal stress response and illness is held to be the blurriest of any diagnosis, making it an emblem of the medicalization of everyday distress.' },
   },
   {
     id: 'DA-025', num: 25, cat: 'CURRENT',
@@ -364,7 +364,7 @@ export const CARDS: Card[] = [
       history: '1945年のシュピッツの「施設病（hospitalism）」研究やボウルビィの愛着理論を背景に、DSM-III（1980）で収載された。',
       debate: '養育環境という社会的要因が前提となる診断であり、個人の障害として扱うことの是非や、過剰診断のリスクが論じられる。',
     },
-    en: { name: 'Reactive Attachment Disorder', enName: '反応性アタッチメント障害', reading: '', meaning: '' },
+    en: { name: 'Reactive Attachment Disorder', enName: '反応性アタッチメント障害', reading: '', meaning: 'A failure to form stable attachment as a result of grossly inadequate caregiving.', symptom: 'Against a background of grossly insufficient early care — neglect, repeated changes of caregiver — the child shows inhibited attachment behavior, neither seeking comfort from caregivers when distressed nor responding to it.', history: 'Entered DSM-III (1980), drawing on Spitz\'s 1945 studies of \'hospitalism\' and Bowlby\'s attachment theory.', debate: 'The diagnosis presupposes a social cause — the caregiving environment — raising questions about treating it as an individual disorder, along with the risk of overdiagnosis.' },
   },
   {
     id: 'DA-026', num: 26, cat: 'CURRENT',
@@ -378,7 +378,7 @@ export const CARDS: Card[] = [
       history: '19世紀から「多重人格」として知られ、DSM-III（1980）で収載、1980年代に映画や手記で社会的注目を集めた。DSM-IV（1994）で「解離性同一症」へ改称された。',
       debate: '実在をめぐる論争が続いており、治療者の暗示によって人格が作られる医原性の可能性（1990年代の「記憶回復療法」訴訟など）が指摘される。',
     },
-    en: { name: 'Dissociative Identity Disorder', enName: '解離性同一症', reading: '', meaning: '' },
+    en: { name: 'Dissociative Identity Disorder', enName: '解離性同一症', reading: '', meaning: 'Two or more alternating personality states, accompanied by gaps in memory.', symptom: 'Two or more distinct personality states (identities) alternate in taking control, with amnesia for everyday events and important personal information. Most cases are held to be linked to severe, repeated trauma.', history: 'Known since the nineteenth century as multiple personality; entered DSM-III (1980) and drew wide public attention in the 1980s through films and memoirs. DSM-IV (1994) renamed it dissociative identity disorder.', debate: 'Its very existence remains contested: critics point to possible iatrogenesis — personalities produced by therapists\' suggestion — as in the \'recovered memory therapy\' lawsuits of the 1990s.' },
   },
   {
     id: 'DA-027', num: 27, cat: 'CURRENT',
@@ -392,7 +392,7 @@ export const CARDS: Card[] = [
       history: '解離症群の一つとしてDSM-III（1980）以降整理された。',
       debate: '疲労やストレス時に多くの人が経験する一過性の体験との境界が問われる。',
     },
-    en: { name: 'Depersonalization/Derealization', enName: '離人感・現実感消失症', reading: '', meaning: '' },
+    en: { name: 'Depersonalization/Derealization', enName: '離人感・現実感消失症', reading: '', meaning: 'A persistent sense that oneself or one\'s surroundings are unreal.', symptom: 'Persistent or recurrent experiences of oneself (depersonalization) or the surrounding world (derealization) feeling unreal, dreamlike, or observed from outside. Reality testing remains intact.', history: 'Organized from DSM-III (1980) onward as one of the dissociative disorders.', debate: 'Where it ends and the transient experiences most people have under fatigue or stress begin remains in question.' },
   },
   {
     id: 'DA-028', num: 28, cat: 'CURRENT',
@@ -406,7 +406,7 @@ export const CARDS: Card[] = [
       history: 'DSM-5（2013）で、従来の「身体表現性障害」群を再編して成立した。「ヒステリー」「心気症」の系譜に連なる。',
       debate: '身体疾患をもつ人を「心の問題」として病理化しかねないという懸念や、女性に多く診断されてきた性差バイアスが論じられる。',
     },
-    en: { name: 'Somatic Symptom Disorder', enName: '身体症状症', reading: '', meaning: '' },
+    en: { name: 'Somatic Symptom Disorder', enName: '身体症状症', reading: '', meaning: 'Preoccupation with bodily symptoms, accompanied by excessive anxiety and behavior.', symptom: 'One or more distressing bodily symptoms, plus persistent excessive thoughts, anxiety, or behaviors concerning them (repeated medical visits, for example). What is new is that whether the symptoms are medically explainable does not matter.', history: 'Created in DSM-5 (2013) by reorganizing the former somatoform disorders; it descends from the lineage of hysteria and hypochondriasis.', debate: 'Critics fear it pathologizes people with physical illness as having a \'mental problem,\' and point to the gender bias of a diagnosis long applied mostly to women.' },
   },
   {
     id: 'DA-029', num: 29, cat: 'CURRENT',
@@ -420,7 +420,7 @@ export const CARDS: Card[] = [
       history: 'ヒステリーの直接の後継であり、フロイトの「転換」概念に由来する。DSM-5では「機能性神経症状症」が併記された。',
       debate: '「心因性」と判定する過程の難しさや、見落とされた身体疾患の問題、ヒステリーから続く女性の病理化の歴史が論じられる。',
     },
-    en: { name: 'Conversion Disorder', enName: '変換症', reading: '', meaning: '' },
+    en: { name: 'Conversion Disorder', enName: '変換症', reading: '', meaning: 'Motor or sensory symptoms — paralysis, loss of voice — that neurology cannot explain.', symptom: 'Motor and sensory symptoms unexplained by neurological disease: paralysis, tremor, loss of voice, seizures, visual and sensory disturbances. The symptoms are not intentionally produced.', history: 'The direct heir of hysteria, derived from Freud\'s concept of conversion. DSM-5 added the parallel name functional neurological symptom disorder.', debate: 'Debated: the difficulty of judging symptoms \'psychogenic,\' the problem of overlooked physical disease, and the history of pathologizing women that runs from hysteria onward.' },
   },
   {
     id: 'DA-030', num: 30, cat: 'CURRENT',
@@ -434,7 +434,7 @@ export const CARDS: Card[] = [
       history: 'DSM-5（2013）で従来の「心気症（hypochondriasis）」を再編して成立した。',
       debate: '健康への関心と病的な不安の境界、インターネット検索が不安を増幅する現象（サイバー心気症）との関係が論じられる。',
     },
-    en: { name: 'Illness Anxiety Disorder', enName: '病気不安症', reading: '', meaning: '' },
+    en: { name: 'Illness Anxiety Disorder', enName: '病気不安症', reading: '', meaning: 'A consuming fear of having a serious illness.', symptom: 'A persistent fear of, or preoccupation with, having or acquiring a serious illness. Bodily symptoms are absent or mild, with excessive health-checking behavior or, conversely, avoidance of medical care.', history: 'Created in DSM-5 (2013) by reorganizing the former hypochondriasis.', debate: 'Debated: the boundary between health concern and pathological anxiety, and the way internet searching amplifies anxiety (cyberchondria).' },
   },
   {
     id: 'DA-031', num: 31, cat: 'CURRENT',
@@ -448,7 +448,7 @@ export const CARDS: Card[] = [
       history: '1951年にアッシャーが「ミュンヒハウゼン症候群」として記載し、後にDSMへ収載された。代理によるものは虐待として扱われる。',
       debate: '詐病（明確な外的利益がある）との境界や、その判定の困難さが論じられる。',
     },
-    en: { name: 'Factitious Disorder', enName: '作為症', reading: '', meaning: '' },
+    en: { name: 'Factitious Disorder', enName: '作為症', reading: '', meaning: 'Feigning illness or deliberately producing one\'s own symptoms.', symptom: 'Intentionally producing or feigning illness or injury in oneself or in another (by proxy), in the absence of external rewards such as money or the avoidance of obligations.', history: 'Described by Asher in 1951 as Munchausen syndrome and later entered into the DSM; the by-proxy form is treated as abuse.', debate: 'Debated: the boundary with malingering — where a clear external gain exists — and the difficulty of making that determination.' },
   },
   {
     id: 'DA-032', num: 32, cat: 'CURRENT',
@@ -462,7 +462,7 @@ export const CARDS: Card[] = [
       history: '1873年に英国のガルと仏のラセーグがほぼ同時に記載した。中世の宗教的拒食（聖女の断食）との比較もなされる。',
       debate: '西洋的な「痩せ」の美の基準や、メディア・SNSの影響との関係が指摘され、文化拘束的な側面をもつとも論じられる。死亡率が高く、医療化と当事者の権利のバランスが問われる。',
     },
-    en: { name: 'Anorexia Nervosa', enName: '神経性やせ症', reading: '', meaning: '' },
+    en: { name: 'Anorexia Nervosa', enName: '神経性やせ症', reading: '', meaning: 'An eating disorder in which an intense fear of weight gain drives extreme food restriction.', symptom: 'An intense fear of gaining weight drives severe restriction of food intake, leading to significantly low body weight, accompanied by a distorted perception of one\'s own weight and shape.', history: 'Described almost simultaneously in 1873 by Gull in England and Lasègue in France. Comparisons are drawn with medieval religious fasting — the fasting of holy women.', debate: 'Its ties to Western thin-ideal beauty standards and to media and social media are noted, and it is argued to be partly culture-bound. With a high mortality rate, it forces the question of how to balance medicalization against the rights of those diagnosed.' },
   },
   {
     id: 'DA-033', num: 33, cat: 'CURRENT',
@@ -476,7 +476,7 @@ export const CARDS: Card[] = [
       history: '1979年に英国のジェラルド・ラッセルが記載した、比較的新しい診断である。',
       debate: '美の基準やダイエット文化との関係、神経性やせ症との連続性が論じられる。',
     },
-    en: { name: 'Bulimia Nervosa', enName: '神経性過食症', reading: '', meaning: '' },
+    en: { name: 'Bulimia Nervosa', enName: '神経性過食症', reading: '', meaning: 'An eating disorder marked by cycles of binge eating and compensatory behaviors such as vomiting.', symptom: 'Recurrent episodes of eating large amounts in a short time, followed by compensatory behaviors — self-induced vomiting, laxative abuse, fasting, excessive exercise. Self-evaluation is unduly governed by body shape and weight.', history: 'A relatively recent diagnosis, first described by Gerald Russell in Britain in 1979.', debate: 'Its relation to beauty standards and diet culture, and its continuity with anorexia nervosa, remain debated.' },
   },
   {
     id: 'DA-034', num: 34, cat: 'CURRENT',
@@ -490,7 +490,7 @@ export const CARDS: Card[] = [
       history: 'DSM-IV（1994）の「性同一性障害」を、脱病理化の流れの中でDSM-5（2013）が「性別違和」へ改称した。ICD-11（2019）はこれを精神疾患の章から外し、「性の健康に関連する状態」へ移した。',
       debate: '診断は治療（ホルモン療法等）へのアクセスを保障する一方、トランスジェンダーであること自体を病理化するスティグマとの緊張が続く。同性愛の脱病理化の系譜に連なる、現在進行形の境界移動である。',
     },
-    en: { name: 'Gender Dysphoria', enName: '性別違和', reading: '', meaning: '' },
+    en: { name: 'Gender Dysphoria', enName: '性別違和', reading: '', meaning: 'Severe distress arising from the mismatch between sex assigned at birth and gender identity.', symptom: 'A marked, persistent incongruence between one\'s experienced or expressed gender and the sex assigned at birth, with significant distress or impairment. The diagnosis targets the distress, not the incongruence itself.', history: 'DSM-5 (2013) renamed DSM-IV\'s (1994) \'gender identity disorder\' as \'gender dysphoria\' amid the movement toward depathologization. ICD-11 (2019) removed it from the mental disorders chapter, relocating it to \'conditions related to sexual health.\'', debate: 'The diagnosis secures access to care such as hormone therapy, yet remains in tension with the stigma of pathologizing being transgender itself — an ongoing boundary shift in the lineage of homosexuality\'s depathologization.' },
   },
   {
     id: 'DA-035', num: 35, cat: 'CURRENT',
@@ -504,7 +504,7 @@ export const CARDS: Card[] = [
       history: '1938年に米国のアドルフ・スターンが、神経症と精神病の「境界（borderline）」にあると考えた一群に名づけた。1980年のDSM-IIIで正式な診断として収載され、以後診断数が大きく増加した。ICD-11ではパーソナリティ障害の分類そのものが再編され、境界性パターンは特定子として位置づけられている。',
       debate: '診断される人の約4分の3が女性であることから、「ヒステリーの現代版」だとする批判が長年続いている（Wirth-Cauchonら）。「操作的」「治療抵抗的」「演技的」といったスティグマの強いラベルが付きやすいことも問題視される。多くの当事者が幼少期のトラウマ歴をもつことから、ICD-11の複雑性PTSDとの境界や、そちらで捉えるべきではないかという議論も活発である。',
     },
-    en: { name: 'Borderline PD', enName: '境界性パーソナリティ障害', reading: '', meaning: '' },
+    en: { name: 'Borderline PD', enName: '境界性パーソナリティ障害', reading: '', meaning: 'A condition of unstable emotions, relationships, and self-image, marked by impulsivity.', symptom: 'Instability in relationships, self-image, and affect with marked impulsivity. Diagnosed with five or more of nine criteria: fear of abandonment, relationships swinging between idealization and devaluation, identity disturbance, self-damaging impulsivity, recurrent self-harm or suicidal behavior, affective instability, chronic emptiness, intense inappropriate anger, and transient paranoid or dissociative states.', history: 'Named in 1938 by the American Adolph Stern for a group he placed on the \'borderline\' between neurosis and psychosis. Formalized in DSM-III (1980), after which diagnoses rose sharply. ICD-11 restructured personality disorder classification, retaining the borderline pattern as a specifier.', debate: 'Because roughly three-quarters of those diagnosed are women, critics such as Wirth-Cauchon have long called it a modern version of hysteria. Stigmatizing labels — \'manipulative,\' \'treatment-resistant,\' \'dramatic\' — attach easily. Since many patients have childhood trauma histories, its boundary with ICD-11\'s complex PTSD, and whether that framing should replace it, is actively debated.' },
   },
   {
     id: 'DA-036', num: 36, cat: 'CURRENT',
@@ -518,7 +518,7 @@ export const CARDS: Card[] = [
       history: 'フロイトらの「ナルシシズム」概念に由来し、DSM-III（1980）でパーソナリティ障害として収載された。',
       debate: 'SNS時代に概念が大衆化・乱用され、診断としての妥当性や、文化が「自己愛」をどう評価するかが論じられる。',
     },
-    en: { name: 'Narcissistic PD', enName: '自己愛性パーソナリティ障害', reading: '', meaning: '' },
+    en: { name: 'Narcissistic PD', enName: '自己愛性パーソナリティ障害', reading: '', meaning: 'Marked by grandiosity, a need for admiration, and a lack of empathy.', symptom: 'A pervasive, persistent pattern of grandiosity (inflated self-importance), need for admiration, and lack of empathy, with a sense of entitlement and a tendency to exploit others.', history: 'Derived from the concept of narcissism in Freud and his successors; entered DSM-III (1980) as a personality disorder.', debate: 'Popularized and overused in the social media era, raising questions about its validity as a diagnosis and about how culture judges narcissism.' },
   },
   {
     id: 'DA-037', num: 37, cat: 'CURRENT',
@@ -532,7 +532,7 @@ export const CARDS: Card[] = [
       history: '19世紀の「道徳的狂気」「サイコパス」の系譜に連なり、DSM-III（1980）で収載された。',
       debate: '犯罪と病気の境界、刑事責任能力との関係が問われる。診断が司法の道具となるリスクや、貧困・環境要因の軽視が論じられる。',
     },
-    en: { name: 'Antisocial PD', enName: '反社会性パーソナリティ障害', reading: '', meaning: '' },
+    en: { name: 'Antisocial PD', enName: '反社会性パーソナリティ障害', reading: '', meaning: 'A persistent pattern of disregarding and violating the rights of others.', symptom: 'A pattern of disregard for and violation of others\' rights persisting since age 15, marked by law-breaking, deceitfulness, impulsivity, aggression, irresponsibility, and lack of remorse.', history: 'Descended from the nineteenth-century lineage of \'moral insanity\' and the \'psychopath\'; codified in DSM-III (1980).', debate: 'It raises the boundary between crime and illness and questions of criminal responsibility. Critics point to the risk of the diagnosis becoming a judicial tool and to the neglect of poverty and environmental factors.' },
   },
   {
     id: 'DA-038', num: 38, cat: 'CURRENT',
@@ -546,7 +546,7 @@ export const CARDS: Card[] = [
       history: 'その名称（histrionic＝演技的）はヒステリーの概念に由来し、DSM-IIIで「ヒステリー性人格」から改称された。',
       debate: '女性に多く診断される性差バイアスが指摘され、「ヒステリー」の系譜を引く女性の病理化として批判される。',
     },
-    en: { name: 'Histrionic PD', enName: '演技性パーソナリティ障害', reading: '', meaning: '' },
+    en: { name: 'Histrionic PD', enName: '演技性パーソナリティ障害', reading: '', meaning: 'Marked by excessive emotionality and attention-seeking.', symptom: 'A pervasive pattern of excessive emotional expression and attention-seeking behavior, with high suggestibility and the use of appearance and theatrical behavior to draw notice.', history: 'The name (histrionic: theatrical) derives from the concept of hysteria; DSM-III renamed it from \'hysterical personality.\'', debate: 'Diagnosed far more often in women, it is criticized as a gender-biased pathologization of women in the direct lineage of hysteria.' },
   },
   {
     id: 'DA-039', num: 39, cat: 'CURRENT',
@@ -560,7 +560,7 @@ export const CARDS: Card[] = [
       history: 'DSM-5（2013）で、それまで「衝動制御の障害」にあった病的賭博が「物質関連障害および嗜癖性障害群」へ移され、物質によらない初の正式な行動嗜癖となった。',
       debate: 'この再分類は「依存」概念を行動全般へ拡張する道を開き、ゲーム障害などへの布石となった。何を「嗜癖」とするかの境界が問われる。',
     },
-    en: { name: 'Gambling Disorder', enName: 'ギャンブル障害', reading: '', meaning: '' },
+    en: { name: 'Gambling Disorder', enName: 'ギャンブル障害', reading: '', meaning: 'Loss of control over gambling, with severe disruption of daily life.', symptom: 'Persistent, recurrent problem gambling causes major disruption to life, work, and relationships — marked by escalating stakes, failed attempts to stop, preoccupation with gambling, and chasing losses.', history: 'DSM-5 (2013) moved pathological gambling from impulse-control disorders into \'substance-related and addictive disorders,\' making it the first official behavioral addiction involving no substance.', debate: 'The reclassification opened the way to extending \'addiction\' to behavior in general, paving the road for gaming disorder. Where the boundary of addiction lies remains contested.' },
   },
   {
     id: 'DA-040', num: 40, cat: 'CURRENT',
@@ -574,7 +574,7 @@ export const CARDS: Card[] = [
       history: '1906年にドイツのアロイス・アルツハイマーが症例を報告し、その名が冠された。長く「老いによる自然なぼけ」とされてきた状態が病として切り出された。',
       debate: '加齢に伴う変化と「病」の境界、軽度認知障害(MCI)の扱い、診断が当事者に与える影響が論じられる。',
     },
-    en: { name: 'Alzheimer\'s Dementia', enName: 'アルツハイマー型認知症', reading: '', meaning: '' },
+    en: { name: 'Alzheimer\'s Dementia', enName: 'アルツハイマー型認知症', reading: '', meaning: 'A neurodegenerative disease causing progressive decline in memory and cognition.', symptom: 'Progressive decline across multiple cognitive domains, centered on memory (especially recent memory), eroding independence in daily life. Pathologically marked by amyloid plaques and neurofibrillary tangles in the brain.', history: 'Named after Alois Alzheimer, who reported a case in Germany in 1906. A state long dismissed as the natural forgetfulness of old age was carved out as disease.', debate: 'The boundary between age-related change and \'disease,\' the status of mild cognitive impairment (MCI), and what the diagnosis does to those who receive it remain debated.' },
   },
   {
     id: 'DA-041', num: 41, cat: 'RETIRED',
@@ -602,7 +602,7 @@ export const CARDS: Card[] = [
       history: '1851年、ドラペトマニアと同じ報告でカートライトが提唱した姉妹診断である。原因を「血液の脱酸素化」に求め、治療として皮膚を油で擦り革帯で叩き、日光下で労働させることを推奨した。とりわけ「白人の監督を受けない自由黒人」に多いと主張した。',
       debate: '逃亡（ドラペトマニア）と並び、奴隷の抵抗や非協力を医学的に病理化し、奴隷制と人種支配を正当化した。今日では科学的人種主義の代表例として記録される。',
     },
-    en: { name: 'Dysaesthesia Aethiopica', enName: '黒人無感覚症', reading: '', meaning: '' },
+    en: { name: 'Dysaesthesia Aethiopica', enName: '黒人無感覚症', reading: '', meaning: 'A pseudo-diagnosis that framed enslaved people\'s lethargy and dullness as disease.', symptom: 'Cartwright cast enslaved people\'s lethargy, idleness, poor work, and defiance as disease, with dulled skin sensation and slowed mental activity as its signs. Behavior overseers called \'rascality\' was read not as deliberate resistance but as bodily illness.', history: 'Proposed by Cartwright in 1851, in the same report as drapetomania, as its sister diagnosis. He blamed \'deoxygenation of the blood\' and prescribed rubbing the skin with oil, whipping with a leather strap, and labor in the sun — claiming it was most common among free Black people living without white supervision.', debate: 'Alongside drapetomania, it medicalized enslaved people\'s resistance and noncooperation, legitimizing slavery and racial domination. It is recorded today as a defining example of scientific racism.' },
   },
   {
     id: 'DA-043', num: 43, cat: 'RETIRED',
@@ -616,7 +616,7 @@ export const CARDS: Card[] = [
       history: '1969年のストーンウォール暴動以降の同性愛者解放運動が、APAの年次総会への介入を通じて削除を求めた。1973年12月、APA理事会は同性愛を診断から削除することを決議し、翌1974年のDSM-II第7刷から削除された。ただし妥協として「性的指向の障害」、続いてDSM-III（1980）の「自我異和的同性愛」が一時的に残り、これも1987年のDSM-III-Rで完全に削除された。',
       debate: '削除は、保守派からは「政治的圧力で科学が歪められた」と批判された一方、支持派は「もともと診断基準に科学的根拠がなかった」と反論した。Ronald Bayerは『Homosexuality and American Psychiatry』（1981）で、この決定が科学というより社会的・政治的プロセスであったことを記録している。当事者運動が診断そのものを消滅させた最初期かつ最大の事例として、医学的分類が社会の価値観に従って変わることを示している。',
     },
-    en: { name: 'Homosexuality', enName: '同性愛', reading: '', meaning: '' },
+    en: { name: 'Homosexuality', enName: '同性愛', reading: '', meaning: 'A classification that made same-sex orientation itself a mental disorder.', symptom: 'In DSM-I (1952) and DSM-II (1968), same-sex orientation itself was classed as a \'sexual deviation\' alongside pedophilia and sadism — pathological regardless of whether the person suffered.', history: 'After the 1969 Stonewall riots, the gay liberation movement demanded removal, intervening in APA annual meetings. In December 1973 the APA board voted to delete homosexuality, effective from the seventh printing of DSM-II in 1974. As compromises, \'sexual orientation disturbance\' and then DSM-III\'s (1980) \'ego-dystonic homosexuality\' lingered until final removal in DSM-III-R (1987).', debate: 'Conservatives charged that political pressure had distorted science; supporters countered that the criteria never had a scientific basis. Ronald Bayer\'s Homosexuality and American Psychiatry (1981) documented the decision as a social and political process rather than a scientific one. As the earliest and largest case of an activist movement erasing a diagnosis outright, it shows medical classification bending to social values.' },
   },
   {
     id: 'DA-044', num: 44, cat: 'RETIRED',
@@ -630,7 +630,7 @@ export const CARDS: Card[] = [
       history: '1973年の同性愛削除の際、完全な脱病理化に反対する立場との折衷として、DSM-III（1980）に「自我異和的同性愛」が設けられた。これも1987年のDSM-III-Rで削除された。',
       debate: '「苦痛があれば病」という論理は、苦痛の多くが社会的差別（外的スティグマの内在化）に由来する点を見落とすと批判された。病理化を段階的に手放す過程の記録である。',
     },
-    en: { name: 'Ego-dystonic Homosexuality', enName: '自我異和的同性愛', reading: '', meaning: '' },
+    en: { name: 'Ego-dystonic Homosexuality', enName: '自我異和的同性愛', reading: '', meaning: 'A diagnosis retained only for those distressed by their own homosexuality.', symptom: 'A compromise category covering only those persistently distressed by their same-sex orientation and wishing to change it.', history: 'Created in DSM-III (1980) as a middle ground with opponents of full depathologization after the 1973 removal of homosexuality; deleted in DSM-III-R (1987).', debate: 'Critics argued the logic of \'distress makes disease\' overlooked that much of the distress stemmed from social discrimination — internalized stigma. It stands as a record of pathologization being relinquished in stages.' },
   },
   {
     id: 'DA-045', num: 45, cat: 'RETIRED',
@@ -644,7 +644,7 @@ export const CARDS: Card[] = [
       history: '紀元前の古代エジプト・ギリシャの医学に源流をもち、語源はギリシャ語の hystera（子宮）である。19世紀後半、パリのサルペトリエール病院でジャン=マルタン・シャルコーが、女性患者を撮影し照明の当たった舞台で公開実演を行ったことで、医学的診断であると同時に文化的見世物にもなった。DSM-I（1952）には収載されず、DSM-II（1968）で「ヒステリー神経症」として再登場したのち、DSM-III（1980）で削除され、転換症・身体症状症・解離症・演技性パーソナリティ障害などに分解された。',
       debate: 'Elaine Showalterらフェミニスト研究者は、ヒステリーを「男性が女性に見出した、理解しがたく扱いにくいものすべて」を病理化する装置だったと論じた。シャルコーの患者が撮影を意識して症状を「演じていた」可能性も指摘される。診断名としては消えたが、「ヒステリック」という語は今も主に女性に向けられる蔑称として残り、女性に多く診断される後継カテゴリ群にその構造が引き継がれているとの批判がある。',
     },
-    en: { name: 'Hysteria', enName: 'ヒステリー', reading: '', meaning: '' },
+    en: { name: 'Hysteria', enName: 'ヒステリー', reading: '', meaning: 'A catch-all label for fainting, convulsions, and emotional outbursts, attributed mainly to women.', symptom: 'In antiquity, a disease of the womb wandering the body and pressing on the organs — a catch-all for fainting, convulsions, choking sensations, paralysis, and emotional outbursts said to afflict women. In the nineteenth century Charcot classified its attacks into stages; Freud recast it as psychogenic bodily symptoms (conversion). In fact it lumped together epilepsy, multiple sclerosis, trauma responses, and more.', history: 'Rooted in ancient Egyptian and Greek medicine, its name comes from the Greek hystera (womb). In late nineteenth-century Paris, Jean-Martin Charcot photographed female patients at the Salpêtrière and staged public demonstrations under stage lighting, making hysteria a cultural spectacle as much as a diagnosis. Absent from DSM-I (1952), it returned as \'hysterical neurosis\' in DSM-II (1968), then was deleted in DSM-III (1980) and split into conversion disorder, somatic symptom disorder, dissociative disorders, and histrionic personality disorder.', debate: 'Feminist scholars such as Elaine Showalter read hysteria as a device for pathologizing everything men found unintelligible and unmanageable in women. Charcot\'s patients may have performed their symptoms for the camera. The diagnosis is gone, but \'hysterical\' survives as a slur aimed mostly at women, and critics argue its structure lives on in the successor categories still diagnosed mainly in women.' },
   },
   {
     id: 'DA-046', num: 46, cat: 'RETIRED',
@@ -658,7 +658,7 @@ export const CARDS: Card[] = [
       history: '1869年に米国の神経科医ジョージ・ビアードが命名し、急速な都市化・工業化・「過剰な文明化」がもたらす病として、19世紀末から20世紀初頭の欧米で大流行した。電報・鉄道など情報と移動の加速が原因とされた点が時代を象徴する。日本にも明治後期に流入し、夏目漱石が自らの状態をこう表現したことでも知られる。',
       debate: '症状があまりに非特異的であったため、DSM-III（1980）で削除され、症状はうつ病・身体症状症・慢性疲労症候群などに分散吸収された。一方、中国では1950年代以降「神経衰弱（shenjing shuairuo）」として定着し、現在もICD-11に記載が残る。Arthur Kleinmanの人類学的研究は、西洋で消えた診断が文化的フィットによって別の社会で生き延びる過程を示し、2019年にICD-11入りした燃え尽き症候群を「神経衰弱の再来」とみる見方もある。',
     },
-    en: { name: 'Neurasthenia', enName: '神経衰弱', reading: '', meaning: '' },
+    en: { name: 'Neurasthenia', enName: '神経衰弱', reading: '', meaning: 'A diagnosis that explained fatigue, headaches, and irritability as depleted nerve energy.', symptom: 'Centered on chronic fatigue, with a sweeping array of nonspecific bodily and mental symptoms — headache, dizziness, irritability, insomnia, indigestion, palpitations, poor concentration, sexual dysfunction — all explained as exhaustion of the nerves\' energy.', history: 'Named in 1869 by the American neurologist George Beard and blamed on rapid urbanization, industrialization, and \'overcivilization,\' it swept Europe and America from the late nineteenth to early twentieth century. That the telegraph and railroad — the acceleration of information and movement — were cited as causes is emblematic of the era. It reached Japan in the late Meiji period, where Natsume Sōseki famously described his own condition with the term.', debate: 'Too nonspecific to survive, it was deleted in DSM-III (1980), its symptoms absorbed into depression, somatic symptom disorder, and chronic fatigue syndrome. In China, however, it took root from the 1950s as shenjing shuairuo and remains in ICD-11. Arthur Kleinman\'s anthropological work shows a diagnosis extinct in the West surviving elsewhere through cultural fit; some see burnout\'s 2019 entry into ICD-11 as neurasthenia\'s return.' },
   },
   {
     id: 'DA-047', num: 47, cat: 'RETIRED',
@@ -672,7 +672,7 @@ export const CARDS: Card[] = [
       history: '19世紀末にクレペリンが諸症状を一つの疾患単位として整理した。1908年、ブロイラーが「必ずしも荒廃に至らない」として「統合失調症」概念へ置き換えた。',
       debate: '「不可逆的に荒廃する」という予後の前提が誤りだったことが、概念の転換を促した。診断名が患者の運命の見方そのものを規定した例といえる。',
     },
-    en: { name: 'Dementia Praecox', enName: '早発性痴呆', reading: '', meaning: '' },
+    en: { name: 'Dementia Praecox', enName: '早発性痴呆', reading: '', meaning: 'A psychosis believed to begin in youth and end in progressive, irreversible ruin.', symptom: 'Held to begin in adolescence or early adulthood and progress irreversibly to mental deterioration: \'praecox\' marked the early onset, \'dementia\' the collapse of intellect and personality.', history: 'In the late nineteenth century Kraepelin organized its symptoms into a single disease entity. In 1908 Bleuler, holding that deterioration was not inevitable, replaced it with the concept of schizophrenia.', debate: 'The false premise of inevitable, irreversible decline is what forced the concept\'s replacement — a case of a diagnosis dictating how a patient\'s fate was seen.' },
   },
   {
     id: 'DA-048', num: 48, cat: 'RETIRED',
@@ -686,7 +686,7 @@ export const CARDS: Card[] = [
       history: '19世紀初頭、フランスのエスキロールが提唱し、当時の精神医学と刑事法廷（責任能力の判断）で中心的概念となった。',
       debate: '「正気の人間が一点だけ狂う」という考えは、責任能力をめぐる法廷で乱用され、概念の曖昧さから19世紀末に解体した。',
     },
-    en: { name: 'Monomania', enName: 'モノマニア', reading: '', meaning: '' },
+    en: { name: 'Monomania', enName: 'モノマニア', reading: '', meaning: 'A "partial insanity" said to fixate on a single idea.', symptom: 'Held to be a "partial insanity" in which general intellect remained intact while the person fixated on one idea or theme. It was subclassified by the theme of fixation, such as persecution, religion, or love.', history: 'Proposed in the early nineteenth century by Esquirol in France, it became a central concept of the era\'s psychiatry and of criminal courts, where it bore on judgments of criminal responsibility.', debate: 'The notion that a sane person could be mad on a single point was abused in courtrooms over criminal responsibility, and the concept\'s vagueness dissolved it by the end of the nineteenth century.' },
   },
   {
     id: 'DA-049', num: 49, cat: 'RETIRED',
@@ -700,7 +700,7 @@ export const CARDS: Card[] = [
       history: '1835年、英国のJ.C.プリチャードが提唱した。反社会性パーソナリティ障害やサイコパス概念の前身にあたる。',
       debate: '「道徳」という社会的・規範的な領域を医学が病として裁定することへの根本的な問いを含み、逸脱を医療化する装置として批判される。',
     },
-    en: { name: 'Moral Insanity', enName: '道徳的狂気', reading: '', meaning: '' },
+    en: { name: 'Moral Insanity', enName: '道徳的狂気', reading: '', meaning: 'A state in which intellect was normal but the moral sense alone was diseased.', symptom: 'A supposed condition in which intellectual faculties were intact while only moral feeling and impulse control were impaired — antisocial, impulsive behavior appearing without any defect of reason.', history: 'Proposed in 1835 by J. C. Prichard in Britain. It is the forerunner of antisocial personality disorder and the concept of the psychopath.', debate: 'It carries the fundamental question of medicine adjudicating the social, normative domain of "morality" as disease, and is criticized as an apparatus for medicalizing deviance.' },
   },
   {
     id: 'DA-050', num: 50, cat: 'RETIRED',
@@ -714,7 +714,7 @@ export const CARDS: Card[] = [
       history: '古代ギリシャのヒポクラテス医学に源流をもち、2000年以上にわたり西洋の憂鬱概念の中心であった。DSM-III（1980）で独立した分類としては姿を消し、うつ病へ吸収された。',
       debate: '体液説という誤った病因論に基づいていたが、近年「メランコリア型うつ病」として生物学的に区別する意義を再評価する動きもある。',
     },
-    en: { name: 'Melancholia', enName: 'メランコリア', reading: '', meaning: '' },
+    en: { name: 'Melancholia', enName: 'メランコリア', reading: '', meaning: 'A state of deep dejection attributed to an excess of black bile.', symptom: 'Deep dejection, despair, apathy, and bodily heaviness. In humoral theory the cause was an excess of black bile (melancholē).', history: 'Rooted in the Hippocratic medicine of ancient Greece, it anchored the Western concept of melancholy for over 2,000 years. It vanished as an independent category in DSM-III (1980), absorbed into depression.', debate: 'Its humoral etiology was wrong, but recent work has moved to revive "melancholic depression" as a biologically distinct subtype.' },
   },
   {
     id: 'DA-051', num: 51, cat: 'RETIRED',
@@ -728,7 +728,7 @@ export const CARDS: Card[] = [
       history: '1915年、英国の心理学者チャールズ・S・マイヤーズが医学誌『The Lancet』で用いた語に由来する。やがて器質的損傷説から心理的衝撃説へと理解が移ったが、軍にとっては規律と人員の問題と直結していた。第二次大戦では「戦闘疲労」「戦争神経症」と呼ばれ、ベトナム戦争後の運動を経て1980年にPTSDとして再定義された。',
       debate: '大戦中、軍上層部や古参の軍医はこれを「臆病」「規律違反」とみなし、診断自体に抵抗した。英軍では症状を訴えた兵士が「臨陣脱走」として軍法会議にかけられ、300名以上が銃殺刑に処された（2006年に英政府が名誉回復）。将校には「神経衰弱」、一般兵には「シェルショック」と階級により呼称が使い分けられた点も、診断が社会構造を反映することを示している。',
     },
-    en: { name: 'Shell Shock', enName: 'シェルショック', reading: '', meaning: '' },
+    en: { name: 'Shell Shock', enName: 'シェルショック', reading: '', meaning: 'The psychiatric symptoms of soldiers exposed to World War I bombardment.', symptom: 'Seen in soldiers exposed to intense shelling in the trenches of World War I: uncontrollable tremor, paralysis, mutism, blindness and deafness, amnesia, nightmares, exaggerated startle. Initially attributed to microscopic brain and nerve damage from shell blasts.', history: 'The term derives from British psychologist Charles S. Myers, writing in The Lancet in 1915. Understanding shifted from organic injury to psychological shock, but for the military it was bound up with discipline and manpower. In World War II it became "combat fatigue" and "war neurosis," and through the movement that followed the Vietnam War it was redefined as PTSD in 1980.', debate: 'During the war, commanders and senior army doctors dismissed it as cowardice and indiscipline, resisting the diagnosis itself. In the British Army, soldiers reporting symptoms were court-martialed for desertion in the face of the enemy, and more than 300 were executed by firing squad (pardoned by the British government in 2006). Officers were labeled with "neurasthenia," enlisted men with "shell shock" — a naming split by rank that shows how diagnosis reflects social structure.' },
   },
   {
     id: 'DA-052', num: 52, cat: 'RETIRED',
@@ -742,7 +742,7 @@ export const CARDS: Card[] = [
       history: '1866年、英国の外科医エリクセンが命名した。鉄道という新技術がもたらした災害と、損害賠償をめぐる法廷で大きな争点となった。',
       debate: '後に、多くは心理的トラウマ（後のPTSDに連なる）だったと考えられるようになった。新技術がもたらす不安が身体症状として現れ、補償制度と結びついて流行した点で、シェルショックやむち打ち症の先駆である。',
     },
-    en: { name: 'Railway Spine', enName: '鉄道脊椎症', reading: '', meaning: '' },
+    en: { name: 'Railway Spine', enName: '鉄道脊椎症', reading: '', meaning: 'A diagnosis attributing post-railway-accident ailments to spinal cord injury.', symptom: 'Long-lasting pain, numbness, weakness, and disturbances of memory and emotion after railway accidents, first attributed to microscopic physical damage to the spinal cord.', history: 'Named in 1866 by the British surgeon Erichsen. It became a major point of contention in courts over damages for the disasters brought by the new technology of the railway.', debate: 'Most cases were later understood as psychological trauma, in a line leading to PTSD. As anxiety about new technology surfacing in bodily symptoms and spreading through compensation systems, it is the forerunner of shell shock and whiplash.' },
   },
   {
     id: 'DA-053', num: 53, cat: 'RETIRED',
@@ -756,7 +756,7 @@ export const CARDS: Card[] = [
       history: '1944年にオーストリアのハンス・アスペルガーが記載し、1981年にローナ・ウィングが英語圏へ紹介した。DSM-IV（1994）で収載されたが、DSM-5（2013）で自閉スペクトラム症へ統合され、独立診断としては姿を消した。',
       debate: '統合により「アスペルガー」という自己認識をもつ当事者がアイデンティティの拠り所を失ったとされる。2018年にはアスペルガーのナチス政権下での児童政策への関与疑惑が示され、人名診断の倫理が問い直された。',
     },
-    en: { name: 'Asperger\'s Disorder', enName: 'アスペルガー症候群', reading: '', meaning: '' },
+    en: { name: 'Asperger\'s Disorder', enName: 'アスペルガー症候群', reading: '', meaning: 'Autistic traits without intellectual delay.', symptom: 'A group showing autistic traits — difficulty with social reciprocity, intense interest in specific domains, stereotyped behavior — without evident delay in intellectual or language development.', history: 'Described by Hans Asperger in Austria in 1944 and introduced to the English-speaking world by Lorna Wing in 1981. Listed in DSM-IV (1994), it was merged into autism spectrum disorder in DSM-5 (2013) and disappeared as an independent diagnosis.', debate: 'The merger is said to have stripped people who identified as "Asperger\'s" of an anchor for identity. In 2018, allegations surfaced of Asperger\'s involvement in child policies under the Nazi regime, reopening the ethics of eponymous diagnoses.' },
   },
   {
     id: 'DA-054', num: 54, cat: 'RETIRED',
@@ -770,7 +770,7 @@ export const CARDS: Card[] = [
       history: 'DSM-III（1980）で収載され、DSM-5（2013）で脱病理化の流れの中「性別違和」へ改称された。',
       debate: '「障害」という語そのものがスティグマを与えるとして当事者運動が改称を求めた。一方で診断は医療アクセスの根拠にもなるという緊張が続く、現在進行形の境界移動である。',
     },
-    en: { name: 'Gender Identity Disorder', enName: '性同一性障害', reading: '', meaning: '' },
+    en: { name: 'Gender Identity Disorder', enName: '性同一性障害', reading: '', meaning: 'The former diagnosis that framed gender incongruence as a "disorder."', symptom: 'A diagnostic label that framed the mismatch between one\'s experienced gender and assigned sex as a "disorder."', history: 'Listed in DSM-III (1980) and renamed "gender dysphoria" in DSM-5 (2013) amid the movement toward depathologization.', debate: 'Advocacy by those diagnosed drove the renaming, arguing the word "disorder" itself stigmatized. Yet diagnosis also grounds access to medical care — an ongoing boundary shift held in that tension.' },
   },
   {
     id: 'DA-055', num: 55, cat: 'RETIRED',
@@ -784,7 +784,7 @@ export const CARDS: Card[] = [
       history: 'DSM-III（1980）で「多重人格障害」として収載され、1980年代に書籍・映画で大きな社会的注目を集めた。DSM-IV（1994）で「解離性同一症」へ改称された。',
       debate: '診断数の急増が、治療者の暗示による医原性ではないかという論争を呼んだ。名称変更は、人格の「分裂」より同一性の「断絶」を強調する理解の転換を反映する。',
     },
-    en: { name: 'Multiple Personality Disorder', enName: '多重人格障害', reading: '', meaning: '' },
+    en: { name: 'Multiple Personality Disorder', enName: '多重人格障害', reading: '', meaning: 'A state in which multiple personalities were said to alternate (the former name of DID).', symptom: 'A condition in which multiple personalities were said to appear in alternation.', history: 'Listed as "multiple personality disorder" in DSM-III (1980), it drew massive public attention through books and films in the 1980s. DSM-IV (1994) renamed it "dissociative identity disorder."', debate: 'The surge in diagnoses sparked controversy over whether cases were iatrogenic, produced by therapists\' suggestion. The renaming reflects a shift in understanding: not a "splitting" of personality but a "discontinuity" of identity.' },
   },
   {
     id: 'DA-056', num: 56, cat: 'RETIRED',
@@ -798,7 +798,7 @@ export const CARDS: Card[] = [
       history: '20世紀初頭、ゴダードらが知能検査の普及とともに体系化した。元は中立的な医学用語だったが、やがて蔑称化して廃棄された。',
       debate: '優生学運動と結びつき、移民制限や断種政策の根拠として用いられた負の歴史をもつ。医学用語が差別の道具となり、また蔑称へと転落する過程の典型例である。',
     },
-    en: { name: 'Idiot / Imbecile / Moron', enName: '白痴・痴愚・魯鈍', reading: '', meaning: '' },
+    en: { name: 'Idiot / Imbecile / Moron', enName: '白痴・痴愚・魯鈍', reading: '', meaning: 'A graded, IQ-based classification of intellectual disability (now slurs).', symptom: 'A classification dividing intellectual disability into three grades by intelligence quotient: moron, imbecile, and idiot.', history: 'Systematized in the early twentieth century by Goddard and others alongside the spread of intelligence testing. Originally neutral medical terms, they degraded into slurs and were discarded.', debate: 'Bound to the eugenics movement, the terms served as grounds for immigration restriction and sterilization policies. A textbook case of medical terminology becoming an instrument of discrimination and then collapsing into slur.' },
   },
   {
     id: 'DA-057', num: 57, cat: 'RETIRED',
@@ -812,7 +812,7 @@ export const CARDS: Card[] = [
       history: 'DSM-III-R（1987）の付録に研究用カテゴリとして収載されたが、本編入りせずDSM-IV（1994）で削除された。',
       debate: 'フェミニスト精神科医（Paula Caplan ら）は、DV被害者が虐待にとどまる状況を「本人の病理」に帰し、被害者を病理化するものだと強く批判した。診断作成過程の政治性を露呈させた事例である。',
     },
-    en: { name: 'Self-Defeating PD', enName: '自己破壊性パーソナリティ障害', reading: '', meaning: '' },
+    en: { name: 'Self-Defeating PD', enName: '自己破壊性パーソナリティ障害', reading: '', meaning: 'A personality type said to keep placing itself in harmful situations.', symptom: 'A supposed personality pattern of repeatedly choosing situations and relationships that bring oneself disadvantage and suffering.', history: 'Included as a research category in the appendix of DSM-III-R (1987); it never entered the main text and was deleted in DSM-IV (1994).', debate: 'Feminist psychiatrists, Paula Caplan among them, attacked it fiercely for attributing a domestic-violence victim\'s staying in abuse to "the victim\'s own pathology." The episode exposed the politics of how diagnoses get made.' },
   },
   {
     id: 'DA-058', num: 58, cat: 'RETIRED',
@@ -826,7 +826,7 @@ export const CARDS: Card[] = [
       history: '1923年、ハイパーインフレ下のワイマール期ドイツで報じられた。通貨の桁が爆発的に増え、紙幣に並ぶゼロが日常を覆った時代背景をもつ。',
       debate: '経済現象が直接生んだ一過性の病であり、インフレの終息とともに消えた。社会・経済状況が特定の症状を結晶化させる例として読める。',
     },
-    en: { name: 'Zero Stroke', enName: 'ゼロ・ストローク', reading: '', meaning: '' },
+    en: { name: 'Zero Stroke', enName: 'ゼロ・ストローク', reading: '', meaning: 'A supposed illness of compulsively writing endless strings of zeros.', symptom: 'A supposed state of compulsive preoccupation with calculation and numerals — writing out zeros to astronomical lengths.', history: 'Reported in 1923 in Weimar Germany under hyperinflation, when currency denominations exploded and the zeros lining banknotes saturated daily life.', debate: 'A transient illness produced directly by an economic phenomenon, it vanished when the inflation ended — readable as a case of social and economic conditions crystallizing a specific symptom.' },
   },
   {
     id: 'DA-059', num: 59, cat: 'RETIRED',
@@ -840,7 +840,7 @@ export const CARDS: Card[] = [
       history: '18世紀のヨーロッパで、特に上流階級の女性に広く用いられた。ヒステリーと同じく女性の身体に病因を求める系譜にある。',
       debate: '女性のあらゆる不調を身体（子宮）に帰し病理化する装置であり、19世紀に神経衰弱・ヒステリーへと姿を変えた。',
     },
-    en: { name: 'The Vapours', enName: 'ヴェイパーズ', reading: '', meaning: '' },
+    en: { name: 'The Vapours', enName: 'ヴェイパーズ', reading: '', meaning: 'A label attributing women\'s fainting and dejection to "vapours" rising from the womb.', symptom: 'An umbrella term for women\'s fainting, melancholy, nervousness, and mood swings, explained as "vapours" rising from the uterus or spleen to invade the brain.', history: 'Widely applied in eighteenth-century Europe, especially to upper-class women. Like hysteria, it belongs to the lineage that located the cause of women\'s illness in their bodies.', debate: 'An apparatus that referred every female complaint to the body (the womb) and pathologized it; in the nineteenth century it transformed into neurasthenia and hysteria.' },
   },
   {
     id: 'DA-060', num: 60, cat: 'RETIRED',
@@ -854,7 +854,7 @@ export const CARDS: Card[] = [
       history: 'DSM-II（1968）に「小児期（または青年期）の多動性反応」として収載され、DSM-III（1980）で「注意欠陥障害（ADD）」へ改称された。ADHDの直接の前身である。',
       debate: '多動という子どもの振る舞いを病として切り出す出発点であり、その後の概念拡大と過剰診断論争の起点となった。',
     },
-    en: { name: 'Hyperkinetic Reaction', enName: '多動性反応', reading: '', meaning: '' },
+    en: { name: 'Hyperkinetic Reaction', enName: '多動性反応', reading: '', meaning: 'An early diagnosis capturing childhood hyperactivity.', symptom: 'A diagnosis capturing restlessness, hyperactivity, and impulsivity in children.', history: 'Listed in DSM-II (1968) as "hyperkinetic reaction of childhood (or adolescence)" and renamed "attention deficit disorder (ADD)" in DSM-III (1980). The direct forerunner of ADHD.', debate: 'The starting point for carving out children\'s restlessness as disease — and thus the origin of the later disputes over concept expansion and overdiagnosis.' },
   },
   {
     id: 'DA-061', num: 61, cat: 'RETIRED',
@@ -868,7 +868,7 @@ export const CARDS: Card[] = [
       history: '20世紀初頭に独立した疾患単位とされたが、通常のうつ病と区別できないとして、DSM-III（1980）で削除された。',
       debate: '特定の年齢（女性の更年期）に固有の病とみなすことが、加齢や女性の身体の病理化につながると問われた。',
     },
-    en: { name: 'Involutional Melancholia', enName: '退行期メランコリー', reading: '', meaning: '' },
+    en: { name: 'Involutional Melancholia', enName: '退行期メランコリー', reading: '', meaning: 'Depression at menopause treated as a disease in its own right.', symptom: 'A depression set apart as specific to the menopausal and presenile years: severe, with agitation, hypochondria, and delusions.', history: 'Treated as an independent disease entity in the early twentieth century, it was deleted in DSM-III (1980) as indistinguishable from ordinary depression.', debate: 'Casting a particular age — women\'s menopause — as having its own disease was challenged as pathologizing aging and women\'s bodies.' },
   },
   {
     id: 'DA-062', num: 62, cat: 'DISPUTED',
@@ -882,7 +882,7 @@ export const CARDS: Card[] = [
       history: '1996年に心理学者エレイン・アーロンが一般書『The Highly Sensitive Person』で提唱し、自己診断式チェックリストとともに普及した。日本では2010年代後半に「繊細さん」として爆発的に広まり、武田友紀の著作（2018）などが流行を後押しした。',
       debate: '学術的には独立した構成概念としての妥当性が確立しておらず、うつ・不安・自閉スペクトラム症などとの重複が大きいと指摘される。「病気ではない」と謳いながら自己診断行動を促進し、関連書籍やサービスへ誘導する商業構造への批判もある。一方で自らをHSPと認識することが当事者の自己理解や安心につながる肯定的側面も報告されており、公式診断ではない概念が病気のように流通する現象そのものが興味深い対象となっている。',
     },
-    en: { name: 'Highly Sensitive Person', enName: 'HSP', reading: '', meaning: '' },
+    en: { name: 'Highly Sensitive Person', enName: 'HSP', reading: '', meaning: 'A non-diagnostic "temperament" concept of heightened sensitivity and deep processing.', symptom: 'Proposed not as an official diagnosis but as a "temperament": high sensory processing sensitivity, characterized by four elements — deep information processing, susceptibility to overstimulation, strong emotional reactivity and empathy, and awareness of subtle stimuli. Its originator estimated 15 to 20 percent of the population qualifies.', history: 'Proposed in 1996 by psychologist Elaine Aron in the trade book The Highly Sensitive Person and spread with a self-scored checklist. In Japan it exploded in the late 2010s as sensai-san [the sensitive person], propelled by Yuki Takeda\'s books (2018).', debate: 'Its validity as an independent construct is not academically established, and overlap with depression, anxiety, and autism spectrum disorder is said to be large. Critics point to a commercial structure that claims "this is not an illness" while encouraging self-diagnosis and funneling people toward books and services. Yet identifying as HSP is also reported to give people self-understanding and reassurance — and the circulation of a non-diagnosis as if it were a disease is itself a phenomenon of interest.' },
   },
   {
     id: 'DA-063', num: 63, cat: 'DISPUTED',
@@ -896,7 +896,7 @@ export const CARDS: Card[] = [
       history: '1995年、精神科医アイヴァン・ゴールドバーグが、診断基準のパロディとして冗談で提唱したのが始まりである。その後、真面目な研究対象となったが、DSM-5（2013）は正式採用を見送った。',
       debate: '独立した疾患か、うつ・不安など他の問題の表れかが決着していない。冗談から生まれた概念が学術化していく過程自体が興味深い。',
     },
-    en: { name: 'Internet Addiction', enName: 'インターネット依存', reading: '', meaning: '' },
+    en: { name: 'Internet Addiction', enName: 'インターネット依存', reading: '', meaning: 'A condition of supposedly uncontrollable internet use.', symptom: 'A purported inability to control internet use: restlessness when offline, ever-lengthening hours online, and disruption of daily life.', history: 'Coined in 1995 by psychiatrist Ivan Goldberg as a joke — a parody of diagnostic criteria. It later became a serious research subject, but DSM-5 (2013) declined to formally adopt it.', debate: 'Whether it is an independent disorder or an expression of depression, anxiety, or other problems remains unsettled. The process by which a joke became an academic concept is itself striking.' },
   },
   {
     id: 'DA-064', num: 64, cat: 'DISPUTED',
@@ -910,7 +910,7 @@ export const CARDS: Card[] = [
       history: '1980年代、アルコール依存症者の家族を支援する自助グループの中から生まれた概念である。公式診断ではない。',
       debate: '診断的妥当性が乏しく、概念が際限なく拡散したと批判される。一方で当事者の自己理解の枠組みとして広く普及している。',
     },
-    en: { name: 'Codependency', enName: '共依存', reading: '', meaning: '' },
+    en: { name: 'Codependency', enName: '共依存', reading: '', meaning: 'A relational pattern of excessive caretaking of and dependence on others.', symptom: 'Said to be a relational pattern of over-immersion in caring for others — especially people with addictions or similar problems — while setting aside one\'s own feelings and needs.', history: 'Emerged in the 1980s from self-help groups supporting the families of alcoholics. It is not an official diagnosis.', debate: 'Criticized for weak diagnostic validity and limitless conceptual sprawl, yet widely adopted as a framework for self-understanding among those it describes.' },
   },
   {
     id: 'DA-065', num: 65, cat: 'DISPUTED',
@@ -924,7 +924,7 @@ export const CARDS: Card[] = [
       history: '1988年に米国CDCが「慢性疲労症候群」と命名した。神経衰弱の後継ともみなされる。ICD-11では神経系の疾患に分類される。',
       debate: '心因か器質かをめぐり、精神医学と身体医学の間で激しい論争（特に治療法をめぐる対立）が続く。患者団体は「心の病」とされることに強く反発してきた。',
     },
-    en: { name: 'CFS / ME', enName: '慢性疲労症候群', reading: '', meaning: '' },
+    en: { name: 'CFS / ME', enName: '慢性疲労症候群', reading: '', meaning: 'A condition of prolonged, severe fatigue whose cause remains disputed.', symptom: 'Severe fatigue lasting six months or more and unrelieved by rest, accompanied by post-exertional malaise (PEM), sleep disturbance, cognitive impairment, and pain.', history: 'Named "chronic fatigue syndrome" by the US CDC in 1988, and sometimes seen as the successor to neurasthenia. ICD-11 classifies it as a disease of the nervous system.', debate: 'Psychiatry and somatic medicine remain in fierce dispute over whether it is psychogenic or organic — above all over treatment. Patient groups have strongly resisted its framing as a mental illness.' },
   },
   {
     id: 'DA-066', num: 66, cat: 'DISPUTED',
@@ -938,7 +938,7 @@ export const CARDS: Card[] = [
       history: '2000年代の日本で、メディアや一部の臨床家が用いた用語で、正式な医学概念ではない。',
       debate: '医学的根拠に乏しく、若年労働者を「甘え」「わがまま」と断じる世代論・労働規範と結びついて使われたと批判される。',
     },
-    en: { name: '"New-type Depression"', enName: '新型うつ', reading: '', meaning: '' },
+    en: { name: '"New-type Depression"', enName: '新型うつ', reading: '', meaning: 'A non-diagnostic media term for depression said to differ from the classic form.', symptom: 'A depressive presentation said to differ from the classic type: little self-reproach, full activity in private life, but complaints of dysfunction at work.', history: 'A term used in 2000s Japan by media and some clinicians; it is not a formal medical concept.', debate: 'Criticized as medically baseless and as a term wielded through generational and work-ethic discourse to brand young workers as spoiled or selfish.' },
   },
   {
     id: 'DA-067', num: 67, cat: 'PROMOTED',
@@ -952,7 +952,7 @@ export const CARDS: Card[] = [
       history: '1974年に米国の心理学者ハーバート・フロイデンバーガーが対人援助職に観察して命名し、1980年代にクリスティーナ・マスラックが測定尺度（MBI）を開発した。2019年にWHOがICD-11に記載したが、疾病ではなく「職業に関連する現象」として位置づけられている。コロナ禍を経て医療従事者や教員のバーンアウトが世界的な社会問題となった。',
       debate: '「病気か職業現象か」の境界が曖昧で、DSMには収載されていない。問題を個人の不調として扱うのか、それとも労働環境の構造的問題として扱うのかという、フレーミングをめぐる対立がある。19世紀の神経衰弱と概念的に酷似しており、労働に起因する不調が時代ごとに名前を変えて現れることを示す。',
     },
-    en: { name: 'Burnout', enName: '燃え尽き症候群', reading: '', meaning: '' },
+    en: { name: 'Burnout', enName: '燃え尽き症候群', reading: '', meaning: 'Exhaustion, cynicism, and reduced efficacy resulting from chronic workplace stress.', symptom: 'A syndrome resulting from chronic workplace stress that has not been successfully managed, defined by three dimensions: energy depletion and exhaustion, increased mental distance from or cynicism toward one\'s job, and reduced professional efficacy.', history: 'Named in 1974 by American psychologist Herbert Freudenberger, who observed it in the helping professions; Christina Maslach developed a measurement scale (the MBI) in the 1980s. WHO listed it in ICD-11 in 2019 — not as a disease but as an "occupational phenomenon." After the pandemic, burnout among health workers and teachers became a global social problem.', debate: 'The boundary between disease and occupational phenomenon stays blurred, and the DSM does not include it. The framing dispute persists: is this an individual\'s disorder or a structural problem of working conditions? Its close conceptual resemblance to 19th-century neurasthenia shows work-induced distress reappearing under a new name in each era.' },
   },
   {
     id: 'DA-068', num: 68, cat: 'PROMOTED',
@@ -980,7 +980,7 @@ export const CARDS: Card[] = [
       history: '1992年、ジュディス・ハーマンが『心的外傷と回復』で提唱した。ICD-11（2019）が正式な独立診断として採用したが、DSMは現在も採用していない。',
       debate: '境界性パーソナリティ障害との境界が大きな論点で、BPDを「人格の病」ではなくトラウマの帰結として捉え直す視点を提供する。DSMとICDの分類の不一致を象徴する。',
     },
-    en: { name: 'Complex PTSD', enName: '複雑性PTSD', reading: '', meaning: '' },
+    en: { name: 'Complex PTSD', enName: '複雑性PTSD', reading: '', meaning: 'PTSD plus disturbances in self-organization, following prolonged, repeated trauma.', symptom: 'The core symptoms of PTSD plus difficulty regulating emotions, a negative self-concept, and persistent interpersonal difficulties (disturbances in self-organization). Associated with prolonged, repeated trauma such as child abuse, captivity, and domestic violence.', history: 'Proposed by Judith Herman in Trauma and Recovery (1992). ICD-11 (2019) adopted it as a formal standalone diagnosis; the DSM still has not.', debate: 'Its boundary with borderline personality disorder is the central issue: it offers a way to reframe BPD not as a disease of character but as a consequence of trauma. It epitomizes the classificatory split between DSM and ICD.' },
   },
   {
     id: 'DA-070', num: 70, cat: 'PROMOTED',
@@ -994,7 +994,7 @@ export const CARDS: Card[] = [
       history: 'DSM-IVでは死別反応はうつ病の診断から除外されていたが、DSM-5（2013）でこの除外規定が撤廃された。さらに2022年のDSM-5-TRで「遷延性悲嘆症」が正式な独立診断として追加された。COVID-19による死別の急増が、この追加を後押ししたとみられている。',
       debate: 'Allan Horwitzらは、悲嘆という普遍的で正常な人間の経験を病理化し「悲しむ権利を奪う」ものだと批判した。一方で推進派は、通常の範囲を超えて長期に苦しむ人々に治療の枠組みを提供する意義を主張する。「12か月」という基準値の恣意性も論点であり、収録カードのなかで時系列的に最も新しく、分類が今も増え続けていることを示す。',
     },
-    en: { name: 'Prolonged Grief Disorder', enName: '遷延性悲嘆症', reading: '', meaning: '' },
+    en: { name: 'Prolonged Grief Disorder', enName: '遷延性悲嘆症', reading: '', meaning: 'Intense grief persisting twelve months or more after bereavement.', symptom: 'Twelve months or more after the death of a close person (six months in children), intense yearning for and preoccupation with the deceased persists, along with severe emotional pain — deep sorrow, anger, denial, a sense of identity collapse, emotional numbness — impairing daily functioning. Persistence beyond the normal course of grief is required.', history: 'DSM-IV excluded bereavement from the diagnosis of depression; DSM-5 (2013) abolished that exclusion, and DSM-5-TR (2022) added Prolonged Grief Disorder as a formal standalone diagnosis. The surge in deaths from COVID-19 is thought to have driven the addition.', debate: 'Allan Horwitz and others criticized it for pathologizing grief — a universal, normal human experience — and stripping people of the right to mourn. Proponents counter that it offers a treatment framework to those who suffer long past the usual range. The arbitrariness of the twelve-month threshold is also contested. Chronologically the newest diagnosis in this archive, it shows that the classifications are still multiplying.' },
   },
   {
     id: 'DA-071', num: 71, cat: 'PROMOTED',
@@ -1008,7 +1008,7 @@ export const CARDS: Card[] = [
       history: '長く強迫症の一症状とされたが、DSM-5（2013）で独立した診断となった。',
       debate: '収集の趣味や倹約との境界、高齢者のセルフネグレクト（ディオゲネス症候群）との関係が論じられる。',
     },
-    en: { name: 'Hoarding Disorder', enName: 'ためこみ症', reading: '', meaning: '' },
+    en: { name: 'Hoarding Disorder', enName: 'ためこみ症', reading: '', meaning: 'An inability to discard possessions until they crowd out the living space.', symptom: 'Persistent difficulty discarding possessions leads to excessive accumulation that renders living spaces unusable for their intended purpose, with intense distress at the prospect of discarding.', history: 'Long treated as a symptom of obsessive-compulsive disorder, it became a standalone diagnosis in DSM-5 (2013).', debate: 'Its boundaries with collecting as a hobby and with frugality, and its relation to self-neglect in the elderly (Diogenes syndrome), remain debated.' },
   },
   {
     id: 'DA-072', num: 72, cat: 'PROMOTED',
@@ -1022,7 +1022,7 @@ export const CARDS: Card[] = [
       history: '1959年に記述され、長く非公式だったが、DSM-5（2013）で正式な独立診断となった。',
       debate: '過食という行動の病理化や、肥満との関係、最も新しく公式化された摂食障害としての位置づけが論じられる。',
     },
-    en: { name: 'Binge Eating Disorder', enName: '過食性障害', reading: '', meaning: '' },
+    en: { name: 'Binge Eating Disorder', enName: '過食性障害', reading: '', meaning: 'Recurrent binge eating without compensatory behaviors.', symptom: 'Recurrent episodes of binge eating without compensatory behaviors such as vomiting or fasting: eating large amounts in a short time, with a sense of lost control and intense distress and self-loathing.', history: 'First described in 1959 and long unofficial, it became a formal standalone diagnosis in DSM-5 (2013).', debate: 'Debate centers on the pathologization of overeating, its relation to obesity, and its position as the most recently formalized eating disorder.' },
   },
   {
     id: 'DA-073', num: 73, cat: 'PROMOTED',
@@ -1036,7 +1036,7 @@ export const CARDS: Card[] = [
       history: '2000年代に米国で「小児双極性障害」の診断が急増したことへの対策として、DSM-5（2013）で新設された。',
       debate: '過剰診断を防ぐために作った診断が、新たな病理化・過剰投薬を生むのではないかという懸念が、新設当初から指摘されている。',
     },
-    en: { name: 'DMDD', enName: '重篤気分調節症', reading: '', meaning: '' },
+    en: { name: 'DMDD', enName: '重篤気分調節症', reading: '', meaning: 'Chronic, frequent, severe temper outbursts in children.', symptom: 'Against a background of chronic, persistent, severe irritability, a child repeatedly has intense temper outbursts out of proportion to the situation, three or more times a week.', history: 'Created in DSM-5 (2013) as a corrective to the surge in "pediatric bipolar disorder" diagnoses in 2000s America.', debate: 'From its creation, the concern has been raised that a diagnosis built to curb overdiagnosis may itself generate new pathologization and overmedication.' },
   },
   {
     id: 'DA-074', num: 74, cat: 'PROMOTED',
@@ -1050,7 +1050,7 @@ export const CARDS: Card[] = [
       history: '1931年の「月経前緊張」の記述に源流をもち、1987年のDSM-III-Rでは付録に「黄体期後期不快気分障害」として研究用に収載された。2013年のDSM-5で正式な独立診断に格上げされ、同時にこの昇格に対してフェミニスト精神科医を中心に強い反対運動が起こった。',
       debate: 'Paula Caplanらは、月経周期に伴う正常なホルモン変動と感情を「病気」として医療化し、女性の感情を病理化するものだと批判した。製薬企業がPMDD向けにSSRIを販売する商業的動機との関連も指摘される。一方で重い症状に苦しむ当事者にとっては診断が治療アクセスや承認につながる側面もあり、単純な二項対立では捉えられない論点となっている。',
     },
-    en: { name: 'PMDD', enName: '月経前不快気分障害', reading: '', meaning: '' },
+    en: { name: 'PMDD', enName: '月経前不快気分障害', reading: '', meaning: 'Severe mood symptoms that arise premenstrually and remit after menstruation begins.', symptom: 'In the final week before the onset of menses, multiple symptoms appear — including at least one core symptom: marked affective lability, irritability and interpersonal friction, depressed mood and hopelessness, or anxiety and tension — improving within days after menses begin and nearly absent in the week after. The pattern must hold across most cycles and impair work, school, or relationships.', history: 'Traceable to a 1931 description of "premenstrual tension," it was listed for research purposes in the appendix of DSM-III-R (1987) as Late Luteal Phase Dysphoric Disorder. DSM-5 (2013) elevated it to a formal standalone diagnosis, triggering a strong opposition movement led by feminist psychiatrists.', debate: 'Paula Caplan and others criticized it for medicalizing normal hormonal fluctuation across the menstrual cycle and pathologizing women\'s emotions. Drug companies\' commercial motive in marketing SSRIs for PMDD has also been noted. Yet for those with severe symptoms the diagnosis brings access to treatment and recognition — an issue that resists a simple binary.' },
   },
   {
     id: 'DA-075', num: 75, cat: 'PROMOTED',
@@ -1064,7 +1064,7 @@ export const CARDS: Card[] = [
       history: 'ICD-11（2022発効）が「衝動制御症群」の一つとして正式採用した。DSM-5で見送られた「性依存症」とは、依存ではなく衝動制御の枠で位置づける点が異なる。',
       debate: '「依存」概念との線引き、過剰な性欲を病とすることへの道徳的判断の混入が論じられる。',
     },
-    en: { name: 'Compulsive Sexual Behaviour', enName: '強迫的性行動症', reading: '', meaning: '' },
+    en: { name: 'Compulsive Sexual Behaviour', enName: '強迫的性行動症', reading: '', meaning: 'Impaired control over sexual impulses and behavior.', symptom: 'An inability to control repetitive, intense sexual impulses and behavior, which becomes the center of one\'s life and causes distress and impairment.', history: 'Formally adopted by ICD-11 (in effect 2022) as one of the impulse control disorders. It differs from the "sex addiction" rejected by DSM-5 in framing the problem as impulse control rather than addiction.', debate: 'Debate concerns where it ends and "addiction" begins, and how much moral judgment enters when excessive sexual desire is declared a disease.' },
   },
   {
     id: 'DA-076', num: 76, cat: 'PROMOTED',
@@ -1078,7 +1078,7 @@ export const CARDS: Card[] = [
       history: '長く非公式概念（BIID）だったが、ICD-11（2022）が正式採用した。',
       debate: '自己決定（身体の改変を望む権利）と病理化の緊張が鋭く問われる。性別違和と並び、身体と自己同一性をめぐる現代的な境界事例である。',
     },
-    en: { name: 'Body Integrity Dysphoria', enName: '身体完全性違和', reading: '', meaning: '' },
+    en: { name: 'Body Integrity Dysphoria', enName: '身体完全性違和', reading: '', meaning: 'A persistent desire to amputate a healthy limb.', symptom: 'A persistent desire to be rid of a specific body part felt as "not one\'s own" — through amputation of a healthy limb, paralysis, or loss of sensation.', history: 'Long an informal concept (BIID), it was formally adopted by ICD-11 (2022).', debate: 'It poses the tension between self-determination — the right to alter one\'s own body — and pathologization at its sharpest. Alongside gender dysphoria, it is a contemporary borderline case of body and identity.' },
   },
   {
     id: 'DA-077', num: 77, cat: 'CULTURE-BOUND',
@@ -1106,7 +1106,7 @@ export const CARDS: Card[] = [
       history: '1920年代に森田正馬が「神経質」研究の中で記載し、森田療法と一体となって発展した。他者中心的な自己観や「世間」「迷惑」を重視する文化を背景にもつとされる。DSM-IV（1994）以降、文化結合症候群として国際的にも記載されている。',
       debate: '「日本だけの現象」とする見方には批判があり、韓国や東南アジアでも類似例が報告される。西洋の社交不安症の一変種とみる説と、独立した概念とみる説がある。グローバル化により若年層では症状が西洋型に近づく傾向も指摘され、「日本人特殊論」へ安易に回収する危険も論じられている。',
     },
-    en: { name: 'Taijin Kyofusho（日本）', enName: '対人恐怖症', reading: '', meaning: '' },
+    en: { name: 'Taijin Kyofusho（日本）', enName: '対人恐怖症', reading: '', meaning: 'An excessive fear that one\'s own presence offends other people.', symptom: 'An excessive fear that one\'s body, appearance, gaze, facial expression, or body odor causes discomfort or offense to others, with subtypes including fear of blushing, of eye contact, of body odor, and of bodily deformity. Where Western social anxiety disorder fears one\'s own embarrassment, taijin kyōfushō fears harming others — the direction is reversed.', history: 'Described in the 1920s by Shōma Morita in his research on shinkeishitsu (nervous temperament), and developed hand in hand with Morita therapy. Its background is said to be an other-centered sense of self and a culture that stresses seken (the watching world) and meiwaku (causing trouble). Since DSM-IV (1994) it has been listed internationally as a culture-bound syndrome.', debate: 'The "Japan-only" view has been criticized: similar cases are reported in Korea and Southeast Asia. Some see it as a variant of Western social anxiety disorder, others as an independent concept. With globalization, younger patients\' symptoms reportedly converge toward the Western type — a warning against reducing it too easily to theories of Japanese uniqueness.' },
   },
   {
     id: 'DA-079', num: 79, cat: 'CULTURE-BOUND',
@@ -1120,7 +1120,7 @@ export const CARDS: Card[] = [
       history: '1834年にマレー諸島での記録が残り、中国南部および東南アジア（マレーシア、シンガポール、インドネシア）に多くみられる。中医学における「精」（生命エネルギー）の喪失への不安が文化的土壌にあるとされる。個人の発作のほか、噂やメディアを媒介に地域で集団発作として流行することがあり、1967年のシンガポールでは数百人が病院に殺到した。',
       debate: '西洋にも稀に類似のケース（うつ病や統合失調症に伴う妄想として）が報告され、文化的相対性と普遍的な不安（去勢不安など）のどちらで捉えるべきかが論じられてきた。集団発作は社会心理学・人類学の重要事例となっている。精神疾患は個人のものであり普遍的だという西洋精神医学の前提を、最も鮮やかに揺さぶる診断である。',
     },
-    en: { name: 'Koro（東南アジア・中国）', enName: 'コロ', reading: '', meaning: '' },
+    en: { name: 'Koro（東南アジア・中国）', enName: 'コロ', reading: '', meaning: 'An acute panic episode driven by the belief that the genitals are retracting into the body, fatally.', symptom: 'An acute panic-like attack driven by the belief that the genitals (the penis in men; the breasts or vulva in women) are retracting into the body, and that full retraction means death. Sufferers may pull on or clamp the genitals to hold them in place.', history: 'First recorded in the Malay Archipelago in 1834; most common in southern China and Southeast Asia (Malaysia, Singapore, Indonesia). Its cultural soil is said to be anxiety over the loss of jing — vital essence in Chinese medicine. Beyond individual attacks, it can spread through rumor and media as regional mass episodes: in Singapore in 1967, hundreds rushed to hospitals.', debate: 'Rare similar cases in the West (as delusions accompanying depression or schizophrenia) have fueled debate over whether to read it through cultural relativity or through universal anxieties such as castration anxiety. Its mass episodes are a key case for social psychology and anthropology. No diagnosis more vividly shakes Western psychiatry\'s premise that mental illness is individual and universal.' },
   },
   {
     id: 'DA-080', num: 80, cat: 'CULTURE-BOUND',
@@ -1134,7 +1134,7 @@ export const CARDS: Card[] = [
       history: '16世紀以降、ポルトガル・オランダ・英国の航海記録に登場し、マレー文化圏（マレーシア、インドネシア）に固有とされた。英領マラヤでは警察・植民地行政の対応対象となった。英語の「run amok（暴走する）」の語源であり、クレペリンも1903年に現地調査を行っている。',
       debate: '「マレー文化に固有」とする説と、「条件が整えば普遍的に起こりうる」とする説がある。21世紀には米国の銃乱射事件との構造的類似が論じられる一方、植民地時代に「アジア人の野蛮性」というステレオタイプの強化に用いられた歴史があり、植民地的まなざしの再生産への注意が必要とされる。特定文化の病が「普遍的現象」として翻訳・流通するプロセスを示す。',
     },
-    en: { name: 'Amok（マレー圏）', enName: 'アモック', reading: '', meaning: '' },
+    en: { name: 'Amok（マレー圏）', enName: 'アモック', reading: '', meaning: 'A sudden episode of indiscriminate violence erupting after a period of brooding withdrawal.', symptom: 'After a period of social withdrawal and depressive brooding, the person erupts into violent frenzy, attacking people indiscriminately with a weapon. The episode ends in amnesia, and often in suicide or self-harm.', history: 'Recorded in Portuguese, Dutch, and British voyage accounts from the sixteenth century onward and held to be specific to the Malay world (Malaysia, Indonesia). In British Malaya it became a matter for police and colonial administration. It is the origin of the English phrase "run amok"; Kraepelin conducted fieldwork on it in 1903.', debate: 'One view holds it specific to Malay culture; another, that it can occur anywhere given the right conditions. Its structural resemblance to American mass shootings has been discussed in the twenty-first century, yet its colonial-era use to reinforce stereotypes of "Asian savagery" demands caution against reproducing the colonial gaze. It shows how a culture-specific illness gets translated and circulated as a "universal phenomenon."' },
   },
   {
     id: 'DA-081', num: 81, cat: 'CULTURE-BOUND',
@@ -1148,7 +1148,7 @@ export const CARDS: Card[] = [
       history: '19世紀からマレー・インドネシアで記録され、最初に注目された文化結合症候群の一つである。中年女性に多いとされる。',
       debate: '普遍的な驚愕反射の文化的に増幅された表現とみる説と、固有の症候群とみる説がある。同様の現象はシベリアやメイン州（跳ぶフランス人）でも報告される。',
     },
-    en: { name: 'Latah（マレー・インドネシア）', enName: 'ラタ', reading: '', meaning: '' },
+    en: { name: 'Latah（マレー・インドネシア）', enName: 'ラタ', reading: '', meaning: 'A startle response that tips into involuntary mimicry and automatic obedience.', symptom: 'An exaggerated startle reaction: once startled, the person falls into involuntary echolalia (parroting), echopraxia (mimicry), automatic obedience to commands, or the utterance of obscenities.', history: 'Recorded in Malaysia and Indonesia since the nineteenth century, one of the first culture-bound syndromes to draw attention. Said to occur mostly in middle-aged women.', debate: 'Some read it as a culturally amplified expression of the universal startle reflex, others as a distinct syndrome. Similar phenomena are reported in Siberia and in Maine (the "Jumping Frenchmen").' },
   },
   {
     id: 'DA-082', num: 82, cat: 'CULTURE-BOUND',
@@ -1162,7 +1162,7 @@ export const CARDS: Card[] = [
       history: '韓国の民間概念で、家父長的・抑圧的な社会状況に置かれた中年女性に多いとされる（中年女性の5〜15%という推計もある）。DSM-IVに記載された。',
       debate: 'うつ病や身体表現性障害との関係が論じられる。感情（特に怒り）の表出を許さない社会構造が身体症状を生む過程を示す。',
     },
-    en: { name: 'Hwa-byung（韓国）', enName: '火病', reading: '', meaning: '' },
+    en: { name: 'Hwa-byung（韓国）', enName: '火病', reading: '', meaning: 'Chest pain, insomnia, and depression attributed to long-suppressed anger.', symptom: 'Said to arise from years of suppressed anger and resentment: chest tightness, palpitations, insomnia, depression, sighing, and the sensation of a mass in the pit of the stomach. The name literally means "fire illness."', history: 'A Korean folk concept, most common among middle-aged women in patriarchal, oppressive circumstances — by some estimates 5 to 15 percent of middle-aged women. It was listed in DSM-IV.', debate: 'Its relation to depression and somatoform disorders is debated. It shows how a social structure that forbids the expression of emotion — anger above all — produces bodily symptoms.' },
   },
   {
     id: 'DA-083', num: 83, cat: 'CULTURE-BOUND',
@@ -1176,7 +1176,7 @@ export const CARDS: Card[] = [
       history: '韓国のシャーマニズム（巫俗）と結びついた民間概念である。',
       debate: '西洋精神医学では精神病性体験と見なされうる現象が、文化内では聖なる召命として肯定的に意味づけられる点が、正常と異常の文化相対性を示す。',
     },
-    en: { name: 'Shin-byung（韓国）', enName: '神病', reading: '', meaning: '' },
+    en: { name: 'Shin-byung（韓国）', enName: '神病', reading: '', meaning: 'Anxiety and bodily complaints read as the prelude to becoming a shaman.', symptom: 'Anxiety, weakness, loss of appetite, and bodily ailments progressing to identification with — possession by — spirits, interpreted as the initiatory experience of becoming a shaman (mudang).', history: 'A folk concept bound to Korean shamanism (musok).', debate: 'What Western psychiatry might call psychotic experience is, within the culture, given positive meaning as a sacred calling — a demonstration of the cultural relativity of normal and abnormal.' },
   },
   {
     id: 'DA-084', num: 84, cat: 'CULTURE-BOUND',
@@ -1190,7 +1190,7 @@ export const CARDS: Card[] = [
       history: '中南米の先住民由来の概念で、DSM-5の文化的苦痛概念の一つに挙げられる。「魂の喪失」という病因観に基づく。',
       debate: 'うつ病・PTSD・不安症との関連が指摘される。低い社会経済的地位やストレスとの関係も論じられ、病因を超自然に求める枠組みの意味が問われる。',
     },
-    en: { name: 'Susto（中南米）', enName: 'ススト', reading: '', meaning: '' },
+    en: { name: 'Susto（中南米）', enName: 'ススト', reading: '', meaning: 'Chronic malaise attributed to the soul leaving the body after a fright.', symptom: 'Chronic malaise attributed to the soul (alma) departing the body after a terrifying experience: loss of appetite, insomnia, listlessness, weight loss, sadness. The word literally means "fright."', history: 'A concept of Indigenous Latin American origin, listed among DSM-5\'s cultural concepts of distress and grounded in an etiology of soul loss.', debate: 'Links to depression, PTSD, and anxiety disorders are noted, as are low socioeconomic status and stress; what it means to locate cause in the supernatural remains at issue.' },
   },
   {
     id: 'DA-085', num: 85, cat: 'CULTURE-BOUND',
@@ -1204,7 +1204,7 @@ export const CARDS: Card[] = [
       history: '中南米・カリブのスペイン語圏の概念で、DSM-5に代表的な文化的苦痛概念として記載される。直訳は「神経の発作」。',
       debate: 'パニック症・解離・転換症と重なるが一対一対応はしない。葬儀などでの発作は正常な感情表出でもあり、病とそうでないものの線引きが文化に依存することを示す。',
     },
-    en: { name: 'Ataque de Nervios（中南米）', enName: '神経発作', reading: '', meaning: '' },
+    en: { name: 'Ataque de Nervios（中南米）', enName: '神経発作', reading: '', meaning: 'An attack of screaming, trembling, and fainting, typically triggered by loss.', symptom: 'Intense emotional upheaval: uncontrollable screaming and weeping, trembling, heat rising from the chest to the head, aggression, and fainting-like episodes. Most are triggered by intense stress such as a death in the family.', history: 'A concept of Spanish-speaking Latin America and the Caribbean, listed in DSM-5 as a representative cultural concept of distress. The name literally means "attack of nerves."', debate: 'It overlaps with panic disorder, dissociation, and conversion disorder without mapping one-to-one. An attack at a funeral can also be normal emotional expression — showing that the line between illness and non-illness depends on culture.' },
   },
   {
     id: 'DA-086', num: 86, cat: 'CULTURE-BOUND',
@@ -1218,7 +1218,7 @@ export const CARDS: Card[] = [
       history: '中南米で日常語化した苦痛のイディオムであり、DSM-5の文化的苦痛概念の一つである。',
       debate: '特定の症候群というより、苦痛を語る言葉（idiom of distress）に近く、診断カテゴリと文化的表現の違いを考える題材となる。',
     },
-    en: { name: 'Nervios（中南米）', enName: 'ナーバス', reading: '', meaning: '' },
+    en: { name: 'Nervios（中南米）', enName: 'ナーバス', reading: '', meaning: 'A broad, nonspecific malaise in response to chronic stress.', symptom: 'Headache, insomnia, irritability, gastrointestinal upset, poor concentration — a broad, nonspecific distress response to chronic stress. The word literally means "nerves."', history: 'An everyday idiom of distress across Latin America and one of DSM-5\'s cultural concepts of distress.', debate: 'Less a specific syndrome than an idiom of distress, it offers material for thinking through the difference between diagnostic categories and cultural expression.' },
   },
   {
     id: 'DA-087', num: 87, cat: 'CULTURE-BOUND',
@@ -1232,7 +1232,7 @@ export const CARDS: Card[] = [
       history: '地中海沿岸・中南米・中東など広範な地域に古代から伝わる邪視信仰に基づく。',
       debate: '民間信仰と医学の境界、対人関係（嫉妬）に病因を求める発想が論じられる。お守りや儀礼による予防・治療が伴う。',
     },
-    en: { name: 'Mal de Ojo（地中海・中南米）', enName: '邪視', reading: '', meaning: '' },
+    en: { name: 'Mal de Ojo（地中海・中南米）', enName: '邪視', reading: '', meaning: 'Illness attributed to the "evil eye" of an envious other.', symptom: 'Malaise attributed to the evil eye cast by an envious or covetous other. Children and infants especially are said to suffer sleeplessness, crying, fever, and vomiting.', history: 'Grounded in evil-eye belief transmitted since antiquity across the Mediterranean, Latin America, the Middle East, and beyond.', debate: 'It raises the boundary between folk belief and medicine, and the impulse to locate cause in interpersonal relations (envy). Prevention and cure involve amulets and ritual.' },
   },
   {
     id: 'DA-088', num: 88, cat: 'CULTURE-BOUND',
@@ -1246,7 +1246,7 @@ export const CARDS: Card[] = [
       history: '南アジアの概念で、DSM-5の文化的苦痛概念の一つ。精液（生命力）の喪失を有害とみる土着の身体観に基づく。主に若い男性にみられる。',
       debate: '男性性と身体観の文化依存を示す。中医学圏の腎虚と類似し、「失われるもの」への不安が文化ごとに異なる形をとる。',
     },
-    en: { name: 'Dhat（南アジア）', enName: 'ダート', reading: '', meaning: '' },
+    en: { name: 'Dhat（南アジア）', enName: 'ダート', reading: '', meaning: 'Excessive anxiety and bodily complaints over the loss of semen.', symptom: 'Excessive anxiety over semen loss (in nocturnal emissions or urination), with fatigue, weakness, hypochondriacal complaints, and worry about sexual function. The word literally means "semen."', history: 'A South Asian concept, one of DSM-5\'s cultural concepts of distress, grounded in an indigenous body-concept that treats the loss of semen — vital force — as harmful. Seen mainly in young men.', debate: 'It shows how masculinity and body-concepts depend on culture. It resembles shen-k\'uei in the Chinese-medicine sphere: anxiety over "what is being lost" takes a different form in each culture.' },
   },
   {
     id: 'DA-089', num: 89, cat: 'CULTURE-BOUND',
@@ -1260,7 +1260,7 @@ export const CARDS: Card[] = [
       history: '19世紀の西洋の「神経衰弱（neurasthenia）」が1950年代以降に中国へ定着し、土着化した。Arthur Kleinmanの研究で広く知られ、ICD-11にも記載が残る。',
       debate: '西洋でうつ病等に分解・消滅した診断が、抑うつより身体症状や社会的に受容されやすい説明を好む文化の中で生き延びた。診断が文化に「適合」して残存する過程を示す。',
     },
-    en: { name: 'Shenjing Shuairuo（中国）', enName: '神経衰弱（中国）', reading: '', meaning: '' },
+    en: { name: 'Shenjing Shuairuo（中国）', enName: '神経衰弱（中国）', reading: '', meaning: 'Fatigue, headache, dizziness — a diagnosis that survives in China.', symptom: 'A catch-all for varied, nonspecific complaints: fatigue, headache, dizziness, poor concentration, insomnia, failing memory, bodily pain. The name literally means "weakness of the nerves."', history: 'The nineteenth-century Western diagnosis of neurasthenia took root in China from the 1950s onward and became indigenized. Widely known through Arthur Kleinman\'s research, it remains listed in ICD-11.', debate: 'A diagnosis that dissolved in the West into depression and other categories survived in a culture that prefers somatic symptoms and socially acceptable explanations over depression — showing how a diagnosis persists by adapting to its culture.' },
   },
   {
     id: 'DA-090', num: 90, cat: 'CULTURE-BOUND',
@@ -1274,7 +1274,7 @@ export const CARDS: Card[] = [
       history: '中医学的な身体観に基づく中国・台湾の概念である。南アジアのダートと近縁とされる。',
       debate: '「精」の喪失を病因とみる文化固有の身体観を示し、西洋の生物医学とは異なる病の理解の枠組みを浮かび上がらせる。',
     },
-    en: { name: 'Shen-k\'uei（中国・台湾）', enName: '腎虚', reading: '', meaning: '' },
+    en: { name: 'Shen-k\'uei（中国・台湾）', enName: '腎虚', reading: '', meaning: 'Anxiety over debility from the loss of vital essence, in Chinese medicine.', symptom: 'Intense anxiety about debility caused by the loss of semen or jing (vital energy), accompanied by fatigue, worry about sexual function, and bodily complaints.', history: 'A Chinese and Taiwanese concept grounded in the body-concept of traditional Chinese medicine, considered close kin to South Asia\'s dhat.', debate: 'It exhibits a culture-specific body-concept that treats the loss of essence as pathogenic, throwing into relief a framework for understanding illness distinct from Western biomedicine.' },
   },
   {
     id: 'DA-091', num: 91, cat: 'CULTURE-BOUND',
@@ -1288,7 +1288,7 @@ export const CARDS: Card[] = [
       history: '中国の臨床で記述され、DSM-IV-TRに文化結合症候群として記載された。',
       debate: '修行・瞑想という文化的実践と精神症状の関係を示す。短期的な反応か病かの境界、宗教的実践のリスクが論じられる。',
     },
-    en: { name: 'Qi-gong Psychotic Reaction（中国）', enName: '気功精神病性反応', reading: '', meaning: '' },
+    en: { name: 'Qi-gong Psychotic Reaction（中国）', enName: '気功精神病性反応', reading: '', meaning: 'Dissociative and delusional episodes arising after qi-gong practice.', symptom: 'Acute, transient psychotic-like episodes — dissociation, delusions, hallucinations — said to follow intensive qi-gong training.', history: 'Described in Chinese clinical practice and listed in DSM-IV-TR as a culture-bound syndrome.', debate: 'It shows the relation between a cultural practice — training, meditation — and psychiatric symptoms. The boundary between short-lived reaction and illness, and the risks of religious practice, are debated.' },
   },
   {
     id: 'DA-092', num: 92, cat: 'CULTURE-BOUND',
@@ -1302,7 +1302,7 @@ export const CARDS: Card[] = [
       history: '1960年代に西アフリカ（特にナイジェリア）で記述された（R. Prince ら）。植民地教育・西洋式の学業が課す圧力を背景とする。直訳は「脳の疲労」。',
       debate: '植民地主義がもたらした教育制度のストレスが身体化したものとも読まれ、近年はDSM-5でクフンギシサ等との関連で再整理された。',
     },
-    en: { name: 'Brain Fag（西アフリカ）', enName: 'ブレインファグ', reading: '', meaning: '' },
+    en: { name: 'Brain Fag（西アフリカ）', enName: 'ブレインファグ', reading: '', meaning: 'Head fatigue and impaired concentration attributed to study.', symptom: 'Centered on a feeling of fatigue in the head from study and intellectual work, with heat and pressure in the head, blurred vision, and poor concentration. Common among students.', history: 'Described in West Africa (especially Nigeria) in the 1960s by R. Prince and others, against the background of pressures imposed by colonial education and Western-style schooling. The name means "brain fatigue."', debate: 'It has been read as the somatization of stress imposed by a colonial education system; DSM-5 recently reorganized it in relation to kufungisisa and kindred concepts.' },
   },
   {
     id: 'DA-093', num: 93, cat: 'CULTURE-BOUND',
@@ -1316,7 +1316,7 @@ export const CARDS: Card[] = [
       history: '19世紀フランス精神医学の概念で、フランス語圏の西アフリカやハイチで用いられた。',
       debate: '短期精神病性障害との関係が論じられる。植民地期の精神医学の枠組みが現地の現象に当てはめられた歴史をもつ。',
     },
-    en: { name: 'Bouffée Délirante（西アフリカ・ハイチ）', enName: '妄想突発', reading: '', meaning: '' },
+    en: { name: 'Bouffée Délirante（西アフリカ・ハイチ）', enName: '妄想突発', reading: '', meaning: 'Sudden agitation with hallucinations and delusions, resolving within days.', symptom: 'A sudden psychotic-like episode of intense agitation, confusion, hallucinations, and delusions, usually resolving within days. The name literally means "delusional outburst."', history: 'A concept of nineteenth-century French psychiatry, used in Francophone West Africa and Haiti.', debate: 'Its relation to brief psychotic disorder is debated. It carries the history of a colonial-era psychiatric framework applied to local phenomena.' },
   },
   {
     id: 'DA-094', num: 94, cat: 'CULTURE-BOUND',
@@ -1330,7 +1330,7 @@ export const CARDS: Card[] = [
       history: 'ハイチの病因分類の一部で、自然由来の病や超自然由来の病と区別される。DSM-5に記載される。',
       debate: '病を対人関係・社会的緊張の表れとみる枠組みであり、個人の身体内に病因を求める生物医学と対照をなす。',
     },
-    en: { name: 'Maladi Moun（ハイチ）', enName: '人為の病', reading: '', meaning: '' },
+    en: { name: 'Maladi Moun（ハイチ）', enName: '人為の病', reading: '', meaning: 'Illness believed to be inflicted by others through envy or sorcery.', symptom: 'Illness interpreted as deliberately caused by another person\'s envy, hostility, or sorcery. The name literally means "humanly caused illness."', history: 'Part of Haiti\'s etiological classification of illness, distinguished from illness of natural or supernatural origin. Listed in DSM-5.', debate: 'A framework that reads illness as an expression of interpersonal and social tension, standing in contrast to biomedicine, which locates cause inside the individual body.' },
   },
   {
     id: 'DA-095', num: 95, cat: 'CULTURE-BOUND',
@@ -1344,7 +1344,7 @@ export const CARDS: Card[] = [
       history: '北アフリカ・中東・東アフリカに広がる憑依概念・儀礼で、特に女性に多いとされる。DSMに記載される。',
       debate: '解離の文化的に容認された表現であり、抑圧された立場の女性が声をあげる社会的回路としての機能も論じられる。',
     },
-    en: { name: 'Zar（北アフリカ・中東）', enName: 'ザール', reading: '', meaning: '' },
+    en: { name: 'Zar（北アフリカ・中東）', enName: 'ザール', reading: '', meaning: 'Dissociative and somatic symptoms attributed to spirit possession.', symptom: 'Dissociation, shouting, laughing, bodily complaints, and apathy attributed to possession by a spirit (zar). Possession rituals are used to come to terms with the spirit.', history: 'A possession concept and ritual spread across North Africa, the Middle East, and East Africa, reported chiefly among women. Listed in the DSM.', debate: 'Read as a culturally sanctioned expression of dissociation — and as a social channel through which women in oppressed positions can raise their voices.' },
   },
   {
     id: 'DA-096', num: 96, cat: 'CULTURE-BOUND',
@@ -1358,7 +1358,7 @@ export const CARDS: Card[] = [
       history: 'カンボジアの身体観に基づく概念で、DSM-5の文化的苦痛概念の一つ。直訳は「風の発作」。',
       debate: 'パニック症と重なるが、身体感覚の解釈の枠組み（風の理論）が文化固有である点が、症状の意味づけの文化依存を示す。',
     },
-    en: { name: 'Khyâl Cap（カンボジア）', enName: '風の発作', reading: '', meaning: '' },
+    en: { name: 'Khyâl Cap（カンボジア）', enName: '風の発作', reading: '', meaning: 'Panic-like attacks attributed to a disturbance of "wind."', symptom: 'Panic-like attacks — dizziness, palpitations, shortness of breath, tinnitus, cold extremities — attributed to a disturbance of the "wind" (khyâl in Khmer) circulating through the body.', history: 'Rooted in Cambodian concepts of the body; one of DSM-5\'s cultural concepts of distress. The name literally means "wind attacks."', debate: 'It overlaps with panic disorder, but the framework for interpreting bodily sensations — the theory of wind — is culture-specific, showing how the meaning given to symptoms depends on culture.' },
   },
   {
     id: 'DA-097', num: 97, cat: 'CULTURE-BOUND',
@@ -1372,7 +1372,7 @@ export const CARDS: Card[] = [
       history: 'ジンバブエ（ショナ語圏）の概念で、DSM-5の文化的苦痛概念の一つである。サハラ以南アフリカ各地に類似の概念がある。',
       debate: '抑うつ・不安と重なるが、「思考そのもの」を病因とみる点が特徴的で、西洋の反芻概念とも比較される。',
     },
-    en: { name: 'Kufungisisa（ジンバブエ）', enName: '考えすぎ病', reading: '', meaning: '' },
+    en: { name: 'Kufungisisa（ジンバブエ）', enName: '考えすぎ病', reading: '', meaning: 'Physical and mental symptoms attributed to excessive thinking.', symptom: 'Headache, rumination, depression, and anxiety attributed to "thinking too much" — which is what the word literally means.', history: 'A concept from Shona-speaking Zimbabwe, one of DSM-5\'s cultural concepts of distress. Similar concepts exist across sub-Saharan Africa.', debate: 'It overlaps with depression and anxiety, but is distinctive in treating thought itself as the cause of illness, inviting comparison with Western concepts of rumination.' },
   },
   {
     id: 'DA-098', num: 98, cat: 'CULTURE-BOUND',
@@ -1386,7 +1386,7 @@ export const CARDS: Card[] = [
       history: '1892年以降、北極探検家（ピアリーら）の記録に登場し、イヌイット（特に女性）に固有の「北極ヒステリー」とされた。',
       debate: '近年の研究（Lyle Dick ら）は、探検家が不安反応・身体疾患・家父長制や性的強要への抵抗・シャーマン的実践などを一括した「催し物的なカテゴリ」だった可能性を示し、実在性と植民地的まなざしが問い直されている。',
     },
-    en: { name: 'Pibloktoq（北極圏）', enName: 'ピブロクトク', reading: '', meaning: '' },
+    en: { name: 'Pibloktoq（北極圏）', enName: 'ピブロクトク', reading: '', meaning: 'Sudden fits of confusion — stripping off one\'s clothes and running.', symptom: 'After sudden confusion and agitation, the person reportedly strips off clothing and runs across the snow, screaming and behaving bizarrely, with amnesia afterward.', history: 'Appearing in Arctic explorers\' records (Peary and others) from 1892 onward, it was framed as an "Arctic hysteria" peculiar to the Inuit, especially women.', debate: 'Recent research (Lyle Dick and others) suggests the explorers may have created a "spectacle" category lumping together anxiety reactions, physical illness, resistance to patriarchy and sexual coercion, and shamanic practice — putting both its reality and the colonial gaze in question.' },
   },
   {
     id: 'DA-099', num: 99, cat: 'CULTURE-BOUND',
@@ -1400,7 +1400,7 @@ export const CARDS: Card[] = [
       history: '北米のアルゴンキン系先住民の神話に由来し、20世紀の人類学・精神医学で「文化結合精神病」として論じられた。',
       debate: 'Lou Marano（1982）は、これが実在の精神疾患ではなく、観察者の視点（emic/etic）の混同と、飢饉時の処刑を正当化する社会的レッテルだった可能性を論じた。実在自体が学術的に強く疑われており、植民地的まなざしの再生産の典型例とされる。',
     },
-    en: { name: 'Windigo Psychosis（北米先住民）', enName: 'ウェンディゴ精神病', reading: '', meaning: '' },
+    en: { name: 'Windigo Psychosis（北米先住民）', enName: 'ウェンディゴ精神病', reading: '', meaning: 'A delusional compulsion to eat human flesh.', symptom: 'A state in which the person was said to be gripped by a delusional, irresistible urge to eat human flesh, with terror of transforming into the windigo, a monster with a heart of ice.', history: 'Derived from the mythology of Algonquian peoples of North America, and discussed in twentieth-century anthropology and psychiatry as a "culture-bound psychosis."', debate: 'Lou Marano (1982) argued it was not a real mental illness but a confusion of observer perspectives (emic/etic) and a social label used to justify executions during famine. Its very existence is strongly doubted in the scholarship; it stands as a textbook case of the colonial gaze reproduced.' },
   },
   {
     id: 'DA-100', num: 100, cat: 'CULTURE-BOUND',
@@ -1414,7 +1414,7 @@ export const CARDS: Card[] = [
       history: '北米先住民（特にナバホ）の概念で、DSM-IVに記載された。',
       debate: '死別反応やPTSDとの関係が論じられる。死者観と病の結びつきという、文化固有の死生観を反映する。',
     },
-    en: { name: 'Ghost Sickness（北米先住民）', enName: '幽霊病', reading: '', meaning: '' },
+    en: { name: 'Ghost Sickness（北米先住民）', enName: '幽霊病', reading: '', meaning: 'Nightmares, weakness, and dread attributed to being haunted by the dead.', symptom: 'Nightmares, weakness, loss of appetite, a sense of suffocation, terror, and foreboding, attributed to being possessed by the dead or by death itself.', history: 'A concept of North American Indigenous peoples, especially the Navajo, listed in DSM-IV.', debate: 'Its relation to bereavement reactions and PTSD is discussed. It reflects a culture-specific view of death, binding illness to how the dead are conceived.' },
   },
   {
     id: 'DA-101', num: 101, cat: 'CULTURE-BOUND',
@@ -1428,7 +1428,7 @@ export const CARDS: Card[] = [
       history: '米国南部のアフリカ系コミュニティやカリブで報告される概念で、ataque de nervios やハイチの indisposition と関連づけられる。',
       debate: '解離・転換症との関係が論じられる。同じ現象が地域・集団ごとに異なる名で呼ばれることを示す。',
     },
-    en: { name: 'Falling-out（アフリカ系米国・カリブ）', enName: 'フォーリングアウト', reading: '', meaning: '' },
+    en: { name: 'Falling-out（アフリカ系米国・カリブ）', enName: 'フォーリングアウト', reading: '', meaning: 'Episodes of suddenly collapsing, unable to move.', symptom: 'Episodes of collapsing suddenly and being unable to move; the eyes may see but the person cannot respond. Consciousness is often partly preserved.', history: 'Reported in African American communities of the southern United States and in the Caribbean, and linked to ataque de nervios and Haitian indisposition.', debate: 'Its relation to dissociation and conversion disorder is discussed. It shows how the same phenomenon goes by different names across regions and groups.' },
   },
   {
     id: 'DA-102', num: 102, cat: 'CULTURE-BOUND',
@@ -1442,7 +1442,7 @@ export const CARDS: Card[] = [
       history: '米国南部やカリブのアフリカ系の民間伝承（フードゥー等）に基づく概念である。',
       debate: '病因を対人的・呪術的な領域に求める枠組みであり、生物医学の説明と衝突しうる。誤診・治療放棄のリスクも論じられる。',
     },
-    en: { name: 'Rootwork（米国南部）', enName: 'ルートワーク', reading: '', meaning: '' },
+    en: { name: 'Rootwork（米国南部）', enName: 'ルートワーク', reading: '', meaning: 'Illness attributed to hexing by others.', symptom: 'Illness interpreted as inflicted by another person through sorcery or charms ("roots"); unexplained ailments are read as the work of hostile magic.', history: 'Rooted in African American folk traditions of the southern United States and the Caribbean, such as hoodoo.', debate: 'A framework that locates the cause of illness in the interpersonal, magical sphere, it can collide with biomedical explanation. Risks of misdiagnosis and abandonment of treatment are also discussed.' },
   },
   {
     id: 'DA-103', num: 103, cat: 'CULTURE-BOUND',
@@ -1456,7 +1456,7 @@ export const CARDS: Card[] = [
       history: 'スペイン語の「狂気」を意味する日常語が、重い精神病を指す文化的呼称として用いられる。',
       debate: '統合失調症等の専門用語に対応するが、その文化内での意味づけ・スティグマの度合いが異なる。',
     },
-    en: { name: 'Locura（中南米・米ラティーノ）', enName: 'ロクラ', reading: '', meaning: '' },
+    en: { name: 'Locura（中南米・米ラティーノ）', enName: 'ロクラ', reading: '', meaning: 'A folk term for chronic, severe psychosis.', symptom: 'A vernacular term among Latin Americans and U.S. Latinos for a chronic, severe psychotic state.', history: 'The everyday Spanish word for "madness," used as a cultural label for serious mental illness.', debate: 'It corresponds to technical terms such as schizophrenia, but the meanings attached to it within the culture — and the degree of stigma — differ.' },
   },
   {
     id: 'DA-104', num: 104, cat: 'CULTURE-BOUND',
@@ -1470,7 +1470,7 @@ export const CARDS: Card[] = [
       history: '1878年、ジョージ・ビアードが米国メイン州北部のフランス系カナダ人の木こりに観察して報告した。',
       debate: '驚愕反応の文化的・神経学的な極端例として、ラタやアモックと比較される。固有文化の現象が西欧でも見いだされたことが、普遍性と文化性の議論を呼んだ。',
     },
-    en: { name: 'Jumping Frenchmen of Maine（米）', enName: 'メイン州の跳ぶフランス人', reading: '', meaning: '' },
+    en: { name: 'Jumping Frenchmen of Maine（米）', enName: 'メイン州の跳ぶフランス人', reading: '', meaning: 'An exaggerated startle response, resembling latah.', symptom: 'When startled, the person jumps excessively, cries out, obeys commands automatically, or imitates nearby movements. It closely resembles latah.', history: 'Reported in 1878 by George Beard, who observed it among French Canadian lumberjacks in northern Maine.', debate: 'Compared with latah and amok as a cultural and neurological extreme of the startle response. That a supposedly culture-specific phenomenon turned up in the West fueled debate over universality versus cultural specificity.' },
   },
   {
     id: 'DA-105', num: 105, cat: 'CULTURE-BOUND',
@@ -1484,7 +1484,7 @@ export const CARDS: Card[] = [
       history: '1942年、生理学者ウォルター・キャノンが世界各地の事例を集めて論じた。アフリカ・ポリネシア・先住民社会などで報告された。',
       debate: '信念が身体を死に至らしめる機序として、ノセボ効果や自律神経系の関与が研究される。心身相関の極限例であり、信念と身体の関係を問う。',
     },
-    en: { name: 'Voodoo Death（多地域）', enName: 'ヴードゥー死', reading: '', meaning: '' },
+    en: { name: 'Voodoo Death（多地域）', enName: 'ヴードゥー死', reading: '', meaning: 'Actual death brought on by the belief that one has been cursed.', symptom: 'A phenomenon in which the conviction of having been cursed or having broken a taboo reportedly leads to real decline and death, without medical explanation.', history: 'In 1942 the physiologist Walter Cannon collected and analyzed cases from around the world. Reports came from Africa, Polynesia, and Indigenous societies.', debate: 'The nocebo effect and the autonomic nervous system are studied as mechanisms by which belief can kill. An extreme case of mind-body interaction, it asks how belief acts on the body.' },
   },
   {
     id: 'DA-106', num: 106, cat: 'CULTURE-BOUND',
@@ -1498,7 +1498,7 @@ export const CARDS: Card[] = [
       history: '米国南部のアフリカ系コミュニティに伝わる概念である。',
       debate: '西洋精神医学では解離・精神病と誤診されうる体験が、文化内では正常で価値ある経験とされる。正常と異常の境界の文化相対性を示す。',
     },
-    en: { name: 'Spell（米国南部）', enName: 'スペル', reading: '', meaning: '' },
+    en: { name: 'Spell（米国南部）', enName: 'スペル', reading: '', meaning: 'A trance state in which one communes with the dead.', symptom: 'An experience of entering a trance and communing with the dead or with spirits, regarded within the culture as a normal phenomenon.', history: 'A concept found in African American communities of the southern United States.', debate: 'An experience that Western psychiatry might misdiagnose as dissociation or psychosis is treated within the culture as normal and valued — showing the cultural relativity of the line between normal and abnormal.' },
   },
   {
     id: 'DA-107', num: 107, cat: 'RETIRED',
@@ -1512,7 +1512,7 @@ export const CARDS: Card[] = [
       history: '15〜17世紀、特に16世紀のヨーロッパで、王侯貴族や知識人の間に記録が集中した。フランス王シャルル6世（在位1380-1422）が自らをガラス製と信じ、衣服に鉄の棒を縫い込ませたという逸話が知られる。ロバート・バートン『憂鬱の解剖』（1621）に記載され、セルバンテスの短編『ガラスの学士（El licenciado Vidriera）』（1613）で文学化された。17世紀末以降、急速に消滅した。',
       debate: '「文化結合症候群の歴史版」とみる見方があり、なぜ特定の時代に集中して現れ、なぜ消えたのかについて定説はない。ヴェネツィアやボヘミアでのガラス製造技術の普及と時期的に重なる点が指摘される。現在流行している妄想も、後世から見ればこのように時代を映す鏡として読まれるかもしれない、という問いを投げかける。',
     },
-    en: { name: 'Glass Delusion', enName: 'ガラス妄想', reading: '', meaning: '' },
+    en: { name: 'Glass Delusion', enName: 'ガラス妄想', reading: '', meaning: 'The delusion that one\'s body is made of glass and will shatter at a touch.', symptom: 'The delusion that one\'s body, or part of it, is made of glass and will break on impact. Sufferers refused to sit or be touched, wrapping themselves in blankets for protection.', history: 'Recorded chiefly among nobles and intellectuals in fifteenth- to seventeenth-century Europe, peaking in the sixteenth century. King Charles VI of France (r. 1380-1422) reputedly believed himself made of glass and had iron rods sewn into his clothes. Described in Robert Burton\'s The Anatomy of Melancholy (1621) and fictionalized in Cervantes\'s story El licenciado Vidriera (1613). It vanished rapidly after the late seventeenth century.', debate: 'Some call it a "historical culture-bound syndrome"; there is no settled account of why it clustered in one era and then disappeared, though its timing coincides with the spread of glassmaking in Venice and Bohemia. It poses the question of whether today\'s fashionable delusions will one day be read the same way — as mirrors of their age.' },
   },
   {
     id: 'DA-108', num: 108, cat: 'RETIRED',
@@ -1526,7 +1526,7 @@ export const CARDS: Card[] = [
       history: '中世〜近世のヨーロッパで断続的に発生し、1374年のライン地方や1518年のストラスブールの事例が有名である。',
       debate: '集団ヒステリー（集団心因反応）、麦角中毒、宗教的トランスなど諸説あるが、原因は確定していない。集団で生じる「病」の代表例である。',
     },
-    en: { name: 'Dancing Mania', enName: '舞踏狂', reading: '', meaning: '' },
+    en: { name: 'Dancing Mania', enName: '舞踏狂', reading: '', meaning: 'Crowds dancing uncontrollably until they collapse.', symptom: 'Groups of people danced for hours or days until they collapsed, sometimes weeping, screaming, hallucinating, and convulsing.', history: 'It broke out intermittently in medieval and early modern Europe; the Rhineland outbreak of 1374 and Strasbourg in 1518 are the most famous.', debate: 'Explanations include mass hysteria (mass psychogenic illness), ergot poisoning, and religious trance, but no cause has been established. It is the paradigmatic example of an "illness" that arises collectively.' },
   },
   {
     id: 'DA-109', num: 109, cat: 'RETIRED',
@@ -1540,7 +1540,7 @@ export const CARDS: Card[] = [
       history: '南イタリア（プーリア地方）で11世紀以降記録され、15〜17世紀に流行した。音楽療法としてのタランテラ舞曲を生んだ。',
       debate: 'クモの咬傷と症状の因果は薄く、舞踏狂と同様の集団的・文化的現象とみなされる。なぜ特定の地域・時代に集中したかが問われる。',
     },
-    en: { name: 'Tarantism', enName: 'タランティズム', reading: '', meaning: '' },
+    en: { name: 'Tarantism', enName: 'タランティズム', reading: '', meaning: 'A compulsion to dance, attributed to a spider\'s bite.', symptom: 'A violent urge to dance, agitation, and melancholy, said to be triggered by the bite of a venomous spider (tarantula) and curable only by dancing the tarantella.', history: 'Recorded in southern Italy (Apulia) from the eleventh century onward and epidemic in the fifteenth to seventeenth centuries. It gave rise to the tarantella as music therapy.', debate: 'The causal link between spider bite and symptoms is thin; like dancing mania, it is viewed as a collective, cultural phenomenon. Why it clustered in a particular region and era remains the question.' },
   },
   {
     id: 'DA-110', num: 110, cat: 'RETIRED',
@@ -1554,7 +1554,7 @@ export const CARDS: Card[] = [
       history: '古代から各地の狼男伝承と結びついて記録され、現在も「臨床的人狼妄想」として稀に報告される。',
       debate: '統合失調症やうつ病に伴う妄想の一形態とされる。同じ妄想の内容が、時代の信仰（動物変身）を映す鏡となっている。',
     },
-    en: { name: 'Lycanthropy', enName: '狼男妄想', reading: '', meaning: '' },
+    en: { name: 'Lycanthropy', enName: '狼男妄想', reading: '', meaning: 'The delusion that one has become a wolf or another animal.', symptom: 'The delusional conviction that one has transformed, or is transforming, into a wolf or other animal.', history: 'Recorded since antiquity alongside werewolf lore across cultures; rare cases are still reported today as \'clinical lycanthropy.\'', debate: 'Regarded as one form of delusion accompanying schizophrenia or depression. The content of the same delusion becomes a mirror of its era\'s beliefs — in this case, animal transformation.' },
   },
   {
     id: 'DA-111', num: 111, cat: 'CURRENT',
@@ -1568,7 +1568,7 @@ export const CARDS: Card[] = [
       history: '1880年、フランスの神経科医ジュール・コタールが報告した。',
       debate: '重いうつ病や統合失調症に伴う症状の一つで、独立疾患ではない。自己の存在を否定する妄想として、哲学的関心も引く。',
     },
-    en: { name: 'Cotard Syndrome', enName: 'コタール症候群', reading: '', meaning: '' },
+    en: { name: 'Cotard Syndrome', enName: 'コタール症候群', reading: '', meaning: 'The nihilistic delusion that one is dead or does not exist.', symptom: 'The nihilistic conviction that one is dead, that one\'s organs are rotting or missing, that no blood flows in one\'s veins. Also called \'walking corpse syndrome.\'', history: 'Reported in 1880 by the French neurologist Jules Cotard.', debate: 'A symptom of severe depression or schizophrenia, not an independent disease. As a delusion that denies one\'s own existence, it also draws philosophical interest.' },
   },
   {
     id: 'DA-112', num: 112, cat: 'CURRENT',
@@ -1582,7 +1582,7 @@ export const CARDS: Card[] = [
       history: '1923年、フランスの精神科医ジョゼフ・カプグラが報告した。',
       debate: '顔の認知と情動反応の解離という神経学的機序が研究される。神経科学と精神医学をつなぐ症例として重要視される。',
     },
-    en: { name: 'Capgras Syndrome', enName: 'カプグラ症候群', reading: '', meaning: '' },
+    en: { name: 'Capgras Syndrome', enName: 'カプグラ症候群', reading: '', meaning: 'The delusion that someone close has been replaced by an impostor.', symptom: 'The delusional conviction that a familiar person has been replaced by an identical double or impostor — a misidentification delusion.', history: 'Reported in 1923 by the French psychiatrist Joseph Capgras.', debate: 'Research points to a neurological mechanism: a dissociation between face recognition and emotional response. Valued as a case linking neuroscience and psychiatry.' },
   },
   {
     id: 'DA-113', num: 113, cat: 'CURRENT',
@@ -1596,7 +1596,7 @@ export const CARDS: Card[] = [
       history: '1927年、変装の名手だった俳優レオポルド・フレゴリにちなみ、クルボンとファイユが命名した。',
       debate: '顔認知の障害として研究される、稀な誤認妄想の一つである。',
     },
-    en: { name: 'Fregoli Syndrome', enName: 'フレゴリ症候群', reading: '', meaning: '' },
+    en: { name: 'Fregoli Syndrome', enName: 'フレゴリ症候群', reading: '', meaning: 'The delusion that various strangers are one person in disguise.', symptom: 'The conviction that multiple strangers are in fact a single person — often a persecutor — in disguise. The inverse of Capgras.', history: 'Named in 1927 by Courbon and Fail after Leopoldo Fregoli, an actor famed as a master of disguise.', debate: 'One of the rare misidentification delusions, studied as a disorder of face recognition.' },
   },
   {
     id: 'DA-114', num: 114, cat: 'CURRENT',
@@ -1624,7 +1624,7 @@ export const CARDS: Card[] = [
       history: '作家スタンダールがフィレンツェで体験した記述（1817）に由来し、1989年に精神科医グラツィエラ・マゲリーニが命名した。',
       debate: '独立した疾患かは議論があり、実在を疑う声もある。場所・体験が精神状態を変容させる「場所の症候群」の一つで、パリ症候群・エルサレム症候群と系譜を共有する。',
     },
-    en: { name: 'Stendhal Syndrome', enName: 'スタンダール症候群', reading: '', meaning: '' },
+    en: { name: 'Stendhal Syndrome', enName: 'スタンダール症候群', reading: '', meaning: 'Palpitations, dizziness, and hallucinations while viewing great art.', symptom: 'Acute symptoms — palpitations, dizziness, confusion, hallucinations — said to strike when a viewer is overwhelmed by a great work of art.', history: 'Derived from the writer Stendhal\'s account (1817) of his experience in Florence; named in 1989 by the psychiatrist Graziella Magherini.', debate: 'Whether it is an independent disorder is disputed, and some doubt it exists at all. One of the \'place syndromes\' in which location and experience transform mental states, sharing a lineage with Paris syndrome and Jerusalem syndrome.' },
   },
   {
     id: 'DA-116', num: 116, cat: 'DISPUTED',
@@ -1652,7 +1652,7 @@ export const CARDS: Card[] = [
       history: '記述は1930年代にさかのぼり、1980年代に「エルサレム症候群」として概念化された。',
       debate: '既存の精神疾患が聖地という場所で顕在化したものか、独立した現象かが論じられる。場所が引き起こす精神変容の例である。',
     },
-    en: { name: 'Jerusalem Syndrome', enName: 'エルサレム症候群', reading: '', meaning: '' },
+    en: { name: 'Jerusalem Syndrome', enName: 'エルサレム症候群', reading: '', meaning: 'Visitors to the holy city develop religious delusions.', symptom: 'A phenomenon in which visitors to Jerusalem develop acute psychiatric symptoms — religious delusions, a sense of divine mission, preaching behavior.', history: 'Descriptions date back to the 1930s; it was conceptualized as \'Jerusalem syndrome\' in the 1980s.', debate: 'Debated as either a preexisting mental illness surfacing at a holy site or an independent phenomenon. An example of place-induced mental transformation.' },
   },
   {
     id: 'DA-118', num: 118, cat: 'DISPUTED',
@@ -1666,7 +1666,7 @@ export const CARDS: Card[] = [
       history: '1973年、ストックホルムの銀行強盗・人質事件で人質が犯人をかばったことから名づけられた。正式な診断ではない。',
       debate: '近年は、この概念自体が、被害者（特に女性やDV被害者）の反応を非合理として説明し被害者非難に使われてきたとして、強く批判されている。診断未満の概念が社会に与える影響を示す。',
     },
-    en: { name: 'Stockholm Syndrome', enName: 'ストックホルム症候群', reading: '', meaning: '' },
+    en: { name: 'Stockholm Syndrome', enName: 'ストックホルム症候群', reading: '', meaning: 'Hostages develop empathy and attachment toward their captors.', symptom: 'A psychological phenomenon in which hostages or victims are said to develop empathy, attachment, or affection toward their captors.', history: 'Named after a 1973 Stockholm bank robbery and hostage crisis in which the hostages shielded their captors. Not a formal diagnosis.', debate: 'The concept itself is now sharply criticized for framing victims\' responses — especially those of women and domestic-abuse survivors — as irrational, and for serving victim-blaming. It shows how a sub-diagnostic concept can shape society.' },
   },
   {
     id: 'DA-119', num: 119, cat: 'DISPUTED',
@@ -1680,7 +1680,7 @@ export const CARDS: Card[] = [
       history: '1975年、清貧を実践した古代の哲学者ディオゲネスにちなんで命名された。',
       debate: '命名の適切性（ディオゲネスは自発的に簡素に生きた）への批判や、ためこみ症・認知症・うつ病との関係が論じられる。正式な単一診断ではない。',
     },
-    en: { name: 'Diogenes Syndrome', enName: 'ディオゲネス症候群', reading: '', meaning: '' },
+    en: { name: 'Diogenes Syndrome', enName: 'ディオゲネス症候群', reading: '', meaning: 'Extreme self-neglect, squalor, and hoarding.', symptom: 'A state marked by extreme self-neglect and squalor, hoarding, social isolation, and refusal of help, seen mostly in the elderly.', history: 'Named in 1975 after Diogenes, the ancient philosopher who practiced austere poverty.', debate: 'The name draws criticism — Diogenes chose to live simply — and its relation to hoarding disorder, dementia, and depression is debated. Not a formal single diagnosis.' },
   },
   {
     id: 'DA-120', num: 120, cat: 'CURRENT',
@@ -1694,7 +1694,7 @@ export const CARDS: Card[] = [
       history: '1955年、英国の精神科医ジョン・トッドが、ルイス・キャロルの作品にちなんで命名した。',
       debate: '独立疾患ではなく症状群で、片頭痛・てんかん・感染症（EBウイルス等）に伴うことが多い。子どもに多くみられる。',
     },
-    en: { name: 'Alice in Wonderland Syndrome', enName: '不思議の国のアリス症候群', reading: '', meaning: '' },
+    en: { name: 'Alice in Wonderland Syndrome', enName: '不思議の国のアリス症候群', reading: '', meaning: 'Objects and one\'s own body seem to change in size.', symptom: 'The size and shape of objects, the size of one\'s own body, and the sense of time and distance are perceived differently from reality (micropsia, macropsia, and the like).', history: 'Named in 1955 by the British psychiatrist John Todd, after Lewis Carroll\'s book.', debate: 'A symptom cluster, not an independent disease, most often accompanying migraine, epilepsy, or infections such as Epstein-Barr virus. Common in children.' },
   },
   {
     id: 'DA-121', num: 121, cat: 'CURRENT',
@@ -1708,7 +1708,7 @@ export const CARDS: Card[] = [
       history: '19世紀初頭にエスキロールらが概念化した。19世紀末、百貨店という新空間の登場とともに、中流階級の女性の万引きに多く診断された。',
       debate: '「貧しい者の窃盗は犯罪、富める女性の窃盗は病」という階級・ジェンダーの二重基準が露呈する。犯罪と病の境界を、誰の何を病とするかという問いに直結させる。',
     },
-    en: { name: 'Kleptomania', enName: '窃盗症', reading: '', meaning: '' },
+    en: { name: 'Kleptomania', enName: '窃盗症', reading: '', meaning: 'An impulse-control disorder marked by a recurrent inability to resist stealing objects unrelated to economic need or personal value.', symptom: 'Rising tension before the theft, pleasure and relief at the moment of stealing. The stolen goods are neither needed nor taken for money, and are often discarded or hidden.', history: 'Conceptualized in the early 19th century by Esquirol and others. At the century\'s end, with the department store\'s arrival as a new kind of space, it was widely diagnosed in middle-class women who shoplifted.', debate: 'It exposes a double standard of class and gender — theft by the poor is crime, theft by wealthy women is illness — tying the boundary between crime and disease directly to the question of whose behavior gets pathologized.' },
   },
   {
     id: 'DA-122', num: 122, cat: 'CURRENT',
@@ -1722,7 +1722,7 @@ export const CARDS: Card[] = [
       history: '1980年のDSM-IIIで収載された。',
       debate: '文化的に「女性的」とされる従順さ・依存を病理化しているとして、フェミニスト批評から強く問われてきた。自立を是とする西洋的価値観が「正常」の基準になっている。',
     },
-    en: { name: 'Dependent Personality Disorder', enName: '依存性パーソナリティ障害', reading: '', meaning: '' },
+    en: { name: 'Dependent Personality Disorder', enName: '依存性パーソナリティ障害', reading: '', meaning: 'A personality marked by an excessive need to be cared for, producing submissive, clinging behavior and fear of separation.', symptom: 'Seeks excessive advice and reassurance for everyday decisions, fears being alone, and rushes into a new relationship the moment support is lost.', history: 'Entered the DSM-III in 1980.', debate: 'Feminist critics have long charged that it pathologizes the submissiveness and dependence culturally coded as \'feminine.\' A Western ideal of self-reliance sets the standard for \'normal.\'' },
   },
   {
     id: 'DA-123', num: 123, cat: 'CURRENT',
@@ -1736,7 +1736,7 @@ export const CARDS: Card[] = [
       history: '精神分析の「肛門性格」などに源流をもち、DSM-IIIで収載された。',
       debate: '「きちんとしている」「真面目」という社会的に称賛される特性が、どこから病になるのか線引きが難しい。OCDと名前が紛らわしく混同されやすい。',
     },
-    en: { name: 'Obsessive-Compulsive Personality Disorder', enName: '強迫性パーソナリティ障害', reading: '', meaning: '' },
+    en: { name: 'Obsessive-Compulsive Personality Disorder', enName: '強迫性パーソナリティ障害', reading: '', meaning: 'A personality defined by excessive preoccupation with order, perfectionism, and control — distinct from obsessive-compulsive disorder (OCD).', symptom: 'Fixation on rules, lists, and details; work delayed by perfectionism; excessive devotion to work; miserly and stubborn tendencies.', history: 'Rooted in the psychoanalytic \'anal character,\' it entered DSM-III.', debate: 'It is hard to draw the line where socially praised traits — orderliness, diligence — become illness. Its name is easily confused with OCD.' },
   },
   {
     id: 'DA-124', num: 124, cat: 'CURRENT',
@@ -1750,7 +1750,7 @@ export const CARDS: Card[] = [
       history: '統合失調症の遺伝研究から、その「軽い連続体」として概念化され、DSM-IIIで収載された。',
       debate: '統合失調症スペクトラムの一部とみるか独立した人格とみるかで議論があり、「正常な奇人」と「病」の境界を問う。',
     },
-    en: { name: 'Schizotypal Personality Disorder', enName: '統合失調型パーソナリティ障害', reading: '', meaning: '' },
+    en: { name: 'Schizotypal Personality Disorder', enName: '統合失調型パーソナリティ障害', reading: '', meaning: 'A personality marked by acute discomfort in close relationships plus odd beliefs, perceptions, and behavior.', symptom: 'Ideas of reference, magical thinking, unusual perceptual experiences, odd speech and appearance, and excessive social anxiety.', history: 'Conceptualized as a \'milder continuum\' of schizophrenia through genetic research, it entered DSM-III.', debate: 'Debated as part of the schizophrenia spectrum or as a personality in its own right — probing the border between the \'normal eccentric\' and illness.' },
   },
   {
     id: 'DA-125', num: 125, cat: 'CURRENT',
@@ -1764,7 +1764,7 @@ export const CARDS: Card[] = [
       history: 'DSM-IIIで収載された。',
       debate: '社交不安症との境界がほとんどなく、「性格」と「病」、「不安症」と「人格障害」の区別の恣意性を示す。',
     },
-    en: { name: 'Avoidant Personality Disorder', enName: '回避性パーソナリティ障害', reading: '', meaning: '' },
+    en: { name: 'Avoidant Personality Disorder', enName: '回避性パーソナリティ障害', reading: '', meaning: 'A personality that broadly avoids interpersonal contact out of hypersensitivity to negative evaluation.', symptom: 'Avoids relationships and activities for fear of criticism or rejection, and feels socially inept.', history: 'Entered DSM-III.', debate: 'Its border with social anxiety disorder is nearly nonexistent, exposing the arbitrariness of the lines between \'temperament\' and \'illness,\' between anxiety disorder and personality disorder.' },
   },
   {
     id: 'DA-126', num: 126, cat: 'CURRENT',
@@ -1778,7 +1778,7 @@ export const CARDS: Card[] = [
       history: '非行という社会的・司法的な問題が、20世紀後半に医学的診断として枠づけられた。',
       debate: '貧困・虐待・差別といった環境要因を、子ども個人の「病」に帰しかねない点が問われる。反社会性PDの前段階とされ、若年者を早期にラベリングする危うさを含む。',
     },
-    en: { name: 'Conduct Disorder', enName: '素行症', reading: '', meaning: '' },
+    en: { name: 'Conduct Disorder', enName: '素行症', reading: '', meaning: 'A pattern of behavior in children and adolescents that repeatedly violates the rights of others and age-appropriate social norms.', symptom: 'Repeated violence, destruction of property, lying and theft, and serious rule violations.', history: 'Delinquency, a social and judicial problem, was reframed as a medical diagnosis in the late 20th century.', debate: 'It risks attributing environmental causes — poverty, abuse, discrimination — to a \'disease\' within the individual child. Treated as a precursor to antisocial personality disorder, it carries the danger of labeling the young early.' },
   },
   {
     id: 'DA-127', num: 127, cat: 'CURRENT',
@@ -1792,7 +1792,7 @@ export const CARDS: Card[] = [
       history: 'DSM-IIIで収載された。',
       debate: '子どもの「反抗」という発達上ありふれた振る舞いを病とすることへの批判が強い。何を「正常な反抗」とし何を病とするかが、文化と大人の都合に依存する。',
     },
-    en: { name: 'Oppositional Defiant Disorder', enName: '反抗挑発症', reading: '', meaning: '' },
+    en: { name: 'Oppositional Defiant Disorder', enName: '反抗挑発症', reading: '', meaning: 'A childhood condition marked by a persistent pattern of anger, argument, defiance, and vindictiveness toward authority figures.', symptom: 'Recurrent temper tantrums, arguments with adults, deliberate defiance of rules, and behavior meant to irritate others.', history: 'Introduced in DSM-III.', debate: 'Critics object to turning defiance — a developmentally ordinary behavior in children — into a disease. Where \'normal defiance\' ends and disorder begins depends on culture and adult convenience.' },
   },
   {
     id: 'DA-128', num: 128, cat: 'CURRENT',
@@ -1806,7 +1806,7 @@ export const CARDS: Card[] = [
       history: '衝動制御の障害群の一つとして整理された。',
       debate: '「キレやすい性格」と「病」の境界が曖昧で、怒りという感情を医療化することの是非が問われる。',
     },
-    en: { name: 'Intermittent Explosive Disorder', enName: '間欠爆発症', reading: '', meaning: '' },
+    en: { name: 'Intermittent Explosive Disorder', enName: '間欠爆発症', reading: '', meaning: 'A failure of impulse control marked by repeated aggressive outbursts out of all proportion to the situation.', symptom: 'Sudden explosions of verbal or physical aggression, which the person often regrets afterward.', history: 'Classified as one of the impulse-control disorders.', debate: 'The boundary between a \'short temper\' and disease is blurred, raising the question of whether anger itself should be medicalized.' },
   },
   {
     id: 'DA-129', num: 129, cat: 'CURRENT',
@@ -1820,7 +1820,7 @@ export const CARDS: Card[] = [
       history: 'ヒステリー・解離研究に源流をもち、DSMに収載された。',
       debate: '1990年代の「抑圧された記憶」回復療法をめぐり、治療者の暗示で偽の記憶が作られる「偽記憶論争」の中心となった。記憶の真偽と治療の倫理を問う。',
     },
-    en: { name: 'Dissociative Amnesia', enName: '解離性健忘', reading: '', meaning: '' },
+    en: { name: 'Dissociative Amnesia', enName: '解離性健忘', reading: '', meaning: 'An inability to recall important autobiographical memories, often traumatic, that ordinary forgetting cannot explain.', symptom: 'Memory of specific events or periods drops out; in rare cases a fugue state involving disappearance occurs.', history: 'Rooted in the study of hysteria and dissociation, later included in the DSM.', debate: 'Central to the 1990s \'false memory\' controversy over recovered-memory therapy, in which therapists\' suggestions could implant false memories — a dispute over the truth of memory and the ethics of treatment.' },
   },
   {
     id: 'DA-130', num: 130, cat: 'CURRENT',
@@ -1834,7 +1834,7 @@ export const CARDS: Card[] = [
       history: '19世紀のクラフト=エビング『性的精神病質』以来、性的逸脱の分類は変遷を重ねてきた。同性愛の削除もこの系譜上にある。',
       debate: '何を「逸脱」とし何を病とするかが社会規範に依存する。「苦痛か、同意のない加害か」を基準にする現行の枠組みは、嗜好の多様性と公共の安全のあいだの線引きをめぐり議論が続く。',
     },
-    en: { name: 'Paraphilic Disorders', enName: 'パラフィリア症群', reading: '', meaning: '' },
+    en: { name: 'Paraphilic Disorders', enName: 'パラフィリア症群', reading: '', meaning: 'An umbrella category treating atypical sexual interests as \'disorders\' only when they cause the person distress or harm others.', symptom: 'DSM-5 distinguished atypical sexual interest itself (paraphilia) from \'paraphilic disorder,\' which involves distress, impairment, or nonconsensual harm.', history: 'Since Krafft-Ebing\'s Psychopathia Sexualis in the nineteenth century, classifications of sexual deviance have shifted repeatedly; the removal of homosexuality belongs to this lineage.', debate: 'What counts as \'deviant\' and what counts as disease depends on social norms. The current criterion — distress, or harm without consent — remains contested as the line between sexual diversity and public safety.' },
   },
   {
     id: 'DA-131', num: 131, cat: 'CURRENT',
@@ -1848,7 +1848,7 @@ export const CARDS: Card[] = [
       history: '「意志の弱さ・道徳的堕落」とされてきた飲酒が、20世紀に「病(disease model)」として枠づけ直された。DSM-5で乱用と依存を統合した。',
       debate: '「依存は病か、意志の問題か」という根本的論争が今も続く。病とすることは治療と非難回避につながる一方、責任や自由意志の問題を曖昧にするとも論じられる。',
     },
-    en: { name: 'Alcohol Use Disorder', enName: 'アルコール使用障害', reading: '', meaning: '' },
+    en: { name: 'Alcohol Use Disorder', enName: 'アルコール使用障害', reading: '', meaning: 'A condition in which drinking beyond one\'s control causes serious harm to body, mind, and social life.', symptom: 'Marked by craving, loss of control, tolerance and withdrawal, and continued drinking despite known harm.', history: 'Drinking long condemned as weak will or moral degeneracy was reframed in the twentieth century under the disease model; DSM-5 merged abuse and dependence.', debate: 'Whether addiction is a disease or a matter of will remains fundamentally contested. Framing it as disease enables treatment and deflects blame, yet critics argue it blurs questions of responsibility and free will.' },
   },
   {
     id: 'DA-132', num: 132, cat: 'CURRENT',
@@ -1862,7 +1862,7 @@ export const CARDS: Card[] = [
       history: 'DSM-5で、従来の性欲低下と興奮の障害を統合して成立した。',
       debate: '女性の性を医療化し「正常な性欲」の基準を設定することへの批判が強い。“女性版バイアグラ”フリバンセリンの承認をめぐる商業的動機も論点となった。',
     },
-    en: { name: 'Female Sexual Interest/Arousal Disorder', enName: '女性の性的関心・興奮障害', reading: '', meaning: '' },
+    en: { name: 'Female Sexual Interest/Arousal Disorder', enName: '女性の性的関心・興奮障害', reading: '', meaning: 'A persistent decline or absence of sexual interest or arousal that causes the person distress.', symptom: 'Persistent loss of sexual interest and fantasy and reduced response to sexual stimulation.', history: 'Created in DSM-5 by merging the earlier diagnoses of low desire and impaired arousal.', debate: 'Critics charge it medicalizes women\'s sexuality and sets a standard for \'normal desire.\' The commercial motives behind the approval of flibanserin, the \'female Viagra,\' became a further point of contention.' },
   },
   {
     id: 'DA-133', num: 133, cat: 'CURRENT',
@@ -1876,7 +1876,7 @@ export const CARDS: Card[] = [
       history: '1966年にアンドレアス・レットが報告。かつてDSM-IVで広汎性発達障害に含まれたが、原因遺伝子(MECP2)が判明し、DSM-5で発達障害の括りから外れた。',
       debate: '固有名診断であり、「行動で定義される発達障害」から「遺伝子で定義される神経疾患」へ移った例。診断の根拠が症状から生物学へ移る瞬間を示す。',
     },
-    en: { name: 'Rett Syndrome', enName: 'レット症候群', reading: '', meaning: '' },
+    en: { name: 'Rett Syndrome', enName: 'レット症候群', reading: '', meaning: 'A neurodevelopmental disease, mainly of girls, in which motor, language, and social abilities regress after a period of normal development.', symptom: 'After normal early development, stereotyped hand-wringing movements, loss of walking and speech, and intellectual regression appear.', history: 'Reported by Andreas Rett in 1966. Listed under pervasive developmental disorders in DSM-IV, but after the causal gene (MECP2) was identified, DSM-5 removed it from the developmental-disorder grouping.', debate: 'An eponymous diagnosis that moved from \'developmental disorder defined by behavior\' to \'neurological disease defined by a gene\' — capturing the moment a diagnosis\'s basis shifts from symptoms to biology.' },
   },
   {
     id: 'DA-134', num: 134, cat: 'CURRENT',
@@ -1890,7 +1890,7 @@ export const CARDS: Card[] = [
       history: 'DSM-5で、他の疾患の二次症状とせず独立した障害として扱う方針が強まった。',
       debate: '誰もが経験する「眠れなさ」をどこから病とするか、睡眠薬産業との関係、眠りの医療化が論じられる。',
     },
-    en: { name: 'Insomnia Disorder', enName: '不眠症', reading: '', meaning: '' },
+    en: { name: 'Insomnia Disorder', enName: '不眠症', reading: '', meaning: 'Frequent, persistent difficulty falling or staying asleep that impairs daytime functioning.', symptom: 'Trouble falling asleep, waking during the night, or early-morning waking, occurring at least three times a week for three months or more.', history: 'DSM-5 moved decisively toward treating it as an independent disorder rather than a secondary symptom of other illnesses.', debate: 'At issue are where universal sleeplessness becomes disease, the diagnosis\'s ties to the sleeping-pill industry, and the medicalization of sleep itself.' },
   },
   {
     id: 'DA-135', num: 135, cat: 'CURRENT',
@@ -1904,7 +1904,7 @@ export const CARDS: Card[] = [
       history: '19世紀末にジェリノーが命名。後に脳内物質オレキシンの欠乏という生物学的基盤が解明された。',
       debate: '長く「怠け」「気の緩み」と誤解されてきた。生物学的原因が判明し病として確立した、誤解の歴史をもつ。',
     },
-    en: { name: 'Narcolepsy', enName: 'ナルコレプシー', reading: '', meaning: '' },
+    en: { name: 'Narcolepsy', enName: 'ナルコレプシー', reading: '', meaning: 'A sleep-wake disease marked by uncontrollable daytime sleepiness and emotion-triggered loss of muscle tone (cataplexy).', symptom: 'Sudden sleep attacks, cataplexy set off by laughter, hypnagogic hallucinations, and sleep paralysis.', history: 'Named by Gelineau in the late nineteenth century; later traced to a deficiency of the brain chemical orexin.', debate: 'Long misread as laziness or slackness. A history of misunderstanding that ended when its biological cause was found and the disease was established.' },
   },
   {
     id: 'DA-136', num: 136, cat: 'PROMOTED',
@@ -1918,7 +1918,7 @@ export const CARDS: Card[] = [
       history: '古くから知られたが、DSM-5(2013)で初めて独立した正式診断となった。',
       debate: '癖・習慣との境界が曖昧で、ありふれた行動の病理化が問われる。',
     },
-    en: { name: 'Excoriation Disorder', enName: '皮膚むしり症', reading: '', meaning: '' },
+    en: { name: 'Excoriation Disorder', enName: '皮膚むしり症', reading: '', meaning: 'An obsessive-compulsive-related condition of repeatedly picking at one\'s own skin, producing lesions.', symptom: 'Repeated picking, scratching, and pulling at the skin of the face or arms, with repeated failed attempts to stop.', history: 'Long recognized, but first made an independent formal diagnosis in DSM-5 (2013).', debate: 'The boundary with mere habit is blurred, raising the question of pathologizing an everyday behavior.' },
   },
   {
     id: 'DA-137', num: 137, cat: 'PROMOTED',
@@ -1932,7 +1932,7 @@ export const CARDS: Card[] = [
       history: '従来「幼児期の摂食障害」とされたものを拡張し、DSM-5(2013)で全年齢の独立診断とした。',
       debate: '「ただの偏食・少食」と「病」の境界、神経性やせ症との違い(体型懸念の有無)が論点となる。',
     },
-    en: { name: 'Avoidant/Restrictive Food Intake Disorder', enName: '回避・制限性食物摂取症', reading: '', meaning: '' },
+    en: { name: 'Avoidant/Restrictive Food Intake Disorder', enName: '回避・制限性食物摂取症', reading: '', meaning: 'An eating disorder in which food avoidance or restriction causes nutritional and weight problems, without any concern about body shape.', symptom: 'Extreme selective or minimal eating — driven by texture, smell, or fear of choking — leads to low weight, malnutrition, and impaired social life.', history: 'DSM-5 (2013) expanded what had been a feeding disorder of infancy into an independent diagnosis for all ages.', debate: 'At issue are the line between \'just picky eating\' and disease, and the distinction from anorexia nervosa — the absence of body-image concern.' },
   },
   {
     id: 'DA-138', num: 138, cat: 'PROMOTED',
@@ -1946,7 +1946,7 @@ export const CARDS: Card[] = [
       history: 'DSM-5(2013)で新設された。',
       debate: 'ASDの診断基準を厳格化した結果、そこから外れた人の受け皿として作られたとされ、「分類の都合で生まれた診断」という側面が指摘される。',
     },
-    en: { name: 'Social (Pragmatic) Communication Disorder', enName: '社会的コミュニケーション症', reading: '', meaning: '' },
+    en: { name: 'Social (Pragmatic) Communication Disorder', enName: '社会的コミュニケーション症', reading: '', meaning: 'Persistent difficulty with the social use of verbal and nonverbal communication, without the repetitive, restricted behaviors of ASD.', symptom: 'Difficulty with pragmatic skills such as context-appropriate greetings, shifting topics, and understanding implied meaning.', history: 'Newly created in DSM-5 (2013).', debate: 'Said to have been built as a catch basin for people excluded when ASD\'s criteria were tightened — a diagnosis born, critics note, of classificatory convenience.' },
   },
   {
     id: 'DA-139', num: 139, cat: 'PROMOTED',
@@ -1960,7 +1960,7 @@ export const CARDS: Card[] = [
       history: '古くは「自己臭症」として知られ、日本の対人恐怖症(体臭恐怖)とも重なる。ICD-11で正式に独立カテゴリ化された。',
       debate: '文化結合的とされてきた体臭恐怖が、国際分類に正式採用された。文化固有とされた苦痛が普遍的診断へ移る過程を示す。',
     },
-    en: { name: 'Olfactory Reference Disorder', enName: '自己臭関係付け症', reading: '', meaning: '' },
+    en: { name: 'Olfactory Reference Disorder', enName: '自己臭関係付け症', reading: '', meaning: 'A fixed conviction of emitting an offensive body odor — one that others usually cannot detect — and preoccupation with it.', symptom: 'Intense preoccupation with one\'s body odor, with repetitive checking, camouflaging, and avoidance.', history: 'Long known as jikoshū-shō (self-odor syndrome), overlapping with the body-odor fear of Japan\'s taijin kyōfushō. ICD-11 formally made it an independent category.', debate: 'A body-odor fear once deemed culture-bound was formally adopted into the international classification — showing how a distress considered culture-specific becomes a universal diagnosis.' },
   },
   {
     id: 'DA-140', num: 140, cat: 'PROMOTED',
@@ -1974,7 +1974,7 @@ export const CARDS: Card[] = [
       history: 'DSM-5(2013)で正式な診断として収載された。',
       debate: '「コーヒーを断つのは病気か」という、ありふれた日常の医療化の象徴。診断概念が日常の隅々まで及ぶことへの議論を呼んだ。',
     },
-    en: { name: 'Caffeine Withdrawal', enName: 'カフェイン離脱', reading: '', meaning: '' },
+    en: { name: 'Caffeine Withdrawal', enName: 'カフェイン離脱', reading: '', meaning: 'Headache, fatigue, and poor concentration arising when habitual caffeine intake is interrupted.', symptom: 'After stopping, headache, marked drowsiness and fatigue, depressed or irritable mood, and difficulty concentrating appear.', history: 'Formally listed as a diagnosis in DSM-5 (2013).', debate: 'An emblem of medicalizing the ordinary — is quitting coffee a disease? — it stirred debate over diagnostic concepts reaching into every corner of daily life.' },
   },
   {
     id: 'DA-141', num: 141, cat: 'CULTURE-BOUND',
@@ -1988,7 +1988,7 @@ export const CARDS: Card[] = [
       history: '19世紀末〜20世紀前半に記録された。マレーのラタや各地の驚愕症候群と類似する。',
       debate: '消滅した文化結合症候群とされ、記録の多くが和人(本州日本人)観察者によることから、外部のまなざしの問題を含む。',
     },
-    en: { name: 'Imu', enName: 'イム', reading: '', meaning: '' },
+    en: { name: 'Imu', enName: 'イム', reading: '', meaning: 'An exaggerated startle response reported among Ainu women, with echolalia, echopraxia, and automatic obedience after being startled.', symptom: 'When startled by a sudden stimulus (especially snakes), the person shows parroting, imitation, obscene speech, and automatic obedience.', history: 'Recorded from the late nineteenth century to the first half of the twentieth. Resembles latah in Malaya and startle syndromes elsewhere.', debate: 'Considered an extinct culture-bound syndrome; because most records came from Wajin (mainland Japanese) observers, it carries the problem of the outsider\'s gaze.' },
   },
   {
     id: 'DA-142', num: 142, cat: 'CULTURE-BOUND',
@@ -2002,7 +2002,7 @@ export const CARDS: Card[] = [
       history: '睡眠麻痺は普遍的な生理現象だが、日本では古くから霊や妖怪と結びつけて解釈されてきた。',
       debate: '同じ生理現象が文化ごとに異なる超自然的物語(西洋の「オールド・ハグ」等)をまとう。普遍的身体反応の文化的意味づけの好例。',
     },
-    en: { name: 'Kanashibari', enName: '金縛り', reading: '', meaning: '' },
+    en: { name: 'Kanashibari', enName: '金縛り', reading: '', meaning: 'A Japanese cultural concept that interprets sleep paralysis — conscious but unable to move at sleep onset or waking — in spiritual or supernatural terms.', symptom: 'The paralysis may come with pressure on the chest and hallucinations of a shadowy figure or an unseen presence.', history: 'Sleep paralysis is a universal physiological phenomenon, but in Japan it has long been interpreted through spirits and yōkai.', debate: 'The same physiology wears different supernatural narratives in each culture — the Western "Old Hag" among them — a prime example of how cultures assign meaning to a universal bodily response.' },
   },
   {
     id: 'DA-143', num: 143, cat: 'CULTURE-BOUND',
@@ -2016,7 +2016,7 @@ export const CARDS: Card[] = [
       history: '中医学の陰陽・「気」の理論に基づく身体観を背景とする。',
       debate: '「精」の喪失を恐れるコロや、東アジアの身体観と連続する。冷え=危険という文化固有の病因観を示す。',
     },
-    en: { name: 'Pa-leng (Frigophobia)', enName: 'パーレン／恐寒症', reading: '', meaning: '' },
+    en: { name: 'Pa-leng (Frigophobia)', enName: 'パーレン／恐寒症', reading: '', meaning: 'The fear that exposure to cold or wind drains the life force, met with excessive layering and warming.', symptom: 'Sufferers wear heavy clothing even in midsummer and rigorously avoid cold food, drink, and drafts.', history: 'Grounded in a view of the body drawn from traditional Chinese medicine\'s theories of yin-yang and qi.', debate: 'It is continuous with koro\'s feared loss of jing (vital essence) and East Asian conceptions of the body — a culture-specific etiology in which cold itself is danger.' },
   },
   {
     id: 'DA-144', num: 144, cat: 'CULTURE-BOUND',
@@ -2030,7 +2030,7 @@ export const CARDS: Card[] = [
       history: 'ニカラグア・ホンジュラスの先住民コミュニティで記録される。直訳は「狂気の病」。',
       debate: '集団発生する文化結合症候群として、社会的緊張やジェンダーの抑圧との関連が論じられる。',
     },
-    en: { name: 'Grisi Siknis', enName: 'グリシ・シクニス', reading: '', meaning: '' },
+    en: { name: 'Grisi Siknis', enName: 'グリシ・シクニス', reading: '', meaning: 'An attack seen among the Miskito people of Central America in which anxiety and dizziness give way to confusion, agitation, and bolting.', symptom: 'After headache and fear come altered consciousness, thrashing, running, and sensations of assault by evil spirits, often spreading epidemically among young women.', history: 'Recorded in Indigenous communities of Nicaragua and Honduras; the name translates literally as "crazy sickness."', debate: 'As a culture-bound syndrome that erupts collectively, it is discussed in relation to social tension and gendered oppression.' },
   },
   {
     id: 'DA-145', num: 145, cat: 'CULTURE-BOUND',
@@ -2044,7 +2044,7 @@ export const CARDS: Card[] = [
       history: 'マレーのラタ、アイヌのイム、メイン州の跳ぶフランス人と同系の驚愕症候群とされる。',
       debate: '同型の現象が世界各地に分布することが、文化固有性と神経生理的普遍性の両面から論じられる。',
     },
-    en: { name: 'Mali-mali', enName: 'マリ・マリ', reading: '', meaning: '' },
+    en: { name: 'Mali-mali', enName: 'マリ・マリ', reading: '', meaning: 'A Philippine startle syndrome of exaggerated reactions marked by echolalia, echopraxia, and command obedience.', symptom: 'When startled, sufferers lapse into mimicry, parroting, obscene outbursts, and automatic obedience.', history: 'Classed with the startle syndromes of Malay latah, Ainu imu, and the Jumping Frenchmen of Maine.', debate: 'The worldwide distribution of the same phenomenon is debated from both sides: cultural specificity versus neurophysiological universality.' },
   },
   {
     id: 'DA-146', num: 146, cat: 'CULTURE-BOUND',
@@ -2058,7 +2058,7 @@ export const CARDS: Card[] = [
       history: 'ケニア・南部アフリカなどで記録される憑依概念である。',
       debate: 'ザールと同様、抑圧された立場の女性が声をあげる社会的回路としての機能も論じられる。解離の文化的に容認された表現。',
     },
-    en: { name: 'Saka / Ufufuyane', enName: 'サカ／ウフフニャナ', reading: '', meaning: '' },
+    en: { name: 'Saka / Ufufuyane', enName: 'サカ／ウフフニャナ', reading: '', meaning: 'A state attributed to spirit possession — dissociation, screaming, convulsions, lethargy — seen mostly in women.', symptom: 'Sufferers enter possession states with glossolalia, wailing, and bodily complaints, and are treated through ritual.', history: 'A possession concept recorded in Kenya and southern Africa.', debate: 'Like zar, it is discussed as a social channel through which women in oppressed positions can raise their voices — a culturally sanctioned expression of dissociation.' },
   },
   {
     id: 'DA-147', num: 147, cat: 'CULTURE-BOUND',
@@ -2072,7 +2072,7 @@ export const CARDS: Card[] = [
       history: 'カーボベルデ(西アフリカ沖)の文化概念で、失恋・喪失と結びつく。',
       debate: '喪失反応・うつ病との関係が論じられる。恋愛の喪失を病として語る文化固有の苦痛表現。',
     },
-    en: { name: 'Tabanca', enName: 'タバンカ', reading: '', meaning: '' },
+    en: { name: 'Tabanca', enName: 'タバンカ', reading: '', meaning: 'Depression, listlessness, and painful longing said to follow abandonment by a lover or spouse.', symptom: 'Intense sadness, disturbed appetite and sleep, apathy, and preoccupation with the lost partner.', history: 'A cultural concept from Cape Verde, off West Africa, tied to heartbreak and loss.', debate: 'Its relation to grief reactions and depression is debated — a culture-specific idiom of distress that names romantic loss as illness.' },
   },
   {
     id: 'DA-148', num: 148, cat: 'CULTURE-BOUND',
@@ -2086,7 +2086,7 @@ export const CARDS: Card[] = [
       history: 'モハベ(北米先住民)の文化概念として記録される。',
       debate: '「失恋の病」を独立の苦痛として名づける文化があることが、うつ病の普遍性をめぐる議論に一石を投じる。',
     },
-    en: { name: 'Hi-wa itck', enName: 'ヒワ・イチック', reading: '', meaning: '' },
+    en: { name: 'Hi-wa itck', enName: 'ヒワ・イチック', reading: '', meaning: 'Insomnia, loss of appetite, and depression attributed among the Mohave of North America to separation from or rejection by a loved one.', symptom: 'After heartbreak or bereavement: insomnia, loss of appetite, depression, and at times suicidal thoughts.', history: 'Recorded as a cultural concept of the Mohave, a North American Indigenous people.', debate: 'That a culture names heartbreak as a distinct form of suffering unsettles arguments over the universality of depression.' },
   },
   {
     id: 'DA-149', num: 149, cat: 'CULTURE-BOUND',
@@ -2100,7 +2100,7 @@ export const CARDS: Card[] = [
       history: 'マレーのアモックと同型とされ、プエルトリコで記録された。直訳は「闘いの病」。',
       debate: '同型の暴力発作が異なる文化に分布することが、アモックの「マレー固有説」への反証として論じられる。',
     },
-    en: { name: 'Mal de Pelea', enName: 'マル・デ・ペレア', reading: '', meaning: '' },
+    en: { name: 'Mal de Pelea', enName: 'マル・デ・ペレア', reading: '', meaning: 'A sudden attack of violent frenzy seen in Puerto Rico, resembling amok.', symptom: 'After withdrawal and tension, sufferers erupt into violent rampage, followed by amnesia.', history: 'Recorded in Puerto Rico and held to be the same type as Malay amok; the name translates literally as "fighting sickness."', debate: 'The appearance of identical violent attacks across different cultures is cited as counter-evidence to the claim that amok is uniquely Malay.' },
   },
   {
     id: 'DA-150', num: 150, cat: 'CULTURE-BOUND',
@@ -2114,7 +2114,7 @@ export const CARDS: Card[] = [
       history: 'タイの精霊信仰を背景とする憑依概念である。',
       debate: '憑依を病とみるか宗教的現実とみるかという、文化相対性の核心を突く。集団発生は社会的緊張の表れとも論じられる。',
     },
-    en: { name: 'Phi Pop', enName: 'ピーポップ', reading: '', meaning: '' },
+    en: { name: 'Phi Pop', enName: 'ピーポップ', reading: '', meaning: 'Dissociation and aberrant behavior in northeastern Thailand attributed to possession by a spirit, the phi pop.', symptom: 'In the possessed state, sufferers show glossolalia and abnormal behavior, often erupting collectively and in chains.', history: 'A possession concept rooted in Thai spirit belief.', debate: 'It cuts to the core of cultural relativity — is possession an illness or a religious reality? Collective outbreaks are also read as expressions of social tension.' },
   },
   {
     id: 'DA-151', num: 151, cat: 'RETIRED',
@@ -2128,7 +2128,7 @@ export const CARDS: Card[] = [
       history: '1960〜70年代、アンドレイ・スネジネフスキーらモスクワ学派が体系化し、KGBと結びついた「懲罰精神医学」の中核となった。反体制活動家・信仰者・出国希望者がこの診断で病院に送られ、抗精神病薬を強制投与された。1983年、国際的批判のなかソ連の精神医学会は世界精神医学会(WPA)からの除名を避けるため脱退した(1989年に再加盟)。',
       debate: '「正気の人間を病人に仕立てる」最も露骨な政治利用とされ、ドラペトマニアの20世紀版にあたる。診断の曖昧な拡張(“潜在性”の強調)が、いかに容易に権力の道具になるかを示す。冷戦下の象徴的事件として、精神医学倫理の転換点となった。',
     },
-    en: { name: 'Sluggish Schizophrenia', enName: '緩徐進行性統合失調症', reading: '', meaning: '' },
+    en: { name: 'Sluggish Schizophrenia', enName: '緩徐進行性統合失調症', reading: '', meaning: 'A Soviet diagnosis that construed dissidents as having "slowly progressing schizophrenia" without overt psychotic symptoms, used to commit them to psychiatric hospitals.', symptom: 'Absent hallucinations or delusions, "reformist delusions," "combativeness," "excessive conscientiousness," and "poor social adaptation" were read as signs of latent schizophrenia — dissent itself became the symptom.', history: 'Systematized in the 1960s-70s by Andrei Snezhnevsky and the Moscow school, it became the core of KGB-linked "punitive psychiatry." Dissidents, believers, and would-be emigrants were hospitalized under it and forcibly given antipsychotics. In 1983, under international criticism, Soviet psychiatry withdrew from the World Psychiatric Association (WPA) to avoid expulsion, rejoining in 1989.', debate: 'Called the most blatant political use of psychiatry — manufacturing patients from the sane — and a twentieth-century drapetomania. Its vague expansion of diagnosis, the stress on "latency," shows how easily a diagnosis becomes an instrument of power; as a symbolic Cold War episode, it marked a turning point in psychiatric ethics.' },
   }
 ];
 
