@@ -85,12 +85,15 @@ export default function SearchOverlay({ onClose }: { onClose: () => void }) {
       aria-modal="true"
       aria-label={tx(UI.search)}
       onKeyDown={onKeyDown}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+      onPointerDown={(e) => {
+        // 検索UI（入力欄・結果行など）以外＝枠外をタップしたら閉じる
+        const t = e.target as HTMLElement;
+        if (t.closest("input,button,a,[data-search-keep]")) return;
+        onClose();
       }}
     >
       <div className="mx-auto flex h-full max-w-2xl flex-col px-4 pt-[12vh] sm:px-6">
-        <div className="flex items-center gap-3 border-b-2 border-da-ink pb-3">
+        <div data-search-keep className="flex items-center gap-3 border-b-2 border-da-ink pb-3">
           <svg viewBox="0 0 20 20" className="h-5 w-5 shrink-0 text-da-accent" aria-hidden="true">
             <circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.7" />
             <path d="m13.2 13.2 3.6 3.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -118,7 +121,7 @@ export default function SearchOverlay({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <p className="mt-2 font-mono text-[10px] tracking-[0.15em] text-da-muted">{tx(UI.searchHint)}</p>
+        <p data-search-keep className="mt-2 font-mono text-[10px] tracking-[0.15em] text-da-muted">{tx(UI.searchHint)}</p>
 
         <ul ref={listRef} id="da-search-list" className="mt-4 flex-1 overflow-y-auto pb-24" role="listbox">
           {results.map((card, i) => {
