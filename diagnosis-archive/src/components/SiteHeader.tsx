@@ -87,7 +87,7 @@ export default function SiteHeader() {
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
           <Link href="/" className="flex items-baseline gap-3">
             <span className="font-display text-xl font-semibold italic tracking-tight">
-              Diagnosis<span className="text-da-accent">.</span>
+              Diagnosis Archive<span className="text-da-accent">.</span>
             </span>
             <span className="hidden font-mono text-[10px] tracking-[0.25em] text-da-muted sm:inline">
               {tx(UI.archive)} · {STATS.entries} {tx(UI.entries)}

@@ -31,9 +31,8 @@ function Hero() {
       <div>
         <p className="font-mono text-[11px] tracking-[0.3em] text-da-accent-text">{tx(UI.issue)}</p>
         <h1 className="font-display mt-3 text-5xl font-medium italic leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-          Diagnosis<span className="text-da-accent">.</span> Archive
+          Diagnosis Archive<span className="text-da-accent">.</span>
         </h1>
-        <p className="font-mincho mt-4 text-base text-da-muted sm:text-lg">{tx(UI.tagline)}</p>
       </div>
       <dl className="flex gap-8 md:justify-end">
         {[

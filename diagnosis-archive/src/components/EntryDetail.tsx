@@ -120,19 +120,10 @@ export default function EntryDetail({ card }: { card: Card }) {
               { label: UI.named, value: String(card.year) },
               { label: UI.lifespan, value: lifespanLabel(card, lang), upright: lang === "ja" && card.endYear != null },
               { label: UI.origin, value: tx(REGION_LABELS[card.region]), upright: lang === "ja" },
-              { label: UI.classification, value: card.code, small: true },
             ].map((row) => (
               <div key={row.label.ja}>
                 <dt className="font-mono text-[10px] tracking-[0.25em] text-da-muted">{tx(row.label)}</dt>
-                <dd
-                  className={`mt-1 ${
-                    row.small
-                      ? "font-mincho text-[13px] leading-snug"
-                      : row.upright
-                        ? "font-mincho text-xl font-semibold"
-                        : "font-display text-2xl italic"
-                  }`}
-                >
+                <dd className={`mt-1 ${row.upright ? "font-mincho text-xl font-semibold" : "font-display text-2xl italic"}`}>
                   {row.value}
                 </dd>
               </div>
