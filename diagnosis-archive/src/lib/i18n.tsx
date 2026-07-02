@@ -85,7 +85,6 @@ export const UI = {
   lifespan: { ja: "寿命", en: "Lifespan" },
   origin: { ja: "起源", en: "Origin" },
   classification: { ja: "分類", en: "Class" },
-  saveCard: { ja: "カードを保存", en: "Save card" },
   prevEntry: { ja: "前へ", en: "Prev" },
   nextEntry: { ja: "次へ", en: "Next" },
   aboutTitle: { ja: "いつから、その“障害”は障害になったのか？", en: "When did that “disorder” become a disorder?" },

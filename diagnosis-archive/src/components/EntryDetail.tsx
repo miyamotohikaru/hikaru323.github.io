@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { CARDS, type Card } from "@/data/cards";
 import CardIcon from "@/components/CardIcon";
 import HoloCard from "@/components/HoloCard";
@@ -10,7 +10,6 @@ import { ChainBlock } from "@/components/LineageView";
 import { chainsFor } from "@/data/lineage";
 import { UI, useLang } from "@/lib/i18n";
 import { POWER_LABELS, REGION_LABELS, STATS, STATUS_META, cardText, lifespanLabel, yearLabel } from "@/lib/meta";
-import { saveCardPng } from "@/lib/saveCard";
 
 const ORDERED = [...CARDS].sort((a, b) => a.num - b.num);
 
@@ -48,17 +47,10 @@ export default function EntryDetail({ card }: { card: Card }) {
     };
   }, [card.id]);
 
-  const save = useCallback(() => saveCardPng(card, lang), [card, lang]);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        void save();
-        return;
-      }
       // 修飾キー付き（Alt+←の戻る等）や、検索などのモーダル表示中は奪わない
       if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
       if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
@@ -70,7 +62,7 @@ export default function EntryDetail({ card }: { card: Card }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [prev.id, next.id, router, save]);
+  }, [prev.id, next.id, router]);
 
   const sections: { label: (typeof UI)[keyof typeof UI]; text?: string }[] = [
     { label: UI.summary, text: t.meaning },
@@ -97,7 +89,7 @@ export default function EntryDetail({ card }: { card: Card }) {
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[330px_minmax(0,1fr)] xl:grid-cols-[330px_minmax(0,1fr)_280px]">
         {/* 左: ホロカード */}
-        <div className="mx-auto w-full max-w-[360px] lg:mx-0 lg:max-w-none">
+        <div className="mx-auto w-full max-w-[300px] lg:mx-0 lg:max-w-none">
           <HoloCard card={card} />
           <p className="mt-2 text-center font-mono text-[10px] tracking-[0.15em] text-da-muted">↑ {tx(UI.cardDrag)}</p>
 
@@ -135,13 +127,6 @@ export default function EntryDetail({ card }: { card: Card }) {
             ))}
           </dl>
 
-          <button
-            type="button"
-            onClick={() => void save()}
-            className="font-mincho mt-6 w-full rounded-full bg-da-ink py-3 text-[15px] text-da-paper transition-opacity hover:opacity-85"
-          >
-            {tx(UI.saveCard)} <span className="ml-1 font-mono text-xs opacity-70">⌘S</span>
-          </button>
         </div>
 
         {/* 中央: 本文 */}

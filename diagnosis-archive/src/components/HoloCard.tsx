@@ -2,13 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import type { Card } from "@/data/cards";
-import CardIcon from "@/components/CardIcon";
-import { useLang } from "@/lib/i18n";
-import { REGION_LABELS, STATUS_META, cardText, yearLabel } from "@/lib/meta";
+import ArchiveCard from "@/components/ArchiveCard";
 
-/** ポインタ追従で傾く「ホロカード」 */
+/** ポインタ追従で傾く「ホロカード」。中身は一覧と同じ ArchiveCard（同比率） */
 export default function HoloCard({ card }: { card: Card }) {
-  const { lang, tx } = useLang();
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const sheenRef = useRef<HTMLDivElement>(null);
@@ -68,36 +65,15 @@ export default function HoloCard({ card }: { card: Card }) {
     };
   }, []);
 
-  const t = cardText(card, lang);
-
   return (
     <div ref={wrapRef} className="select-none [touch-action:pan-y]" style={{ perspective: "900px" }}>
-      <div ref={cardRef} className="da-card relative px-6 pb-5 pt-5 will-change-transform" style={{ transformStyle: "preserve-3d", transition: "none" }}>
+      <div
+        ref={cardRef}
+        className="relative will-change-transform"
+        style={{ transformStyle: "preserve-3d", transition: "none" }}
+      >
         <div ref={sheenRef} className="pointer-events-none absolute inset-0 z-[2] opacity-0 transition-opacity duration-300" />
-
-        <header className="flex items-baseline justify-between">
-          <span className="font-display text-3xl italic text-da-accent">
-            <span className="text-lg">№</span>
-            {card.num}
-          </span>
-          <span className="font-mono text-xs tracking-[0.15em]">{yearLabel(card)}</span>
-        </header>
-
-        <CardIcon card={card} className="mx-auto my-4 aspect-square w-[70%] max-w-[190px]" />
-
-        <div className="border-t da-hairline pt-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-da-muted">{t.enName}</p>
-          <h2 className="font-mincho mt-1 text-2xl font-bold leading-snug">{t.name}</h2>
-          <p className="da-clamp-3 mt-2 text-xs leading-relaxed text-da-muted">{t.meaning}</p>
-        </div>
-
-        <footer className="mt-4 flex items-center justify-between border-t da-hairline pt-2">
-          <span className="font-mono text-[11px] tracking-[0.12em]">
-            <span className="mr-1.5 text-da-accent">−</span>
-            {tx(STATUS_META[card.cat].label)}
-          </span>
-          <span className="font-mono text-[11px] tracking-[0.12em] text-da-accent-text">{tx(REGION_LABELS[card.region])}</span>
-        </footer>
+        <ArchiveCard card={card} />
       </div>
     </div>
   );
