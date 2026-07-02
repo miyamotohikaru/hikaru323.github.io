@@ -24,10 +24,6 @@
   --font-mono: var(--font-mono), "Menlo", monospace;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   background: var(--da-bg);
   color: var(--da-ink);

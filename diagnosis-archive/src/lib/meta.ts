@@ -112,11 +112,12 @@ export const STATS = {
   regions: new Set(CARDS.map((c) => c.region)).size,
 };
 
-/** 表示用テキスト。EN表示時は未翻訳フィールドを日本語へフォールバック */
+/** 表示用テキスト。EN表示時は未翻訳フィールドを日本語へフォールバック。
+    ENのタイトルは「（日本）」のような全角括弧の国名注記を外す（ユーザー指定） */
 export function cardText(card: Card, lang: Lang): CardText {
   if (lang === "ja") return card.ja;
   return {
-    name: card.en.name || card.ja.name,
+    name: (card.en.name || card.ja.name).replace(/（[^）]*）/g, "").trim(),
     enName: card.en.enName || card.ja.enName,
     reading: card.en.reading || card.ja.reading,
     meaning: card.en.meaning || card.ja.meaning,
