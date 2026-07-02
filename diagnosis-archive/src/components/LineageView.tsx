@@ -1,21 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import type { Card, Status } from "@/data/cards";
+import type { Card } from "@/data/cards";
 import { CHAINS, RELATION_LABELS, type Chain } from "@/data/lineage";
 import { useLang } from "@/lib/i18n";
-import { CARD_BY_ID, STATUS_META, cardText, yearLabel } from "@/lib/meta";
+import { CARD_BY_ID, DISPLAY_STATUS_META, cardText, displayStatus, yearLabel, type DisplayStatus } from "@/lib/meta";
 
-/** ピンク＋インクの2色だけでステータスを描き分けるドット */
-export function StatusDot({ cat }: { cat: Status }) {
-  const cls: Record<Status, string> = {
-    CURRENT: "bg-da-accent border-da-accent",
-    PROMOTED: "bg-da-ink border-da-ink",
+/** ピンク＋インクの2色だけでステータスを描き分けるドット（正式／議論中／廃止） */
+export function StatusDot({ s }: { s: DisplayStatus }) {
+  const cls: Record<DisplayStatus, string> = {
+    OFFICIAL: "bg-da-accent border-da-accent",
     DISPUTED: "bg-transparent border-da-accent",
     RETIRED: "bg-transparent border-da-ink",
-    "CULTURE-BOUND": "bg-da-accent/30 border-da-accent",
   };
-  return <span aria-hidden="true" className={`inline-block h-[9px] w-[9px] shrink-0 rounded-full border-[1.5px] ${cls[cat]}`} />;
+  return <span aria-hidden="true" className={`inline-block h-[9px] w-[9px] shrink-0 rounded-full border-[1.5px] ${cls[s]}`} />;
 }
 
 function NodeRow({ card, rel, currentId, fromParam }: { card: Card; rel?: string; currentId?: string; fromParam?: string }) {
@@ -24,7 +22,7 @@ function NodeRow({ card, rel, currentId, fromParam }: { card: Card; rel?: string
   const isCurrent = card.id === currentId;
   return (
     <div className="flex items-center gap-2.5 py-2" data-card-id={card.id}>
-      <StatusDot cat={card.cat} />
+      <StatusDot s={displayStatus(card)} />
       <Link
         href={`/entry/${card.id}${fromParam ? `?from=${fromParam}` : ""}`}
         aria-current={isCurrent ? "page" : undefined}
@@ -36,7 +34,7 @@ function NodeRow({ card, rel, currentId, fromParam }: { card: Card; rel?: string
       </Link>
       {rel && <span className="shrink-0 rounded-sm bg-da-ink/8 px-1.5 py-0.5 font-mono text-[9px] tracking-[0.1em] text-da-muted">{rel}</span>}
       <span className="ml-auto shrink-0 font-mono text-[10px] text-da-muted">
-        {tx(STATUS_META[card.cat].label)}
+        {tx(DISPLAY_STATUS_META[displayStatus(card)].label)}
         <span className="ml-2 text-da-ink">{yearLabel(card)}</span>
       </span>
     </div>

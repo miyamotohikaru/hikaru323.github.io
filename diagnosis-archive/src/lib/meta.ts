@@ -75,6 +75,31 @@ export const ERAS: Era[] = [
   { from: 2000, to: 2030, label: { ja: "デジタル時代", en: "The Digital Age" } },
 ];
 
+/* ── 表示用ステータス（3分類・ユーザー指定 2026-07-03） ──
+   元データの5分類は保持しつつ、表示・絞り込みは 正式/議論中/廃止 に集約する。
+   現行・新規昇格 → 正式 ／ 文化圏（正式収載ではない）→ 議論中 */
+export type DisplayStatus = "OFFICIAL" | "DISPUTED" | "RETIRED";
+
+export const DISPLAY_STATUS_ORDER: DisplayStatus[] = ["OFFICIAL", "DISPUTED", "RETIRED"];
+
+export const DISPLAY_STATUS_META: Record<DisplayStatus, { label: Bi }> = {
+  OFFICIAL: { label: { ja: "正式", en: "Official" } },
+  DISPUTED: { label: { ja: "議論中", en: "Disputed" } },
+  RETIRED: { label: { ja: "廃止", en: "Retired" } },
+};
+
+export function displayStatus(card: Card): DisplayStatus {
+  switch (card.cat) {
+    case "RETIRED":
+      return "RETIRED";
+    case "DISPUTED":
+    case "CULTURE-BOUND":
+      return "DISPUTED";
+    default:
+      return "OFFICIAL";
+  }
+}
+
 export const CARD_BY_ID = new Map<string, Card>(CARDS.map((c) => [c.id, c]));
 
 export const YEAR_MIN = Math.min(...CARDS.map((c) => c.year));
@@ -82,7 +107,7 @@ export const YEAR_MAX = Math.max(...CARDS.map((c) => c.year));
 
 export const STATS = {
   entries: CARDS.length,
-  statuses: STATUS_ORDER.length,
+  statuses: DISPLAY_STATUS_ORDER.length,
   years: YEAR_MAX - YEAR_MIN,
   regions: new Set(CARDS.map((c) => c.region)).size,
 };
@@ -142,7 +167,7 @@ export function sortCards(cards: Card[], key: SortKey, lang: Lang): Card[] {
 }
 
 export interface Filters {
-  status: Status | null;
+  status: DisplayStatus | null;
   powers: Power[];
   regions: Region[];
   yearFrom: number;
@@ -159,7 +184,7 @@ export const DEFAULT_FILTERS: Filters = {
 
 export function applyFilters(cards: Card[], f: Filters): Card[] {
   return cards.filter((c) => {
-    if (f.status && c.cat !== f.status) return false;
+    if (f.status && displayStatus(c) !== f.status) return false;
     if (f.powers.length && !f.powers.some((p) => c.power.includes(p))) return false;
     if (f.regions.length && !f.regions.includes(c.region)) return false;
     if (c.year < f.yearFrom || c.year > f.yearTo) return false;

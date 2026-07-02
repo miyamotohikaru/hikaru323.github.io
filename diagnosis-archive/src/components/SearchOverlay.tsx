@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CARDS, type Card } from "@/data/cards";
 import { UI, useLang } from "@/lib/i18n";
-import { STATUS_META, cardText, yearLabel } from "@/lib/meta";
+import { DISPLAY_STATUS_META, cardText, displayStatus, yearLabel } from "@/lib/meta";
 
 function normalize(s: string): string {
   return s
@@ -140,7 +140,7 @@ export default function SearchOverlay({ onClose }: { onClose: () => void }) {
                     {t.enName}
                   </span>
                   <span className="ml-auto shrink-0 font-mono text-[10px] text-da-muted">
-                    {tx(STATUS_META[card.cat].label)} · {yearLabel(card)}
+                    {tx(DISPLAY_STATUS_META[displayStatus(card)].label)} · {yearLabel(card)}
                   </span>
                 </button>
               </li>

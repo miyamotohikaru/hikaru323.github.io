@@ -3,7 +3,7 @@
 import type { Card } from "@/data/cards";
 import CardIcon from "@/components/CardIcon";
 import { useLang } from "@/lib/i18n";
-import { REGION_LABELS, STATUS_META, cardText, yearLabel } from "@/lib/meta";
+import { DISPLAY_STATUS_META, REGION_LABELS, cardText, yearLabel } from "@/lib/meta";
 
 /**
  * アーカイブカードの共通ビジュアル。
@@ -51,7 +51,7 @@ export default function ArchiveCard({ card, depth = false }: { card: Card; depth
           {card.cat === "RETIRED" ? (
             <span className="font-mono tracking-[0.12em] text-[max(3cqw,8px)]">
               <span className="mr-[1cqw] text-da-accent">−</span>
-              {tx(STATUS_META[card.cat].label)}
+              {tx(DISPLAY_STATUS_META.RETIRED.label)}
             </span>
           ) : (
             <span aria-hidden="true" className="font-mono text-[max(3cqw,8px)]">

@@ -9,7 +9,7 @@ import HoloCard from "@/components/HoloCard";
 import { ChainBlock } from "@/components/LineageView";
 import { chainsFor } from "@/data/lineage";
 import { UI, useLang } from "@/lib/i18n";
-import { POWER_LABELS, REGION_LABELS, STATS, STATUS_META, cardText, lifespanLabel, yearLabel } from "@/lib/meta";
+import { DISPLAY_STATUS_META, POWER_LABELS, REGION_LABELS, STATS, cardText, displayStatus, lifespanLabel, yearLabel } from "@/lib/meta";
 
 const ORDERED = [...CARDS].sort((a, b) => a.num - b.num);
 
@@ -130,7 +130,7 @@ export default function EntryDetail({ card }: { card: Card }) {
           ← {backLabel}
         </Link>
         <span className="text-da-muted">/</span>
-        <span className="text-da-muted">{tx(STATUS_META[card.cat].label)}</span>
+        <span className="text-da-muted">{tx(DISPLAY_STATUS_META[displayStatus(card)].label)}</span>
         <span className="text-da-muted">/</span>
         <span className="text-da-accent-text">{card.id}</span>
         <span className="ml-auto text-da-muted">
@@ -174,7 +174,7 @@ export default function EntryDetail({ card }: { card: Card }) {
         {/* 中央: 本文 */}
         <article>
           <p className="font-mono text-[11px] tracking-[0.25em] text-da-accent-text">
-            {tx(STATUS_META[card.cat].label)} · {yearLabel(card)}
+            {tx(DISPLAY_STATUS_META[displayStatus(card)].label)} · {yearLabel(card)}
           </p>
           <h1 className="font-mincho mt-3 text-4xl font-bold leading-tight sm:text-5xl">{t.name}</h1>
           <p className="font-display mt-3 text-xl italic text-da-muted">{t.enName}</p>

@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Power, Region, Status } from "@/data/cards";
+import type { Power, Region } from "@/data/cards";
 import { UI, useLang } from "@/lib/i18n";
 import {
   DEFAULT_FILTERS,
   POWER_LABELS,
   REGION_LABELS,
+  DISPLAY_STATUS_META,
+  DISPLAY_STATUS_ORDER,
   SORT_LABELS,
-  STATUS_META,
-  STATUS_ORDER,
   YEAR_MAX,
   YEAR_MIN,
+  type DisplayStatus,
   type Filters,
   type SortKey,
 } from "@/lib/meta";
@@ -156,7 +157,7 @@ export default function FilterPanel({
       ...filters,
       regions: filters.regions.includes(r) ? filters.regions.filter((x) => x !== r) : [...filters.regions, r],
     });
-  const setStatus = (s: Status | null) => setFilters({ ...filters, status: s });
+  const setStatus = (s: DisplayStatus | null) => setFilters({ ...filters, status: s });
   const reset = () => setFilters(DEFAULT_FILTERS);
 
   return (
@@ -192,10 +193,10 @@ export default function FilterPanel({
             <AxisLabel>{tx(UI.status)}</AxisLabel>
             <div className="flex flex-wrap gap-1.5">
               <Chip label={tx(UI.all)} active={filters.status === null} onClick={() => setStatus(null)} />
-              {STATUS_ORDER.map((s) => (
+              {DISPLAY_STATUS_ORDER.map((s) => (
                 <Chip
                   key={s}
-                  label={tx(STATUS_META[s].label)}
+                  label={tx(DISPLAY_STATUS_META[s].label)}
                   active={filters.status === s}
                   onClick={() => setStatus(filters.status === s ? null : s)}
                 />

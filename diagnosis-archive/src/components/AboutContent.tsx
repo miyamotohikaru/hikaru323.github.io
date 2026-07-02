@@ -3,56 +3,39 @@
 import Link from "next/link";
 import { StatusDot } from "@/components/LineageView";
 import { UI, useLang } from "@/lib/i18n";
-import { STATS, YEAR_MAX, YEAR_MIN, type Bi } from "@/lib/meta";
-import type { Status } from "@/data/cards";
+import { STATS, YEAR_MAX, YEAR_MIN, type Bi, type DisplayStatus } from "@/lib/meta";
 
 /* ── About 専用コピー ──────────────────────────── */
 
-const STATUS_GUIDE: { cat: Status; term: Bi; desc: Bi }[] = [
+const STATUS_GUIDE: { s: DisplayStatus; term: Bi; desc: Bi }[] = [
   {
-    cat: "CURRENT",
-    term: { ja: "現行", en: "Current" },
+    s: "OFFICIAL",
+    term: { ja: "正式", en: "Official" },
     desc: {
-      ja: "DSM-5-TR（米国精神医学会の診断マニュアル最新版）またはICD-11（WHOの国際疾病分類）に正式な診断として収載され、以前から定着しているもの。",
-      en: "Long-established diagnoses currently listed in DSM-5-TR (the American Psychiatric Association's manual) or ICD-11 (the WHO's international classification).",
+      ja: "DSM-5-TR（米国精神医学会の診断マニュアル最新版）またはICD-11（WHOの国際疾病分類）に、正式な診断として収載されているもの。以前から定着しているものも、ゲーム障害（2019年・ICD-11）や複雑性PTSDのように近年昇格したばかりのものも含む。",
+      en: "Diagnoses officially listed in DSM-5-TR (the American Psychiatric Association's manual) or ICD-11 (the WHO's international classification) — both long-established ones and recent arrivals like gaming disorder (ICD-11, 2019) and complex PTSD.",
     },
   },
   {
-    cat: "PROMOTED",
-    term: { ja: "新規昇格", en: "Promoted" },
-    desc: {
-      ja: "かつては俗称や研究上の概念だったが、近年の改訂で正式な診断として採用されたもの。今の身分は「現行」と同じ正式診断だが、このアーカイブでは“正式になった”という出来事に注目して別枠で扱う。ゲーム障害（2019年・ICD-11）や複雑性PTSDなどが該当する。",
-      en: "Concepts that began as informal or research terms and were recently promoted to official diagnoses. Today they are just as official as “Current” entries — this archive sets them apart to spotlight the moment of promotion. E.g. gaming disorder (ICD-11, 2019) and complex PTSD.",
-    },
-  },
-  {
-    cat: "DISPUTED",
+    s: "DISPUTED",
     term: { ja: "議論中", en: "Disputed" },
     desc: {
-      ja: "社会や研究の場で広く使われているものの、正式な診断としては採用されていない概念。独立した病気なのか、他の状態の一部なのか、そもそも「病気」と呼ぶべきなのかが議論されている。",
-      en: "Concepts widely used in society and research but not officially adopted. Whether they are independent illnesses, aspects of other conditions, or illnesses at all remains debated.",
+      ja: "正式な診断としては採用されていない概念。社会や研究で広く使われながら有効性が議論されているものと、特定の文化や地域と結びついて記述されてきた症候群（文化結合症候群）を含む。独立した病気なのか、他の状態の一部なのか、そもそも「病気」と呼ぶべきなのかが問われている。",
+      en: "Concepts not officially adopted as diagnoses: ideas widely used but still debated, and syndromes described in connection with specific cultures (culture-bound syndromes). Whether they are independent illnesses, aspects of other conditions, or illnesses at all remains in question.",
     },
   },
   {
-    cat: "RETIRED",
+    s: "RETIRED",
     term: { ja: "廃止", en: "Retired" },
     desc: {
       ja: "かつて公式の診断として存在したが、その後の改訂で削除・改名され、使われなくなったもの。科学の進歩によって退場したものもあれば、当事者の運動や政治によって削除されたものもある。診断が固定的なものではないことの記録。",
       en: "Former official diagnoses that were later deleted or renamed. Some retired through scientific progress, others through activism and politics — a record that diagnoses are not fixed.",
     },
   },
-  {
-    cat: "CULTURE-BOUND",
-    term: { ja: "文化圏", en: "Culture-bound" },
-    desc: {
-      ja: "特定の文化や地域と強く結びついて記述されてきた症候群。DSM-IVでは付録「文化結合症候群」として収載され、DSM-5では「苦悩の文化的概念」として整理し直された。",
-      en: "Syndromes described in connection with specific cultures and regions. DSM-IV listed them in an appendix of “culture-bound syndromes”; DSM-5 reframed them as “cultural concepts of distress.”",
-    },
-  },
 ];
 
 const DSM_INTRO: Bi = {
-  ja: "DSM（Diagnostic and Statistical Manual of Mental Disorders／精神疾患の診断・統計マニュアル）は、米国精神医学会（APA）が発行する診断基準集。何を精神疾患とし、何と呼ぶかを定める事実上の標準として世界中で参照されてきた。版が改まるたびに診断は追加・削除・改名されており、このアーカイブの「新規昇格」や「廃止」の多くはその改訂史の出来事にあたる。カード本文の「DSM-III（1980）」のような表記は、その出来事が起きた版と年を指す。",
+  ja: "DSM（Diagnostic and Statistical Manual of Mental Disorders／精神疾患の診断・統計マニュアル）は、米国精神医学会（APA）が発行する診断基準集。何を精神疾患とし、何と呼ぶかを定める事実上の標準として世界中で参照されてきた。版が改まるたびに診断は追加・削除・改名されており、このアーカイブで扱う診断の昇格や「廃止」の多くはその改訂史の出来事にあたる。カード本文の「DSM-III（1980）」のような表記は、その出来事が起きた版と年を指す。",
   en: "The DSM (Diagnostic and Statistical Manual of Mental Disorders), published by the American Psychiatric Association, is the de facto standard that decides what counts as a mental disorder and what it is called. Each revision has added, deleted, and renamed diagnoses — most of the “promotions” and “retirements” in this archive are events in that revision history. Notations like “DSM-III (1980)” in the entries refer to the edition and year of the event.",
 };
 
@@ -118,9 +101,9 @@ export default function AboutContent() {
         <SectionLabel>{lang === "ja" ? "ステータスの読み方" : "How to read the statuses"}</SectionLabel>
         <dl className="mt-4">
           {STATUS_GUIDE.map((s) => (
-            <div key={s.cat} className="border-b da-hairline py-4">
+            <div key={s.s} className="border-b da-hairline py-4">
               <dt className="flex items-center gap-2.5">
-                <StatusDot cat={s.cat} />
+                <StatusDot s={s.s} />
                 <span className="font-mincho text-[16px] font-bold">{tx(s.term)}</span>
               </dt>
               <dd className="mt-1.5 pl-[19px] text-[13.5px] leading-[1.9] text-da-muted">{tx(s.desc)}</dd>

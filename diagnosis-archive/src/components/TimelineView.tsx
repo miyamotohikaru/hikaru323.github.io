@@ -6,7 +6,7 @@ import type { Card } from "@/data/cards";
 import CardIcon from "@/components/CardIcon";
 import CardTile from "@/components/CardTile";
 import { useLang } from "@/lib/i18n";
-import { ERAS, STATUS_META, cardText, yearLabel } from "@/lib/meta";
+import { DISPLAY_STATUS_META, ERAS, cardText, displayStatus, yearLabel } from "@/lib/meta";
 
 /* ── 横型チャート（デスクトップ・モック準拠） ─────────────────
    1850年以降を等倍、1500〜1849年は圧縮した年代軸の上に
@@ -216,7 +216,7 @@ function TimelineChart({ cards }: { cards: Card[] }) {
                             <span className="min-w-0">
                               <span className="font-mincho block truncate text-[13px] font-medium">{ct.name}</span>
                               <span className="block font-mono text-[9px] text-da-muted">
-                                №{c.num} · {tx(STATUS_META[c.cat].label)}
+                                №{c.num} · {tx(DISPLAY_STATUS_META[displayStatus(c)].label)}
                               </span>
                             </span>
                           </Link>
@@ -301,7 +301,7 @@ function TimelineList({ cards }: { cards: Card[] }) {
                     </span>
                     <span className="ml-auto hidden shrink-0 font-mono text-[10px] tracking-[0.12em] text-da-muted sm:block">
                       <span className="mr-1 text-da-accent">−</span>
-                      {tx(STATUS_META[card.cat].label)}
+                      {tx(DISPLAY_STATUS_META[displayStatus(card)].label)}
                     </span>
                   </Link>
                 </li>
