@@ -52,7 +52,7 @@ export const CHAINS: Chain[] = [
       { id: "DA-052" },
       { id: "DA-051", rel: "succeed" },
       { id: "DA-022", rel: "succeed" },
-      { id: "DA-088", rel: "promote" },
+      { id: "DA-069", rel: "promote" },
     ],
   },
   {
@@ -63,7 +63,7 @@ export const CHAINS: Chain[] = [
       { id: "DA-045" },
       { id: "DA-029", rel: "split" },
       { id: "DA-028", rel: "split" },
-      { id: "DA-152", rel: "split" },
+      { id: "DA-129", rel: "split" },
       { id: "DA-026", rel: "split" },
       { id: "DA-038", rel: "succeed" },
     ],
@@ -87,7 +87,7 @@ export const CHAINS: Chain[] = [
     nodes: [
       { id: "DA-041" },
       { id: "DA-042", rel: "sister" },
-      { id: "DA-174", rel: "echo" },
+      { id: "DA-151", rel: "echo" },
     ],
   },
   {
@@ -97,7 +97,7 @@ export const CHAINS: Chain[] = [
     nodes: [
       { id: "DA-001" },
       { id: "DA-050", rel: "absorb" },
-      { id: "DA-070", rel: "absorb" },
+      { id: "DA-061", rel: "absorb" },
     ],
   },
   {
@@ -119,16 +119,16 @@ export const CHAINS: Chain[] = [
     kind: "fan",
     nodes: [
       { id: "DA-046" },
-      { id: "DA-108", rel: "survive" },
-      { id: "DA-081", rel: "echo" },
-      { id: "DA-086", rel: "echo" },
+      { id: "DA-089", rel: "survive" },
+      { id: "DA-065", rel: "echo" },
+      { id: "DA-067", rel: "echo" },
     ],
   },
   {
     key: "adhd",
     title: { ja: "ADHDへの改名", en: "Becoming ADHD" },
     kind: "linear",
-    nodes: [{ id: "DA-069" }, { id: "DA-003", rel: "rename" }],
+    nodes: [{ id: "DA-060" }, { id: "DA-003", rel: "rename" }],
   },
   {
     key: "intellectual",
@@ -146,7 +146,7 @@ export const CHAINS: Chain[] = [
     key: "addiction",
     title: { ja: "行動嗜癖の拡大", en: "Expanding behavioral addiction" },
     kind: "linear",
-    nodes: [{ id: "DA-072" }, { id: "DA-087", rel: "promote" }],
+    nodes: [{ id: "DA-063" }, { id: "DA-068", rel: "promote" }],
   },
 ];
 

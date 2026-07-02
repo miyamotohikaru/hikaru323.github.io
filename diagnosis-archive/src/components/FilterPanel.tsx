@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Power, Region } from "@/data/cards";
+import type { Power, Region, Status } from "@/data/cards";
 import { UI, useLang } from "@/lib/i18n";
 import {
   DEFAULT_FILTERS,
   POWER_LABELS,
   REGION_LABELS,
   SORT_LABELS,
+  STATUS_META,
+  STATUS_ORDER,
   YEAR_MAX,
   YEAR_MIN,
   type Filters,
@@ -154,7 +156,8 @@ export default function FilterPanel({
       ...filters,
       regions: filters.regions.includes(r) ? filters.regions.filter((x) => x !== r) : [...filters.regions, r],
     });
-  const reset = () => setFilters({ ...DEFAULT_FILTERS, status: filters.status });
+  const setStatus = (s: Status | null) => setFilters({ ...filters, status: s });
+  const reset = () => setFilters(DEFAULT_FILTERS);
 
   return (
     <>
@@ -175,12 +178,27 @@ export default function FilterPanel({
           <span className="font-mono text-[10px] tracking-[0.2em] text-da-muted">{tx(UI.axes)}</span>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <AxisLabel>{tx(UI.sortBy)}</AxisLabel>
             <div className="flex flex-wrap gap-1.5">
               {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
                 <Chip key={k} label={tx(SORT_LABELS[k])} active={sort === k} onClick={() => setSort(k)} />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <AxisLabel>{tx(UI.status)}</AxisLabel>
+            <div className="flex flex-wrap gap-1.5">
+              <Chip label={tx(UI.all)} active={filters.status === null} onClick={() => setStatus(null)} />
+              {STATUS_ORDER.map((s) => (
+                <Chip
+                  key={s}
+                  label={tx(STATUS_META[s].label)}
+                  active={filters.status === s}
+                  onClick={() => setStatus(filters.status === s ? null : s)}
+                />
               ))}
             </div>
           </div>

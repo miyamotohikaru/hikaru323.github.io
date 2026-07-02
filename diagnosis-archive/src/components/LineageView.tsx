@@ -18,7 +18,7 @@ export function StatusDot({ cat }: { cat: Status }) {
   return <span aria-hidden="true" className={`inline-block h-[9px] w-[9px] shrink-0 rounded-full border-[1.5px] ${cls[cat]}`} />;
 }
 
-function NodeRow({ card, rel, currentId }: { card: Card; rel?: string; currentId?: string }) {
+function NodeRow({ card, rel, currentId, fromParam }: { card: Card; rel?: string; currentId?: string; fromParam?: string }) {
   const { lang, tx } = useLang();
   const t = cardText(card, lang);
   const isCurrent = card.id === currentId;
@@ -26,7 +26,7 @@ function NodeRow({ card, rel, currentId }: { card: Card; rel?: string; currentId
     <div className="flex items-center gap-2.5 py-2">
       <StatusDot cat={card.cat} />
       <Link
-        href={`/entry/${card.id}`}
+        href={`/entry/${card.id}${fromParam ? `?from=${fromParam}` : ""}`}
         aria-current={isCurrent ? "page" : undefined}
         className={`font-mincho truncate text-[15px] leading-snug transition-colors hover:text-da-accent ${
           isCurrent ? "font-semibold text-da-accent-text" : ""
@@ -43,7 +43,7 @@ function NodeRow({ card, rel, currentId }: { card: Card; rel?: string; currentId
   );
 }
 
-export function ChainBlock({ chain, currentId }: { chain: Chain; currentId?: string }) {
+export function ChainBlock({ chain, currentId, fromParam }: { chain: Chain; currentId?: string; fromParam?: string }) {
   const { tx } = useLang();
   const [head, ...rest] = chain.nodes;
   const branchCls = chain.kind === "fan" ? "border-dashed" : "";
@@ -57,12 +57,20 @@ export function ChainBlock({ chain, currentId }: { chain: Chain; currentId?: str
         {tx(chain.title)}
       </h3>
       <div className="mt-1.5">
-        <NodeRow card={headCard} currentId={currentId} />
+        <NodeRow card={headCard} currentId={currentId} fromParam={fromParam} />
         <div className={`ml-1 border-l-[1.5px] border-da-line pl-4 ${branchCls}`}>
           {rest.map((node) => {
             const card = CARD_BY_ID.get(node.id);
             if (!card) return null;
-            return <NodeRow key={node.id} card={card} rel={node.rel ? tx(RELATION_LABELS[node.rel]) : undefined} currentId={currentId} />;
+            return (
+              <NodeRow
+                key={node.id}
+                card={card}
+                rel={node.rel ? tx(RELATION_LABELS[node.rel]) : undefined}
+                currentId={currentId}
+                fromParam={fromParam}
+              />
+            );
           })}
           {chain.terminus && (
             <p className="py-2 font-mono text-[10px] tracking-[0.1em] text-da-accent-text">✕ {tx(chain.terminus.label)}</p>
@@ -77,7 +85,7 @@ export default function LineageView() {
   return (
     <div className="da-fade grid gap-x-10 gap-y-8 md:grid-cols-2">
       {CHAINS.map((chain) => (
-        <ChainBlock key={chain.key} chain={chain} />
+        <ChainBlock key={chain.key} chain={chain} fromParam="lineage" />
       ))}
     </div>
   );

@@ -105,8 +105,10 @@ export function yearLabel(card: Card): string {
   return card.endYear ? `${card.year}–${card.endYear}` : String(card.year);
 }
 
-export function lifespanLabel(card: Card): string {
-  return card.endYear ? `≈${Math.max(1, card.endYear - card.year)}y` : "—";
+export function lifespanLabel(card: Card, lang: Lang): string {
+  if (!card.endYear) return "—";
+  const n = Math.max(1, card.endYear - card.year);
+  return lang === "ja" ? `約${n}年` : `~${n} yrs`;
 }
 
 export type SortKey = "year-desc" | "year-asc" | "num" | "life" | "name";

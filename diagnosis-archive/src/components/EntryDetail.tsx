@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CARDS, type Card } from "@/data/cards";
 import CardIcon from "@/components/CardIcon";
 import HoloCard from "@/components/HoloCard";
@@ -13,12 +13,14 @@ import { POWER_LABELS, REGION_LABELS, STATS, STATUS_META, cardText, lifespanLabe
 
 const ORDERED = [...CARDS].sort((a, b) => a.num - b.num);
 
-function AdjacentRow({ card, dir }: { card: Card; dir: "prev" | "next" }) {
+type From = "timeline" | "lineage" | null;
+
+function AdjacentRow({ card, dir, q }: { card: Card; dir: "prev" | "next"; q: string }) {
   const { lang, tx } = useLang();
   const t = cardText(card, lang);
   return (
     <Link
-      href={`/entry/${card.id}`}
+      href={`/entry/${card.id}${q}`}
       className="group flex items-center gap-3 border-b da-hairline py-2.5 transition-colors hover:bg-da-ink/5"
     >
       <span className="w-7 shrink-0 font-mono text-[10px] text-da-muted">{dir === "prev" ? "←" : "→"}</span>
@@ -39,6 +41,16 @@ export default function EntryDetail({ card }: { card: Card }) {
   const t = cardText(card, lang);
   const chains = chainsFor(card.id);
 
+  // どのビューから来たか（?from=timeline / lineage）。戻る導線と後続リンクに引き継ぐ
+  const [from, setFrom] = useState<From>(null);
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get("from");
+    setFrom(v === "timeline" || v === "lineage" ? v : null);
+  }, [card.id]);
+  const q = from ? `?from=${from}` : "";
+  const backHref = from ? `/?view=${from}` : "/";
+  const backLabel = from === "timeline" ? tx(UI.backToTimeline) : from === "lineage" ? tx(UI.backToLineage) : tx(UI.backToIndex);
+
   const { prev, next } = useMemo(() => {
     const i = ORDERED.findIndex((c) => c.id === card.id);
     return {
@@ -55,14 +67,14 @@ export default function EntryDetail({ card }: { card: Card }) {
       if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
       if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       if (e.key === "ArrowLeft") {
-        router.push(`/entry/${prev.id}`);
+        router.push(`/entry/${prev.id}${q}`);
       } else if (e.key === "ArrowRight") {
-        router.push(`/entry/${next.id}`);
+        router.push(`/entry/${next.id}${q}`);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [prev.id, next.id, router]);
+  }, [prev.id, next.id, router, q]);
 
   const sections: { label: (typeof UI)[keyof typeof UI]; text?: string }[] = [
     { label: UI.summary, text: t.meaning },
@@ -75,8 +87,8 @@ export default function EntryDetail({ card }: { card: Card }) {
     <div className="da-fade mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6">
       {/* パンくず */}
       <nav className="flex items-baseline gap-2 font-mono text-[11px] tracking-[0.15em]" aria-label="Breadcrumb">
-        <Link href="/" className="text-da-ink transition-colors hover:text-da-accent">
-          ← {tx(UI.backToIndex)}
+        <Link href={backHref} className="text-da-ink transition-colors hover:text-da-accent">
+          ← {backLabel}
         </Link>
         <span className="text-da-muted">/</span>
         <span className="text-da-muted">{tx(STATUS_META[card.cat].label)}</span>
@@ -106,7 +118,7 @@ export default function EntryDetail({ card }: { card: Card }) {
           <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-t da-hairline pt-4">
             {[
               { label: UI.named, value: String(card.year) },
-              { label: UI.lifespan, value: lifespanLabel(card) },
+              { label: UI.lifespan, value: lifespanLabel(card, lang), upright: lang === "ja" && card.endYear != null },
               { label: UI.origin, value: tx(REGION_LABELS[card.region]), upright: lang === "ja" },
               { label: UI.classification, value: card.code, small: true },
             ].map((row) => (
@@ -162,7 +174,7 @@ export default function EntryDetail({ card }: { card: Card }) {
             <div className="space-y-6">
               <h2 className="sr-only">{tx(UI.lineageSection)}</h2>
               {chains.map((chain) => (
-                <ChainBlock key={chain.key} chain={chain} currentId={card.id} />
+                <ChainBlock key={chain.key} chain={chain} currentId={card.id} fromParam={from ?? undefined} />
               ))}
             </div>
           )}
@@ -173,8 +185,8 @@ export default function EntryDetail({ card }: { card: Card }) {
               {tx(UI.adjacent)}
             </h2>
             <div className="mt-2">
-              <AdjacentRow card={prev} dir="prev" />
-              <AdjacentRow card={next} dir="next" />
+              <AdjacentRow card={prev} dir="prev" q={q} />
+              <AdjacentRow card={next} dir="next" q={q} />
             </div>
           </div>
         </aside>

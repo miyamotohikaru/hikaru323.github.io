@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { CARDS, type Status } from "@/data/cards";
+import { Suspense, useMemo, useState } from "react";
+import { CARDS } from "@/data/cards";
 import CardTile from "@/components/CardTile";
 import FilterPanel from "@/components/FilterPanel";
 import LineageView from "@/components/LineageView";
@@ -12,15 +11,11 @@ import { UI, useLang } from "@/lib/i18n";
 import {
   DEFAULT_FILTERS,
   STATS,
-  STATUS_META,
-  STATUS_ORDER,
   YEAR_MAX,
   YEAR_MIN,
   applyFilters,
-  cardText,
   isFiltered,
   sortCards,
-  yearLabel,
   type Filters,
   type SortKey,
 } from "@/lib/meta";
@@ -29,48 +24,10 @@ type View = "grid" | "timeline" | "lineage";
 
 /* ── ヒーロー ─────────────────────────────────── */
 
-function FeaturedEntry() {
-  const { lang, tx } = useLang();
-  const [idx, setIdx] = useState<number | null>(null);
-
-  useEffect(() => {
-    // 週替わり（年×53＋週番号で決定的に選ぶ）
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 1);
-    const week = Math.floor((now.getTime() - start.getTime()) / (7 * 24 * 3600 * 1000));
-    setIdx((now.getFullYear() * 53 + week) % CARDS.length);
-  }, []);
-
-  const card = idx == null ? null : CARDS[idx];
-  if (!card) return <div className="hidden h-56 md:block" aria-hidden="true" />;
-  const t = cardText(card, lang);
-
-  return (
-    <div className="da-fade flex items-center gap-5">
-      <div className="w-36 shrink-0 sm:w-40">
-        <CardTile card={card} />
-      </div>
-      <div className="min-w-0">
-        <p className="font-mono text-[10px] tracking-[0.25em] text-da-accent-text">{tx(UI.weeklyEntry)}</p>
-        <h3 className="font-mincho mt-1.5 text-2xl font-semibold leading-tight">{t.name}</h3>
-        <p className="mt-1 truncate font-mono text-[10px] tracking-[0.15em] text-da-muted">
-          {yearLabel(card)} · {card.code}
-        </p>
-        <Link
-          href={`/entry/${card.id}`}
-          className="font-mincho mt-3 inline-block text-[15px] italic text-da-accent-text underline-offset-4 hover:underline"
-        >
-          {tx(UI.readMore)}
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 function Hero() {
   const { tx } = useLang();
   return (
-    <section className="mx-auto grid max-w-6xl gap-8 px-4 pb-6 pt-10 sm:px-6 md:grid-cols-[1.1fr_1fr] md:items-center md:pt-14">
+    <section className="mx-auto grid max-w-6xl gap-8 px-4 pb-6 pt-10 sm:px-6 md:grid-cols-[1.2fr_1fr] md:items-end md:pt-14">
       <div>
         <p className="font-mono text-[11px] tracking-[0.3em] text-da-accent-text">{tx(UI.issue)}</p>
         <h1 className="font-display mt-3 text-5xl font-medium italic leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
@@ -78,23 +35,20 @@ function Hero() {
         </h1>
         <p className="font-mincho mt-4 text-base text-da-muted sm:text-lg">{tx(UI.tagline)}</p>
       </div>
-      <div className="space-y-6">
-        <dl className="flex gap-8">
-          {[
-            { n: STATS.entries, label: UI.statEntries },
-            { n: STATS.statuses, label: UI.statStatuses },
-            { n: STATS.years, label: UI.statYears },
-            { n: STATS.regions, label: UI.statRegions },
-          ].map((s) => (
-            <div key={s.label.ja}>
-              <dt className="sr-only">{tx(s.label)}</dt>
-              <dd className="font-display text-3xl italic">{s.n}</dd>
-              <dd className="mt-0.5 font-mono text-[10px] tracking-[0.2em] text-da-muted">{tx(s.label)}</dd>
-            </div>
-          ))}
-        </dl>
-        <FeaturedEntry />
-      </div>
+      <dl className="flex gap-8 md:justify-end">
+        {[
+          { n: STATS.entries, label: UI.statEntries },
+          { n: STATS.statuses, label: UI.statStatuses },
+          { n: STATS.years, label: UI.statYears },
+          { n: STATS.regions, label: UI.statRegions },
+        ].map((s) => (
+          <div key={s.label.ja}>
+            <dt className="sr-only">{tx(s.label)}</dt>
+            <dd className="font-display text-3xl italic">{s.n}</dd>
+            <dd className="mt-0.5 font-mono text-[10px] tracking-[0.2em] text-da-muted">{tx(s.label)}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }
@@ -134,7 +88,7 @@ function ExplorerInner() {
   const paramView = searchParams.get("view");
   const view: View = paramView === "timeline" || paramView === "lineage" ? paramView : "grid";
 
-  const [sort, setSort] = useState<SortKey>("year-desc");
+  const [sort, setSort] = useState<SortKey>("num");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -144,7 +98,6 @@ function ExplorerInner() {
   const setView = (v: View) => {
     router.replace(v === "grid" ? "/" : `/?view=${v}`, { scroll: false });
   };
-  const setStatus = (s: Status | null) => setFilters({ ...filters, status: s });
 
   const viewTitle: Record<View, { label: string; sub: string }> = {
     grid: { label: tx(UI.viewGrid), sub: "" },
@@ -192,34 +145,7 @@ function ExplorerInner() {
               </button>
             </div>
 
-            {view !== "lineage" && (
-              <div className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)]">
-                <button
-                  type="button"
-                  onClick={() => setStatus(null)}
-                  aria-pressed={filters.status === null}
-                  className={`font-mincho shrink-0 rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
-                    filters.status === null ? "bg-da-ink text-da-paper" : "hover:text-da-accent"
-                  }`}
-                >
-                  {tx(UI.all)}
-                </button>
-                {STATUS_ORDER.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setStatus(filters.status === s ? null : s)}
-                    aria-pressed={filters.status === s}
-                    className={`font-mincho shrink-0 rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
-                      filters.status === s ? "bg-da-ink text-da-paper" : "hover:text-da-accent"
-                    }`}
-                  >
-                    {tx(STATUS_META[s].label)}
-                  </button>
-                ))}
-              </div>
-            )}
-            {view === "lineage" && <div className="flex-1" />}
+            <div className="flex-1" />
 
             <span className="hidden shrink-0 font-mono text-[10px] tracking-[0.15em] text-da-muted md:inline">
               {view === "lineage" ? "" : `${sorted.length} / ${CARDS.length}`}

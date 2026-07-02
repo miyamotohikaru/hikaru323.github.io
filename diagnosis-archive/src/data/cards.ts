@@ -815,10 +815,10 @@ export const CARDS: Card[] = [
     en: { name: 'Self-Defeating PD', enName: '自己破壊性パーソナリティ障害', reading: '', meaning: '' },
   },
   {
-    id: 'DA-060', num: 60, cat: 'RETIRED',
+    id: 'DA-058', num: 58, cat: 'RETIRED',
     year: 1923, endYear: null, region: 'na',
     genre: 'anxiety', power: ['class'],
-    code: '廃止 (削除・改名)', origin: '北米', icon: '/icons/da-060.png',
+    code: '廃止 (削除・改名)', origin: '北米', icon: '/icons/da-058.png',
     ja: {
       name: 'ゼロ・ストローク', enName: 'Zero Stroke', reading: '',
       meaning: '巨額のゼロを書き続けてしまうとされた病。',
@@ -829,10 +829,10 @@ export const CARDS: Card[] = [
     en: { name: 'Zero Stroke', enName: 'ゼロ・ストローク', reading: '', meaning: '' },
   },
   {
-    id: 'DA-061', num: 61, cat: 'RETIRED',
+    id: 'DA-059', num: 59, cat: 'RETIRED',
     year: 1980, endYear: null, region: 'eu',
     genre: 'mood', power: ['gender'],
-    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-061.png',
+    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-059.png',
     ja: {
       name: 'ヴェイパーズ', enName: 'The Vapours', reading: '',
       meaning: '女性の失神・抑うつを「子宮の蒸気」によるとした。',
@@ -843,10 +843,10 @@ export const CARDS: Card[] = [
     en: { name: 'The Vapours', enName: 'ヴェイパーズ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-069', num: 69, cat: 'RETIRED',
+    id: 'DA-060', num: 60, cat: 'RETIRED',
     year: 1968, endYear: null, region: 'na',
     genre: 'developmental', power: ['age', 'medical'],
-    code: '廃止 (削除・改名)', origin: '北米', icon: '/icons/da-069.png',
+    code: '廃止 (削除・改名)', origin: '北米', icon: '/icons/da-060.png',
     ja: {
       name: '多動性反応', enName: 'Hyperkinetic Reaction', reading: '',
       meaning: '小児の多動を捉えた初期の診断。',
@@ -857,10 +857,10 @@ export const CARDS: Card[] = [
     en: { name: 'Hyperkinetic Reaction', enName: '多動性反応', reading: '', meaning: '' },
   },
   {
-    id: 'DA-070', num: 70, cat: 'RETIRED',
+    id: 'DA-061', num: 61, cat: 'RETIRED',
     year: 1980, endYear: null, region: 'na',
     genre: 'delusion', power: ['age', 'gender'],
-    code: '廃止 (削除・改名)', origin: '北米', icon: '/icons/da-070.png',
+    code: '廃止 (削除・改名)', origin: '北米', icon: '/icons/da-061.png',
     ja: {
       name: '退行期メランコリー', enName: 'Involutional Melancholia', reading: '',
       meaning: '更年期に生じるとされた抑うつの独立疾患。',
@@ -871,10 +871,10 @@ export const CARDS: Card[] = [
     en: { name: 'Involutional Melancholia', enName: '退行期メランコリー', reading: '', meaning: '' },
   },
   {
-    id: 'DA-071', num: 71, cat: 'DISPUTED',
+    id: 'DA-062', num: 62, cat: 'DISPUTED',
     year: 1996, endYear: null, region: 'na',
     genre: null, power: ['medical'],
-    code: '非公式・係争中', origin: '北米', icon: '/icons/da-071.png',
+    code: '非公式・係争中', origin: '北米', icon: '/icons/da-062.png',
     ja: {
       name: 'HSP', enName: 'Highly Sensitive Person', reading: '',
       meaning: '刺激に敏感で深く処理するとされる「気質」概念（非診断）。',
@@ -885,10 +885,10 @@ export const CARDS: Card[] = [
     en: { name: 'Highly Sensitive Person', enName: 'HSP', reading: '', meaning: '' },
   },
   {
-    id: 'DA-072', num: 72, cat: 'DISPUTED',
+    id: 'DA-063', num: 63, cat: 'DISPUTED',
     year: 1995, endYear: null, region: 'na',
     genre: null, power: ['medical'],
-    code: '非公式・係争中', origin: '北米', icon: '/icons/da-072.png',
+    code: '非公式・係争中', origin: '北米', icon: '/icons/da-063.png',
     ja: {
       name: 'インターネット依存', enName: 'Internet Addiction', reading: '',
       meaning: 'ネット使用への制御不能とされる状態。',
@@ -899,10 +899,10 @@ export const CARDS: Card[] = [
     en: { name: 'Internet Addiction', enName: 'インターネット依存', reading: '', meaning: '' },
   },
   {
-    id: 'DA-080', num: 80, cat: 'DISPUTED',
+    id: 'DA-064', num: 64, cat: 'DISPUTED',
     year: 1980, endYear: null, region: 'na',
     genre: 'addiction', power: ['medical'],
-    code: '非公式・係争中', origin: '北米', icon: '/icons/da-080.png',
+    code: '非公式・係争中', origin: '北米', icon: '/icons/da-064.png',
     ja: {
       name: '共依存', enName: 'Codependency', reading: '',
       meaning: '他者への過剰な世話・依存の関係パターン。',
@@ -913,10 +913,10 @@ export const CARDS: Card[] = [
     en: { name: 'Codependency', enName: '共依存', reading: '', meaning: '' },
   },
   {
-    id: 'DA-081', num: 81, cat: 'DISPUTED',
+    id: 'DA-065', num: 65, cat: 'DISPUTED',
     year: 1988, endYear: null, region: 'na',
     genre: 'somatic', power: ['gender', 'medical'],
-    code: '非公式・係争中', origin: '北米', icon: '/icons/da-081.png',
+    code: '非公式・係争中', origin: '北米', icon: '/icons/da-065.png',
     ja: {
       name: '慢性疲労症候群', enName: 'CFS / ME', reading: '',
       meaning: '長期の強い疲労を主症状とする状態（病因論争中）。',
@@ -927,10 +927,10 @@ export const CARDS: Card[] = [
     en: { name: 'CFS / ME', enName: '慢性疲労症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-083', num: 83, cat: 'DISPUTED',
+    id: 'DA-066', num: 66, cat: 'DISPUTED',
     year: 2000, endYear: null, region: 'na',
     genre: 'mood', power: ['age', 'labor'],
-    code: '非公式・係争中', origin: '北米', icon: '/icons/da-083.png',
+    code: '非公式・係争中', origin: '北米', icon: '/icons/da-066.png',
     ja: {
       name: '新型うつ', enName: '"New-type Depression"', reading: '',
       meaning: '従来型と異なるとされた抑うつのメディア用語（非診断）。',
@@ -941,10 +941,10 @@ export const CARDS: Card[] = [
     en: { name: '"New-type Depression"', enName: '新型うつ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-086', num: 86, cat: 'PROMOTED',
+    id: 'DA-067', num: 67, cat: 'PROMOTED',
     year: 1974, endYear: null, region: 'na',
     genre: 'sexual', power: ['labor', 'medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-086.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-067.png',
     ja: {
       name: '燃え尽き症候群', enName: 'Burnout', reading: '',
       meaning: '慢性的な職場ストレスによる疲弊・シニシズム・効率低下。',
@@ -955,10 +955,10 @@ export const CARDS: Card[] = [
     en: { name: 'Burnout', enName: '燃え尽き症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-087', num: 87, cat: 'PROMOTED',
+    id: 'DA-068', num: 68, cat: 'PROMOTED',
     year: 2019, endYear: null, region: 'easia',
     genre: 'addiction', power: ['medical', 'age'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '東アジア', icon: '/icons/da-087.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '東アジア', icon: '/icons/da-068.png',
     ja: {
       name: 'ゲーム障害', enName: 'Gaming Disorder', reading: 'gēmu shōgai',
       meaning: 'ゲームへの制御不能と、生活への深刻な支障。',
@@ -969,10 +969,10 @@ export const CARDS: Card[] = [
     en: { name: 'Gaming Disorder', enName: 'ゲーム障害', reading: 'gēmu shōgai', meaning: 'A pattern of impaired control over gaming, prioritized over other activities despite negative consequences.', symptom: 'Impaired control over gaming, increasing priority given to it over other interests and daily activities, and continuation or escalation despite negative consequences, typically over 12 months.', history: 'Amid social concern in Korea and China in the 2000s, DSM-5 (2013) listed Internet Gaming Disorder for further study; the WHO adopted Gaming Disorder in ICD-11 (2019, in force 2022), extending behavioral addiction.', debate: 'Some researchers and the games industry objected (Aarseth et al., 2017), warning of overdiagnosis and moral panic. The line between addiction and passionate engagement, and East-Asian cultural bias, remain contested.' },
   },
   {
-    id: 'DA-088', num: 88, cat: 'PROMOTED',
+    id: 'DA-069', num: 69, cat: 'PROMOTED',
     year: 1992, endYear: null, region: 'na',
     genre: null, power: ['gender', 'medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-088.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-069.png',
     ja: {
       name: '複雑性PTSD', enName: 'Complex PTSD', reading: '',
       meaning: '長期反復的トラウマによるPTSD＋自己組織化の障害。',
@@ -983,10 +983,10 @@ export const CARDS: Card[] = [
     en: { name: 'Complex PTSD', enName: '複雑性PTSD', reading: '', meaning: '' },
   },
   {
-    id: 'DA-089', num: 89, cat: 'PROMOTED',
+    id: 'DA-070', num: 70, cat: 'PROMOTED',
     year: 2013, endYear: null, region: 'na',
     genre: 'dissoc', power: ['medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-089.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-070.png',
     ja: {
       name: '遷延性悲嘆症', enName: 'Prolonged Grief Disorder', reading: '',
       meaning: '死別後12ヶ月以上、強烈な悲嘆が持続する状態。',
@@ -997,10 +997,10 @@ export const CARDS: Card[] = [
     en: { name: 'Prolonged Grief Disorder', enName: '遷延性悲嘆症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-090', num: 90, cat: 'PROMOTED',
+    id: 'DA-071', num: 71, cat: 'PROMOTED',
     year: 2013, endYear: null, region: 'na',
     genre: null, power: ['medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-090.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-071.png',
     ja: {
       name: 'ためこみ症', enName: 'Hoarding Disorder', reading: '',
       meaning: '物を捨てられず、生活空間が圧迫される状態。',
@@ -1011,10 +1011,10 @@ export const CARDS: Card[] = [
     en: { name: 'Hoarding Disorder', enName: 'ためこみ症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-091', num: 91, cat: 'PROMOTED',
+    id: 'DA-072', num: 72, cat: 'PROMOTED',
     year: 1959, endYear: null, region: 'na',
     genre: 'eating', power: ['medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-091.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-072.png',
     ja: {
       name: '過食性障害', enName: 'Binge Eating Disorder', reading: '',
       meaning: '代償行動を伴わない、反復的な過食。',
@@ -1025,10 +1025,10 @@ export const CARDS: Card[] = [
     en: { name: 'Binge Eating Disorder', enName: '過食性障害', reading: '', meaning: '' },
   },
   {
-    id: 'DA-092', num: 92, cat: 'PROMOTED',
+    id: 'DA-073', num: 73, cat: 'PROMOTED',
     year: 2000, endYear: null, region: 'na',
     genre: 'sexual', power: ['age', 'medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-092.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-073.png',
     ja: {
       name: '重篤気分調節症', enName: 'DMDD', reading: '',
       meaning: '小児の慢性的・高頻度の激しい癇癪。',
@@ -1039,10 +1039,10 @@ export const CARDS: Card[] = [
     en: { name: 'DMDD', enName: '重篤気分調節症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-093', num: 93, cat: 'PROMOTED',
+    id: 'DA-074', num: 74, cat: 'PROMOTED',
     year: 1931, endYear: null, region: 'na',
     genre: 'anxiety', power: ['gender', 'medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-093.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-074.png',
     ja: {
       name: '月経前不快気分障害', enName: 'PMDD', reading: '',
       meaning: '月経前に重度の気分症状が現れ、月経後に消退する状態。',
@@ -1053,10 +1053,10 @@ export const CARDS: Card[] = [
     en: { name: 'PMDD', enName: '月経前不快気分障害', reading: '', meaning: '' },
   },
   {
-    id: 'DA-094', num: 94, cat: 'PROMOTED',
+    id: 'DA-075', num: 75, cat: 'PROMOTED',
     year: 2022, endYear: null, region: 'na',
     genre: 'sexual', power: ['sexual', 'medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-094.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-075.png',
     ja: {
       name: '強迫的性行動症', enName: 'Compulsive Sexual Behaviour', reading: '',
       meaning: '性的衝動・行動の制御困難。',
@@ -1067,10 +1067,10 @@ export const CARDS: Card[] = [
     en: { name: 'Compulsive Sexual Behaviour', enName: '強迫的性行動症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-095', num: 95, cat: 'PROMOTED',
+    id: 'DA-076', num: 76, cat: 'PROMOTED',
     year: 2022, endYear: null, region: 'na',
     genre: 'somatic', power: ['medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-095.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-076.png',
     ja: {
       name: '身体完全性違和', enName: 'Body Integrity Dysphoria', reading: '',
       meaning: '健康な四肢を切断したいという持続的願望。',
@@ -1081,10 +1081,10 @@ export const CARDS: Card[] = [
     en: { name: 'Body Integrity Dysphoria', enName: '身体完全性違和', reading: '', meaning: '' },
   },
   {
-    id: 'DA-096', num: 96, cat: 'CULTURE-BOUND',
+    id: 'DA-077', num: 77, cat: 'CULTURE-BOUND',
     year: 1998, endYear: null, region: 'jp',
     genre: null, power: ['gender', 'age'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '日本', icon: '/icons/da-096.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '日本', icon: '/icons/da-077.png',
     ja: {
       name: 'ヒキコモリ', enName: 'Hikikomori（日本）', reading: 'hikikomori',
       meaning: '6ヶ月以上、社会参加を回避し自室等にとどまる状態。',
@@ -1095,10 +1095,10 @@ export const CARDS: Card[] = [
     en: { name: 'Hikikomori', enName: 'ヒキコモリ', reading: 'hikikomori', meaning: 'Prolonged social withdrawal — staying home for six months or more, avoiding work, school and contact — without a clear underlying disorder.', symptom: 'Remaining at home or in one\'s room for six months or more, avoiding employment, schooling and social participation, often with little contact beyond family.', history: 'Emerging from the 1980s concept of school refusal, it was framed in 1998 by psychiatrist Tamaki Saito. Government surveys followed, and by the 2010s it became the 8050 problem; cases now appear in Italy, Spain and Korea.', debate: 'Debated as a culture-bound syndrome versus a universal feature of modern society. Not an official diagnosis, its status as illness or social phenomenon is blurred; Japan sees a de-pathologization movement.' },
   },
   {
-    id: 'DA-097', num: 97, cat: 'CULTURE-BOUND',
+    id: 'DA-078', num: 78, cat: 'CULTURE-BOUND',
     year: 1920, endYear: null, region: 'jp',
     genre: 'somatic', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '日本', icon: '/icons/da-097.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '日本', icon: '/icons/da-078.png',
     ja: {
       name: '対人恐怖症', enName: 'Taijin Kyofusho（日本）', reading: '',
       meaning: '自分が他者に不快感を与えることを過剰に恐れる状態。',
@@ -1109,10 +1109,10 @@ export const CARDS: Card[] = [
     en: { name: 'Taijin Kyofusho（日本）', enName: '対人恐怖症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-098', num: 98, cat: 'CULTURE-BOUND',
+    id: 'DA-079', num: 79, cat: 'CULTURE-BOUND',
     year: 1834, endYear: null, region: 'easia',
     genre: 'anxiety', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-098.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-079.png',
     ja: {
       name: 'コロ', enName: 'Koro（東南アジア・中国）', reading: '',
       meaning: '性器が体内に引き込まれ死ぬと信じる急性発作。',
@@ -1123,10 +1123,10 @@ export const CARDS: Card[] = [
     en: { name: 'Koro（東南アジア・中国）', enName: 'コロ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-099', num: 99, cat: 'CULTURE-BOUND',
+    id: 'DA-080', num: 80, cat: 'CULTURE-BOUND',
     year: 1903, endYear: null, region: 'easia',
     genre: 'dissoc', power: ['colonial'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-099.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-080.png',
     ja: {
       name: 'アモック', enName: 'Amok（マレー圏）', reading: '',
       meaning: '抑うつの後に突発的な無差別攻撃に至る発作。',
@@ -1137,10 +1137,10 @@ export const CARDS: Card[] = [
     en: { name: 'Amok（マレー圏）', enName: 'アモック', reading: '', meaning: '' },
   },
   {
-    id: 'DA-100', num: 100, cat: 'CULTURE-BOUND',
+    id: 'DA-081', num: 81, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'easia',
     genre: null, power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-100.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-081.png',
     ja: {
       name: 'ラタ', enName: 'Latah（マレー・インドネシア）', reading: '',
       meaning: '驚かされると不随意の模倣・服従に陥る反応。',
@@ -1151,10 +1151,10 @@ export const CARDS: Card[] = [
     en: { name: 'Latah（マレー・インドネシア）', enName: 'ラタ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-101', num: 101, cat: 'CULTURE-BOUND',
+    id: 'DA-082', num: 82, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'easia',
     genre: 'somatic', power: ['gender'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-101.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-082.png',
     ja: {
       name: '火病', enName: 'Hwa-byung（韓国）', reading: '',
       meaning: '怒りの抑圧による胸の痛み・不眠・抑うつ。',
@@ -1165,10 +1165,10 @@ export const CARDS: Card[] = [
     en: { name: 'Hwa-byung（韓国）', enName: '火病', reading: '', meaning: '' },
   },
   {
-    id: 'DA-102', num: 102, cat: 'CULTURE-BOUND',
+    id: 'DA-083', num: 83, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'easia',
     genre: 'dissoc', power: ['religion'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-102.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-083.png',
     ja: {
       name: '神病', enName: 'Shin-byung（韓国）', reading: '',
       meaning: 'シャーマンになる前駆とされる不安・身体症状。',
@@ -1179,10 +1179,10 @@ export const CARDS: Card[] = [
     en: { name: 'Shin-byung（韓国）', enName: '神病', reading: '', meaning: '' },
   },
   {
-    id: 'DA-103', num: 103, cat: 'CULTURE-BOUND',
+    id: 'DA-084', num: 84, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'latam',
     genre: 'sexual', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-103.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-084.png',
     ja: {
       name: 'ススト', enName: 'Susto（中南米）', reading: '',
       meaning: '恐怖体験で「魂」が抜けるとされる慢性不調。',
@@ -1193,10 +1193,10 @@ export const CARDS: Card[] = [
     en: { name: 'Susto（中南米）', enName: 'ススト', reading: '', meaning: '' },
   },
   {
-    id: 'DA-104', num: 104, cat: 'CULTURE-BOUND',
+    id: 'DA-085', num: 85, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'latam',
     genre: null, power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-104.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-085.png',
     ja: {
       name: '神経発作', enName: 'Ataque de Nervios（中南米）', reading: '',
       meaning: '泣き叫び・震え・失神を伴う発作（喪失が引き金）。',
@@ -1207,10 +1207,10 @@ export const CARDS: Card[] = [
     en: { name: 'Ataque de Nervios（中南米）', enName: '神経発作', reading: '', meaning: '' },
   },
   {
-    id: 'DA-105', num: 105, cat: 'CULTURE-BOUND',
+    id: 'DA-086', num: 86, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'latam',
     genre: 'sexual', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-105.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-086.png',
     ja: {
       name: 'ナーバス', enName: 'Nervios（中南米）', reading: '',
       meaning: '慢性ストレスへの広範な不調反応。',
@@ -1221,10 +1221,10 @@ export const CARDS: Card[] = [
     en: { name: 'Nervios（中南米）', enName: 'ナーバス', reading: '', meaning: '' },
   },
   {
-    id: 'DA-106', num: 106, cat: 'CULTURE-BOUND',
+    id: 'DA-087', num: 87, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'latam',
     genre: 'somatic', power: ['religion'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-106.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-087.png',
     ja: {
       name: '邪視', enName: 'Mal de Ojo（地中海・中南米）', reading: '',
       meaning: '「邪眼」を向けられて生じるとされる病。',
@@ -1235,10 +1235,10 @@ export const CARDS: Card[] = [
     en: { name: 'Mal de Ojo（地中海・中南米）', enName: '邪視', reading: '', meaning: '' },
   },
   {
-    id: 'DA-107', num: 107, cat: 'CULTURE-BOUND',
+    id: 'DA-088', num: 88, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'sasia',
     genre: 'sexual', power: ['gender'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '南アジア', icon: '/icons/da-107.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '南アジア', icon: '/icons/da-088.png',
     ja: {
       name: 'ダート', enName: 'Dhat（南アジア）', reading: '',
       meaning: '精液漏出への過剰な不安・身体不調。',
@@ -1249,10 +1249,10 @@ export const CARDS: Card[] = [
     en: { name: 'Dhat（南アジア）', enName: 'ダート', reading: '', meaning: '' },
   },
   {
-    id: 'DA-108', num: 108, cat: 'CULTURE-BOUND',
+    id: 'DA-089', num: 89, cat: 'CULTURE-BOUND',
     year: 1950, endYear: null, region: 'easia',
     genre: 'somatic', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-108.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-089.png',
     ja: {
       name: '神経衰弱（中国）', enName: 'Shenjing Shuairuo（中国）', reading: '',
       meaning: '疲労・頭痛・めまいなど（中国に残存）。',
@@ -1263,10 +1263,10 @@ export const CARDS: Card[] = [
     en: { name: 'Shenjing Shuairuo（中国）', enName: '神経衰弱（中国）', reading: '', meaning: '' },
   },
   {
-    id: 'DA-109', num: 109, cat: 'CULTURE-BOUND',
+    id: 'DA-090', num: 90, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'easia',
     genre: 'sexual', power: ['gender'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-109.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-090.png',
     ja: {
       name: '腎虚', enName: 'Shen-k\'uei（中国・台湾）', reading: '',
       meaning: '「精」の喪失による衰弱への不安（中医学）。',
@@ -1277,10 +1277,10 @@ export const CARDS: Card[] = [
     en: { name: 'Shen-k\'uei（中国・台湾）', enName: '腎虚', reading: '', meaning: '' },
   },
   {
-    id: 'DA-110', num: 110, cat: 'CULTURE-BOUND',
+    id: 'DA-091', num: 91, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'easia',
     genre: 'dissoc', power: ['religion'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-110.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-091.png',
     ja: {
       name: '気功精神病性反応', enName: 'Qi-gong Psychotic Reaction（中国）', reading: '',
       meaning: '気功実践後に生じる解離・妄想エピソード。',
@@ -1291,10 +1291,10 @@ export const CARDS: Card[] = [
     en: { name: 'Qi-gong Psychotic Reaction（中国）', enName: '気功精神病性反応', reading: '', meaning: '' },
   },
   {
-    id: 'DA-111', num: 111, cat: 'CULTURE-BOUND',
+    id: 'DA-092', num: 92, cat: 'CULTURE-BOUND',
     year: 1960, endYear: null, region: 'africa',
     genre: 'somatic', power: ['colonial'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-111.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-092.png',
     ja: {
       name: 'ブレインファグ', enName: 'Brain Fag（西アフリカ）', reading: '',
       meaning: '勉学による頭の疲労・集中困難。',
@@ -1305,10 +1305,10 @@ export const CARDS: Card[] = [
     en: { name: 'Brain Fag（西アフリカ）', enName: 'ブレインファグ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-112', num: 112, cat: 'CULTURE-BOUND',
+    id: 'DA-093', num: 93, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'africa',
     genre: 'delusion', power: ['colonial'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-112.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-093.png',
     ja: {
       name: '妄想突発', enName: 'Bouffée Délirante（西アフリカ・ハイチ）', reading: '',
       meaning: '突発的な激越と幻覚妄想（短期で回復）。',
@@ -1319,10 +1319,10 @@ export const CARDS: Card[] = [
     en: { name: 'Bouffée Délirante（西アフリカ・ハイチ）', enName: '妄想突発', reading: '', meaning: '' },
   },
   {
-    id: 'DA-113', num: 113, cat: 'CULTURE-BOUND',
+    id: 'DA-094', num: 94, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'latam',
     genre: null, power: ['religion'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-113.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-094.png',
     ja: {
       name: '人為の病', enName: 'Maladi Moun（ハイチ）', reading: '',
       meaning: '嫉妬・呪術で他者が起こしたとされる病。',
@@ -1333,10 +1333,10 @@ export const CARDS: Card[] = [
     en: { name: 'Maladi Moun（ハイチ）', enName: '人為の病', reading: '', meaning: '' },
   },
   {
-    id: 'DA-114', num: 114, cat: 'CULTURE-BOUND',
+    id: 'DA-095', num: 95, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'africa',
     genre: 'dissoc', power: ['religion'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-114.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-095.png',
     ja: {
       name: 'ザール', enName: 'Zar（北アフリカ・中東）', reading: '',
       meaning: '精霊憑依による解離・身体症状。',
@@ -1347,10 +1347,10 @@ export const CARDS: Card[] = [
     en: { name: 'Zar（北アフリカ・中東）', enName: 'ザール', reading: '', meaning: '' },
   },
   {
-    id: 'DA-115', num: 115, cat: 'CULTURE-BOUND',
+    id: 'DA-096', num: 96, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'easia',
     genre: 'anxiety', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-115.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-096.png',
     ja: {
       name: '風の発作', enName: 'Khyâl Cap（カンボジア）', reading: '',
       meaning: '「風」の異常で生じるとされるパニック様発作。',
@@ -1361,10 +1361,10 @@ export const CARDS: Card[] = [
     en: { name: 'Khyâl Cap（カンボジア）', enName: '風の発作', reading: '', meaning: '' },
   },
   {
-    id: 'DA-116', num: 116, cat: 'CULTURE-BOUND',
+    id: 'DA-097', num: 97, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'africa',
     genre: 'somatic', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-116.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-097.png',
     ja: {
       name: '考えすぎ病', enName: 'Kufungisisa（ジンバブエ）', reading: '',
       meaning: '過剰な思考が原因とされる身体・精神症状。',
@@ -1375,10 +1375,10 @@ export const CARDS: Card[] = [
     en: { name: 'Kufungisisa（ジンバブエ）', enName: '考えすぎ病', reading: '', meaning: '' },
   },
   {
-    id: 'DA-117', num: 117, cat: 'CULTURE-BOUND',
+    id: 'DA-098', num: 98, cat: 'CULTURE-BOUND',
     year: 1892, endYear: null, region: 'arctic',
     genre: 'dissoc', power: ['colonial', 'gender'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '極北', icon: '/icons/da-117.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '極北', icon: '/icons/da-098.png',
     ja: {
       name: 'ピブロクトク', enName: 'Pibloktoq（北極圏）', reading: '',
       meaning: '突発的な錯乱・脱衣して走り出す発作。',
@@ -1389,10 +1389,10 @@ export const CARDS: Card[] = [
     en: { name: 'Pibloktoq（北極圏）', enName: 'ピブロクトク', reading: '', meaning: '' },
   },
   {
-    id: 'DA-118', num: 118, cat: 'CULTURE-BOUND',
+    id: 'DA-099', num: 99, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'na',
     genre: 'delusion', power: ['colonial'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-118.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-099.png',
     ja: {
       name: 'ウェンディゴ精神病', enName: 'Windigo Psychosis（北米先住民）', reading: '',
       meaning: '人を食べたくなる衝動の妄想。',
@@ -1403,10 +1403,10 @@ export const CARDS: Card[] = [
     en: { name: 'Windigo Psychosis（北米先住民）', enName: 'ウェンディゴ精神病', reading: '', meaning: '' },
   },
   {
-    id: 'DA-119', num: 119, cat: 'CULTURE-BOUND',
+    id: 'DA-100', num: 100, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'na',
     genre: 'anxiety', power: ['religion'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-119.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-100.png',
     ja: {
       name: '幽霊病', enName: 'Ghost Sickness（北米先住民）', reading: '',
       meaning: '死者に憑かれるとされる悪夢・衰弱・不安。',
@@ -1417,10 +1417,10 @@ export const CARDS: Card[] = [
     en: { name: 'Ghost Sickness（北米先住民）', enName: '幽霊病', reading: '', meaning: '' },
   },
   {
-    id: 'DA-120', num: 120, cat: 'CULTURE-BOUND',
+    id: 'DA-101', num: 101, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'na',
     genre: null, power: ['race'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-120.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-101.png',
     ja: {
       name: 'フォーリングアウト', enName: 'Falling-out（アフリカ系米国・カリブ）', reading: '',
       meaning: '突然倒れて動けなくなる発作。',
@@ -1431,10 +1431,10 @@ export const CARDS: Card[] = [
     en: { name: 'Falling-out（アフリカ系米国・カリブ）', enName: 'フォーリングアウト', reading: '', meaning: '' },
   },
   {
-    id: 'DA-121', num: 121, cat: 'CULTURE-BOUND',
+    id: 'DA-102', num: 102, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'na',
     genre: null, power: ['race', 'religion'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-121.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-102.png',
     ja: {
       name: 'ルートワーク', enName: 'Rootwork（米国南部）', reading: '',
       meaning: '呪術によって起こされたとされる病。',
@@ -1445,10 +1445,10 @@ export const CARDS: Card[] = [
     en: { name: 'Rootwork（米国南部）', enName: 'ルートワーク', reading: '', meaning: '' },
   },
   {
-    id: 'DA-122', num: 122, cat: 'CULTURE-BOUND',
+    id: 'DA-103', num: 103, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'latam',
     genre: 'delusion', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-122.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-103.png',
     ja: {
       name: 'ロクラ', enName: 'Locura（中南米・米ラティーノ）', reading: '',
       meaning: '慢性で重度の精神病状態。',
@@ -1459,10 +1459,10 @@ export const CARDS: Card[] = [
     en: { name: 'Locura（中南米・米ラティーノ）', enName: 'ロクラ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-123', num: 123, cat: 'CULTURE-BOUND',
+    id: 'DA-104', num: 104, cat: 'CULTURE-BOUND',
     year: 1878, endYear: null, region: 'na',
     genre: null, power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-123.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-104.png',
     ja: {
       name: 'メイン州の跳ぶフランス人', enName: 'Jumping Frenchmen of Maine（米）', reading: '',
       meaning: '過剰な驚愕反応（ラタに類似）。',
@@ -1473,10 +1473,10 @@ export const CARDS: Card[] = [
     en: { name: 'Jumping Frenchmen of Maine（米）', enName: 'メイン州の跳ぶフランス人', reading: '', meaning: '' },
   },
   {
-    id: 'DA-124', num: 124, cat: 'CULTURE-BOUND',
+    id: 'DA-105', num: 105, cat: 'CULTURE-BOUND',
     year: 1942, endYear: null, region: 'africa',
     genre: null, power: ['religion'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-124.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-105.png',
     ja: {
       name: 'ヴードゥー死', enName: 'Voodoo Death（多地域）', reading: '',
       meaning: '呪われたという信念で実際に死亡する現象。',
@@ -1487,10 +1487,10 @@ export const CARDS: Card[] = [
     en: { name: 'Voodoo Death（多地域）', enName: 'ヴードゥー死', reading: '', meaning: '' },
   },
   {
-    id: 'DA-125', num: 125, cat: 'CULTURE-BOUND',
+    id: 'DA-106', num: 106, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'na',
     genre: null, power: ['race', 'religion'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-125.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-106.png',
     ja: {
       name: 'スペル', enName: 'Spell（米国南部）', reading: '',
       meaning: 'トランス状態に入り、死者と交流するとされる状態。',
@@ -1501,10 +1501,10 @@ export const CARDS: Card[] = [
     en: { name: 'Spell（米国南部）', enName: 'スペル', reading: '', meaning: '' },
   },
   {
-    id: 'DA-126', num: 126, cat: 'RETIRED',
+    id: 'DA-107', num: 107, cat: 'RETIRED',
     year: 1621, endYear: null, region: 'eu',
     genre: 'delusion', power: ['class'],
-    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-126.png',
+    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-107.png',
     ja: {
       name: 'ガラス妄想', enName: 'Glass Delusion', reading: '',
       meaning: '自分の体がガラス製で、触れると割れると信じる妄想。',
@@ -1515,10 +1515,10 @@ export const CARDS: Card[] = [
     en: { name: 'Glass Delusion', enName: 'ガラス妄想', reading: '', meaning: '' },
   },
   {
-    id: 'DA-127', num: 127, cat: 'RETIRED',
+    id: 'DA-108', num: 108, cat: 'RETIRED',
     year: 1518, endYear: null, region: 'eu',
     genre: 'delusion', power: ['religion'],
-    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-127.png',
+    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-108.png',
     ja: {
       name: '舞踏狂', enName: 'Dancing Mania', reading: '',
       meaning: '集団で倒れるまで踊り続ける現象。',
@@ -1529,10 +1529,10 @@ export const CARDS: Card[] = [
     en: { name: 'Dancing Mania', enName: '舞踏狂', reading: '', meaning: '' },
   },
   {
-    id: 'DA-128', num: 128, cat: 'RETIRED',
+    id: 'DA-109', num: 109, cat: 'RETIRED',
     year: 1980, endYear: null, region: 'eu',
     genre: null, power: ['religion'],
-    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-128.png',
+    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-109.png',
     ja: {
       name: 'タランティズム', enName: 'Tarantism', reading: '',
       meaning: '蜘蛛に噛まれて生じるとされた舞踊衝動。',
@@ -1543,10 +1543,10 @@ export const CARDS: Card[] = [
     en: { name: 'Tarantism', enName: 'タランティズム', reading: '', meaning: '' },
   },
   {
-    id: 'DA-129', num: 129, cat: 'RETIRED',
+    id: 'DA-110', num: 110, cat: 'RETIRED',
     year: 1980, endYear: null, region: 'eu',
     genre: 'delusion', power: ['religion'],
-    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-129.png',
+    code: '廃止 (削除・改名)', origin: '欧州', icon: '/icons/da-110.png',
     ja: {
       name: '狼男妄想', enName: 'Lycanthropy', reading: '',
       meaning: '自分が狼など動物になったと信じる妄想。',
@@ -1557,10 +1557,10 @@ export const CARDS: Card[] = [
     en: { name: 'Lycanthropy', enName: '狼男妄想', reading: '', meaning: '' },
   },
   {
-    id: 'DA-130', num: 130, cat: 'CURRENT',
+    id: 'DA-111', num: 111, cat: 'CURRENT',
     year: 1880, endYear: null, region: 'eu',
     genre: 'delusion', power: [],
-    code: '現行公式 (DSM-5-TR)', origin: '欧州', icon: '/icons/da-130.png',
+    code: '現行公式 (DSM-5-TR)', origin: '欧州', icon: '/icons/da-111.png',
     ja: {
       name: 'コタール症候群', enName: 'Cotard Syndrome', reading: '',
       meaning: '自分は死んでいる・存在しないという虚無妄想。',
@@ -1571,10 +1571,10 @@ export const CARDS: Card[] = [
     en: { name: 'Cotard Syndrome', enName: 'コタール症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-131', num: 131, cat: 'CURRENT',
+    id: 'DA-112', num: 112, cat: 'CURRENT',
     year: 1923, endYear: null, region: 'eu',
     genre: 'delusion', power: [],
-    code: '現行公式 (DSM-5-TR)', origin: '欧州', icon: '/icons/da-131.png',
+    code: '現行公式 (DSM-5-TR)', origin: '欧州', icon: '/icons/da-112.png',
     ja: {
       name: 'カプグラ症候群', enName: 'Capgras Syndrome', reading: '',
       meaning: '身近な人が偽者に置き換わったと信じる妄想。',
@@ -1585,10 +1585,10 @@ export const CARDS: Card[] = [
     en: { name: 'Capgras Syndrome', enName: 'カプグラ症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-132', num: 132, cat: 'CURRENT',
+    id: 'DA-113', num: 113, cat: 'CURRENT',
     year: 1927, endYear: null, region: 'eu',
     genre: 'delusion', power: [],
-    code: '現行公式 (DSM-5-TR)', origin: '欧州', icon: '/icons/da-132.png',
+    code: '現行公式 (DSM-5-TR)', origin: '欧州', icon: '/icons/da-113.png',
     ja: {
       name: 'フレゴリ症候群', enName: 'Fregoli Syndrome', reading: '',
       meaning: '様々な他人が、変装した同一人物だと信じる妄想。',
@@ -1599,10 +1599,10 @@ export const CARDS: Card[] = [
     en: { name: 'Fregoli Syndrome', enName: 'フレゴリ症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-133', num: 133, cat: 'CURRENT',
+    id: 'DA-114', num: 114, cat: 'CURRENT',
     year: 1955, endYear: null, region: 'eu',
     genre: 'delusion', power: ['gender'],
-    code: '現行公式 (DSM-5-TR)', origin: '欧州', icon: '/icons/da-133.png',
+    code: '現行公式 (DSM-5-TR)', origin: '欧州', icon: '/icons/da-114.png',
     ja: {
       name: 'オセロ症候群', enName: 'Othello Syndrome', reading: 'osero shōkōgun',
       meaning: '配偶者の不貞を確信する病的嫉妬。',
@@ -1613,10 +1613,10 @@ export const CARDS: Card[] = [
     en: { name: 'Othello Syndrome', enName: 'オセロ症候群', reading: 'osero shōkōgun', meaning: 'A pathological, unshakeable conviction that one\'s partner is being unfaithful (morbid jealousy).', symptom: 'A delusional, fixed belief in a partner\'s infidelity, sometimes with obsessive checking or interrogation.', history: 'Named in 1955 by British psychiatrist John Todd after Shakespeare\'s Othello.', debate: 'A type of delusional disorder, clinically important for its link to violence and domestic abuse — an example of literature becoming a diagnostic name.' },
   },
   {
-    id: 'DA-134', num: 134, cat: 'DISPUTED',
+    id: 'DA-115', num: 115, cat: 'DISPUTED',
     year: 1817, endYear: null, region: 'eu',
     genre: 'delusion', power: [],
-    code: '非公式・係争中', origin: '欧州', icon: '/icons/da-134.png',
+    code: '非公式・係争中', origin: '欧州', icon: '/icons/da-115.png',
     ja: {
       name: 'スタンダール症候群', enName: 'Stendhal Syndrome', reading: '',
       meaning: '偉大な芸術作品の鑑賞中の動悸・めまい・幻覚。',
@@ -1627,10 +1627,10 @@ export const CARDS: Card[] = [
     en: { name: 'Stendhal Syndrome', enName: 'スタンダール症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-135', num: 135, cat: 'DISPUTED',
+    id: 'DA-116', num: 116, cat: 'DISPUTED',
     year: 1986, endYear: null, region: 'jp',
     genre: 'delusion', power: [],
-    code: '非公式・係争中', origin: '日本', icon: '/icons/da-135.png',
+    code: '非公式・係争中', origin: '日本', icon: '/icons/da-116.png',
     ja: {
       name: 'パリ症候群', enName: 'Paris Syndrome', reading: 'pari shōkōgun',
       meaning: '理想と現実のギャップによる急性精神症状。',
@@ -1641,10 +1641,10 @@ export const CARDS: Card[] = [
     en: { name: 'Paris Syndrome', enName: 'パリ症候群', reading: 'pari shōkōgun', meaning: 'Acute psychiatric symptoms said to strike Japanese tourists when an idealized image of Paris collides with reality.', symptom: 'Delusions, hallucinations, anxiety, depression, derealization and palpitations triggered by the gap between an idealized Paris and the reality of rudeness, dirt and discrimination.', history: 'Named in 1986 by Hiroaki Ota, a Japanese psychiatrist in France. It gained recognition via the embassy\'s support and later Western media, joining travel syndromes like Stendhal and Jerusalem.', debate: 'Not an official diagnosis; critics call it nonexistent or media-inflated and question whether ~100 cases over two decades are meaningful. Some reframe it within travel psychiatry; others warn against a Japanese-exceptionalism framing.' },
   },
   {
-    id: 'DA-136', num: 136, cat: 'DISPUTED',
+    id: 'DA-117', num: 117, cat: 'DISPUTED',
     year: 1930, endYear: null, region: 'eu',
     genre: 'delusion', power: ['religion'],
-    code: '非公式・係争中', origin: '欧州', icon: '/icons/da-136.png',
+    code: '非公式・係争中', origin: '欧州', icon: '/icons/da-117.png',
     ja: {
       name: 'エルサレム症候群', enName: 'Jerusalem Syndrome', reading: '',
       meaning: '聖地訪問者が宗教的妄想を発症する現象。',
@@ -1655,10 +1655,10 @@ export const CARDS: Card[] = [
     en: { name: 'Jerusalem Syndrome', enName: 'エルサレム症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-137', num: 137, cat: 'DISPUTED',
+    id: 'DA-118', num: 118, cat: 'DISPUTED',
     year: 1973, endYear: null, region: 'na',
     genre: null, power: ['gender', 'medical'],
-    code: '非公式・係争中', origin: '北米', icon: '/icons/da-137.png',
+    code: '非公式・係争中', origin: '北米', icon: '/icons/da-118.png',
     ja: {
       name: 'ストックホルム症候群', enName: 'Stockholm Syndrome', reading: '',
       meaning: '人質が犯人に共感・愛着を抱く現象。',
@@ -1669,10 +1669,10 @@ export const CARDS: Card[] = [
     en: { name: 'Stockholm Syndrome', enName: 'ストックホルム症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-139', num: 139, cat: 'DISPUTED',
+    id: 'DA-119', num: 119, cat: 'DISPUTED',
     year: 1975, endYear: null, region: 'eu',
     genre: null, power: ['age'],
-    code: '非公式・係争中', origin: '欧州', icon: '/icons/da-139.png',
+    code: '非公式・係争中', origin: '欧州', icon: '/icons/da-119.png',
     ja: {
       name: 'ディオゲネス症候群', enName: 'Diogenes Syndrome', reading: '',
       meaning: '極端な自己放任・不衛生・ためこみ。',
@@ -1683,10 +1683,10 @@ export const CARDS: Card[] = [
     en: { name: 'Diogenes Syndrome', enName: 'ディオゲネス症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-142', num: 142, cat: 'CURRENT',
+    id: 'DA-120', num: 120, cat: 'CURRENT',
     year: 1955, endYear: null, region: 'na',
     genre: 'somatic', power: [],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-142.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-120.png',
     ja: {
       name: '不思議の国のアリス症候群', enName: 'Alice in Wonderland Syndrome', reading: '',
       meaning: '物の大きさや自分の体が変容して感じられる。',
@@ -1697,10 +1697,10 @@ export const CARDS: Card[] = [
     en: { name: 'Alice in Wonderland Syndrome', enName: '不思議の国のアリス症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-144', num: 144, cat: 'CURRENT',
+    id: 'DA-121', num: 121, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: null, power: ['gender', 'class'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-144.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-121.png',
     ja: {
       name: '窃盗症', enName: 'Kleptomania', reading: '',
       meaning: '経済的必要や個人的価値と無関係に、物を盗みたい衝動に繰り返し抗えなくなる衝動制御の障害。',
@@ -1711,10 +1711,10 @@ export const CARDS: Card[] = [
     en: { name: 'Kleptomania', enName: '窃盗症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-145', num: 145, cat: 'CURRENT',
+    id: 'DA-122', num: 122, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'personality', power: ['gender'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-145.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-122.png',
     ja: {
       name: '依存性パーソナリティ障害', enName: 'Dependent Personality Disorder', reading: '',
       meaning: '世話をされたい過剰な欲求から、従属的でしがみつく行動と分離への不安を示すパーソナリティ。',
@@ -1725,10 +1725,10 @@ export const CARDS: Card[] = [
     en: { name: 'Dependent Personality Disorder', enName: '依存性パーソナリティ障害', reading: '', meaning: '' },
   },
   {
-    id: 'DA-146', num: 146, cat: 'CURRENT',
+    id: 'DA-123', num: 123, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'personality', power: ['medical'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-146.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-123.png',
     ja: {
       name: '強迫性パーソナリティ障害', enName: 'Obsessive-Compulsive Personality Disorder', reading: '',
       meaning: '秩序・完璧主義・統制への過度のとらわれを特徴とするパーソナリティで、強迫症(OCD)とは別物。',
@@ -1739,10 +1739,10 @@ export const CARDS: Card[] = [
     en: { name: 'Obsessive-Compulsive Personality Disorder', enName: '強迫性パーソナリティ障害', reading: '', meaning: '' },
   },
   {
-    id: 'DA-147', num: 147, cat: 'CURRENT',
+    id: 'DA-124', num: 124, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'personality', power: [],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-147.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-124.png',
     ja: {
       name: '統合失調型パーソナリティ障害', enName: 'Schizotypal Personality Disorder', reading: '',
       meaning: '親密な関係での強い不快感に加え、奇異な信念・知覚・行動を特徴とするパーソナリティ。',
@@ -1753,10 +1753,10 @@ export const CARDS: Card[] = [
     en: { name: 'Schizotypal Personality Disorder', enName: '統合失調型パーソナリティ障害', reading: '', meaning: '' },
   },
   {
-    id: 'DA-148', num: 148, cat: 'CURRENT',
+    id: 'DA-125', num: 125, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'personality', power: [],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-148.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-125.png',
     ja: {
       name: '回避性パーソナリティ障害', enName: 'Avoidant Personality Disorder', reading: '',
       meaning: '否定的評価への過敏さから、対人接触を広く回避するパーソナリティ。',
@@ -1767,10 +1767,10 @@ export const CARDS: Card[] = [
     en: { name: 'Avoidant Personality Disorder', enName: '回避性パーソナリティ障害', reading: '', meaning: '' },
   },
   {
-    id: 'DA-149', num: 149, cat: 'CURRENT',
+    id: 'DA-126', num: 126, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: null, power: ['age', 'class'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-149.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-126.png',
     ja: {
       name: '素行症', enName: 'Conduct Disorder', reading: '',
       meaning: '他者の権利や年齢相応の社会規範を繰り返し侵害する、小児・青年の行動パターン。',
@@ -1781,10 +1781,10 @@ export const CARDS: Card[] = [
     en: { name: 'Conduct Disorder', enName: '素行症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-150', num: 150, cat: 'CURRENT',
+    id: 'DA-127', num: 127, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: null, power: ['age'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-150.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-127.png',
     ja: {
       name: '反抗挑発症', enName: 'Oppositional Defiant Disorder', reading: '',
       meaning: '権威者に対する、怒りっぽさ・口論・反抗・執念深さの持続的パターンを示す小児の状態。',
@@ -1795,10 +1795,10 @@ export const CARDS: Card[] = [
     en: { name: 'Oppositional Defiant Disorder', enName: '反抗挑発症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-151', num: 151, cat: 'CURRENT',
+    id: 'DA-128', num: 128, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'somatic', power: ['medical'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-151.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-128.png',
     ja: {
       name: '間欠爆発症', enName: 'Intermittent Explosive Disorder', reading: '',
       meaning: '衝動を制御できず、状況に不釣り合いな攻撃的爆発を繰り返す状態。',
@@ -1809,10 +1809,10 @@ export const CARDS: Card[] = [
     en: { name: 'Intermittent Explosive Disorder', enName: '間欠爆発症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-152', num: 152, cat: 'CURRENT',
+    id: 'DA-129', num: 129, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: null, power: ['medical'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-152.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-129.png',
     ja: {
       name: '解離性健忘', enName: 'Dissociative Amnesia', reading: '',
       meaning: '通常の物忘れでは説明できない、重要な自伝的記憶(多くは外傷的)の想起不能。',
@@ -1823,10 +1823,10 @@ export const CARDS: Card[] = [
     en: { name: 'Dissociative Amnesia', enName: '解離性健忘', reading: '', meaning: '' },
   },
   {
-    id: 'DA-153', num: 153, cat: 'CURRENT',
+    id: 'DA-130', num: 130, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'sexual', power: ['sexual', 'medical'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-153.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-130.png',
     ja: {
       name: 'パラフィリア症群', enName: 'Paraphilic Disorders', reading: '',
       meaning: '標準と異なる性的関心のうち、本人に苦痛があるか他者に害を及ぼすものを「障害」とする傘カテゴリ。',
@@ -1837,10 +1837,10 @@ export const CARDS: Card[] = [
     en: { name: 'Paraphilic Disorders', enName: 'パラフィリア症群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-154', num: 154, cat: 'CURRENT',
+    id: 'DA-131', num: 131, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'addiction', power: ['medical'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-154.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-131.png',
     ja: {
       name: 'アルコール使用障害', enName: 'Alcohol Use Disorder', reading: '',
       meaning: '制御困難な飲酒により、心身・社会生活に重大な支障が生じる状態。',
@@ -1851,10 +1851,10 @@ export const CARDS: Card[] = [
     en: { name: 'Alcohol Use Disorder', enName: 'アルコール使用障害', reading: '', meaning: '' },
   },
   {
-    id: 'DA-155', num: 155, cat: 'CURRENT',
+    id: 'DA-132', num: 132, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'sexual', power: ['gender', 'medical'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-155.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-132.png',
     ja: {
       name: '女性の性的関心・興奮障害', enName: 'Female Sexual Interest/Arousal Disorder', reading: '',
       meaning: '性的関心や興奮の持続的な低下・欠如により、本人が苦痛を感じる状態。',
@@ -1865,10 +1865,10 @@ export const CARDS: Card[] = [
     en: { name: 'Female Sexual Interest/Arousal Disorder', enName: '女性の性的関心・興奮障害', reading: '', meaning: '' },
   },
   {
-    id: 'DA-156', num: 156, cat: 'CURRENT',
+    id: 'DA-133', num: 133, cat: 'CURRENT',
     year: 1966, endYear: null, region: 'na',
     genre: 'developmental', power: [],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-156.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-133.png',
     ja: {
       name: 'レット症候群', enName: 'Rett Syndrome', reading: '',
       meaning: '主に女児に発症し、正常発達の後に運動・言語・社会性が退行する神経発達の疾患。',
@@ -1879,10 +1879,10 @@ export const CARDS: Card[] = [
     en: { name: 'Rett Syndrome', enName: 'レット症候群', reading: '', meaning: '' },
   },
   {
-    id: 'DA-157', num: 157, cat: 'CURRENT',
+    id: 'DA-134', num: 134, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'somatic', power: ['medical'],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-157.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-134.png',
     ja: {
       name: '不眠症', enName: 'Insomnia Disorder', reading: '',
       meaning: '入眠・睡眠維持の困難が頻回に続き、日中の機能に支障をきたす状態。',
@@ -1893,10 +1893,10 @@ export const CARDS: Card[] = [
     en: { name: 'Insomnia Disorder', enName: '不眠症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-158', num: 158, cat: 'CURRENT',
+    id: 'DA-135', num: 135, cat: 'CURRENT',
     year: 1980, endYear: null, region: 'na',
     genre: 'delusion', power: [],
-    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-158.png',
+    code: '現行公式 (DSM-5-TR)', origin: '北米', icon: '/icons/da-135.png',
     ja: {
       name: 'ナルコレプシー', enName: 'Narcolepsy', reading: '',
       meaning: '日中の制御不能な強い眠気と、情動で誘発される脱力(カタプレキシー)を特徴とする睡眠・覚醒の疾患。',
@@ -1907,10 +1907,10 @@ export const CARDS: Card[] = [
     en: { name: 'Narcolepsy', enName: 'ナルコレプシー', reading: '', meaning: '' },
   },
   {
-    id: 'DA-159', num: 159, cat: 'PROMOTED',
+    id: 'DA-136', num: 136, cat: 'PROMOTED',
     year: 2013, endYear: null, region: 'na',
     genre: 'anxiety', power: ['medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-159.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-136.png',
     ja: {
       name: '皮膚むしり症', enName: 'Excoriation Disorder', reading: '',
       meaning: '自分の皮膚を繰り返しむしり、皮膚病変を生じる、強迫関連症群の一つ。',
@@ -1921,10 +1921,10 @@ export const CARDS: Card[] = [
     en: { name: 'Excoriation Disorder', enName: '皮膚むしり症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-160', num: 160, cat: 'PROMOTED',
+    id: 'DA-137', num: 137, cat: 'PROMOTED',
     year: 2013, endYear: null, region: 'na',
     genre: 'eating', power: ['medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-160.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-137.png',
     ja: {
       name: '回避・制限性食物摂取症', enName: 'Avoidant/Restrictive Food Intake Disorder', reading: '',
       meaning: '体型への懸念を伴わずに、食物の回避・制限により栄養・体重に問題が生じる摂食の障害。',
@@ -1935,10 +1935,10 @@ export const CARDS: Card[] = [
     en: { name: 'Avoidant/Restrictive Food Intake Disorder', enName: '回避・制限性食物摂取症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-161', num: 161, cat: 'PROMOTED',
+    id: 'DA-138', num: 138, cat: 'PROMOTED',
     year: 2013, endYear: null, region: 'na',
     genre: 'developmental', power: [],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-161.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-138.png',
     ja: {
       name: '社会的コミュニケーション症', enName: 'Social (Pragmatic) Communication Disorder', reading: '',
       meaning: '言語・非言語コミュニケーションの社会的な使用に持続的な困難を示すが、ASDの反復・限定的行動は伴わない状態。',
@@ -1949,10 +1949,10 @@ export const CARDS: Card[] = [
     en: { name: 'Social (Pragmatic) Communication Disorder', enName: '社会的コミュニケーション症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-162', num: 162, cat: 'PROMOTED',
+    id: 'DA-139', num: 139, cat: 'PROMOTED',
     year: 1980, endYear: null, region: 'eu',
     genre: 'delusion', power: [],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '欧州', icon: '/icons/da-162.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '欧州', icon: '/icons/da-139.png',
     ja: {
       name: '自己臭関係付け症', enName: 'Olfactory Reference Disorder', reading: '',
       meaning: '自分が不快な体臭を発していると確信し、それにとらわれる状態。実際には他者は気づかないことが多い。',
@@ -1963,10 +1963,10 @@ export const CARDS: Card[] = [
     en: { name: 'Olfactory Reference Disorder', enName: '自己臭関係付け症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-163', num: 163, cat: 'PROMOTED',
+    id: 'DA-140', num: 140, cat: 'PROMOTED',
     year: 2013, endYear: null, region: 'na',
     genre: 'somatic', power: ['medical'],
-    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-163.png',
+    code: '新規昇格 (DSM-5 / ICD-11)', origin: '北米', icon: '/icons/da-140.png',
     ja: {
       name: 'カフェイン離脱', enName: 'Caffeine Withdrawal', reading: '',
       meaning: '習慣的なカフェイン摂取の中断により、頭痛・倦怠・集中困難などが生じる状態。',
@@ -1977,10 +1977,10 @@ export const CARDS: Card[] = [
     en: { name: 'Caffeine Withdrawal', enName: 'カフェイン離脱', reading: '', meaning: '' },
   },
   {
-    id: 'DA-164', num: 164, cat: 'CULTURE-BOUND',
+    id: 'DA-141', num: 141, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'jp',
     genre: null, power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '日本', icon: '/icons/da-164.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '日本', icon: '/icons/da-141.png',
     ja: {
       name: 'イム', enName: 'Imu', reading: '',
       meaning: 'アイヌの女性に見られたとされる、驚かされた後の反響言語・反響動作・命令服従などの過剰な驚愕反応。',
@@ -1991,10 +1991,10 @@ export const CARDS: Card[] = [
     en: { name: 'Imu', enName: 'イム', reading: '', meaning: '' },
   },
   {
-    id: 'DA-165', num: 165, cat: 'CULTURE-BOUND',
+    id: 'DA-142', num: 142, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'jp',
     genre: 'delusion', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '日本', icon: '/icons/da-165.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '日本', icon: '/icons/da-142.png',
     ja: {
       name: '金縛り', enName: 'Kanashibari', reading: '',
       meaning: '入眠・覚醒時に意識はあるのに身体が動かせない睡眠麻痺を、霊的・超自然的に意味づける日本の文化概念。',
@@ -2005,10 +2005,10 @@ export const CARDS: Card[] = [
     en: { name: 'Kanashibari', enName: '金縛り', reading: '', meaning: '' },
   },
   {
-    id: 'DA-166', num: 166, cat: 'CULTURE-BOUND',
+    id: 'DA-143', num: 143, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'easia',
     genre: 'eating', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-166.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-143.png',
     ja: {
       name: 'パーレン／恐寒症', enName: 'Pa-leng (Frigophobia)', reading: '',
       meaning: '冷えや風にさらされると生命力を失うと恐れ、過剰に厚着・保温する状態。',
@@ -2019,10 +2019,10 @@ export const CARDS: Card[] = [
     en: { name: 'Pa-leng (Frigophobia)', enName: 'パーレン／恐寒症', reading: '', meaning: '' },
   },
   {
-    id: 'DA-167', num: 167, cat: 'CULTURE-BOUND',
+    id: 'DA-144', num: 144, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'latam',
     genre: 'anxiety', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-167.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-144.png',
     ja: {
       name: 'グリシ・シクニス', enName: 'Grisi Siknis', reading: '',
       meaning: '中米のミスキートの人々に見られる、不安・めまいの後に錯乱・興奮・走り出しなどを示す発作。',
@@ -2033,10 +2033,10 @@ export const CARDS: Card[] = [
     en: { name: 'Grisi Siknis', enName: 'グリシ・シクニス', reading: '', meaning: '' },
   },
   {
-    id: 'DA-168', num: 168, cat: 'CULTURE-BOUND',
+    id: 'DA-145', num: 145, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'easia',
     genre: null, power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-168.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-145.png',
     ja: {
       name: 'マリ・マリ', enName: 'Mali-mali', reading: '',
       meaning: 'フィリピンに見られる、驚愕に対する過剰反応で、反響言語・反響動作・命令服従を示す。',
@@ -2047,10 +2047,10 @@ export const CARDS: Card[] = [
     en: { name: 'Mali-mali', enName: 'マリ・マリ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-169', num: 169, cat: 'CULTURE-BOUND',
+    id: 'DA-146', num: 146, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'africa',
     genre: 'dissoc', power: ['gender'],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-169.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-146.png',
     ja: {
       name: 'サカ／ウフフニャナ', enName: 'Saka / Ufufuyane', reading: '',
       meaning: '精霊の憑依によるとされる、解離・叫び・けいれん・無気力などを示す状態。多くは女性に見られる。',
@@ -2061,10 +2061,10 @@ export const CARDS: Card[] = [
     en: { name: 'Saka / Ufufuyane', enName: 'サカ／ウフフニャナ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-170', num: 170, cat: 'CULTURE-BOUND',
+    id: 'DA-147', num: 147, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'africa',
     genre: 'somatic', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-170.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: 'アフリカ', icon: '/icons/da-147.png',
     ja: {
       name: 'タバンカ', enName: 'Tabanca', reading: '',
       meaning: '恋人・配偶者に去られたことをきっかけに生じるとされる、抑うつ・無気力・思慕の苦痛。',
@@ -2075,10 +2075,10 @@ export const CARDS: Card[] = [
     en: { name: 'Tabanca', enName: 'タバンカ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-171', num: 171, cat: 'CULTURE-BOUND',
+    id: 'DA-148', num: 148, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'na',
     genre: 'somatic', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-171.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '北米', icon: '/icons/da-148.png',
     ja: {
       name: 'ヒワ・イチック', enName: 'Hi-wa itck', reading: '',
       meaning: '北米モハベの人々に見られるとされる、愛する者との別離・拒絶による不眠・食欲不振・抑うつ。',
@@ -2089,10 +2089,10 @@ export const CARDS: Card[] = [
     en: { name: 'Hi-wa itck', enName: 'ヒワ・イチック', reading: '', meaning: '' },
   },
   {
-    id: 'DA-172', num: 172, cat: 'CULTURE-BOUND',
+    id: 'DA-149', num: 149, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'latam',
     genre: 'dissoc', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-172.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '中南米', icon: '/icons/da-149.png',
     ja: {
       name: 'マル・デ・ペレア', enName: 'Mal de Pelea', reading: '',
       meaning: 'プエルトリコに見られる、突発的な暴力的興奮の発作。アモックに類似する。',
@@ -2103,10 +2103,10 @@ export const CARDS: Card[] = [
     en: { name: 'Mal de Pelea', enName: 'マル・デ・ペレア', reading: '', meaning: '' },
   },
   {
-    id: 'DA-173', num: 173, cat: 'CULTURE-BOUND',
+    id: 'DA-150', num: 150, cat: 'CULTURE-BOUND',
     year: 1900, endYear: null, region: 'easia',
     genre: 'dissoc', power: [],
-    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-173.png',
+    code: '文化圏 (DSM 文化的苦痛概念ほか)', origin: '東アジア', icon: '/icons/da-150.png',
     ja: {
       name: 'ピーポップ', enName: 'Phi Pop', reading: '',
       meaning: 'タイ東北部に見られる、霊(ピー・ポップ)の憑依によるとされる解離・異常行動。',
@@ -2117,10 +2117,10 @@ export const CARDS: Card[] = [
     en: { name: 'Phi Pop', enName: 'ピーポップ', reading: '', meaning: '' },
   },
   {
-    id: 'DA-174', num: 174, cat: 'RETIRED',
+    id: 'DA-151', num: 151, cat: 'RETIRED',
     year: 1960, endYear: 1989, region: 'na',
     genre: 'delusion', power: ['state'],
-    code: '廃止 (削除・改名)', origin: '北米', icon: '/icons/da-174.png',
+    code: '廃止 (削除・改名)', origin: '北米', icon: '/icons/da-151.png',
     ja: {
       name: '緩徐進行性統合失調症', enName: 'Sluggish Schizophrenia', reading: '',
       meaning: 'ソ連で、明白な精神病症状がなくても「ゆるやかに進行する統合失調症」とみなし、反体制派を精神病院に強制収容するために用いた診断。',
@@ -2132,4 +2132,4 @@ export const CARDS: Card[] = [
   }
 ];
 
-export const INITIAL_IDS = ['DA-001','DA-041','DA-087','DA-135','DA-096','DA-133'];
+export const INITIAL_IDS = ['DA-001','DA-041','DA-068','DA-116','DA-077','DA-114'];

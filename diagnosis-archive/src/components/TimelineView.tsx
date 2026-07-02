@@ -43,7 +43,7 @@ export default function TimelineView({ cards }: { cards: Card[] }) {
                     {showYear ? yearLabel(card) : ""}
                   </span>
                   <Link
-                    href={`/entry/${card.id}`}
+                    href={`/entry/${card.id}?from=timeline`}
                     className="group flex items-center gap-3 border-b da-hairline py-2.5 pl-5 pr-2 transition-colors hover:bg-da-ink/5"
                   >
                     <CardIcon card={card} className="h-11 w-11 shrink-0" />
