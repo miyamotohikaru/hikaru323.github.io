@@ -87,7 +87,14 @@ export default function EntryDetail({ card }: { card: Card }) {
     <div className="da-fade mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6">
       {/* パンくず */}
       <nav className="flex items-baseline gap-2 font-mono text-[11px] tracking-[0.15em]" aria-label="Breadcrumb">
-        <Link href={backHref} className="text-da-ink transition-colors hover:text-da-accent">
+        <Link
+          href={backHref}
+          onClick={() => {
+            // 戻り先ビューで、このカードの位置へスクロール復帰するためのマーカー
+            window.sessionStorage.setItem("da-return", JSON.stringify({ view: from ?? "grid", id: card.id }));
+          }}
+          className="text-da-ink transition-colors hover:text-da-accent"
+        >
           ← {backLabel}
         </Link>
         <span className="text-da-muted">/</span>

@@ -23,7 +23,7 @@ function NodeRow({ card, rel, currentId, fromParam }: { card: Card; rel?: string
   const t = cardText(card, lang);
   const isCurrent = card.id === currentId;
   return (
-    <div className="flex items-center gap-2.5 py-2">
+    <div className="flex items-center gap-2.5 py-2" data-card-id={card.id}>
       <StatusDot cat={card.cat} />
       <Link
         href={`/entry/${card.id}${fromParam ? `?from=${fromParam}` : ""}`}

@@ -4,9 +4,6 @@ import { useEffect, useRef } from "react";
 import type { Card } from "@/data/cards";
 import ArchiveCard from "@/components/ArchiveCard";
 
-const STARS =
-  "url(\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjQgMTI0Ij48cGF0aCBkPSJNMTggMTkuNEwxOC43OCAyMS4yMkwyMC42IDIyTDE4Ljc4IDIyLjc4TDE4IDI0LjZMMTcuMjIgMjIuNzhMMTUuNCAyMkwxNy4yMiAyMS4yMloiIGZpbGw9IiNkZGUzZWUiIG9wYWNpdHk9IjAuOTUiLz48cGF0aCBkPSJNNjQgMTAuMkw2NC41NCAxMS40Nkw2NS44IDEyTDY0LjU0IDEyLjU0TDY0IDEzLjhMNjMuNDYgMTIuNTRMNjIuMiAxMkw2My40NiAxMS40NloiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuNyIvPjxwYXRoIGQ9Ik0xMDIgMzUuOEwxMDIuNjYgMzcuMzRMMTA0LjIgMzhMMTAyLjY2IDM4LjY2TDEwMiA0MC4yTDEwMS4zNCAzOC42Nkw5OS44IDM4TDEwMS4zNCAzNy4zNFoiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuOTUiLz48cGF0aCBkPSJNMzggNTYuNUwzOC40NSA1Ny41NUwzOS41IDU4TDM4LjQ1IDU4LjQ1TDM4IDU5LjVMMzcuNTUgNTguNDVMMzYuNSA1OEwzNy41NSA1Ny41NVoiIGZpbGw9IiNkZGUzZWUiIG9wYWNpdHk9IjAuNyIvPjxwYXRoIGQ9Ik04NiA3MS4yTDg2Ljg0IDczLjE2TDg4LjggNzRMODYuODQgNzQuODRMODYgNzYuOEw4NS4xNiA3NC44NEw4My4yIDc0TDg1LjE2IDczLjE2WiIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC45NSIvPjxwYXRoIGQ9Ik0xNCA5MC4xTDE0LjU3IDkxLjQzTDE1LjkgOTJMMTQuNTcgOTIuNTdMMTQgOTMuOUwxMy40MyA5Mi41N0wxMi4xIDkyTDEzLjQzIDkxLjQzWiIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC43Ii8+PHBhdGggZD0iTTU4IDEwMi40TDU4LjQ4IDEwMy41Mkw1OS42IDEwNEw1OC40OCAxMDQuNDhMNTggMTA1LjZMNTcuNTIgMTA0LjQ4TDU2LjQgMTA0TDU3LjUyIDEwMy41MloiIGZpbGw9IiNkZGUzZWUiIG9wYWNpdHk9IjAuNyIvPjxwYXRoIGQ9Ik0xMDggOTQuNkwxMDguNDIgOTUuNThMMTA5LjQgOTZMMTA4LjQyIDk2LjQyTDEwOCA5Ny40TDEwNy41OCA5Ni40MkwxMDYuNiA5NkwxMDcuNTggOTUuNThaIiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjciLz48cGF0aCBkPSJNNzYgNDIuOEw3Ni4zNiA0My42NEw3Ny4yIDQ0TDc2LjM2IDQ0LjM2TDc2IDQ1LjJMNzUuNjQgNDQuMzZMNzQuOCA0NEw3NS42NCA0My42NFoiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuNyIvPjxwYXRoIGQ9Ik0zMCAxMTAuMEwzMC42IDExMS40TDMyLjAgMTEyTDMwLjYgMTEyLjZMMzAgMTE0LjBMMjkuNCAxMTIuNkwyOC4wIDExMkwyOS40IDExMS40WiIgZmlsbD0iI2RkZTNlZSIgb3BhY2l0eT0iMC43Ii8+PC9zdmc+\")";
-
 // ごく薄いシルバーの光沢（レアカードの銀箔の気配だけ・カラフルにしない）
 const PRISM =
   "linear-gradient(115deg, transparent 32%, rgb(255 255 255 / 0.14) 44%, rgb(214 220 232 / 0.20) 50%, rgb(255 255 255 / 0.14) 56%, transparent 68%)";
@@ -37,9 +34,7 @@ export default function HoloCard({ card }: { card: Card }) {
         sheenRef.current.style.opacity = s.active ? "1" : "0";
       }
       if (glitterRef.current) {
-        glitterRef.current.style.backgroundPosition = `${(-s.cx * 22).toFixed(1)}px ${(-s.cy * 22).toFixed(1)}px, ${(
-          50 + s.cx * 42
-        ).toFixed(1)}% ${(50 + s.cy * 42).toFixed(1)}%`;
+        glitterRef.current.style.backgroundPosition = `${(50 + s.cx * 42).toFixed(1)}% ${(50 + s.cy * 42).toFixed(1)}%`;
         glitterRef.current.style.opacity = s.active ? "1" : "0";
       }
       if (Math.abs(s.tx - s.cx) > 0.001 || Math.abs(s.ty - s.cy) > 0.001 || s.active) {
@@ -91,14 +86,14 @@ export default function HoloCard({ card }: { card: Card }) {
           ref={sheenRef}
           className="pointer-events-none absolute inset-0 z-[2] rounded-[3px] opacity-0 transition-opacity duration-300 [transform:translateZ(42px)]"
         />
-        {/* キラキラ（星屑＋ごく薄いプリズム） */}
+        {/* ホログラムの光沢（シルバーの帯のみ・形は入れない） */}
         <div
           ref={glitterRef}
           className="pointer-events-none absolute inset-0 z-[3] rounded-[3px] opacity-0 transition-opacity duration-500 [transform:translateZ(44px)]"
           style={{
-            backgroundImage: `${STARS}, ${PRISM}`,
-            backgroundSize: "124px 124px, 240% 240%",
-            backgroundPosition: "0px 0px, 50% 50%",
+            backgroundImage: PRISM,
+            backgroundSize: "240% 240%",
+            backgroundPosition: "50% 50%",
           }}
         />
         <ArchiveCard card={card} depth />

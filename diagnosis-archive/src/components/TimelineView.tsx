@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Card } from "@/data/cards";
 import CardIcon from "@/components/CardIcon";
 import CardTile from "@/components/CardTile";
@@ -39,7 +39,25 @@ function TimelineChart({ cards }: { cards: Card[] }) {
   const { lang, tx } = useLang();
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ x: 0, sl: 0, on: false, moved: false });
-  const [pop, setPop] = useState<number | null>(null); // 開いている年
+  // ホバーで一時表示、クリックでピン留め（開いたまま各診断を選べる）
+  const [hoverYear, setHoverYear] = useState<number | null>(null);
+  const [pinYear, setPinYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (pinYear == null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPinYear(null);
+    };
+    const onDown = (e: PointerEvent) => {
+      if (!(e.target as HTMLElement).closest("[data-pop-root]")) setPinYear(null);
+    };
+    window.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [pinYear]);
 
   // 年ごとにグループ化
   const groups = useMemo(() => {
@@ -69,7 +87,7 @@ function TimelineChart({ cards }: { cards: Card[] }) {
   }, [groups]);
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest("a,button")) return;
+    if ((e.target as HTMLElement).closest("a,button,[data-pop]")) return;
     drag.current = { x: e.clientX, sl: scrollRef.current?.scrollLeft ?? 0, on: true, moved: false };
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -124,6 +142,7 @@ function TimelineChart({ cards }: { cards: Card[] }) {
               />
               <div
                 className="absolute"
+                data-card-id={card.id}
                 style={{ left: Math.min(Math.max(x - CARD_W / 2, 8), CHART_W - CARD_W - 8), top: LANE_Y[lane], width: CARD_W }}
               >
                 <CardTile card={card} from="timeline" />
@@ -145,27 +164,30 @@ function TimelineChart({ cards }: { cards: Card[] }) {
           {/* 全エントリの点＋年ポップオーバー */}
           {groups.map(([year, cs]) => {
             const x = xOf(year);
-            const open = pop === year;
+            // ピン留め中は他の年のホバー表示を抑止（開いたまま選べる状態を優先）
+            const open = pinYear != null ? pinYear === year : hoverYear === year;
             return (
               <div
                 key={year}
                 className="absolute"
+                data-pop-root
+                data-year={year}
                 style={{ left: x, top: AXIS_Y }}
-                onMouseEnter={() => setPop(year)}
-                onMouseLeave={() => setPop((p) => (p === year ? null : p))}
+                onMouseEnter={() => setHoverYear(year)}
+                onMouseLeave={() => setHoverYear((p) => (p === year ? null : p))}
               >
                 <button
                   type="button"
                   aria-expanded={open}
                   aria-label={`${year} · ${cs.length}`}
-                  onClick={() => setPop(open ? null : year)}
-                  onFocus={() => setPop(year)}
+                  onClick={() => setPinYear((p) => (p === year ? null : year))}
+                  onFocus={() => setHoverYear(year)}
                   className="absolute -translate-x-1/2 -translate-y-1/2 p-1.5"
                 >
                   <span
                     className={`block h-[9px] w-[9px] rounded-full border-[1.5px] border-da-ink transition-transform ${
                       open ? "scale-150 bg-da-ink" : "bg-da-accent"
-                    }`}
+                    } ${pinYear === year ? "ring-2 ring-da-accent/40" : ""}`}
                   />
                 </button>
                 {cs.length > 1 && (
@@ -174,6 +196,7 @@ function TimelineChart({ cards }: { cards: Card[] }) {
 
                 {open && (
                   <div
+                    data-pop
                     className="absolute bottom-4 z-30 w-60 border-[1.5px] border-da-ink bg-da-paper shadow-[4px_4px_0_var(--da-accent)]"
                     style={{ left: Math.max(-x + 8, Math.min(-120, CHART_W - x - 248)) }}
                   >
@@ -266,6 +289,7 @@ function TimelineList({ cards }: { cards: Card[] }) {
                   </span>
                   <Link
                     href={`/entry/${card.id}?from=timeline`}
+                    data-card-id={card.id}
                     className="group flex items-center gap-3 border-b da-hairline py-2.5 pl-5 pr-2 transition-colors hover:bg-da-ink/5"
                   >
                     <CardIcon card={card} className="h-11 w-11 shrink-0" />

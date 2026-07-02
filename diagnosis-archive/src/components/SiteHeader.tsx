@@ -56,6 +56,13 @@ function MobileTabs({ view }: { view: string | null }) {
           key={item.href}
           href={item.href}
           aria-current={item.active ? "page" : undefined}
+          onClick={(e) => {
+            // すでに開いているタブをもう一度タップ → ページ先頭へ戻る
+            if (item.active) {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
           className={`font-mincho flex-1 border-t-2 py-3 text-center text-[13px] transition-colors ${
             item.active ? "border-da-accent text-da-ink" : "border-transparent text-da-muted active:text-da-accent"
           }`}

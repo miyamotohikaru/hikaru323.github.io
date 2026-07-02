@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { CARDS } from "@/data/cards";
 import CardTile from "@/components/CardTile";
 import FilterPanel from "@/components/FilterPanel";
@@ -9,6 +9,7 @@ import LineageView from "@/components/LineageView";
 import TimelineView from "@/components/TimelineView";
 import { UI, useLang } from "@/lib/i18n";
 import {
+  CARD_BY_ID,
   DEFAULT_FILTERS,
   STATS,
   YEAR_MAX,
@@ -97,6 +98,33 @@ function ExplorerInner() {
   const setView = (v: View) => {
     router.replace(v === "grid" ? "/" : `/?view=${v}`, { scroll: false });
   };
+
+  // 詳細から「← 年表／系譜／索引」で戻ってきたとき、見ていたカードの位置へスクロールして復帰する
+  useEffect(() => {
+    const raw = window.sessionStorage.getItem("da-return");
+    if (!raw) return;
+    let target: { view?: string; id?: string };
+    try {
+      target = JSON.parse(raw);
+    } catch {
+      window.sessionStorage.removeItem("da-return");
+      return;
+    }
+    if ((target.view ?? "grid") !== view || !target.id) return;
+    window.sessionStorage.removeItem("da-return");
+    const id = target.id;
+    requestAnimationFrame(() => {
+      const visible = (sel: string) =>
+        [...document.querySelectorAll(sel)].find((el) => el.getClientRects().length > 0);
+      let el = visible(`[data-card-id="${id}"]`);
+      if (!el && view === "timeline") {
+        // 横型チャートではカードが点のみの場合があるので、その年の点へ
+        const card = CARD_BY_ID.get(id);
+        if (card) el = visible(`[data-year="${card.year}"]`);
+      }
+      el?.scrollIntoView({ block: "start", inline: "center" });
+    });
+  }, [view]);
 
   const viewTitle: Record<View, { label: string; sub: string }> = {
     grid: { label: tx(UI.viewGrid), sub: "" },
@@ -189,7 +217,9 @@ function ExplorerInner() {
                 className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
               >
                 {sorted.map((card, i) => (
-                  <CardTile key={card.id} card={card} priorityIndex={i} />
+                  <div key={card.id} data-card-id={card.id}>
+                    <CardTile card={card} priorityIndex={i} />
+                  </div>
                 ))}
               </div>
             ) : (
