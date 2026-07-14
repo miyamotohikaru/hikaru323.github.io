@@ -10,10 +10,11 @@ import { COLORS, HOLE_COUNT, MOON_RADIUS } from "@/lib/config";
 import { getBit } from "@/lib/bitmask";
 import { getHolePoints } from "@/lib/holes";
 import { useGameStore } from "@/game/store";
+import { getHoleWorld } from "./sharedRefs";
 
-// 穴は「黒い穴の集合」だと集合体恐怖症的にざわつくため、月面に彫った
-// 細いリング(クレーターの縁)だけの控えめな表現にする。
-const COLOR_BASE = new THREE.Color("#a9a294"); // 月面よりわずかに明るい「彫り込み線」
+// 穴は本物のクレーター(縁が盛り上がり中が凹む地形)として描く。
+// 色はその場所の月面テクスチャから拾って馴染ませる(黒い穴の集合にしない)。
+const COLOR_BASE = new THREE.Color("#9a948a"); // テクスチャ読込前のフォールバック
 const COLOR_HOVER = new THREE.Color("#ffe9a0"); // ホバーで暖かく光る
 const COLOR_SELECTED = new THREE.Color(COLORS.accent);
 const COLOR_PULSE = new THREE.Color("#fff4b8"); // 選択中の明滅の明るい側
@@ -24,8 +25,56 @@ const tmpColor = new THREE.Color();
 const tmpNormal = new THREE.Vector3();
 const tmpQuat = new THREE.Quaternion();
 
-/** リングを月面からわずかに浮かせる量(バンプの起伏に埋もれない程度) */
-const LIFT = 0.012;
+/** クレーターを月面から浮かせる量。すり鉢の底はあえて球面下に沈め、
+    月面テクスチャがそのまま「クレーターの底」になるようにする */
+const LIFT = 0.006;
+
+/**
+ * 月面テクスチャから各穴の位置の色を拾う(非同期)。
+ * クレーターを周囲の地形色に馴染ませるための下地色になる。
+ */
+function sampleMoonColors(
+  onReady: (colors: Float32Array) => void
+): () => void {
+  let cancelled = false;
+  const img = new Image();
+  img.onload = () => {
+    if (cancelled) return;
+    const W = 512;
+    const H = 256;
+    const cv = document.createElement("canvas");
+    cv.width = W;
+    cv.height = H;
+    const ctx = cv.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(img, 0, 0, W, H);
+    const data = ctx.getImageData(0, 0, W, H).data;
+    const pts = getHolePoints();
+    const out = new Float32Array(HOLE_COUNT * 3);
+    const c = new THREE.Color();
+    for (let i = 0; i < HOLE_COUNT; i++) {
+      const [nx, ny, nz] = pts[i].normal;
+      // three.jsのSphereGeometryと同じ equirect UV (φ = atan2(z, -x))
+      const u = (Math.atan2(nz, -nx) / (Math.PI * 2) + 1) % 1;
+      const y = Math.acos(Math.min(1, Math.max(-1, ny))) / Math.PI; // 0=北極
+      const px = Math.min(W - 1, Math.floor(u * W));
+      const py = Math.min(H - 1, Math.floor(y * H));
+      const o = (py * W + px) * 4;
+      // ほんの少し明るくして「地形」として読めるように
+      c.setRGB(data[o] / 255, data[o + 1] / 255, data[o + 2] / 255)
+        .convertSRGBToLinear()
+        .multiplyScalar(1.18);
+      out[i * 3] = Math.min(1, c.r);
+      out[i * 3 + 1] = Math.min(1, c.g);
+      out[i * 3 + 2] = Math.min(1, c.b);
+    }
+    onReady(out);
+  };
+  img.src = "/textures/moon_color.jpg";
+  return () => {
+    cancelled = true;
+  };
+}
 
 export default function Holes() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -53,17 +102,25 @@ export default function Holes() {
   }, [points]);
 
   const geometry = useMemo(() => {
-    // 平たいリング(彫り込み線)。RingはXY平面向きなので法線(+Y)向きに回す
-    const g = new THREE.RingGeometry(0.088, 0.125, 28);
-    g.rotateX(-Math.PI / 2);
-    return g;
+    // すり鉢クレーターの断面(中心→外)。縁が盛り上がり、すそ野は月面に接する
+    const profile = [
+      new THREE.Vector2(0.0, -0.01),
+      new THREE.Vector2(0.04, -0.008),
+      new THREE.Vector2(0.075, 0.002),
+      new THREE.Vector2(0.098, 0.024),
+      new THREE.Vector2(0.112, 0.032), // 縁の頂上
+      new THREE.Vector2(0.124, 0.012),
+      new THREE.Vector2(0.135, 0.0),
+    ];
+    return new THREE.LatheGeometry(profile, 24);
   }, []);
   const material = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
         color: "#ffffff", // インスタンスカラーをそのまま見せる
-        roughness: 0.9,
+        roughness: 0.95,
         metalness: 0,
+        side: THREE.DoubleSide, // 月の輪郭ぎわで裏から見えてもスキマを出さない
       }),
     []
   );
@@ -73,6 +130,21 @@ export default function Holes() {
   const active = useRef(new Set<number>());
   const prevHover = useRef<number | null>(null);
   const prevSelected = useRef<number | null>(null);
+  // 月面テクスチャから拾った各穴の下地色(読込完了までnull)
+  const baseColors = useRef<Float32Array | null>(null);
+
+  useEffect(() => {
+    return sampleMoonColors((colors) => {
+      baseColors.current = colors;
+      const mesh = meshRef.current;
+      if (!mesh) return;
+      for (let i = 0; i < HOLE_COUNT; i++) {
+        tmpColor.setRGB(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]);
+        mesh.setColorAt(i, tmpColor);
+      }
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    });
+  }, []);
 
   /** 基準位置+姿勢+スケール(個体差×アニメ)で行列を書き込む */
   const writeMatrix = (mesh: THREE.InstancedMesh, id: number, sc: number) => {
@@ -119,12 +191,34 @@ export default function Holes() {
     };
   }, []);
 
+  // 選択中の穴を指す光るターゲットリング(クレーターは地形色なので目印が要る)
+  const markerRef = useRef<THREE.Mesh>(null);
+  const markerGeom = useMemo(() => {
+    const g = new THREE.RingGeometry(0.16, 0.205, 32);
+    g.rotateX(-Math.PI / 2);
+    return g;
+  }, []);
+  const markerMat = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: COLORS.accent,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    []
+  );
+
   useEffect(() => {
     return () => {
       geometry.dispose();
       material.dispose();
+      markerGeom.dispose();
+      markerMat.dispose();
     };
-  }, [geometry, material]);
+  }, [geometry, material, markerGeom, markerMat]);
 
   useFrame((state, delta) => {
     const mesh = meshRef.current;
@@ -133,6 +227,28 @@ export default function Holes() {
     const hovered = s.phase === "idle" ? s.hoveredHole : null;
     const selected = s.selectedHole;
     const set = active.current;
+    const time = state.clock.elapsedTime;
+
+    // ターゲットリングの表示・脈動
+    const marker = markerRef.current;
+    if (marker) {
+      const show =
+        selected !== null &&
+        (s.phase === "confirming" ||
+          s.phase === "stabbing" ||
+          s.phase === "suspense");
+      marker.visible = show;
+      if (show && selected !== null) {
+        const hw = getHoleWorld(selected);
+        marker.position.copy(hw.pos).addScaledVector(hw.normal, 0.04);
+        tmpQuat.setFromUnitVectors(UP, hw.normal);
+        marker.quaternion.copy(tmpQuat);
+        marker.scale.setScalar(
+          Math.max(1, base.size[selected]) * (1 + 0.07 * Math.sin(time * 5))
+        );
+        markerMat.opacity = 0.72 + 0.22 * Math.sin(time * 5);
+      }
+    }
 
     // 対象が変わった穴をアニメ対象に追加
     if (hovered !== prevHover.current || selected !== prevSelected.current) {
@@ -144,7 +260,6 @@ export default function Holes() {
     }
     if (set.size === 0) return;
 
-    const time = state.clock.elapsedTime;
     const arr = scales.current;
     const done: number[] = [];
     const k = Math.min(1, delta * 14); // ばね風の追従
@@ -160,7 +275,12 @@ export default function Holes() {
       } else if (id === hovered) {
         tmpColor.copy(COLOR_HOVER);
       } else {
-        tmpColor.copy(COLOR_BASE);
+        const bc = baseColors.current;
+        if (bc) {
+          tmpColor.setRGB(bc[id * 3], bc[id * 3 + 1], bc[id * 3 + 2]);
+        } else {
+          tmpColor.copy(COLOR_BASE);
+        }
         if (Math.abs(sc - 1) < 0.002) {
           sc = 1;
           done.push(id);
@@ -235,6 +355,14 @@ export default function Holes() {
         ref={meshRef}
         args={[geometry, material, HOLE_COUNT]}
         frustumCulled={false}
+      />
+      {/* 選択中の穴を指す光るターゲットリング */}
+      <mesh
+        ref={markerRef}
+        geometry={markerGeom}
+        material={markerMat}
+        visible={false}
+        raycast={() => undefined}
       />
       {/* 見えないピッキング球: 月面のどこを触っても最寄りの穴が選べる */}
       <mesh
