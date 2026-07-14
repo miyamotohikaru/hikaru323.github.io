@@ -11,8 +11,8 @@ import { getBit } from "@/lib/bitmask";
 import { getHolePoints } from "@/lib/holes";
 import { useGameStore } from "@/game/store";
 
-const COLOR_BASE = new THREE.Color("#343a63"); // 暗い穴の口
-const COLOR_HOVER = new THREE.Color("#aeb6ea"); // ホバーで明るく
+const COLOR_BASE = new THREE.Color("#191613"); // 暗い穴の口(実写月面に合う暗灰)
+const COLOR_HOVER = new THREE.Color("#e8e2d2"); // ホバーで明るく
 const COLOR_SELECTED = new THREE.Color(COLORS.accent);
 const COLOR_PULSE = new THREE.Color("#fff4b8"); // 選択中の明滅の明るい側
 
@@ -29,10 +29,11 @@ export default function Holes() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const points = useMemo(() => getHolePoints(), []);
 
-  // 各穴の基準位置と姿勢を事前計算(毎フレームの再合成用)
+  // 各穴の基準位置・姿勢・口径の個体差を事前計算(毎フレームの再合成用)
   const base = useMemo(() => {
     const pos = new Float32Array(HOLE_COUNT * 3);
     const quat = new Float32Array(HOLE_COUNT * 4);
+    const size = new Float32Array(HOLE_COUNT);
     for (let i = 0; i < HOLE_COUNT; i++) {
       const p = points[i];
       tmpNormal.set(p.normal[0], p.normal[1], p.normal[2]);
@@ -44,13 +45,14 @@ export default function Holes() {
       quat[i * 4 + 1] = tmpQuat.y;
       quat[i * 4 + 2] = tmpQuat.z;
       quat[i * 4 + 3] = tmpQuat.w;
+      size[i] = p.scale;
     }
-    return { pos, quat };
+    return { pos, quat, size };
   }, [points]);
 
   const geometry = useMemo(
-    // 上がやや広い浅いシリンダー=すり鉢状の穴の口
-    () => new THREE.CylinderGeometry(0.125, 0.095, 0.07, 12, 1),
+    // 上がやや広い浅いシリンダー=すり鉢状の穴の口(近接でも丸く見える24分割)
+    () => new THREE.CylinderGeometry(0.125, 0.095, 0.07, 24, 1),
     []
   );
   const material = useMemo(
@@ -69,9 +71,9 @@ export default function Holes() {
   const prevHover = useRef<number | null>(null);
   const prevSelected = useRef<number | null>(null);
 
-  /** 基準位置+姿勢+スケールで行列を書き込む */
+  /** 基準位置+姿勢+スケール(個体差×アニメ)で行列を書き込む */
   const writeMatrix = (mesh: THREE.InstancedMesh, id: number, sc: number) => {
-    const { pos, quat } = base;
+    const { pos, quat, size } = base;
     tmpObj.position.set(pos[id * 3], pos[id * 3 + 1], pos[id * 3 + 2]);
     tmpObj.quaternion.set(
       quat[id * 4],
@@ -80,7 +82,8 @@ export default function Holes() {
       quat[id * 4 + 3]
     );
     // 法線方向(ローカルY)の厚みは変えず、口径だけ広げる
-    tmpObj.scale.set(sc, 1, sc);
+    const s = sc * size[id];
+    tmpObj.scale.set(s, 1, s);
     tmpObj.updateMatrix();
     mesh.setMatrixAt(id, tmpObj.matrix);
   };
@@ -193,8 +196,8 @@ export default function Holes() {
         best = i;
       }
     }
-    // 半径0.5unit以内なら採用(穴の間隔は約0.56unit)
-    return bestD < 0.25 ? best : null;
+    // 半径0.6unit以内なら採用(ジッターで隙間が広がった場所もカバー)
+    return bestD < 0.36 ? best : null;
   };
 
   const handleMove = (e: ThreeEvent<PointerEvent>) => {
