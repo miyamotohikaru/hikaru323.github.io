@@ -42,7 +42,8 @@ export function getHolePoints(): HolePoint[] {
     // 分岐に関わらず消費する乱数の個数を揃えて決定性を保つ
     const jAngle = rng() * Math.PI * 2;
     const jDist = Math.pow(rng(), 0.75) * JITTER_MAX;
-    const scale = 0.62 + 1.25 * Math.pow(rng(), 1.7);
+    // 小さめ中心の分布(集合体恐怖症に配慮して「丸の群れ」感を抑える)
+    const scale = 0.5 + 1.35 * Math.pow(rng(), 2.4);
 
     // 接平面の基底(法線がY軸に近い場合はX軸から作る)
     let t1x: number, t1y: number, t1z: number;

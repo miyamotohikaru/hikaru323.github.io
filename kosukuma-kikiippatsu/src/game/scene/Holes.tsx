@@ -102,14 +102,15 @@ export default function Holes() {
   }, [points]);
 
   const geometry = useMemo(() => {
-    // すり鉢クレーターの断面(中心→外)。縁が盛り上がり、すそ野は月面に接する
+    // すり鉢クレーターの断面(中心→外)。集合体恐怖症に配慮して
+    // 浅く・低く、影のコントラストが出にくいなだらかな地形にする
     const profile = [
-      new THREE.Vector2(0.0, -0.01),
-      new THREE.Vector2(0.04, -0.008),
-      new THREE.Vector2(0.075, 0.002),
-      new THREE.Vector2(0.098, 0.024),
-      new THREE.Vector2(0.112, 0.032), // 縁の頂上
-      new THREE.Vector2(0.124, 0.012),
+      new THREE.Vector2(0.0, -0.006),
+      new THREE.Vector2(0.04, -0.005),
+      new THREE.Vector2(0.075, 0.001),
+      new THREE.Vector2(0.098, 0.012),
+      new THREE.Vector2(0.112, 0.016), // 縁の頂上(低め)
+      new THREE.Vector2(0.124, 0.006),
       new THREE.Vector2(0.135, 0.0),
     ];
     return new THREE.LatheGeometry(profile, 24);

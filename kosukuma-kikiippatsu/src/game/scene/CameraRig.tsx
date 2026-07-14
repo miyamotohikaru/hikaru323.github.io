@@ -31,6 +31,9 @@ const WORLD_UP = new THREE.Vector3(0, 1, 0);
 const WORLD_X = new THREE.Vector3(1, 0, 0);
 const _side = new THREE.Vector3();
 const _tanUp = new THREE.Vector3();
+// 2ショット(穴+こすくまくん)計算用のスクラッチ
+const _bis = new THREE.Vector3();
+const KOSUKUMA_BASE = new THREE.Vector3(0, MOON_RADIUS + 1.6, 0);
 
 export default function CameraRig() {
   const controlsRef = useRef<ControlsImpl>(null);
@@ -90,12 +93,9 @@ export default function CameraRig() {
       let lookSmooth = 0.25;
 
       switch (phase) {
-        case "confirming":
-        case "stabbing":
-        case "suspense":
-        case "safe": {
-          // 穴を斜め横(3/4アングル)から見る。真上からだと法線上を
-          // 上がってくる剣がカメラを突き抜けて絵にならない。
+        case "confirming": {
+          // 穴えらびの確認はアップ: 斜め横(3/4アングル)から見る。
+          // 真上からだと法線上を上がってくる剣がカメラを突き抜けて絵にならない。
           if (s.selectedHole !== null) lastHole.current = s.selectedHole;
           const h = getHoleWorld(s.selectedHole ?? lastHole.current);
           _side.crossVectors(h.normal, WORLD_UP);
@@ -107,19 +107,34 @@ export default function CameraRig() {
             .addScaledVector(h.normal, 3.1)
             .addScaledVector(_side, 3.0)
             .addScaledVector(_tanUp, 1.1);
-          if (phase === "safe") {
-            // セーフは少し引いて、残った剣を見せる
-            desired.current
-              .addScaledVector(h.normal, 0.9)
-              .addScaledVector(_side, 0.8);
-            smooth = 0.5;
-          } else if (phase !== "confirming") {
-            smooth = 0.35;
-          } else {
-            smooth = 0.5;
-          }
-          // 穴と、構えた剣の両方が入る注視点
           desiredLook.current.copy(h.pos).addScaledVector(h.normal, 1.1);
+          break;
+        }
+        case "stabbing":
+        case "suspense":
+        case "safe": {
+          // 刺す〜判定は「穴とこすくまくんの2ショット」: 飛ぶのか飛ばないのか
+          // をその場で見届けられるように、両方が入る位置まで引く。
+          if (s.selectedHole !== null) lastHole.current = s.selectedHole;
+          const h = getHoleWorld(s.selectedHole ?? lastHole.current);
+          // 穴の法線と北極(こすくまくん)の中間方向にカメラを置く
+          _bis.set(h.normal.x, h.normal.y + 1, h.normal.z);
+          if (_bis.lengthSq() < 0.05) {
+            // 穴がほぼ南極(真反対)のときは少し横へ逃がす
+            _bis.set(h.normal.x + 0.35, h.normal.y + 1, h.normal.z);
+          }
+          _bis.normalize();
+          // 離れている穴ほど大きく引く(北極との角度に比例)
+          const sep = Math.acos(Math.max(-1, Math.min(1, h.normal.y)));
+          const dist = MOON_RADIUS + 4.6 + (sep / Math.PI) * 8.5;
+          desired.current.copy(_bis).multiplyScalar(dist);
+          // 注視点は穴とこすくまくんの間(こすくまくん寄り: 見切れさせない)
+          desiredLook.current
+            .copy(h.pos)
+            .multiplyScalar(0.42)
+            .addScaledVector(KOSUKUMA_BASE, 0.58);
+          smooth = phase === "stabbing" ? 0.55 : 0.4;
+          lookSmooth = 0.3;
           break;
         }
         case "launch": {
