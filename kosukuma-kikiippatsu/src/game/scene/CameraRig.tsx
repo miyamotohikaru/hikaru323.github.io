@@ -40,6 +40,8 @@ export default function CameraRig() {
   const wasManual = useRef(false);
   const shakeRef = useRef(0);
   const lastHole = useRef(0); // safe中はselectedHoleが消えるので直前の穴を覚えておく
+  const launchSnapped = useRef(false); // launch開始時の「引きへのカット」を1回だけ
+  const launchDir = useRef(new THREE.Vector3(0, 0, 1)); // 引きショットの水平方向
 
   // 刺さった瞬間のカメラシェイク
   useEffect(
@@ -55,6 +57,8 @@ export default function CameraRig() {
     const phase = s.phase;
     const cam = state.camera;
     const controls = controlsRef.current;
+
+    if (phase !== "launch") launchSnapped.current = false;
 
     // ユーザー操作を許すフェーズ(それ以外はカメラ演出が運転する)
     const orbit = phase === "boot" || phase === "title" || phase === "idle";
@@ -119,13 +123,27 @@ export default function CameraRig() {
           break;
         }
         case "launch": {
-          // こすくまくんを追い、時間とともに引きながら見上げる
+          // 発射の瞬間を見せる: 白フラッシュに隠して引きのステージショットへ
+          // 一発でカットし(damp補間しない)、その後は上昇を追いながらさらに引く
           const t = Math.max(0, (Date.now() - s.phaseAt) / 1000);
-          const pull = 1 + Math.min(3, t * 0.45);
+          if (!launchSnapped.current) {
+            launchSnapped.current = true;
+            launchDir.current.set(cam.position.x, 0, cam.position.z);
+            if (launchDir.current.lengthSq() < 1) launchDir.current.set(0, 0, 1);
+            launchDir.current.normalize();
+            cam.position.set(
+              kosukumaWorldPos.x + launchDir.current.x * 13,
+              kosukumaWorldPos.y + 1.0,
+              kosukumaWorldPos.z + launchDir.current.z * 13
+            );
+            lookRef.current.copy(kosukumaWorldPos);
+            cam.lookAt(lookRef.current);
+          }
+          const pull = 1 + Math.min(1.6, t * 0.3);
           desired.current.set(
-            kosukumaWorldPos.x + 5 * pull,
-            kosukumaWorldPos.y - 2.5,
-            kosukumaWorldPos.z + 9 * pull
+            kosukumaWorldPos.x + launchDir.current.x * 13 * pull,
+            kosukumaWorldPos.y - 1.2,
+            kosukumaWorldPos.z + launchDir.current.z * 13 * pull
           );
           desiredLook.current.copy(kosukumaWorldPos);
           smooth = 0.45;

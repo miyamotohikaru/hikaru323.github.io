@@ -11,8 +11,10 @@ import { getBit } from "@/lib/bitmask";
 import { getHolePoints } from "@/lib/holes";
 import { useGameStore } from "@/game/store";
 
-const COLOR_BASE = new THREE.Color("#191613"); // 暗い穴の口(実写月面に合う暗灰)
-const COLOR_HOVER = new THREE.Color("#e8e2d2"); // ホバーで明るく
+// 穴は「黒い穴の集合」だと集合体恐怖症的にざわつくため、月面に彫った
+// 細いリング(クレーターの縁)だけの控えめな表現にする。
+const COLOR_BASE = new THREE.Color("#a9a294"); // 月面よりわずかに明るい「彫り込み線」
+const COLOR_HOVER = new THREE.Color("#ffe9a0"); // ホバーで暖かく光る
 const COLOR_SELECTED = new THREE.Color(COLORS.accent);
 const COLOR_PULSE = new THREE.Color("#fff4b8"); // 選択中の明滅の明るい側
 
@@ -22,8 +24,8 @@ const tmpColor = new THREE.Color();
 const tmpNormal = new THREE.Vector3();
 const tmpQuat = new THREE.Quaternion();
 
-/** 穴を月面へ少し沈める量(リムだけ顔を出す) */
-const SINK = 0.016;
+/** リングを月面からわずかに浮かせる量(バンプの起伏に埋もれない程度) */
+const LIFT = 0.012;
 
 export default function Holes() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -37,9 +39,9 @@ export default function Holes() {
     for (let i = 0; i < HOLE_COUNT; i++) {
       const p = points[i];
       tmpNormal.set(p.normal[0], p.normal[1], p.normal[2]);
-      pos[i * 3] = p.position[0] - tmpNormal.x * SINK;
-      pos[i * 3 + 1] = p.position[1] - tmpNormal.y * SINK;
-      pos[i * 3 + 2] = p.position[2] - tmpNormal.z * SINK;
+      pos[i * 3] = p.position[0] + tmpNormal.x * LIFT;
+      pos[i * 3 + 1] = p.position[1] + tmpNormal.y * LIFT;
+      pos[i * 3 + 2] = p.position[2] + tmpNormal.z * LIFT;
       tmpQuat.setFromUnitVectors(UP, tmpNormal);
       quat[i * 4] = tmpQuat.x;
       quat[i * 4 + 1] = tmpQuat.y;
@@ -50,11 +52,12 @@ export default function Holes() {
     return { pos, quat, size };
   }, [points]);
 
-  const geometry = useMemo(
-    // 上がやや広い浅いシリンダー=すり鉢状の穴の口(近接でも丸く見える24分割)
-    () => new THREE.CylinderGeometry(0.125, 0.095, 0.07, 24, 1),
-    []
-  );
+  const geometry = useMemo(() => {
+    // 平たいリング(彫り込み線)。RingはXY平面向きなので法線(+Y)向きに回す
+    const g = new THREE.RingGeometry(0.088, 0.125, 28);
+    g.rotateX(-Math.PI / 2);
+    return g;
+  }, []);
   const material = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
