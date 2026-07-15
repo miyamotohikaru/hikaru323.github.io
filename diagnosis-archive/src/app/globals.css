@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+:root {
+  /* Diagnosis. Archive 基本トーン（モック準拠・アクセントはピンク1色） */
+  --da-bg: #e8e5dd; /* 全体の生成り背景 */
+  --da-paper: #f3f0e6; /* カード紙面 */
+  --da-ink: #252a4a; /* 濃紺インク */
+  --da-accent: #e4506e; /* 赤ピンク（装飾・大きな文字用） */
+  --da-accent-text: #b23a55; /* 小さな文字用の濃いピンク（コントラスト確保） */
+  --da-muted: #565971; /* 補助テキスト（AAコントラスト） */
+  --da-line: #c9c5b6; /* 罫線 */
+}
+
+@theme inline {
+  --color-da-bg: var(--da-bg);
+  --color-da-paper: var(--da-paper);
+  --color-da-ink: var(--da-ink);
+  --color-da-accent: var(--da-accent);
+  --color-da-accent-text: var(--da-accent-text);
+  --color-da-muted: var(--da-muted);
+  --color-da-line: var(--da-line);
+  --font-display: var(--font-display), "Didot", serif;
+  --font-mincho: var(--font-mincho), "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-mono: var(--font-mono), "Menlo", monospace;
+}
+
+body {
+  background: var(--da-bg);
+  color: var(--da-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--da-accent);
+  color: var(--da-paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--da-accent);
+  outline-offset: 2px;
+}
+
+/* ── アーカイブカード ───────────────────────────── */
+.da-card {
+  background: var(--da-paper);
+  border: 1.5px solid var(--da-ink);
+  border-radius: 3px;
+  box-shadow: 4px 4px 0 var(--da-accent);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+a:hover > .da-card,
+a:focus-visible > .da-card,
+.da-card-hover:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--da-accent);
+}
+
+/* ── 出現アニメーション ─────────────────────────── */
+@keyframes da-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.da-rise {
+  animation: da-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes da-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.da-fade {
+  animation: da-fade 0.3s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .da-rise,
+  .da-fade {
+    animation: none;
+  }
+  .da-card {
+    transition: none;
+  }
+}
+
+/* ── 年代レンジスライダー（2つ重ねてデュアルレンジ化） ── */
+.da-range {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: none;
+  pointer-events: none;
+  margin: 0;
+}
+
+.da-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--da-accent);
+  border: 2px solid var(--da-ink);
+  cursor: grab;
+}
+
+.da-range::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--da-accent);
+  border: 2px solid var(--da-ink);
+  cursor: grab;
+}
+
+.da-range::-webkit-slider-runnable-track {
+  background: none;
+}
+
+.da-range::-moz-range-track {
+  background: none;
+}
+
+/* ── 細部 ──────────────────────────────────── */
+/* 戻り復帰スクロールの着地点が固定ヘッダーに隠れないように */
+[data-card-id],
+[data-year] {
+  scroll-margin-top: 130px;
+}
+
+.da-hairline {
+  border-color: var(--da-line);
+}
+
+.da-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.da-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* スクロールバーを控えめに（WebKit） */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--da-line);
+  border-radius: 5px;
+  border: 2px solid var(--da-bg);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
