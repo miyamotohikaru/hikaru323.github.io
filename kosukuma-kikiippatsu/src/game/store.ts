@@ -123,6 +123,23 @@ export function getFingerprint(): string {
   return fp;
 }
 
+/**
+ * デモモード(?demo=win): 刺すと必ず「当たり」になり、発射〜トロフィー授与を
+ * 体験できる。サーバーには一切書き込まない(記録は残らない)。
+ */
+function isDemoWin(): boolean {
+  try {
+    return (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("demo") === "win"
+    );
+  } catch {
+    return false;
+  }
+}
+
+const DEMO_TOKEN = "demo";
+
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -317,7 +334,7 @@ export const useGameStore = create<GameState>((set, get) => {
         emitGameEvent("error");
         return;
       }
-      if (cur.cooldownUntil > Date.now()) {
+      if (!isDemoWin() && cur.cooldownUntil > Date.now()) {
         const sec = Math.ceil((cur.cooldownUntil - Date.now()) / 1000);
         cur.showToast(`つぎに刺せるまで あと${sec}びょう`);
         emitGameEvent("error");
@@ -351,14 +368,22 @@ export const useGameStore = create<GameState>((set, get) => {
         typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
           ? AbortSignal.timeout(12000)
           : undefined;
-      const resultPromise: Promise<StabResult> = fetch("/api/stab", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-        signal: timeoutSignal,
-      })
-        .then((r) => r.json() as Promise<StabResult>)
-        .catch(() => ({ result: "error", message: "つうしんエラー" }));
+      const resultPromise: Promise<StabResult> = isDemoWin()
+        ? Promise.resolve<StabResult>({
+            // デモ: サーバーを呼ばず必ず当たり(記録は残らない)
+            result: "win",
+            holeId,
+            claimToken: DEMO_TOKEN,
+            roundNo: cur.roundNo,
+          })
+        : fetch("/api/stab", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+            signal: timeoutSignal,
+          })
+            .then((r) => r.json() as Promise<StabResult>)
+            .catch(() => ({ result: "error", message: "つうしんエラー" }));
 
       setPhase("stabbing");
       emitGameEvent("sword-raise");
@@ -392,8 +417,11 @@ export const useGameStore = create<GameState>((set, get) => {
           break;
         }
         case "win": {
-          LS.set("kk-claim-token", result.claimToken);
-          LS.set("kk-claim-round", String(result.roundNo));
+          if (result.claimToken !== DEMO_TOKEN) {
+            // デモの当たりはリロード復元の対象にしない
+            LS.set("kk-claim-token", result.claimToken);
+            LS.set("kk-claim-round", String(result.roundNo));
+          }
           set({
             claimToken: result.claimToken,
             claimRound: result.roundNo,
@@ -458,6 +486,30 @@ export const useGameStore = create<GameState>((set, get) => {
       if (cur.phase !== "name-entry" || !cur.claimToken || !cur.claimRound)
         return;
       const trimmed = name.trim().slice(0, 12) || "ななし";
+
+      // デモの当たり: サーバーへ書き込まず授与式だけ体験する
+      if (cur.claimToken === DEMO_TOKEN) {
+        set({
+          claimToken: null,
+          claimRound: null,
+          wonName: trimmed,
+          launchInfo: cur.launchInfo
+            ? { ...cur.launchInfo, name: trimmed }
+            : null,
+        });
+        emitGameEvent("fanfare");
+        emitGameEvent("trophy");
+        setPhase("trophy");
+        get().showToast("デモモードだから きろくには のこらないよ");
+        await sleep(T_TROPHY);
+        emitGameEvent("new-round");
+        setPhase("new-round");
+        await sleep(T_NEW_ROUND);
+        flushPending();
+        setPhase("idle");
+        return;
+      }
+
       try {
         const timeoutSignal =
           typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
