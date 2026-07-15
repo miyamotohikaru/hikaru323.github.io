@@ -124,17 +124,22 @@ export default function CameraRig() {
             _bis.set(h.normal.x + 0.35, h.normal.y + 1, h.normal.z);
           }
           _bis.normalize();
-          // 離れている穴ほど大きく引く(北極との角度に比例)
+          // 真正面だと剣が「点」に見えるので、横へずらして剣のシルエットを出す
+          _side.crossVectors(_bis, WORLD_UP);
+          if (_side.lengthSq() < 0.04) _side.copy(WORLD_X);
+          _side.normalize();
+          _bis.addScaledVector(_side, 0.32).normalize();
+          // 離れている穴ほど大きく引く(縦視野に両方収めるには角度依存で強めに)
           const sep = Math.acos(Math.max(-1, Math.min(1, h.normal.y)));
-          const dist = MOON_RADIUS + 4.6 + (sep / Math.PI) * 8.5;
+          const dist = MOON_RADIUS + 4.2 + (sep / Math.PI) * 13;
           desired.current.copy(_bis).multiplyScalar(dist);
-          // 注視点は穴とこすくまくんの間(こすくまくん寄り: 見切れさせない)
+          // 注視点は穴とこすくまくんの間(すこしこすくまくん寄り)
           desiredLook.current
             .copy(h.pos)
-            .multiplyScalar(0.42)
-            .addScaledVector(KOSUKUMA_BASE, 0.58);
-          smooth = phase === "stabbing" ? 0.55 : 0.4;
-          lookSmooth = 0.3;
+            .multiplyScalar(0.46)
+            .addScaledVector(KOSUKUMA_BASE, 0.54);
+          smooth = phase === "stabbing" ? 0.38 : 0.4;
+          lookSmooth = 0.25;
           break;
         }
         case "launch": {

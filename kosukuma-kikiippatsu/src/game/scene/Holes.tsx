@@ -244,8 +244,12 @@ export default function Holes() {
         marker.position.copy(hw.pos).addScaledVector(hw.normal, 0.04);
         tmpQuat.setFromUnitVectors(UP, hw.normal);
         marker.quaternion.copy(tmpQuat);
+        // 刺し〜判定はカメラが引くのでマーカーを大きくして見失わせない
+        const far = s.phase === "confirming" ? 1 : 2.1;
         marker.scale.setScalar(
-          Math.max(1, base.size[selected]) * (1 + 0.07 * Math.sin(time * 5))
+          Math.max(1, base.size[selected]) *
+            far *
+            (1 + 0.07 * Math.sin(time * 5))
         );
         markerMat.opacity = 0.72 + 0.22 * Math.sin(time * 5);
       }

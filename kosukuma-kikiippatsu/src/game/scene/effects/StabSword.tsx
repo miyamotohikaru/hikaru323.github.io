@@ -11,12 +11,14 @@ import { T_STAB } from "@/lib/config";
 import { useGameStore } from "@/game/store";
 import { getHoleWorld } from "@/game/scene/sharedRefs";
 import { backOut, easeInCubic, easeOutCubic } from "./easing";
-import { makeStarTexture } from "./textures";
+import { makeCircleTexture, makeStarTexture } from "./textures";
 
 // 寸法(ローカル座標: 剣先が原点、+Y が柄の向き)
 const BLADE_LEN = 1.5;
 const TIP_BURIED = -(BLADE_LEN * 2) / 3; // 刃の 2/3 が埋まる深さ
-const RAISE_H = 1.9; // 構えの高さ(穴の法線上)。カメラ(法線方向+3.1)より低く保つ
+const RAISE_H = 1.9; // 構えの高さ(穴の法線上)
+/** 自分の剣は引きの2ショットでも見えるように大きめの「ヒーローサイズ」 */
+const HERO_SCALE = 1.55;
 
 const UP = new THREE.Vector3(0, 1, 0);
 // 毎フレームの割り当てを避けるスクラッチ
@@ -30,6 +32,8 @@ interface SwordRig {
   inner: THREE.Group;
   sparkle: THREE.Sprite;
   sparkleMat: THREE.SpriteMaterial;
+  halo: THREE.Sprite;
+  haloMat: THREE.SpriteMaterial;
   dispose: () => void;
 }
 
@@ -46,11 +50,12 @@ function buildSword(): SwordRig {
   };
 
   const bladeMat = new THREE.MeshStandardMaterial({
-    color: "#e9edf8",
+    color: "#eef2ff",
     metalness: 0.85,
     roughness: 0.25,
-    emissive: "#5a68b8",
-    emissiveIntensity: 0.22,
+    // 引きの構図でも月面に埋もれないよう強めに光らせる
+    emissive: "#7e8ee0",
+    emissiveIntensity: 0.55,
   });
   const goldMat = new THREE.MeshStandardMaterial({
     color: "#ffd93d",
@@ -93,8 +98,23 @@ function buildSword(): SwordRig {
   const sparkle = new THREE.Sprite(sparkleMat);
   sparkle.scale.setScalar(0.001);
 
+  // 引きの構図でも「ここに剣がある」と分かる、やわらかい光のハロ
+  const haloTex = makeCircleTexture();
+  const haloMat = new THREE.SpriteMaterial({
+    map: haloTex,
+    color: "#ffe9a0",
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const halo = new THREE.Sprite(haloMat);
+  halo.position.set(0, BLADE_LEN * 0.55, 0);
+  halo.scale.setScalar(1.15);
+
   const inner = new THREE.Group();
-  inner.add(tip, blade, guard, grip, pommel, sparkle);
+  inner.add(tip, blade, guard, grip, pommel, sparkle, halo);
   const root = new THREE.Group();
   root.add(inner);
   root.visible = false;
@@ -104,10 +124,14 @@ function buildSword(): SwordRig {
     inner,
     sparkle,
     sparkleMat,
+    halo,
+    haloMat,
     dispose: () => {
       geoms.forEach((g) => g.dispose());
       mats.forEach((m) => m.dispose());
       sparkleMat.dispose();
+      haloMat.dispose();
+      haloTex.dispose();
       tex.dispose();
     },
   };
@@ -172,8 +196,18 @@ export default function StabSword() {
     _qAlign.setFromUnitVectors(UP, _n);
     _qYaw.setFromAxisAngle(UP, yaw);
     g.quaternion.copy(_qAlign).multiply(_qYaw);
-    g.scale.setScalar(Math.max(scale, 0.001));
+    g.scale.setScalar(Math.max(scale, 0.001) * HERO_SCALE);
     rig.inner.rotation.set(tiltX, 0, tiltZ);
+
+    // ハロ: 構え〜判定待ちの間ふんわり光り、セーフで消えていく
+    const tSec = t / 1000;
+    if (s.phase === "stabbing") {
+      rig.haloMat.opacity = 0.3;
+    } else if (s.phase === "suspense") {
+      rig.haloMat.opacity = 0.22 + 0.14 * Math.sin(tSec * 6.5);
+    } else {
+      rig.haloMat.opacity = Math.max(0, 0.25 - tSec * 0.35);
+    }
 
     // きらめき: 刃に沿って星が走る
     if (sparkleT >= 0) {
