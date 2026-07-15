@@ -1,11 +1,54 @@
 @import "tailwindcss";
 
 :root {
-  --vja-bg: #f5f1e8;
-  --vja-ink: #1f2430;
+  --vja-bg: #e9e4d7;
+  --vja-paper: #f2eee3;
+  --vja-panel: #ede8db;
+  --vja-ink: #3a2e22;
+  --vja-ink-soft: rgba(58, 46, 34, 0.62);
+  --vja-line: rgba(58, 46, 34, 0.18);
+  --vja-accent: #b04a3c;
+  --vja-blue: #6f8296;
+  --vja-cream: #f3eee0;
+}
+
+@theme inline {
+  --color-vja-bg: var(--vja-bg);
+  --color-vja-paper: var(--vja-paper);
+  --color-vja-panel: var(--vja-panel);
+  --color-vja-ink: var(--vja-ink);
+  --color-vja-ink-soft: var(--vja-ink-soft);
+  --color-vja-line: var(--vja-line);
+  --color-vja-accent: var(--vja-accent);
+  --color-vja-blue: var(--vja-blue);
+  --color-vja-cream: var(--vja-cream);
 }
 
 body {
   background: var(--vja-bg);
   color: var(--vja-ink);
+  font-family: var(--font-shippori), "Hiragino Mincho ProN", serif;
+}
+
+.font-logo {
+  font-family: var(--font-playfair), serif;
+}
+
+.font-mono-label {
+  font-family: var(--font-plex-mono), monospace;
+}
+
+/* 索引ページのカード出現 */
+@keyframes vja-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.vja-rise {
+  animation: vja-rise 0.45s ease both;
 }
