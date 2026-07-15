@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+:root {
+  --vja-bg: #f5f1e8;
+  --vja-ink: #1f2430;
+}
+
+body {
+  background: var(--vja-bg);
+  color: var(--vja-ink);
+}
