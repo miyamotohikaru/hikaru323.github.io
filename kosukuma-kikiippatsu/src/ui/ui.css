@@ -1,0 +1,828 @@
+/* ============================================================
+   こすくまくん危機一髪 — UIオーバーレイのスタイル
+   トーン: 丸くて太い・バネのある動き・ひらがなのやさしさ。
+   オーバーレイの root は pointer-events:none にして3D操作を
+   邪魔せず、押せる要素だけ auto にする。
+   ============================================================ */
+
+:root {
+  /* バネのイージング(全アニメ共通) */
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── ボタン共通 ──────────────────────────────────────── */
+.btn {
+  pointer-events: auto;
+  font-family: var(--font-game);
+  font-weight: 800;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.15s var(--spring),
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(3px) scale(0.97);
+}
+.btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* 黄色のメインボタン(モーダル等) */
+.btn-primary {
+  background: var(--accent);
+  color: var(--ui-text);
+  font-size: 1.1rem;
+  padding: 0.8em 2.2em;
+  box-shadow: 0 5px 0 rgba(120, 90, 0, 0.45);
+}
+.btn-primary:active:not(:disabled) {
+  box-shadow: 0 2px 0 rgba(120, 90, 0, 0.45);
+}
+
+/* ── タイトル画面 ────────────────────────────────────── */
+.title-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  padding: calc(11vh + env(safe-area-inset-top)) 20px
+    calc(36px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(5, 7, 26, 0.45), transparent 32%);
+  animation: fade-in 0.5s ease both;
+}
+.title-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.title-logo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05em;
+}
+.logo-line {
+  display: flex;
+  justify-content: center;
+}
+/* 1文字ずつ: 降ってきてポップ → ときどき跳ねる(delayはインラインで指定) */
+.logo-char {
+  display: inline-block;
+  font-size: clamp(2.1rem, 11vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--ui);
+  -webkit-text-stroke: 8px var(--space-deep);
+  paint-order: stroke fill;
+  text-shadow: 0 4px 0 rgba(5, 7, 26, 0.55);
+  animation:
+    logo-pop 0.55s var(--spring) both,
+    char-bounce 2.8s ease-in-out infinite;
+}
+/* 「危機一髪」は赤系で強調 */
+.logo-char-danger {
+  font-size: clamp(2.6rem, 13.5vw, 4.4rem);
+  color: var(--danger);
+}
+.title-copy {
+  margin-top: 16px;
+  color: var(--ui);
+  font-size: clamp(0.85rem, 3.8vw, 1.05rem);
+  font-weight: 700;
+  line-height: 1.7;
+  text-shadow:
+    0 2px 8px rgba(5, 7, 26, 0.95),
+    0 0 3px rgba(5, 7, 26, 0.9);
+  animation: fade-up 0.6s ease 1s both;
+}
+.title-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.btn-start {
+  background: var(--accent);
+  color: var(--ui-text);
+  font-size: clamp(1.25rem, 5.5vw, 1.5rem);
+  padding: 0.85em 2.6em;
+  box-shadow:
+    0 6px 0 rgba(120, 90, 0, 0.55),
+    0 12px 28px rgba(5, 7, 26, 0.45);
+  animation:
+    fade-up 0.5s ease 1.3s backwards,
+    btn-breathe 2s ease-in-out 2s infinite;
+}
+.btn-start:active:not(:disabled) {
+  box-shadow:
+    0 2px 0 rgba(120, 90, 0, 0.55),
+    0 6px 16px rgba(5, 7, 26, 0.45);
+}
+.btn-start:disabled {
+  background: rgba(255, 254, 242, 0.4);
+  color: rgba(58, 55, 48, 0.75);
+  box-shadow: none;
+  animation: fade-up 0.5s ease 0.9s backwards;
+}
+.title-note {
+  color: rgba(255, 254, 242, 0.78);
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(5, 7, 26, 0.9);
+  animation: fade-up 0.5s ease 1.6s both;
+}
+
+/* ── HUD ─────────────────────────────────────────────── */
+.hud {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  font-family: var(--font-game);
+}
+
+/* 上部バー: 左にバッジ、右にアイコンボタン */
+.hud-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: calc(10px + env(safe-area-inset-top))
+    calc(10px + env(safe-area-inset-right)) 0
+    calc(12px + env(safe-area-inset-left));
+}
+.hud-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  animation: fade-in 0.4s ease both;
+}
+.hud-badge {
+  background: rgba(5, 7, 26, 0.55);
+  border: 1px solid rgba(255, 254, 242, 0.16);
+  color: rgba(255, 254, 242, 0.92);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.hud-badge b {
+  color: var(--accent);
+  font-size: 1.25em;
+  margin: 0 1px;
+}
+.hud-badge-gen {
+  font-size: 12px;
+}
+.hud-top-right {
+  display: flex;
+  gap: 8px;
+}
+.icon-btn {
+  pointer-events: auto;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 254, 242, 0.18);
+  border-radius: 999px;
+  background: rgba(5, 7, 26, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.15s var(--spring),
+    background 0.15s ease;
+}
+.icon-btn:active {
+  transform: scale(0.88);
+  background: rgba(5, 7, 26, 0.8);
+}
+
+/* 下部: クールダウンピル + フィード */
+.hud-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0 calc(12px + env(safe-area-inset-left))
+    calc(24px + env(safe-area-inset-bottom));
+}
+
+/* ── フィード(直近の刺しイベント) ───────────────────── */
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.feed-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(5, 7, 26, 0.45);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 4px 12px 4px 8px;
+  width: fit-content;
+  max-width: min(78vw, 340px);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: rgba(255, 254, 242, 0.88);
+  animation: feed-in 0.35s var(--spring) both;
+}
+/* 古い行ほど薄く */
+.feed-row:nth-child(2) {
+  opacity: 0.78;
+}
+.feed-row:nth-child(3) {
+  opacity: 0.56;
+}
+.feed-row:nth-child(4) {
+  opacity: 0.38;
+}
+.feed-flag {
+  font-size: 14px;
+  line-height: 1;
+}
+/* 勝利行は金色に光る */
+.feed-win {
+  color: var(--accent);
+  border-color: rgba(255, 217, 61, 0.5);
+  text-shadow: 0 0 8px rgba(255, 217, 61, 0.6);
+}
+
+/* ── クールダウンピル ────────────────────────────────── */
+.cooldown-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(5, 7, 26, 0.6);
+  border: 1px solid rgba(255, 254, 242, 0.16);
+  color: rgba(255, 254, 242, 0.9);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px 6px 8px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: pop-in 0.35s var(--spring) both;
+}
+.cooldown-pill b {
+  color: var(--accent);
+  font-size: 1.3em;
+  margin: 0 1px;
+  font-variant-numeric: tabular-nums;
+}
+.cooldown-ring {
+  flex: none;
+}
+.cooldown-ring .ring-bg {
+  fill: none;
+  stroke: rgba(255, 254, 242, 0.2);
+  stroke-width: 3;
+}
+.cooldown-ring .ring-fg {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s linear;
+}
+
+/* ── 確認シート(この あなに 刺す…？) ─────────────────── */
+.confirm-sheet {
+  position: absolute;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(calc(100% - 24px), 420px);
+  pointer-events: auto;
+  background: var(--ui);
+  color: var(--ui-text);
+  border-radius: 24px;
+  padding: 18px 16px 16px;
+  box-shadow: 0 14px 36px rgba(5, 7, 26, 0.55);
+  text-align: center;
+  animation: sheet-up 0.4s var(--spring) both;
+}
+.confirm-text {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+.confirm-buttons {
+  display: flex;
+  gap: 10px;
+}
+.btn-cancel {
+  flex: 1;
+  background: rgba(58, 55, 48, 0.1);
+  color: var(--ui-text);
+  font-size: 1rem;
+  padding: 0.9em 0;
+}
+.btn-stab {
+  flex: 1.6;
+  background: var(--danger);
+  color: #fff;
+  font-size: 1.2rem;
+  padding: 0.75em 0;
+  box-shadow: 0 5px 0 rgba(170, 45, 45, 0.85);
+  /* transformは:activeの押し込みに譲り、filterでドキドキさせる */
+  animation: stab-pulse 1.3s ease-in-out 0.5s infinite;
+}
+.btn-stab:active:not(:disabled) {
+  box-shadow: 0 2px 0 rgba(170, 45, 45, 0.85);
+}
+
+/* ── 中央ステージ(スタンプ・バナー共通の置き場) ───────── */
+.center-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* セーフ！スタンプ */
+.stamp {
+  font-size: clamp(3rem, 16vw, 5rem);
+  font-weight: 800;
+  color: var(--safe);
+  border: 0.09em solid var(--safe);
+  border-radius: 0.25em;
+  padding: 0.02em 0.35em 0.08em;
+  letter-spacing: 0.06em;
+  background: rgba(5, 7, 26, 0.35);
+  text-shadow: 0 0 18px rgba(124, 227, 139, 0.5);
+  box-shadow:
+    0 0 30px rgba(124, 227, 139, 0.25),
+    inset 0 0 22px rgba(124, 227, 139, 0.15);
+  transform: rotate(-8deg);
+  animation: stamp-in 0.45s var(--spring) both;
+}
+
+/* 発射バナー */
+.launch-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transform: translateY(-16vh);
+  text-align: center;
+  padding: 0 16px;
+}
+.banner-big {
+  font-size: clamp(1.7rem, 8.5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--ui);
+  -webkit-text-stroke: 7px var(--space-deep);
+  paint-order: stroke fill;
+  animation: pop-in 0.5s var(--spring) 0.35s both;
+}
+.banner-hit {
+  color: var(--accent);
+  text-shadow: 0 0 26px rgba(255, 217, 61, 0.55);
+}
+.banner-sub {
+  font-size: clamp(1rem, 5vw, 1.5rem);
+  font-weight: 800;
+  color: var(--ui);
+  -webkit-text-stroke: 6px var(--space-deep);
+  paint-order: stroke fill;
+  animation:
+    pop-in 0.5s var(--spring) 1.1s both,
+    float-y 2.4s ease-in-out 1.6s infinite;
+}
+
+/* トロフィー授与バナー(3Dのトロフィーが中央にせり上がるので上に置く) */
+.trophy-banner {
+  position: absolute;
+  top: calc(12vh + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 0 20px;
+  pointer-events: none;
+}
+.trophy-gen {
+  background: rgba(255, 217, 61, 0.15);
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 16px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: pop-in 0.45s var(--spring) 0.5s both;
+}
+.trophy-name {
+  font-size: clamp(2rem, 10vw, 3.2rem);
+  font-weight: 800;
+  color: var(--accent);
+  -webkit-text-stroke: 7px var(--space-deep);
+  paint-order: stroke fill;
+  text-shadow: 0 0 24px rgba(255, 217, 61, 0.55);
+  overflow-wrap: anywhere;
+  animation: pop-in 0.55s var(--spring) 1s both;
+}
+.btn-share {
+  background: #0f1419;
+  color: #fff;
+  font-size: 0.95rem;
+  padding: 0.7em 1.6em;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  text-decoration: none;
+  animation: fade-up 0.5s ease 1.8s backwards;
+}
+
+/* 新ラウンド降臨バナー */
+.newround-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transform: translateY(-10vh);
+  text-align: center;
+  padding: 0 16px;
+  animation: pop-in 0.55s var(--spring) 0.4s both;
+}
+.newround-gen {
+  font-size: clamp(1.5rem, 7.5vw, 2.6rem);
+  font-weight: 800;
+  color: var(--kosukuma);
+  -webkit-text-stroke: 7px var(--space-deep);
+  paint-order: stroke fill;
+}
+.newround-sub {
+  font-size: clamp(2rem, 10vw, 3.4rem);
+  font-weight: 800;
+  color: var(--accent-pink);
+  -webkit-text-stroke: 8px var(--space-deep);
+  paint-order: stroke fill;
+  animation: float-y 2s ease-in-out 1s infinite;
+}
+
+/* 通信よわい表示 */
+.conn-warn {
+  position: absolute;
+  left: calc(12px + env(safe-area-inset-left));
+  bottom: calc(6px + env(safe-area-inset-bottom));
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 254, 242, 0.55);
+}
+
+/* 当たりの瞬間の白フラッシュ(0.15秒で消える) */
+.win-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  background: #fff;
+  pointer-events: none;
+  animation: flash-out 0.15s ease-out both;
+}
+
+/* ── モーダル共通 ────────────────────────────────────── */
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 7, 26, 0.62);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: fade-in 0.25s ease both;
+}
+.modal-card {
+  width: min(100%, 340px);
+  background: var(--ui);
+  color: var(--ui-text);
+  border-radius: 26px;
+  padding: 26px 22px 22px;
+  text-align: center;
+  box-shadow: 0 18px 48px rgba(5, 7, 26, 0.6);
+  animation: pop-in 0.4s var(--spring) both;
+}
+.modal-emoji {
+  font-size: 44px;
+  line-height: 1;
+  animation: float-y 2.2s ease-in-out infinite;
+}
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.5;
+  margin: 10px 0 16px;
+}
+.modal-note {
+  margin-top: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(58, 55, 48, 0.6);
+}
+
+/* 名前入力 */
+.name-input {
+  width: 100%;
+  font-family: var(--font-game);
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--ui-text);
+  background: #fff;
+  border: 3px solid rgba(58, 55, 48, 0.18);
+  border-radius: 16px;
+  padding: 12px 14px;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+  transition: border-color 0.2s ease;
+}
+.name-input::placeholder {
+  color: rgba(58, 55, 48, 0.35);
+}
+.name-input:focus {
+  border-color: var(--accent);
+}
+.name-input:disabled {
+  opacity: 0.6;
+}
+.btn-engrave {
+  width: 100%;
+  margin-top: 14px;
+  font-size: 1.2rem;
+  padding: 0.8em 0;
+}
+
+/* あそびかた */
+.help-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 4px 0 16px;
+  text-align: left;
+}
+.help-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+.help-num {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ui-text);
+  font-size: 0.85rem;
+  font-weight: 800;
+  margin-top: 1px;
+}
+.help-cooldown {
+  background: rgba(255, 107, 107, 0.12);
+  color: var(--danger);
+  font-size: 0.85rem;
+  font-weight: 800;
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin-bottom: 16px;
+}
+.help-card .btn-primary {
+  width: 100%;
+}
+
+/* ── トースト ────────────────────────────────────────── */
+.toast-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(104px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  padding: 0 16px;
+}
+.toast {
+  background: rgba(5, 7, 26, 0.82);
+  border: 1px solid rgba(255, 254, 242, 0.2);
+  color: var(--ui);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(5, 7, 26, 0.5);
+  animation: toast-in 0.45s var(--spring) both;
+}
+
+/* ── キーフレーム ────────────────────────────────────── */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* バネで飛び出す */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* ロゴ文字: 上から降ってきて潰れて戻る(squash & stretch) */
+@keyframes logo-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.8em) scale(0.3);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0.08em) scale(1.15, 0.85);
+  }
+  80% {
+    transform: translateY(-0.03em) scale(0.95, 1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+/* ロゴ文字: ときどきぴょこんと跳ねる */
+@keyframes char-bounce {
+  0%,
+  55%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  15% {
+    transform: translateY(-0.16em) scale(0.96, 1.06);
+  }
+  32% {
+    transform: translateY(0) scale(1.06, 0.94);
+  }
+  42% {
+    transform: translateY(-0.04em) scale(1, 1.02);
+  }
+}
+/* ふわふわ上下 */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.14em);
+  }
+}
+/* スタンプがドンと押される */
+@keyframes stamp-in {
+  0% {
+    opacity: 0;
+    transform: rotate(-8deg) scale(2.8);
+  }
+  55% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(0.92);
+  }
+  75% {
+    transform: rotate(-8deg) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(1);
+  }
+}
+/* 下からシートがせり上がる */
+@keyframes sheet-up {
+  from {
+    transform: translate(-50%, 130%);
+  }
+  to {
+    transform: translate(-50%, 0);
+  }
+}
+/* 刺すボタンのドキドキ */
+@keyframes stab-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.14);
+  }
+}
+/* はじめるボタンの呼吸 */
+@keyframes btn-breathe {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.08);
+  }
+}
+/* フィード行が左から跳ねて入る */
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px) scale(0.9);
+  }
+  to {
+    transform: translateX(0) scale(1);
+  }
+}
+/* トーストが下から跳ねて出る */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(60px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+/* 白フラッシュが消える */
+@keyframes flash-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ── アクセシビリティ: 動きを減らす設定を尊重 ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  .title-screen *,
+  .hud *,
+  .modal-backdrop,
+  .modal-card,
+  .toast {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
