@@ -26,6 +26,19 @@ export const T_LAUNCH = 6500; // こすくまくん発射カットシーン
 export const T_TROPHY = 4500; // トロフィー授与式
 export const T_NEW_ROUND = 3500; // 新こすくまくん降臨
 
+// ── 剣の色(プレイヤーが選べる。indexをAPI/DBに保存する) ──
+// 並び順を変えると過去の剣の色が変わってしまうので、追加は末尾にのみ行うこと。
+export const SWORD_COLORS = [
+  { name: "きん", hex: "#ffd93d" }, // 0: デフォルト(いままでの剣と同じ)
+  { name: "あか", hex: "#ff5d5d" },
+  { name: "オレンジ", hex: "#ff9f43" },
+  { name: "みどり", hex: "#7ce38b" },
+  { name: "みずいろ", hex: "#6fd3ff" },
+  { name: "あお", hex: "#5d8bff" },
+  { name: "むらさき", hex: "#b38bff" },
+  { name: "ピンク", hex: "#ff8bc2" },
+] as const;
+
 // ── パレット ────────────────────────────────────────
 export const COLORS = {
   space: "#0a0e2a", // 宇宙の紺

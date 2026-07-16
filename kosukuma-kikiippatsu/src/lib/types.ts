@@ -30,6 +30,11 @@ export interface StateResponse {
   stabCount: number;
   /** HOLE_COUNTビットのビットマスクをbase64化したもの。1=刺さっている */
   holesBase64: string;
+  /**
+   * 各穴の剣の色。Uint8Array(HOLE_COUNT)をbase64化したもの。
+   * 0=色情報なし(デフォルト金) / 1..N = SWORD_COLORS のindex+1
+   */
+  stabColorsBase64: string;
   /** 新しい順・最大12件 */
   recent: StabEvent[];
   /** 直前のラウンドの勝者(roundNo-1)。初代ならnull */
@@ -43,6 +48,8 @@ export interface StabRequest {
   roundNo: number;
   /** クライアント指紋(localStorageのランダムID) */
   fp: string;
+  /** 選んだ剣の色(SWORD_COLORSのindex)。省略時はデフォルト(金) */
+  color?: number;
 }
 
 /** POST /api/stab のレスポンス(discriminated union) */

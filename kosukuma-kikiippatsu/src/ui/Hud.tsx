@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { SWORD_COLORS } from "@/lib/config";
 import { useGameStore } from "@/game/store";
 import { onGameEvent } from "@/game/events";
 import Feed from "./Feed";
@@ -24,6 +25,10 @@ export default function Hud() {
   const wonName = useGameStore((s) => s.wonName);
   const confirmStab = useGameStore((s) => s.confirmStab);
   const cancelSelect = useGameStore((s) => s.cancelSelect);
+  const swordColor = useGameStore((s) => s.swordColor);
+  const setSwordColor = useGameStore((s) => s.setSwordColor);
+  const myStabs = useGameStore((s) => s.myStabs);
+  const myTotal = useGameStore((s) => s.myTotal);
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [flashId, setFlashId] = useState(0);
@@ -73,6 +78,16 @@ export default function Hud() {
           <div className="hud-badge">
             みんなの ちょうせん <b>{stabCount.toLocaleString()}</b>回
           </div>
+          {myTotal > 0 && (
+            <div className="hud-badge hud-badge-mine">
+              <span
+                className="my-color-dot"
+                style={{ background: SWORD_COLORS[swordColor]?.hex }}
+              />
+              きみの けん この代<b>{myStabs.length}</b>本 / 計
+              <b>{myTotal.toLocaleString()}</b>回
+            </div>
+          )}
         </div>
         <div className="hud-top-right">
           <Link href="/trophies" className="icon-btn" aria-label="トロフィーホール">
@@ -110,6 +125,21 @@ export default function Hud() {
       {phase === "confirming" && (
         <div className="confirm-sheet" role="dialog" aria-label="かくにん">
           <p className="confirm-text">この あなに けんを 刺す…？</p>
+          <div className="color-row" role="radiogroup" aria-label="けんのいろ">
+            <span className="color-label">けんの色</span>
+            {SWORD_COLORS.map((c, i) => (
+              <button
+                key={c.hex}
+                type="button"
+                role="radio"
+                aria-checked={swordColor === i}
+                aria-label={c.name}
+                className={`color-dot${swordColor === i ? " sel" : ""}`}
+                style={{ background: c.hex }}
+                onClick={() => setSwordColor(i)}
+              />
+            ))}
+          </div>
           <div className="confirm-buttons">
             <button type="button" className="btn btn-cancel" onClick={cancelSelect}>
               やめとく

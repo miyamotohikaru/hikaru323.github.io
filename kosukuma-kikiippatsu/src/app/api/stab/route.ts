@@ -3,7 +3,7 @@
 
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { HOLE_COUNT } from "@/lib/config";
+import { HOLE_COUNT, SWORD_COLORS } from "@/lib/config";
 import { maskToBase64 } from "@/lib/bitmask";
 import type { StabRequest, StabResult } from "@/lib/types";
 import { getStore } from "@/server/store";
@@ -28,7 +28,15 @@ function parseBody(v: unknown): StabRequest | null {
     return null;
   }
   if (typeof fp !== "string" || fp.length === 0) return null;
-  return { holeId, roundNo, fp: fp.slice(0, 64) };
+  // 剣の色は任意。不正値はエラーにせずデフォルト(未指定)扱い
+  const color =
+    typeof o.color === "number" &&
+    Number.isInteger(o.color) &&
+    o.color >= 0 &&
+    o.color < SWORD_COLORS.length
+      ? o.color
+      : undefined;
+  return { holeId, roundNo, fp: fp.slice(0, 64), color };
 }
 
 function json(body: StabResult, status = 200): NextResponse {
@@ -61,6 +69,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       ipHash,
       fp: body.fp,
       country,
+      color: body.color ?? null,
     });
 
     switch (outcome.kind) {

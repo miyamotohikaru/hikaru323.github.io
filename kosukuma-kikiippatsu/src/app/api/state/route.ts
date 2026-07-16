@@ -30,6 +30,7 @@ async function loadState(): Promise<StateResponse> {
           startedAt: snap.startedAt,
           stabCount: snap.stabCount,
           holesBase64: maskToBase64(snap.mask),
+          stabColorsBase64: maskToBase64(snap.stabColors),
           recent: snap.recent,
           prevWinner: snap.prevWinner,
         };

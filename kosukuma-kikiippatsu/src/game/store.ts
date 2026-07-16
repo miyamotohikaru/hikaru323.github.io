@@ -7,7 +7,9 @@ import { create } from "zustand";
 import { nanoid } from "nanoid";
 import {
   COOLDOWN_SEC,
+  HOLE_COUNT,
   POLL_MS,
+  SWORD_COLORS,
   T_LAUNCH,
   T_NEW_ROUND,
   T_SAFE,
@@ -60,6 +62,8 @@ interface GameState {
   roundNo: number;
   stabCount: number;
   mask: Uint8Array;
+  /** 各穴の剣の色(0=デフォルト金, 1..N=SWORD_COLORSのindex+1) */
+  stabColors: Uint8Array;
   recent: StateResponse["recent"];
   prevWinner: WinnerInfo | null;
   connected: boolean;
@@ -75,6 +79,12 @@ interface GameState {
   toast: Toast | null;
   muted: boolean;
   ready3d: boolean; // 3Dアセット読み込み完了
+  /** 選んでいる剣の色(SWORD_COLORSのindex)。localStorageに永続 */
+  swordColor: number;
+  /** この代に自分が刺した穴(この端末)。剣を光らせる目印にも使う */
+  myStabs: number[];
+  /** 自分の通算の刺し回数(この端末) */
+  myTotal: number;
 
   // ── actions ──
   init: () => void;
@@ -87,6 +97,7 @@ interface GameState {
   submitName: (name: string) => Promise<void>;
   showToast: (msg: string) => void;
   setMuted: (m: boolean) => void;
+  setSwordColor: (c: number) => void;
 }
 
 // ── localStorage helpers(SSR安全) ─────────────────────
@@ -140,6 +151,22 @@ function isDemoWin(): boolean {
 
 const DEMO_TOKEN = "demo";
 
+/** この代の自分の刺しをlocalStorageに保存(ラウンドが変わったら空になる) */
+function loadMyStabs(roundNo: number): number[] {
+  try {
+    const raw = LS.get("kk-my-stabs");
+    if (!raw) return [];
+    const v = JSON.parse(raw) as { r: number; h: number[] };
+    return v.r === roundNo && Array.isArray(v.h) ? v.h : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveMyStabs(roundNo: number, holes: number[]): void {
+  LS.set("kk-my-stabs", JSON.stringify({ r: roundNo, h: holes }));
+}
+
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -156,18 +183,30 @@ export const useGameStore = create<GameState>((set, get) => {
     // CDNキャッシュ(stale-while-revalidate)由来の古い応答でラウンドを巻き戻さない
     if (s.roundNo < cur.roundNo) return;
     const mask = base64ToMask(s.holesBase64);
+    const colors = s.stabColorsBase64
+      ? base64ToMask(s.stabColorsBase64)
+      : new Uint8Array(HOLE_COUNT);
     let stabCount = s.stabCount;
     if (s.roundNo === cur.roundNo) {
       // 同一ラウンド内でビットが消えることはない。自分の刺した直後に
-      // 数秒古いキャッシュ応答が来ても剣が消えないよう和集合をとる
+      // 数秒古いキャッシュ応答が来ても剣(と色)が消えないよう和集合をとる
       const old = cur.mask;
       for (let i = 0; i < mask.length && i < old.length; i++) mask[i] |= old[i];
+      const oldC = cur.stabColors;
+      for (let i = 0; i < colors.length && i < oldC.length; i++) {
+        if (colors[i] === 0) colors[i] = oldC[i];
+      }
       stabCount = Math.max(stabCount, cur.stabCount);
     }
+    // ラウンドが変わったら「この代の自分の刺し」を読み直す(通常は空)
+    const myStabs =
+      s.roundNo === cur.roundNo ? cur.myStabs : loadMyStabs(s.roundNo);
     set({
       roundNo: s.roundNo,
       stabCount,
       mask,
+      stabColors: colors,
+      myStabs,
       recent: s.recent,
       prevWinner: s.prevWinner,
       connected: true,
@@ -268,6 +307,7 @@ export const useGameStore = create<GameState>((set, get) => {
     roundNo: 0,
     stabCount: 0,
     mask: emptyMask(),
+    stabColors: new Uint8Array(HOLE_COUNT),
     recent: [],
     prevWinner: null,
     connected: true,
@@ -281,6 +321,12 @@ export const useGameStore = create<GameState>((set, get) => {
     toast: null,
     muted: LS.get("kk-muted") === "1",
     ready3d: false,
+    swordColor: (() => {
+      const c = Number(LS.get("kk-sword-color") ?? 0);
+      return Number.isInteger(c) && c >= 0 && c < SWORD_COLORS.length ? c : 0;
+    })(),
+    myStabs: [],
+    myTotal: Math.max(0, Number(LS.get("kk-my-total") ?? 0) || 0),
 
     init: () => {
       if (initialized) return;
@@ -360,6 +406,7 @@ export const useGameStore = create<GameState>((set, get) => {
         holeId,
         roundNo: cur.roundNo,
         fp: getFingerprint(),
+        color: cur.swordColor,
       });
 
       // 演出とAPIを並走させる。回線ハングでsuspenseに閉じ込められないよう
@@ -403,9 +450,19 @@ export const useGameStore = create<GameState>((set, get) => {
         case "safe": {
           const until = Date.now() + COOLDOWN_SEC * 1000;
           LS.set("kk-cooldown", String(until));
+          // 自分の剣の色と「自分の刺し」を即時反映(次のポーリングを待たない)
+          const colors = new Uint8Array(get().stabColors);
+          colors[holeId] = cur.swordColor + 1;
+          const myStabs = [...get().myStabs, holeId];
+          const myTotal = get().myTotal + 1;
+          saveMyStabs(cur.roundNo, myStabs);
+          LS.set("kk-my-total", String(myTotal));
           set({
             mask: base64ToMask(result.holesBase64),
             stabCount: result.stabCount,
+            stabColors: colors,
+            myStabs,
+            myTotal,
             cooldownUntil: until,
             selectedHole: null,
           });
@@ -421,6 +478,10 @@ export const useGameStore = create<GameState>((set, get) => {
             // デモの当たりはリロード復元の対象にしない
             LS.set("kk-claim-token", result.claimToken);
             LS.set("kk-claim-round", String(result.roundNo));
+            // 当たりも自分の1回として数える(デモは数えない)
+            const myTotal = get().myTotal + 1;
+            LS.set("kk-my-total", String(myTotal));
+            set({ myTotal });
           }
           set({
             claimToken: result.claimToken,
@@ -590,6 +651,13 @@ export const useGameStore = create<GameState>((set, get) => {
     setMuted: (m: boolean) => {
       LS.set("kk-muted", m ? "1" : "0");
       set({ muted: m });
+    },
+
+    setSwordColor: (c: number) => {
+      if (!Number.isInteger(c) || c < 0 || c >= SWORD_COLORS.length) return;
+      LS.set("kk-sword-color", String(c));
+      emitGameEvent("ui-tap");
+      set({ swordColor: c });
     },
   };
 });
