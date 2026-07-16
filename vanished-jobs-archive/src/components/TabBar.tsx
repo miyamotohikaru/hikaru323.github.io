@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLang } from "@/lib/lang";
 
 const tabs = [
-  { href: "/", label: "索引" },
-  { href: "/timeline", label: "年表" },
-  { href: "/lineage", label: "系譜" },
-  { href: "/about", label: "About" },
+  { href: "/", ja: "索引", en: "Index" },
+  { href: "/timeline", ja: "年表", en: "Timeline" },
+  { href: "/lineage", ja: "系譜", en: "Lineage" },
+  { href: "/about", ja: "About", en: "About" },
 ];
 
 export default function TabBar() {
   const pathname = usePathname();
+  const { lang } = useLang();
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" || pathname.startsWith("/jobs") : pathname.startsWith(href);
 
@@ -26,7 +28,7 @@ export default function TabBar() {
               isActive(t.href) ? "font-bold" : "text-vja-ink-soft"
             }`}
           >
-            {t.label}
+            {lang === "en" ? t.en : t.ja}
           </Link>
         ))}
       </div>

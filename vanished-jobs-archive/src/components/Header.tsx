@@ -3,22 +3,40 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { stats } from "@/data/jobs";
+import { useLang } from "@/lib/lang";
 
 const nav = [
-  { href: "/", label: "索引" },
-  { href: "/timeline", label: "年表" },
-  { href: "/lineage", label: "系譜" },
-  { href: "/about", label: "About" },
+  { href: "/", ja: "索引", en: "Index" },
+  { href: "/timeline", ja: "年表", en: "Timeline" },
+  { href: "/lineage", ja: "系譜", en: "Lineage" },
+  { href: "/about", ja: "About", en: "About" },
 ];
 
 export default function Header() {
   const pathname = usePathname();
+  const { lang, setLang } = useLang();
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" || pathname.startsWith("/jobs") : pathname.startsWith(href);
 
+  const langToggle = (
+    <span className="font-mono-label flex items-center overflow-hidden rounded-full border border-vja-line text-[10px] tracking-widest">
+      {(["ja", "en"] as const).map((l) => (
+        <button
+          key={l}
+          onClick={() => setLang(l)}
+          className={`px-2.5 py-1 uppercase ${
+            lang === l ? "bg-vja-ink text-vja-cream" : "text-vja-ink-soft hover:text-vja-ink"
+          }`}
+        >
+          {l}
+        </button>
+      ))}
+    </span>
+  );
+
   return (
     <header className="sticky top-0 z-40 border-b border-vja-line bg-vja-bg/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-baseline justify-between px-4 py-3 md:px-8">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-8">
         <Link href="/" className="flex items-baseline gap-3">
           <span className="font-logo text-lg font-bold italic tracking-wide md:text-xl">
             Vanished Jobs Archive.
@@ -27,7 +45,7 @@ export default function Header() {
             ARCHIVE · {stats.total} ENTRIES
           </span>
         </Link>
-        <nav className="hidden items-baseline gap-6 md:flex">
+        <nav className="hidden items-center gap-6 md:flex">
           {nav.map((n) => (
             <Link
               key={n.href}
@@ -38,13 +56,13 @@ export default function Header() {
                   : "text-vja-ink-soft hover:text-vja-ink"
               }`}
             >
-              {n.label}
+              {lang === "en" ? n.en : n.ja}
             </Link>
           ))}
-          <span className="font-mono-label rounded-full border border-vja-line px-2.5 py-0.5 text-[10px] tracking-widest text-vja-ink-soft">
-            JA
-          </span>
+          {langToggle}
         </nav>
+        {/* 携帯: 右上に言語切替のみ（ナビは下部タブ） */}
+        <div className="md:hidden">{langToggle}</div>
       </div>
     </header>
   );

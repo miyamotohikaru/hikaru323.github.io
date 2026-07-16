@@ -11,6 +11,7 @@ import {
   categorySubtitles,
   JobStatus,
 } from "@/data/jobs";
+import { useLang, dict } from "@/lib/lang";
 
 /** 中央軸に置く「機械・技術・制度」のできごと（章ごと） */
 const events: Record<string, string[]> = {
@@ -23,12 +24,26 @@ const events: Record<string, string[]> = {
   消滅進行中: ["2022 生成AI"],
 };
 
-function JobChip({ job }: { job: (typeof jobs)[number] }) {
+const subtitleEn: Record<string, string> = {
+  前近代の世界: "when handwork was the default",
+  江戸の日本: "a job on every street corner",
+  産業革命の世界: "when machines first took work away",
+  "明治〜昭和の日本": "the densest blank zone",
+  "20世紀の世界": "replaced by electricity, telecom, and film",
+  平成の日本: "when automation entered daily life",
+  消滅進行中: "the age of AI",
+};
+
+function JobChip({ job, en }: { job: (typeof jobs)[number]; en: boolean }) {
   const m = statusMeta[job.status];
+  const name = en ? job.en : job.name;
+  const long = name.length > (en ? 16 : 8);
   return (
     <Link
       href={`/jobs/${job.no}`}
-      className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11px] tracking-wider transition-transform hover:-translate-y-0.5 md:gap-2 md:px-3 md:text-xs ${
+      className={`inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded px-2.5 tracking-wider transition-transform hover:-translate-y-0.5 md:h-12 md:gap-2 md:px-3 ${
+        long ? "text-[9px] md:text-[11px]" : "text-[11px] md:text-xs"
+      } ${
         job.status === "ongoing" ? "border border-dashed border-vja-blue text-vja-blue" : ""
       }`}
       style={
@@ -46,7 +61,7 @@ function JobChip({ job }: { job: (typeof jobs)[number] }) {
           className="h-7 w-7 rounded-full bg-vja-cream object-contain md:h-9 md:w-9"
         />
       )}
-      <span className="font-semibold">{job.name}</span>
+      <span className="font-semibold">{name}</span>
       <span className="text-[9px] opacity-85 md:text-[10px]">
         {m.mark}
         {job.endLabel}
@@ -56,6 +71,8 @@ function JobChip({ job }: { job: (typeof jobs)[number] }) {
 }
 
 export default function TimelineView() {
+  const { lang } = useLang();
+  const en = lang === "en";
   const [status, setStatus] = useState<JobStatus | "all">("all");
   const filtered = status === "all" ? jobs : jobs.filter((j) => j.status === status);
 
@@ -66,10 +83,12 @@ export default function TimelineView() {
           TIMELINE
         </p>
         <h1 className="mt-4 text-3xl font-bold tracking-[0.15em] md:text-4xl">
-          仕事が消えた順に、ならべる。
+          {en ? "In the order they vanished." : "仕事が消えた順に、ならべる。"}
         </h1>
         <p className="mt-4 text-xs leading-relaxed tracking-wider text-vja-ink-soft">
-          古代から現在まで。中央の帯は「機械・技術・制度」のできごと——多くの職業は、この隣で息を止めた。
+          {en
+            ? "From antiquity to today. The center band marks events of machines, technology, and institutions — many jobs took their last breath beside them."
+            : "古代から現在まで。中央の帯は「機械・技術・制度」のできごと——多くの職業は、この隣で息を止めた。"}
         </p>
       </header>
 
@@ -77,10 +96,10 @@ export default function TimelineView() {
       <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
         {(
           [
-            ["all", `すべて`, stats.total],
-            ["extinct", `◆絶滅`, stats.extinct],
-            ["transformed", `◇変質`, stats.transformed],
-            ["ongoing", `▲進行中`, stats.ongoing],
+            ["all", en ? "All" : "すべて", stats.total],
+            ["extinct", `◆${en ? dict.status.extinct : "絶滅"}`, stats.extinct],
+            ["transformed", `◇${en ? dict.status.transformed : "変質"}`, stats.transformed],
+            ["ongoing", `▲${en ? dict.status.ongoing : "進行中"}`, stats.ongoing],
           ] as const
         ).map(([key, label, count]) => (
           <button
@@ -105,18 +124,19 @@ export default function TimelineView() {
         {categories.map((cat) => {
           const list = filtered.filter((j) => j.category === cat);
           if (list.length === 0) return null;
+          const subtitle = en ? subtitleEn[cat] : categorySubtitles[cat];
           return (
             <section key={cat} className="relative py-8">
               <h2 className="relative z-10 text-center">
                 <span className="bg-vja-bg px-4 text-sm font-bold tracking-[0.3em]">
-                  {cat}
+                  {en ? dict.category[cat] : cat}
                   <span className="ml-3 hidden font-normal text-vja-ink-soft md:inline">
-                    — {categorySubtitles[cat]}
+                    — {subtitle}
                   </span>
                 </span>
               </h2>
               <p className="relative z-10 mt-1 text-center text-[11px] tracking-[0.2em] text-vja-ink-soft md:hidden">
-                <span className="bg-vja-bg px-3">{categorySubtitles[cat]}</span>
+                <span className="bg-vja-bg px-3">{subtitle}</span>
               </p>
 
               {/* できごとマーカー */}
@@ -137,14 +157,14 @@ export default function TimelineView() {
                   {list
                     .filter((_, i) => i % 2 === 0)
                     .map((j) => (
-                      <JobChip key={j.no} job={j} />
+                      <JobChip key={j.no} job={j} en={en} />
                     ))}
                 </div>
                 <div className="flex flex-col items-start gap-3">
                   {list
                     .filter((_, i) => i % 2 === 1)
                     .map((j) => (
-                      <JobChip key={j.no} job={j} />
+                      <JobChip key={j.no} job={j} en={en} />
                     ))}
                 </div>
               </div>
@@ -153,7 +173,11 @@ export default function TimelineView() {
         })}
 
         <p className="relative z-10 py-8 text-center text-xs tracking-[0.3em] text-vja-ink-soft">
-          <span className="bg-vja-bg px-4">現在 —— この先は、まだ書かれていない</span>
+          <span className="bg-vja-bg px-4">
+            {en
+              ? "Now —— the rest is not yet written"
+              : "現在 —— この先は、まだ書かれていない"}
+          </span>
         </p>
       </div>
     </div>

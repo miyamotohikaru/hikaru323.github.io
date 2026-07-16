@@ -13,6 +13,7 @@ import {
   regionTags,
   JobStatus,
 } from "@/data/jobs";
+import { useLang, dict } from "@/lib/lang";
 
 const PAGE = 18;
 const STEP = 30;
@@ -58,6 +59,8 @@ function Group({
 }
 
 export default function IndexView() {
+  const { lang } = useLang();
+  const en = lang === "en";
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<JobStatus | "all">("all");
   const [category, setCategory] = useState("all");
@@ -100,6 +103,8 @@ export default function IndexView() {
     setShown(PAGE);
   };
 
+  const ALL = en ? "All" : "すべて";
+
   return (
     <>
       {/* 絞り込みバー */}
@@ -113,7 +118,7 @@ export default function IndexView() {
               SORT
             </span>
             <span className="text-sm font-semibold tracking-[0.2em]">
-              絞り込み {open ? "∧" : "∨"}
+              {en ? "Filter" : "絞り込み"} {open ? "∧" : "∨"}
             </span>
             {activeCount > 0 && (
               <span className="rounded-full bg-vja-accent px-2 py-0.5 font-mono-label text-[10px] text-vja-cream">
@@ -129,17 +134,17 @@ export default function IndexView() {
         {open && (
           <div className="rounded-b-lg border border-t-0 border-vja-line bg-vja-paper/60 p-6 md:p-8">
             <div className="grid gap-7 md:grid-cols-2">
-              <Group label="並び替え">
+              <Group label={en ? "Sort" : "並び替え"}>
                 <Chip active={order === "asc"} onClick={() => setOrder("asc")}>
-                  NO.順
+                  {en ? "By NO." : "NO.順"}
                 </Chip>
                 <Chip active={order === "desc"} onClick={() => setOrder("desc")}>
-                  NO.逆順
+                  {en ? "Reverse" : "NO.逆順"}
                 </Chip>
               </Group>
-              <Group label="ステータス">
+              <Group label={en ? "Status" : "ステータス"}>
                 <Chip active={status === "all"} onClick={() => pick(setStatus)("all")}>
-                  すべて
+                  {ALL}
                 </Chip>
                 {(Object.keys(statusMeta) as JobStatus[]).map((s) => (
                   <Chip
@@ -148,13 +153,13 @@ export default function IndexView() {
                     onClick={() => pick(setStatus)(s)}
                   >
                     {statusMeta[s].mark}
-                    {statusMeta[s].label} {stats[s]}
+                    {en ? dict.status[s] : statusMeta[s].label} {stats[s]}
                   </Chip>
                 ))}
               </Group>
-              <Group label="年代（章）">
+              <Group label={en ? "Era (chapter)" : "年代（章）"}>
                 <Chip active={category === "all"} onClick={() => pick(setCategory)("all")}>
-                  すべて
+                  {ALL}
                 </Chip>
                 {categories.map((c) => (
                   <Chip
@@ -162,13 +167,13 @@ export default function IndexView() {
                     active={category === c}
                     onClick={() => pick(setCategory)(c)}
                   >
-                    {c}
+                    {en ? dict.category[c] : c}
                   </Chip>
                 ))}
               </Group>
-              <Group label="発祥地域">
+              <Group label={en ? "Region" : "発祥地域"}>
                 <Chip active={region === "all"} onClick={() => pick(setRegion)("all")}>
-                  すべて
+                  {ALL}
                 </Chip>
                 {regionTagList.map((r) => (
                   <Chip
@@ -176,13 +181,13 @@ export default function IndexView() {
                     active={region === r}
                     onClick={() => pick(setRegion)(r)}
                   >
-                    {r}
+                    {en ? dict.region[r] : r}
                   </Chip>
                 ))}
               </Group>
-              <Group label="死因">
+              <Group label={en ? "Cause of death" : "死因"}>
                 <Chip active={cause === "all"} onClick={() => pick(setCause)("all")}>
-                  すべて
+                  {ALL}
                 </Chip>
                 {Object.entries(causeLabels).map(([n, label]) => (
                   <Chip
@@ -190,7 +195,7 @@ export default function IndexView() {
                     active={cause === n}
                     onClick={() => pick(setCause)(n)}
                   >
-                    {label}
+                    {en ? dict.cause[Number(n)] : label}
                   </Chip>
                 ))}
               </Group>
@@ -200,13 +205,15 @@ export default function IndexView() {
                 onClick={reset}
                 className="rounded-full border border-vja-line px-6 py-2 text-xs tracking-[0.2em] text-vja-ink-soft hover:border-vja-ink"
               >
-                リセット
+                {en ? "Reset" : "リセット"}
               </button>
               <button
                 onClick={() => setOpen(false)}
                 className="rounded-full bg-vja-ink px-6 py-2 text-xs tracking-[0.2em] text-vja-cream hover:opacity-85"
               >
-                結果を見る・{filtered.length}件
+                {en
+                  ? `Show results · ${filtered.length}`
+                  : `結果を見る・${filtered.length}件`}
               </button>
             </div>
           </div>
@@ -217,7 +224,9 @@ export default function IndexView() {
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 md:px-8">
         {visible.length === 0 ? (
           <p className="py-16 text-center text-sm text-vja-ink-soft">
-            この条件のカードは、見つかりませんでした。
+            {en
+              ? "No cards match these filters."
+              : "この条件のカードは、見つかりませんでした。"}
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5">
@@ -238,7 +247,9 @@ export default function IndexView() {
               onClick={() => setShown((n) => n + STEP)}
               className="rounded-full border border-vja-ink px-8 py-2.5 text-sm tracking-[0.2em] hover:bg-vja-ink hover:text-vja-cream"
             >
-              もっとめくる（のこり{remaining}）
+              {en
+                ? `Turn more pages (${remaining} left)`
+                : `もっとめくる（のこり${remaining}）`}
             </button>
           </div>
         )}

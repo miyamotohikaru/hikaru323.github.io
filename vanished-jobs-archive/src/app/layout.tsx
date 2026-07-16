@@ -3,6 +3,7 @@ import { Playfair_Display, Shippori_Mincho, IBM_Plex_Mono } from "next/font/goog
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import TabBar from "@/components/TabBar";
+import { LangProvider } from "@/lib/lang";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -40,10 +41,12 @@ export default function RootLayout({
       <body
         className={`${playfair.variable} ${shippori.variable} ${plexMono.variable} antialiased`}
       >
-        <Header />
-        <main className="pb-20 md:pb-0">{children}</main>
-        <Footer />
-        <TabBar />
+        <LangProvider>
+          <Header />
+          <main className="pb-20 md:pb-0">{children}</main>
+          <Footer />
+          <TabBar />
+        </LangProvider>
       </body>
     </html>
   );
