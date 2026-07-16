@@ -90,7 +90,7 @@
   "summary": "前提理論ごと否定された職業。ただし実験手法は化学へ継承された",
   "successor": "化学者",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/004.png",
   "hasFullBody": false,
   "endLabel": "〜18c",
   "textColor": "#F3EEE0"
