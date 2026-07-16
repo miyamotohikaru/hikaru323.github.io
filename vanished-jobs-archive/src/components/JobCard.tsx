@@ -29,6 +29,11 @@ function BearPlaceholder() {
 /** はみ出し気味に大きく置く画像（受け渡しREADME指定：ノッカーアップ・氷配達人） */
 const OVERSIZED = new Set(["jobs/knocker.png", "jobs/iceman.png"]);
 
+/** 画像ごとの位置微調整（絵柄がカード中央に来るように） */
+const NUDGE: Record<string, string> = {
+  "jobs/002.png": "translate(-5px, 5px)",
+};
+
 /** 全角=1・半角=0.5 で実効文字数を数える（長い名前の縮小率計算用） */
 function effLen(s: string) {
   let n = 0;
@@ -67,6 +72,7 @@ export default function JobCard({ job }: { job: Job }) {
               width={400}
               height={400}
               className={`h-full w-auto object-contain ${oversized ? "scale-115" : ""}`}
+              style={NUDGE[job.image] ? { transform: NUDGE[job.image] } : undefined}
             />
           ) : (
             <BearPlaceholder />
