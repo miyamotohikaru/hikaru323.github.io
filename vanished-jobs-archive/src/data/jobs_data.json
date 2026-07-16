@@ -18,7 +18,7 @@
   "summary": "文字を書けること自体が専門職だった。識字の民主化で「全員が書記」になった",
   "successor": "印刷工→事務職→ワープロ",
   "lineageId": "kiroku",
-  "image": null,
+  "image": "jobs/001.png",
   "hasFullBody": false,
   "endLabel": "〜15c",
   "textColor": "#F3EEE0"
