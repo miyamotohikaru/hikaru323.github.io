@@ -750,7 +750,7 @@ export default function ViewScreen({
           <PanoramaViewer
             imageUrl={showHuman ? panoHumanUrl : panoUrl}
             fov={showHuman ? 120 : fovData?.fov ?? 360}
-            height={400}
+            photoAspect={canvasRatio ?? 1}
             label={showHuman ? "👁 人間のめ" : `${creature.name}のめ`}
           />
         ) : null}

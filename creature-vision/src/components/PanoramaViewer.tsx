@@ -3,40 +3,43 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 
 interface PanoramaViewerProps {
-  imageUrl: string; // フィルター適用済みのマスター拡張画像
-  fov: number; // 生き物の視野角
-  height?: number; // ビューアの高さ
-  label?: string; // 左上に出すラベル（例「馬のめ」）
+  imageUrl: string; // フィルター適用済みのマスター拡張画像（360°ぶん・元写真が中心）
+  fov: number; // 生き物の視野角（見回せる範囲を決める）
+  photoAspect: number; // アップロード写真の縦横比 (w/h)。覗き窓のサイズをこれに合わせる
+  label?: string; // 左上ラベル（例「馬のめ」）
 }
 
+const AUTO_ONEWAY_SEC = 20; // 片道の秒数（本当にゆっくり）
+
 /**
- * Google Street View のようにスクロールして見回すパノラマビューア。
- * - 元写真の位置（中央）からスタート
- * - ドラッグ/スワイプで左右に見回す
- * - 放すと自動でゆっくり往復スクロール
- * - fov に応じて見回せる範囲が変わる（狭い生き物は狭く、広い生き物は広く）
- * 端・余白はクリーム色(#FFF9F2)で背景に溶ける。
+ * 「元写真サイズの覗き窓」の後ろで360°パノラマがゆっくり回る方式。
+ * - 窓のサイズ＝アップロード写真の比率。最初は元写真（中央）だけが見える。
+ * - 拡張部分は窓の外（左右）に隠れていて、回転/ドラッグで初めて見える。
+ * - 放置すると右へゆっくりパン→端で折り返して左へ、を往復（fovで振れ幅が変わる）。
+ * - ドラッグ/スワイプで手動でも見回せる。端・余白はクリーム色(#FFF9F2)。
  */
-export function PanoramaViewer({ imageUrl, fov, height = 400, label }: PanoramaViewerProps) {
+export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgElRef = useRef<HTMLImageElement | null>(null);
 
-  const posRef = useRef(0); // 現在のスクロール位置(px)。0=中央(正面)、負=右方向へ移動
+  const posRef = useRef(0); // 中央(=元写真)からのパン量(px)。0=正面
   const draggingRef = useRef(false);
   const startXRef = useRef(0);
   const startPosRef = useRef(0);
-  const autoRef = useRef(true);
-  const dirRef = useRef(-1);
+  const dirRef = useRef(-1); // -1=右を見に行く / +1=左へ戻る
   const rafRef = useRef(0);
-  const maxScrollRef = useRef(0);
+  const maxRef = useRef(0); // 片側に振れる最大量(px)
+  const centerRef = useRef(0); // マスターを窓中央に置くためのオフセット(px)
+  const speedRef = useRef(0.3); // px/frame
 
+  const autoRef = useRef(true);
   const [autoOn, setAutoOn] = useState(true);
   const [imgW, setImgW] = useState(0);
   const [imgH, setImgH] = useState(0);
+  const [scaledW, setScaledW] = useState(0);
   const [hintVisible, setHintVisible] = useState(true);
 
-  // fov 120°=ほぼ動かない(0.33)、360°=フルにぐるっと(1.0)
-  const viewableRatio = Math.min(1.0, Math.max(0.2, fov / 360));
+  const viewableRatio = Math.min(1.0, Math.max(0.18, fov / 360));
 
   // 画像読み込み
   useEffect(() => {
@@ -48,7 +51,7 @@ export function PanoramaViewer({ imageUrl, fov, height = 400, label }: PanoramaV
     img.src = imageUrl;
   }, [imageUrl]);
 
-  // 画像が変わったら正面に戻し、ヒントを数秒表示
+  // 画像が変わったら正面へ戻し、ヒントを数秒表示
   useEffect(() => {
     posRef.current = 0;
     dirRef.current = -1;
@@ -58,33 +61,41 @@ export function PanoramaViewer({ imageUrl, fov, height = 400, label }: PanoramaV
   }, [imageUrl]);
 
   const applyTransform = useCallback(() => {
-    const inner = imgElRef.current;
-    if (inner) inner.style.transform = `translateX(${posRef.current}px)`;
+    const el = imgElRef.current;
+    if (el) el.style.transform = `translateX(${centerRef.current + posRef.current}px)`;
   }, []);
 
-  // 自動往復 + 描画ループ
+  // サイズ計算 + 自動回転ループ
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !imgW || !imgH) return;
 
     const recompute = () => {
       const cw = container.clientWidth;
-      const scale = height / imgH;
-      const scaledW = imgW * scale;
-      // 見回せる最大量（中央±で fov 制限）
-      maxScrollRef.current = Math.max(0, (scaledW - cw) * viewableRatio);
+      const ch = container.clientHeight;
+      const scale = ch / imgH; // マスターを窓の高さに合わせる
+      const sw = imgW * scale;
+      setScaledW(sw);
+      centerRef.current = (cw - sw) / 2; // 中央=元写真が窓中央に来る
+      // fovで振れ幅を制限。360°=端まで、狭いほど中央付近だけ
+      maxRef.current = Math.max(0, ((sw - cw) / 2) * viewableRatio);
+      // 片道 AUTO_ONEWAY_SEC 秒でゆっくり
+      speedRef.current = Math.max(0.12, (2 * maxRef.current) / (AUTO_ONEWAY_SEC * 60));
+      // クランプ
+      posRef.current = Math.max(-maxRef.current, Math.min(maxRef.current, posRef.current));
+      applyTransform();
     };
     recompute();
     window.addEventListener("resize", recompute);
 
     function loop() {
-      const maxScroll = maxScrollRef.current;
-      if (autoRef.current && !draggingRef.current && maxScroll > 0) {
-        posRef.current += dirRef.current * 0.5; // 0.5px/frame（ゆっくり）
-        if (posRef.current <= -maxScroll) { posRef.current = -maxScroll; dirRef.current = 1; }
-        if (posRef.current >= 0) { posRef.current = 0; dirRef.current = -1; }
+      const M = maxRef.current;
+      if (autoRef.current && !draggingRef.current && M > 0) {
+        posRef.current += dirRef.current * speedRef.current;
+        if (posRef.current <= -M) { posRef.current = -M; dirRef.current = 1; }  // 右端→左へ
+        if (posRef.current >= M) { posRef.current = M; dirRef.current = -1; }   // 左端→右へ
       }
-      posRef.current = Math.max(-maxScroll, Math.min(0, posRef.current));
+      posRef.current = Math.max(-M, Math.min(M, posRef.current));
       applyTransform();
       rafRef.current = requestAnimationFrame(loop);
     }
@@ -93,9 +104,9 @@ export function PanoramaViewer({ imageUrl, fov, height = 400, label }: PanoramaV
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", recompute);
     };
-  }, [imgW, imgH, height, viewableRatio, applyTransform]);
+  }, [imgW, imgH, viewableRatio, applyTransform]);
 
-  // ドラッグ操作（pointer=タッチ・マウス両対応）
+  // ドラッグ（pointer=タッチ・マウス両対応）
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     draggingRef.current = true;
     startXRef.current = e.clientX;
@@ -106,24 +117,19 @@ export function PanoramaViewer({ imageUrl, fov, height = 400, label }: PanoramaV
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!draggingRef.current) return;
-    const maxScroll = maxScrollRef.current;
+    const M = maxRef.current;
     let next = startPosRef.current + (e.clientX - startXRef.current); // 1:1
-    next = Math.max(-maxScroll, Math.min(0, next));
+    next = Math.max(-M, Math.min(M, next));
     posRef.current = next;
     applyTransform();
   }, [applyTransform]);
 
-  const onPointerUp = useCallback(() => {
-    draggingRef.current = false;
-  }, []);
+  const onPointerUp = useCallback(() => { draggingRef.current = false; }, []);
 
   const toggleAuto = () => {
     autoRef.current = !autoRef.current;
     setAutoOn(autoRef.current);
   };
-
-  const scale = imgH ? height / imgH : 1;
-  const scaledW = imgW * scale;
 
   return (
     <div>
@@ -136,7 +142,7 @@ export function PanoramaViewer({ imageUrl, fov, height = 400, label }: PanoramaV
         style={{
           position: "relative",
           width: "100%",
-          height,
+          aspectRatio: photoAspect || 1, // 覗き窓＝アップロード写真の比率
           borderRadius: 18,
           overflow: "hidden",
           background: "#FFF9F2",
@@ -149,20 +155,17 @@ export function PanoramaViewer({ imageUrl, fov, height = 400, label }: PanoramaV
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           ref={imgElRef}
-          className="pano-img"
           src={imageUrl}
           alt="panorama"
           draggable={false}
           style={{
             position: "absolute",
-            top: "50%",
-            left: "50%",
+            top: 0,
+            left: 0,
             height: "100%",
             width: scaledW || "auto",
             maxWidth: "none",
             transform: "translateX(0)",
-            marginLeft: scaledW ? -scaledW / 2 : 0,
-            marginTop: -height / 2,
             willChange: "transform",
             pointerEvents: "none",
           }}
@@ -181,14 +184,13 @@ export function PanoramaViewer({ imageUrl, fov, height = 400, label }: PanoramaV
           </div>
         )}
 
-        {/* 「ドラッグで見回す」ヒント（最初だけ薄く表示して数秒で消す） */}
         {hintVisible && (
           <div
             style={{
               position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)",
               background: "rgba(255,255,255,0.9)", color: "#5F5E5A",
               fontSize: 12, fontWeight: 700, padding: "6px 14px", borderRadius: 100,
-              pointerEvents: "none", transition: "opacity 0.4s ease",
+              pointerEvents: "none",
             }}
           >
             👆 ドラッグで見回す
