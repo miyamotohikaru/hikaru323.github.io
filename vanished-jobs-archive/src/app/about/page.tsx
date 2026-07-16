@@ -23,7 +23,7 @@ export default function AboutPage() {
         <div className="mt-10 space-y-5 text-left leading-loose">
           <p>
             このサイトは、歴史上たしかに存在し、いまは
-            <strong>消えた／姿を変えた／消えつつある</strong>職業{stats.total}
+            <strong>消えた/姿を変えた/消えつつある</strong>職業{stats.total}
             種を収録したアーカイブです。集めて完成させる図鑑ではなく、はじめから
             {stats.total}
             件すべてがそろっています。過去を懐かしむためではなく、「仕事が消える」というできごとが、ずっと昔からくり返されてきた、ごくふつうのことだと知るためのものです。
@@ -82,7 +82,7 @@ export default function AboutPage() {
             ))}
           </div>
 
-          {/* 統計（jobs_data.json から動的計算） */}
+          {/* 統計(jobs_data.json から動的計算) */}
           <div className="mx-auto mt-12 flex max-w-2xl flex-wrap items-stretch justify-center">
             {[
               { n: String(stats.total), label: "項目" },
@@ -133,10 +133,10 @@ export default function AboutPage() {
               出典・クレジット
             </p>
             <ul className="mt-4 space-y-2 text-sm leading-relaxed">
-              <li>企画・構成 — ＿＿＿＿</li>
+              <li>企画・構成 — ____</li>
               <li>イラスト — こすくまくん</li>
-              <li>本文・監修 — ＿＿＿＿</li>
-              <li>参考文献 — ＿＿＿＿（一次資料にて裏取り）</li>
+              <li>本文・監修 — ____</li>
+              <li>参考文献 — ____(一次資料にて裏取り)</li>
             </ul>
           </div>
           <div>
@@ -144,7 +144,7 @@ export default function AboutPage() {
               お問い合わせ
             </p>
             <p className="mt-4 text-sm leading-loose">
-              掲載職業のご提案・誤りのご指摘は ＿＿＿＿ まで。
+              掲載職業のご提案・誤りのご指摘は ____ まで。
               <br />
               あなたの街に「消えた仕事」はありませんか。
             </p>

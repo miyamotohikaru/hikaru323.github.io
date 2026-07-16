@@ -1,13 +1,13 @@
 /**
  * 系譜 12チェーン。デザイン案(系譜ページ)と details の系譜行をもとに構成。
- * no があるノードは収録職業（詳細ページへリンク）、null は収録外の概念ノード。
+ * no があるノードは収録職業(詳細ページへリンク)、null は収録外の概念ノード。
  */
 
 export type LineageNode = {
   label: string;
   no: string | null;
   ongoing?: boolean; // ▲消滅進行中
-  future?: boolean; // 後継の概念（イタリック表示）
+  future?: boolean; // 後継の概念(イタリック表示)
 };
 
 export type LineageChain = {

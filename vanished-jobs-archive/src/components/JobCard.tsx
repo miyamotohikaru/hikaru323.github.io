@@ -29,8 +29,17 @@ function BearPlaceholder() {
 /** はみ出し気味に大きく置く画像（受け渡しREADME指定：ノッカーアップ・氷配達人） */
 const OVERSIZED = new Set(["jobs/knocker.png", "jobs/iceman.png"]);
 
+/** 全角=1・半角=0.5 で実効文字数を数える（長い名前の縮小率計算用） */
+function effLen(s: string) {
+  let n = 0;
+  for (const ch of s) n += ch.charCodeAt(0) > 0xff ? 1 : 0.5;
+  return n;
+}
+
 export default function JobCard({ job }: { job: Job }) {
   const oversized = job.image ? OVERSIZED.has(job.image) : false;
+  // 名前は必ず1行に収める: カード内幅86cqwに対し収まるサイズへ縮小（上限7.4cqw）
+  const nameSize = Math.min(7.4, 84 / effLen(job.name));
 
   return (
     <div className="@container block h-full w-full">
@@ -65,7 +74,12 @@ export default function JobCard({ job }: { job: Job }) {
         </div>
 
         <div className="text-center">
-          <p className="text-[7.4cqw] font-bold leading-tight">{job.name}</p>
+          <p
+            className="whitespace-nowrap font-bold leading-tight"
+            style={{ fontSize: `${nameSize}cqw` }}
+          >
+            {job.name}
+          </p>
           <p className="font-mono-label mt-[1.6cqw] text-[2.9cqw] uppercase tracking-[0.35em] opacity-80">
             {job.en}
           </p>

@@ -13,7 +13,7 @@ import {
 } from "@/data/jobs";
 import { useLang, dict } from "@/lib/lang";
 
-/** 中央軸に置く「機械・技術・制度」のできごと（章ごと） */
+/** 中央軸に置く「機械・技術・制度」のできごと(章ごと) */
 const events: Record<string, string[]> = {
   前近代の世界: ["1450s 活版印刷"],
   江戸の日本: ["1657 明暦の大火"],
@@ -151,7 +151,7 @@ export default function TimelineView() {
                 ))}
               </div>
 
-              {/* 職業チップ：中央軸の左右（携帯でも2列を維持） */}
+              {/* 職業チップ:中央軸の左右(携帯でも2列を維持) */}
               <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 md:gap-x-16">
                 <div className="flex flex-col items-end gap-3">
                   {list

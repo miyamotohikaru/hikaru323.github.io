@@ -65,7 +65,7 @@ export default async function JobPage({
       </div>
 
       <div className="mt-6 grid gap-10 md:grid-cols-[minmax(0,340px)_1fr] md:gap-14">
-        {/* 左：カード */}
+        {/* 左:カード */}
         <div>
           <div className="md:sticky md:top-20">
             <div className="mx-auto max-w-[340px]">
@@ -94,7 +94,7 @@ export default async function JobPage({
           </div>
         </div>
 
-        {/* 右：記録 */}
+        {/* 右:記録 */}
         <article>
           <p className="font-mono-label text-[11px] tracking-[0.3em] text-vja-ink-soft">
             RECORD NO.{job.no} ·{" "}
@@ -160,7 +160,7 @@ export default async function JobPage({
 
               <SectionTitle>
                 {job.status === "ongoing" ? (
-                  <T ja="きえていくわけ（進行中）" en="WHY IT IS VANISHING" />
+                  <T ja="きえていくわけ(進行中)" en="WHY IT IS VANISHING" />
                 ) : (
                   <T ja="きえたわけ" en="WHY IT VANISHED" />
                 )}
@@ -203,7 +203,7 @@ export default async function JobPage({
                 />
               </p>
               <p className="mt-2 text-xs text-vja-ink-soft">
-                <T ja="活動期" en="Active" />: {job.activeYears || "—"} ／{" "}
+                <T ja="活動期" en="Active" />: {job.activeYears || "—"} /{" "}
                 <T ja="消滅期" en="Vanished" />: {job.endYear || "—"}
               </p>
             </div>

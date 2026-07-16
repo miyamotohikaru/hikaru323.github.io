@@ -5,7 +5,7 @@ import { T } from "@/lib/lang";
 export default function Home() {
   return (
     <div>
-      {/* ヒーロー（携帯は左寄せ・PCは中央） */}
+      {/* ヒーロー(携帯は左寄せ・PCは中央) */}
       <section className="px-4 pb-8 pt-10 text-left md:pt-16 md:text-center">
         <p className="font-mono-label text-[10px] tracking-[0.5em] text-vja-ink-soft">
           ISSUE 02

@@ -157,7 +157,7 @@ export default function IndexView() {
                   </Chip>
                 ))}
               </Group>
-              <Group label={en ? "Era (chapter)" : "年代（章）"}>
+              <Group label={en ? "Era (chapter)" : "年代(章)"}>
                 <Chip active={category === "all"} onClick={() => pick(setCategory)("all")}>
                   {ALL}
                 </Chip>
@@ -249,7 +249,7 @@ export default function IndexView() {
             >
               {en
                 ? `Turn more pages (${remaining} left)`
-                : `もっとめくる（のこり${remaining}）`}
+                : `もっとめくる(のこり${remaining})`}
             </button>
           </div>
         )}
