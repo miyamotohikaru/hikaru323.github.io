@@ -7,7 +7,7 @@
 
 import { randomBytes, randomInt } from "node:crypto";
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
-import { COOLDOWN_SEC, HOLE_COUNT } from "@/lib/config";
+import { COOLDOWN_SEC, HOLE_COUNT, SWORD_COLORS } from "@/lib/config";
 import { emptyMask, setBit } from "@/lib/bitmask";
 import type { StabEvent, TrophyRecord, WinnerInfo } from "@/lib/types";
 
@@ -19,6 +19,8 @@ export interface SnapshotData {
   startedAt: string;
   stabCount: number;
   mask: Uint8Array;
+  /** 各穴の剣の色(0=色なし/デフォルト, 1..N=SWORD_COLORSのindex+1) */
+  stabColors: Uint8Array;
   /** 現ラウンドの新しい順・最大12件 */
   recent: StabEvent[];
   /** 直前ラウンド(roundNo-1)の勝者。初代なら null */
@@ -32,6 +34,8 @@ export interface StabInput {
   ipHash: string;
   fp: string;
   country: string | null;
+  /** 剣の色(SWORD_COLORSのindex)。未指定は null(デフォルト表示) */
+  color: number | null;
 }
 
 /** stab の結果。ルートが StabResult(HTTP形)へ変換する */
@@ -151,9 +155,12 @@ class PostgresStore implements IGameStore {
         ip_hash TEXT,
         fp TEXT,
         country TEXT,
+        color SMALLINT,
         created_at TIMESTAMPTZ DEFAULT now(),
         PRIMARY KEY (round_no, hole_id)
       )`;
+    // 既存テーブルへの後付けマイグレーション(既存の刺しは color=NULL のまま残る)
+    await this.sql`ALTER TABLE kk_stabs ADD COLUMN IF NOT EXISTS color SMALLINT`;
     // レート制限(直近の刺し検索)用インデックス
     await this.sql`CREATE INDEX IF NOT EXISTS kk_stabs_ip_idx ON kk_stabs (ip_hash, created_at)`;
     await this.sql`CREATE INDEX IF NOT EXISTS kk_stabs_fp_idx ON kk_stabs (fp, created_at)`;
@@ -191,16 +198,27 @@ class PostgresStore implements IGameStore {
     return created;
   }
 
-  /** そのラウンドの刺さり状態をビットマスクで */
-  private async maskOf(roundNo: number): Promise<Uint8Array> {
+  /** そのラウンドの刺さり状態(ビットマスク+色) */
+  private async stabsStateOf(
+    roundNo: number,
+  ): Promise<{ mask: Uint8Array; colors: Uint8Array }> {
     const rows = (await this.sql`
-      SELECT hole_id FROM kk_stabs WHERE round_no = ${roundNo}
-    `) as { hole_id: number }[];
+      SELECT hole_id, color FROM kk_stabs WHERE round_no = ${roundNo}
+    `) as { hole_id: number; color: number | null }[];
     const mask = emptyMask();
+    const colors = new Uint8Array(HOLE_COUNT);
     for (const r of rows) {
-      if (r.hole_id >= 0 && r.hole_id < HOLE_COUNT) setBit(mask, r.hole_id);
+      if (r.hole_id < 0 || r.hole_id >= HOLE_COUNT) continue;
+      setBit(mask, r.hole_id);
+      if (r.color !== null && r.color >= 0 && r.color < SWORD_COLORS.length) {
+        colors[r.hole_id] = r.color + 1; // 0は「色なし」に予約
+      }
     }
-    return mask;
+    return { mask, colors };
+  }
+
+  private async maskOf(roundNo: number): Promise<Uint8Array> {
+    return (await this.stabsStateOf(roundNo)).mask;
   }
 
   /** 現ラウンドの新しい順12件。アクティブラウンドに勝ちの刺しは存在しない
@@ -242,8 +260,8 @@ class PostgresStore implements IGameStore {
   async getSnapshot(): Promise<SnapshotData> {
     await this.ensureSchema();
     const active = await this.activeRound();
-    const [mask, recent, prevWinner] = await Promise.all([
-      this.maskOf(active.roundNo),
+    const [stabs, recent, prevWinner] = await Promise.all([
+      this.stabsStateOf(active.roundNo),
       this.recentOf(active.roundNo),
       this.winnerOf(active.roundNo - 1),
     ]);
@@ -251,7 +269,8 @@ class PostgresStore implements IGameStore {
       roundNo: active.roundNo,
       startedAt: active.startedAt,
       stabCount: active.stabCount,
-      mask,
+      mask: stabs.mask,
+      stabColors: stabs.colors,
       recent,
       prevWinner,
     };
@@ -287,15 +306,22 @@ class PostgresStore implements IGameStore {
     // PK(round_no, hole_id) 衝突なら ins が0行 → UPDATE も0行 = 先客あり
     const inserted = (await this.sql.query(
       `WITH ins AS (
-         INSERT INTO kk_stabs (round_no, hole_id, ip_hash, fp, country)
-         VALUES ($1, $2, $3, $4, $5)
+         INSERT INTO kk_stabs (round_no, hole_id, ip_hash, fp, country, color)
+         VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT (round_no, hole_id) DO NOTHING
          RETURNING hole_id
        )
        UPDATE kk_rounds SET stab_count = stab_count + 1
        WHERE round_no = $1 AND EXISTS (SELECT 1 FROM ins)
        RETURNING stab_count`,
-      [input.roundNo, input.holeId, input.ipHash, input.fp, input.country],
+      [
+        input.roundNo,
+        input.holeId,
+        input.ipHash,
+        input.fp,
+        input.country,
+        input.color,
+      ],
     )) as { stab_count: number }[];
 
     if (inserted.length === 0) {
@@ -418,6 +444,7 @@ interface MemRound {
 interface MemStab {
   holeId: number;
   country: string | null;
+  color: number | null;
   at: number; // epoch ms
 }
 
@@ -490,6 +517,17 @@ class MemoryStore implements IGameStore {
     return mask;
   }
 
+  private colorsOf(roundNo: number): Uint8Array {
+    const colors = new Uint8Array(HOLE_COUNT);
+    for (const s of this.stabsOf(roundNo).values()) {
+      if (s.holeId < 0 || s.holeId >= HOLE_COUNT) continue;
+      if (s.color !== null && s.color >= 0 && s.color < SWORD_COLORS.length) {
+        colors[s.holeId] = s.color + 1;
+      }
+    }
+    return colors;
+  }
+
   async getSnapshot(): Promise<SnapshotData> {
     const active = this.activeRound();
     const recent: StabEvent[] = [...this.stabsOf(active.roundNo).values()]
@@ -510,6 +548,7 @@ class MemoryStore implements IGameStore {
       startedAt: new Date(active.startedAt).toISOString(),
       stabCount: active.stabCount,
       mask: this.maskOf(active.roundNo),
+      stabColors: this.colorsOf(active.roundNo),
       recent,
       prevWinner: prev ? memWinnerInfo(prev) : null,
     };
@@ -538,7 +577,12 @@ class MemoryStore implements IGameStore {
       return { kind: "taken", mask: this.maskOf(active.roundNo) };
     }
     const now = Date.now();
-    stabs.set(input.holeId, { holeId: input.holeId, country: input.country, at: now });
+    stabs.set(input.holeId, {
+      holeId: input.holeId,
+      country: input.country,
+      color: input.color,
+      at: now,
+    });
     active.stabCount += 1;
     this.data.lastByIp.set(input.ipHash, now);
     this.data.lastByFp.set(input.fp, now);

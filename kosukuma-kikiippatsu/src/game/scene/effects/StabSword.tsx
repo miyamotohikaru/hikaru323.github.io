@@ -7,7 +7,7 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { T_STAB } from "@/lib/config";
+import { SWORD_COLORS, T_STAB } from "@/lib/config";
 import { useGameStore } from "@/game/store";
 import { getHoleWorld } from "@/game/scene/sharedRefs";
 import { backOut, easeInCubic, easeOutCubic } from "./easing";
@@ -37,8 +37,8 @@ interface SwordRig {
   dispose: () => void;
 }
 
-/** ローポリの剣を手続き生成(刃+鍔+柄+柄頭の星) */
-function buildSword(): SwordRig {
+/** ローポリの剣を手続き生成(刃+鍔+柄+柄頭の星)。柄まわりは選んだ色 */
+function buildSword(hiltHex: string): SwordRig {
   const geoms: THREE.BufferGeometry[] = [];
   const mats: THREE.Material[] = [];
   const tex = makeStarTexture();
@@ -57,14 +57,18 @@ function buildSword(): SwordRig {
     emissive: "#7e8ee0",
     emissiveIntensity: 0.55,
   });
+  const hiltColor = new THREE.Color(hiltHex);
   const goldMat = new THREE.MeshStandardMaterial({
-    color: "#ffd93d",
+    color: hiltColor,
     metalness: 0.6,
     roughness: 0.35,
-    emissive: "#7a5c00",
-    emissiveIntensity: 0.3,
+    emissive: hiltColor.clone().multiplyScalar(0.35),
+    emissiveIntensity: 0.5,
   });
-  const gripMat = new THREE.MeshStandardMaterial({ color: "#ff9db8", roughness: 0.75 });
+  const gripMat = new THREE.MeshStandardMaterial({
+    color: hiltColor.clone().multiplyScalar(0.82), // グリップはひと段暗く
+    roughness: 0.75,
+  });
 
   // 剣先(四角錐を下向きに。刃と同じく平たくつぶす)
   const tip = mesh(new THREE.ConeGeometry(0.1, 0.26, 4), bladeMat);
@@ -138,9 +142,13 @@ function buildSword(): SwordRig {
 }
 
 export default function StabSword() {
-  // マウント時(=stabbing 開始時)の選択穴を固定。演出中に store 側が null になっても保持する
+  // マウント時(=stabbing 開始時)の選択穴と剣の色を固定。
+  // 演出中に store 側が変わっても保持する
   const holeId = useMemo(() => useGameStore.getState().selectedHole, []);
-  const rig = useMemo(buildSword, []);
+  const rig = useMemo(() => {
+    const idx = useGameStore.getState().swordColor;
+    return buildSword(SWORD_COLORS[idx]?.hex ?? SWORD_COLORS[0].hex);
+  }, []);
   useEffect(() => () => rig.dispose(), [rig]);
 
   useFrame(() => {
