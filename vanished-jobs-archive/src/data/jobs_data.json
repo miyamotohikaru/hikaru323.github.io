@@ -139,7 +139,7 @@
   "summary": "散髪も瀉血も抜歯も一人で担った。理髪店の赤白サインポールに痕跡が残る",
   "successor": "外科医/理容師に分離",
   "lineageId": "iryo",
-  "image": null,
+  "image": "jobs/006.png",
   "hasFullBody": false,
   "endLabel": "〜18c",
   "textColor": "#3B2A1E"
@@ -164,7 +164,7 @@
   "summary": "唯一王を笑えた特権職。批評の精神は芸人とコラムニストへ継承",
   "successor": "コメディアン・風刺作家",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/007.png",
   "hasFullBody": false,
   "endLabel": "〜17c",
   "textColor": "#F3EEE0"
@@ -188,7 +188,7 @@
   "summary": "死者の胸に置いたパンを食べ、罪を引き受けた。最後の罪食い人の墓が現存する",
   "successor": "─",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/008.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#F3EEE0"
@@ -212,7 +212,7 @@
   "summary": "葬儀で泣くことが職業だった。東アジアの一部では今も依頼できる",
   "successor": "葬儀サービス業",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/009.png",
   "hasFullBody": false,
   "endLabel": "",
   "textColor": "#3B2A1E"
@@ -237,7 +237,7 @@
   "summary": "鉄砲が装甲と騎士道を同時に無効化した。称号だけが生き残った",
   "successor": "常備軍将校(称号として儀礼化)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/010.png",
   "hasFullBody": false,
   "endLabel": "〜中世",
   "textColor": "#F3EEE0"

@@ -34,3 +34,32 @@ export const dict = {
     7: "Media & entertainment",
   } as Record<number, string>,
 };
+
+/** 地域の生文字列をトークン単位で英訳（長いものから置換） */
+const regionTokens: [string, string][] = [
+  ["世界（日本の「泣きばい」含む）", "World (incl. Japan)"],
+  ["英ウェールズ地方", "Wales, UK"],
+  ["英教会", "English church"],
+  ["英宮廷", "English court"],
+  ["日本（越後等）", "Japan (Echigo etc.)"],
+  ["古代世界", "Ancient world"],
+  ["北米", "North America"],
+  ["北欧", "Nordic countries"],
+  ["中東", "Middle East"],
+  ["キューバ", "Cuba"],
+  ["ポーランド", "Poland"],
+  ["日本", "Japan"],
+  ["世界", "World"],
+  ["英", "UK"],
+  ["欧", "Europe"],
+  ["米", "US"],
+  ["愛", "Ireland"],
+  ["蘭", "Netherlands"],
+  ["・", " · "],
+];
+
+export function translateRegion(s: string): string {
+  let out = s;
+  for (const [ja, en] of regionTokens) out = out.split(ja).join(en);
+  return out;
+}

@@ -1,7 +1,12 @@
-import Image from "next/image";
-import { Job, statusBadge } from "@/data/jobs";
+"use client";
 
-/** 収録外141件用のプレースホルダー：線画のこすくまくん */
+import Image from "next/image";
+import { Job, statusMeta } from "@/data/jobs";
+import { useLang } from "@/lib/lang";
+import { dict } from "@/lib/dict";
+import { enDetails } from "@/data/en";
+
+/** 収録外用のプレースホルダー：線画のこすくまくん */
 function BearPlaceholder() {
   return (
     <svg
@@ -42,9 +47,20 @@ function effLen(s: string) {
 }
 
 export default function JobCard({ job }: { job: Job }) {
+  const { lang } = useLang();
+  const en = lang === "en";
+  const tr = enDetails[job.no];
   const oversized = job.image ? OVERSIZED.has(job.image) : false;
+
+  const name = en ? job.en : job.name;
+  const subName = en ? job.name : job.en;
+  const quote = en && tr?.quote ? tr.quote : job.quote;
+  const badge = en
+    ? `${statusMeta[job.status].mark}${dict.status[job.status]}${job.endLabel ? ` ${job.endLabel}` : ""}`
+    : `${statusMeta[job.status].mark}${statusMeta[job.status].label}${job.endLabel ? ` ${job.endLabel}` : ""}`;
+
   // 名前は必ず1行に収める: カード内幅86cqwに対し収まるサイズへ縮小（上限7.4cqw）
-  const nameSize = Math.min(7.4, 84 / effLen(job.name));
+  const nameSize = Math.min(7.4, 84 / effLen(name));
 
   return (
     <div className="@container block h-full w-full">
@@ -57,10 +73,10 @@ export default function JobCard({ job }: { job: Job }) {
             NO.{job.no}
           </span>
           <span
-            className="rounded-full px-[3.4cqw] py-[1cqw] text-[3.2cqw] tracking-wider"
+            className="whitespace-nowrap rounded-full px-[3.4cqw] py-[1cqw] text-[3.2cqw] tracking-wider"
             style={{ background: job.textColor, color: job.color }}
           >
-            {statusBadge(job)}
+            {badge}
           </span>
         </div>
 
@@ -84,13 +100,13 @@ export default function JobCard({ job }: { job: Job }) {
             className="whitespace-nowrap font-bold leading-tight"
             style={{ fontSize: `${nameSize}cqw` }}
           >
-            {job.name}
+            {name}
           </p>
           <p className="font-mono-label mt-[1.6cqw] text-[2.9cqw] uppercase tracking-[0.35em] opacity-80">
-            {job.en}
+            {subName}
           </p>
           <p className="mt-[3.4cqw] text-[3.5cqw] leading-snug opacity-90">
-            「{job.quote}」
+            「{quote}」
           </p>
         </div>
       </div>

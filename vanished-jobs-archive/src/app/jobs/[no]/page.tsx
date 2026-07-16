@@ -4,8 +4,9 @@ import JobCard from "@/components/JobCard";
 import { jobs, jobByNo, statusMeta, causeLabel } from "@/data/jobs";
 import { details } from "@/data/details";
 import { lineageChains } from "@/data/lineage";
-import { dict } from "@/lib/dict";
+import { dict, translateRegion } from "@/lib/dict";
 import { T } from "@/lib/lang";
+import { enDetails } from "@/data/en";
 
 export function generateStaticParams() {
   return jobs.map((j) => ({ no: j.no }));
@@ -38,6 +39,7 @@ export default async function JobPage({
   if (!job) notFound();
 
   const detail = details[no];
+  const tr = enDetails[no];
   const meta = statusMeta[job.status];
   const idx = jobs.findIndex((j) => j.no === no);
   const prev = jobs[idx - 1];
@@ -122,7 +124,7 @@ export default async function JobPage({
               <T ja={meta.label} en={dict.status[job.status]} />
             </span>
             {job.endLabel && <Chip>{job.endLabel}</Chip>}
-            <Chip>{job.region}</Chip>
+            <Chip><T ja={job.region} en={translateRegion(job.region)} /></Chip>
             {job.causeAll.map((c) => (
               <Chip key={c}>
                 <T ja={causeLabel(c)} en={dict.cause[c]} />
@@ -135,7 +137,7 @@ export default async function JobPage({
             <p className="font-mono-label text-[10px] tracking-[0.4em] text-vja-ink-soft">
               <T ja="要約" en="SUMMARY" />
             </p>
-            <p className="mt-2 leading-relaxed">{detail?.summary ?? job.summary}</p>
+            <p className="mt-2 leading-relaxed"><T ja={detail?.summary ?? job.summary} en={tr?.summary ?? detail?.summary ?? job.summary} /></p>
           </div>
 
           {detail ? (
@@ -145,7 +147,7 @@ export default async function JobPage({
               </SectionTitle>
               {detail.body.map((p, i) => (
                 <p key={i} className="mt-4 leading-loose">
-                  {p}
+                  <T ja={p} en={tr?.body?.[i] ?? p} />
                 </p>
               ))}
 
@@ -153,8 +155,10 @@ export default async function JobPage({
                 <T ja="道具" en="TOOLS" />
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {detail.tools.map((t) => (
-                  <Chip key={t}>{t}</Chip>
+                {detail.tools.map((t, i) => (
+                  <Chip key={t}>
+                    <T ja={t} en={tr?.tools?.[i] ?? t} />
+                  </Chip>
                 ))}
               </div>
 
@@ -177,21 +181,21 @@ export default async function JobPage({
                     />
                     <p className="leading-relaxed">
                       <span className="font-mono-label text-sm font-semibold tracking-wide">
-                        {t.year}
+                        <T ja={t.year} en={tr?.timeline?.[i]?.year ?? t.year} />
                       </span>
                       <span className="mx-2">—</span>
-                      {t.text}
+                      <T ja={t.text} en={tr?.timeline?.[i]?.text ?? t.text} />
                     </p>
                   </li>
                 ))}
               </ul>
-              <p className="mt-5 leading-loose">{detail.timelineClose}</p>
+              <p className="mt-5 leading-loose"><T ja={detail.timelineClose} en={tr?.timelineClose ?? detail.timelineClose} /></p>
 
               <div className="mt-10 rounded-lg bg-vja-paper p-6">
                 <p className="font-mono-label text-[10px] tracking-[0.4em] text-vja-ink-soft">
                   <T ja="豆ちしき" en="TRIVIA" />
                 </p>
-                <p className="mt-3 leading-loose">{detail.trivia}</p>
+                <p className="mt-3 leading-loose"><T ja={detail.trivia} en={tr?.trivia ?? detail.trivia} /></p>
               </div>
             </>
           ) : (
@@ -245,7 +249,10 @@ export default async function JobPage({
                   ))
                 ) : (
                   <p className="text-sm leading-relaxed text-vja-ink-soft">
-                    {job.name} → {job.successor}
+                    <T
+                      ja={`${job.name} → ${job.successor}`}
+                      en={tr?.lineageText ?? `${job.name} → ${job.successor}`}
+                    />
                   </p>
                 )}
               </div>

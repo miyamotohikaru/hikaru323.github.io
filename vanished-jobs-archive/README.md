@@ -18,9 +18,9 @@ Next.js 16 (App Router, Turbopack) + React 19 + TypeScript + Tailwind CSS 4（di
 
 - `src/data/jobs_data.json` — 151職業の全データ（受け渡しパッケージ原本のまま）
 - `src/data/jobs.ts` — 型定義＋ステータス/死因/章/地域の分類ヘルパー＋統計（動的計算）
-- `src/data/details.ts` — 本文確定149件のフルテキスト（first10 10件 + batch1 40件 + batch2 38件 +
-  batch3 40件 + batch4_final 21件より転記）。
-  **NO.049 灯台守・NO.057 キーパンチャーの2件のみバッチ原稿に未収録**（「書きかけ」表示。原稿受領次第追記）
+- `src/data/details.ts` — 本文全151件のフルテキスト（first10 + batch1〜4 + 追補2件より転記）
+- `src/data/translations_en.json` — EN全文（Gemini機械翻訳。`scripts/translate_en.mjs` で再生成可能）。
+  EN切替でカード職業名・ひとこと・詳細本文すべて英語表示
 - `src/data/lineage.ts` — 系譜12チェーンの定義
 - `public/jobs/` — こすくまくんイラスト6枚（keisanshu/knocker/leech/iceman/kappan/denwa）。
   画像なしの職業は線画プレースホルダー表示
@@ -28,9 +28,8 @@ Next.js 16 (App Router, Turbopack) + React 19 + TypeScript + Tailwind CSS 4（di
 ## 既知のTODO（受け渡しREADMEより）
 
 - `reading`（読み）が全件未記入（ファーストセット10件のみ details.ts に記載。バッチ分は空）
-- NO.049 灯台守・NO.057 キーパンチャーの本文原稿が未受領
-- 各バッチの※印箇所（1745外科医分離年・カストリの語源・東証閉場日1999.4.30など）は一次資料の裏取り推奨
-- EN切替はUIラベル・分類名・職業英名のみ対応。本文（要約/しごとの中身/豆ちしき等）はJAのまま表示（翻訳未実施）
+- 各バッチの※印箇所（1745外科医分離年・カストリの語源・東証閉場日1999.4.30・女島灯台2006など）は一次資料の裏取り推奨
+- EN本文は機械翻訳（Gemini）のため、公開前に人力レビュー推奨
 - 年号・固有事実の一次資料裏取り（公開前）
 
 ## 開発

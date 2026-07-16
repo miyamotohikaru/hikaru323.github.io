@@ -15,9 +15,6 @@ import {
 } from "@/data/jobs";
 import { useLang, dict } from "@/lib/lang";
 
-const PAGE = 18;
-const STEP = 30;
-
 function Chip({
   active,
   onClick,
@@ -67,7 +64,6 @@ export default function IndexView() {
   const [region, setRegion] = useState("all");
   const [cause, setCause] = useState("all");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
-  const [shown, setShown] = useState(PAGE);
 
   const filtered = useMemo(() => {
     let list = jobs.filter(
@@ -81,8 +77,6 @@ export default function IndexView() {
     return list;
   }, [status, category, region, cause, order]);
 
-  const visible = filtered.slice(0, shown);
-  const remaining = filtered.length - visible.length;
   const activeCount =
     (status !== "all" ? 1 : 0) +
     (category !== "all" ? 1 : 0) +
@@ -95,12 +89,10 @@ export default function IndexView() {
     setRegion("all");
     setCause("all");
     setOrder("asc");
-    setShown(PAGE);
   };
 
   const pick = <T,>(setter: (v: T) => void) => (v: T) => {
     setter(v);
-    setShown(PAGE);
   };
 
   const ALL = en ? "All" : "すべて";
@@ -222,7 +214,7 @@ export default function IndexView() {
 
       {/* カードグリッド */}
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 md:px-8">
-        {visible.length === 0 ? (
+        {filtered.length === 0 ? (
           <p className="py-16 text-center text-sm text-vja-ink-soft">
             {en
               ? "No cards match these filters."
@@ -230,7 +222,7 @@ export default function IndexView() {
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5">
-            {visible.map((j) => (
+            {filtered.map((j) => (
               <Link
                 key={j.no}
                 href={`/jobs/${j.no}`}
@@ -239,18 +231,6 @@ export default function IndexView() {
                 <JobCard job={j} />
               </Link>
             ))}
-          </div>
-        )}
-        {remaining > 0 && (
-          <div className="mt-10 text-center">
-            <button
-              onClick={() => setShown((n) => n + STEP)}
-              className="rounded-full border border-vja-ink px-8 py-2.5 text-sm tracking-[0.2em] hover:bg-vja-ink hover:text-vja-cream"
-            >
-              {en
-                ? `Turn more pages (${remaining} left)`
-                : `もっとめくる(のこり${remaining})`}
-            </button>
           </div>
         )}
       </div>
