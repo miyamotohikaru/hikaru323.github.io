@@ -28,7 +28,7 @@ function JobChip({ job }: { job: (typeof jobs)[number] }) {
   return (
     <Link
       href={`/jobs/${job.no}`}
-      className={`inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs tracking-wider transition-transform hover:-translate-y-0.5 ${
+      className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11px] tracking-wider transition-transform hover:-translate-y-0.5 md:gap-2 md:px-3 md:text-xs ${
         job.status === "ongoing" ? "border border-dashed border-vja-blue text-vja-blue" : ""
       }`}
       style={
@@ -41,13 +41,13 @@ function JobChip({ job }: { job: (typeof jobs)[number] }) {
         <Image
           src={`/${job.image}`}
           alt=""
-          width={20}
-          height={20}
-          className="h-5 w-5 rounded-full bg-vja-cream object-contain"
+          width={36}
+          height={36}
+          className="h-7 w-7 rounded-full bg-vja-cream object-contain md:h-9 md:w-9"
         />
       )}
       <span className="font-semibold">{job.name}</span>
-      <span className="text-[10px] opacity-85">
+      <span className="text-[9px] opacity-85 md:text-[10px]">
         {m.mark}
         {job.endLabel}
       </span>
@@ -99,8 +99,8 @@ export default function TimelineView() {
 
       {/* 年表本体 */}
       <div className="relative mt-12">
-        {/* 中央軸（PCのみ） */}
-        <div className="absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 bg-vja-line md:block" />
+        {/* 中央軸 */}
+        <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-vja-line" />
 
         {categories.map((cat) => {
           const list = filtered.filter((j) => j.category === cat);
@@ -110,11 +110,14 @@ export default function TimelineView() {
               <h2 className="relative z-10 text-center">
                 <span className="bg-vja-bg px-4 text-sm font-bold tracking-[0.3em]">
                   {cat}
-                  <span className="ml-3 font-normal text-vja-ink-soft">
+                  <span className="ml-3 hidden font-normal text-vja-ink-soft md:inline">
                     — {categorySubtitles[cat]}
                   </span>
                 </span>
               </h2>
+              <p className="relative z-10 mt-1 text-center text-[11px] tracking-[0.2em] text-vja-ink-soft md:hidden">
+                <span className="bg-vja-bg px-3">{categorySubtitles[cat]}</span>
+              </p>
 
               {/* できごとマーカー */}
               <div className="relative z-10 mt-5 flex flex-wrap justify-center gap-2">
@@ -128,9 +131,9 @@ export default function TimelineView() {
                 ))}
               </div>
 
-              {/* 職業チップ：左右交互(PC) / 1列(スマホ) */}
-              <div className="mt-6 grid gap-x-16 gap-y-3 md:grid-cols-2">
-                <div className="flex flex-col items-start gap-3 md:items-end">
+              {/* 職業チップ：中央軸の左右（携帯でも2列を維持） */}
+              <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 md:gap-x-16">
+                <div className="flex flex-col items-end gap-3">
                   {list
                     .filter((_, i) => i % 2 === 0)
                     .map((j) => (

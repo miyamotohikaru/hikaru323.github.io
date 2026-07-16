@@ -60,7 +60,7 @@ export default async function JobPage({
         {/* 左：カード */}
         <div>
           <div className="md:sticky md:top-20">
-            <div className="mx-auto max-w-[340px] rotate-[-1.2deg]">
+            <div className="mx-auto max-w-[340px]">
               <JobCard job={job} />
             </div>
             <div className="mt-6 flex items-center justify-center gap-3">
