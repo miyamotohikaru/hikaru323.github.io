@@ -18,16 +18,18 @@ Next.js 16 (App Router, Turbopack) + React 19 + TypeScript + Tailwind CSS 4（di
 
 - `src/data/jobs_data.json` — 151職業の全データ（受け渡しパッケージ原本のまま）
 - `src/data/jobs.ts` — 型定義＋ステータス/死因/章/地域の分類ヘルパー＋統計（動的計算）
-- `src/data/details.ts` — 本文確定10件のフルテキスト（`vanished_jobs_details_first10.md` より転記）。
-  未確定141件は summary＋「書きかけ」表示で運用し、確定次第ここに追記する
+- `src/data/details.ts` — 本文確定50件のフルテキスト（`vanished_jobs_details_first10.md` 10件 +
+  `vanished_jobs_details_batch1_world.md` 40件より転記）。
+  未確定101件は summary＋「書きかけ」表示で運用し、確定次第ここに追記する
 - `src/data/lineage.ts` — 系譜12チェーンの定義
 - `public/jobs/` — こすくまくんイラスト6枚（keisanshu/knocker/leech/iceman/kappan/denwa）。
   画像なしの職業は線画プレースホルダー表示
 
 ## 既知のTODO（受け渡しREADMEより）
 
-- `reading`（読み）が全件未記入（本文確定10件のみ details.ts に記載）
-- 141件の本文（body/timeline/trivia）は仮テキスト運用 → 順次 details.ts に追加
+- `reading`（読み）が全件未記入（ファーストセット10件のみ details.ts に記載。バッチ1の40件は空）
+- 101件の本文（body/timeline/trivia）は仮テキスト運用 → 順次 details.ts に追加（次バッチ予定: 047-061 + 062-080）
+- バッチ1の※印箇所（1745外科医分離年・1875煙突掃除法・罪食い人の人名など）は一次資料の裏取り推奨
 - 年号・固有事実の一次資料裏取り（公開前）
 
 ## 開発
