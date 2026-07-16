@@ -261,7 +261,7 @@
   "summary": "国家公認の海賊。国際条約一本で違法化された",
   "successor": "海軍",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/011.png",
   "hasFullBody": false,
   "endLabel": "〜1856",
   "textColor": "#F3EEE0"
@@ -285,7 +285,7 @@
   "summary": "都市の飲み水を担いで売り歩いた。インフラが職業を丸ごと吸収した典型",
   "successor": "水道インフラ→ペットボトル飲料",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/012.png",
   "hasFullBody": false,
   "endLabel": "〜19c",
   "textColor": "#3B2A1E"
@@ -309,7 +309,7 @@
   "summary": "説教中に眠る信徒を棒でつつく教会公認職。目覚まし屋の教会版",
   "successor": "─",
   "lineageId": "jikoku",
-  "image": null,
+  "image": "jobs/013.png",
   "hasFullBody": false,
   "endLabel": "〜19c",
   "textColor": "#F3EEE0"
@@ -333,7 +333,7 @@
   "summary": "国王の用便の世話係にして側近中の側近。歴史上最も奇妙な出世コース",
   "successor": "─",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/014.png",
   "hasFullBody": false,
   "endLabel": "〜18c",
   "textColor": "#F3EEE0"
@@ -406,7 +406,7 @@
   "summary": "夕暮れにガス灯を点け、夜明けに消して回った。今は観光遺産",
   "successor": "電気街灯(ロンドン等で儀礼的に残存)",
   "lineageId": "hikari",
-  "image": null,
+  "image": "jobs/017.png",
   "hasFullBody": true,
   "endLabel": "〜20c",
   "textColor": "#3B2A1E"
@@ -430,7 +430,7 @@
   "summary": "夜道の歩行者を松明で先導した少年。街が明るくなり失業した",
   "successor": "ガス灯→電気街灯",
   "lineageId": "hikari",
-  "image": null,
+  "image": "jobs/018.png",
   "hasFullBody": false,
   "endLabel": "〜19c",
   "textColor": "#3B2A1E"
@@ -478,7 +478,7 @@
   "summary": "医学校へ遺体を「供給」した闇商売。法律一本で絶滅した職業",
   "successor": "献体制度",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/020.png",
   "hasFullBody": false,
   "endLabel": "〜1832",
   "textColor": "#3B2A1E"

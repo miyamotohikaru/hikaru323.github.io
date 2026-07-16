@@ -35,9 +35,7 @@ function BearPlaceholder() {
 const OVERSIZED = new Set(["jobs/knocker.png", "jobs/iceman.png"]);
 
 /** 画像ごとの位置微調整（絵柄がカード中央に来るように） */
-const NUDGE: Record<string, string> = {
-  "jobs/002.png": "translate(-5px, 5px)",
-};
+const NUDGE: Record<string, string> = {};
 
 /** 全角=1・半角=0.5 で実効文字数を数える（長い名前の縮小率計算用） */
 function effLen(s: string) {
@@ -59,8 +57,8 @@ export default function JobCard({ job }: { job: Job }) {
     ? `${statusMeta[job.status].mark}${dict.status[job.status]}${job.endLabel ? ` ${job.endLabel}` : ""}`
     : `${statusMeta[job.status].mark}${statusMeta[job.status].label}${job.endLabel ? ` ${job.endLabel}` : ""}`;
 
-  // 名前は必ず1行に収める: カード内幅86cqwに対し収まるサイズへ縮小（上限7.4cqw）
-  const nameSize = Math.min(7.4, 84 / effLen(name));
+  // 名前は必ず1行に収める: カード内幅86cqwに対し収まるサイズへ縮小（上限8.8cqw）
+  const nameSize = Math.min(8.8, 84 / effLen(name));
 
   return (
     <div className="@container block h-full w-full">
