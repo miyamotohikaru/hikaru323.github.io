@@ -2,14 +2,8 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Icon from "./Icon";
-import {
-  applyFilter,
-  FOV_DATA,
-  applyCircularFisheye,
-  applyPanoramaBand,
-  applyCenteredDistortion,
-  applyEagleCenterZoom,
-} from "./FilterEngine";
+import { applyFilter, FOV_DATA } from "./FilterEngine";
+import { PanoramaViewer } from "./PanoramaViewer";
 import { CATEGORY_COLORS } from "@/styles/theme";
 import { SHARE_TEXTS } from "@/data/shareTexts";
 import { TRIVIA } from "@/data/trivia";
@@ -262,44 +256,18 @@ async function generateMaster(normalizedBlob: Blob): Promise<HTMLImageElement | 
   }
 }
 
-/* ── 見え方の仕様（全24種） ── */
-// 色フィルターの上書き（既存filterTypeが形状まで焼くもの→純色フィルターに分離）
-const VISION_COLOR: Record<string, string> = {
-  horse: "dichro", // 既存"panorama"は形状込み→色のみdichroにして幾何は変換側で
-  goat: "dichro", // 既存"horizoneye"も同様
-};
-
-type ViewTransform =
-  | { kind: "circular"; strength: number }
-  | { kind: "panorama" }
-  | { kind: "centered"; strength: number }
-  | { kind: "horse" } // 円形魚眼 + 中心の盲点(黒)
-  | { kind: "eagle" } // 中央に望遠ズーム円
-  | { kind: "none" }; // 既存フィルターが形状も担当（分割眼など）→追加変換なし
-
-// 幾何変換の割り当て（マスター画像を使う広視野の生き物のみ）。
-// 未登録(human/owl/deepsea/mole)は変換なし＝既存の狭視野ズーム等にフォールバック。
-const VISION_TRANSFORM: Record<string, ViewTransform> = {
-  kosukuma: { kind: "circular", strength: 0.625 },
-  dog: { kind: "centered", strength: 0.54 },
-  horse: { kind: "horse" },
-  goat: { kind: "panorama" },
-  chameleon: { kind: "none" }, // dualeyeが左右分割を担当
-  frog: { kind: "circular", strength: 1.0 },
-  eagle: { kind: "eagle" },
-  bat: { kind: "circular", strength: 1.0 },
-  cockroach: { kind: "circular", strength: 1.0 },
-  mantis: { kind: "centered", strength: 0.75 },
-  spider: { kind: "none" }, // multieyeが8眼を担当
-  koala: { kind: "centered", strength: 0.33 },
-  dolphin: { kind: "circular", strength: 0.75 },
-  shark: { kind: "circular", strength: 1.0 },
-  octopus: { kind: "circular", strength: 0.96 },
-  foureyedfish: { kind: "none" }, // spliteyeが上下分割を担当
-  snake: { kind: "centered", strength: 0.75 },
-  mshrimp: { kind: "circular", strength: 1.0 },
-  flamingo: { kind: "circular", strength: 0.75 }, // upsidedownフィルターが上下反転を担当
-  pigeon: { kind: "circular", strength: 0.96 },
+/* ── 色フィルターの上書き（スクロールパノラマ用・色のみ） ── */
+// スクロール方式では「見回す」が視野を担当するので、色覚だけを別レイヤーで適用する。
+// 既存filterTypeが形状まで焼くもの（分割眼・上下反転・魚眼など）は、
+// パノラマが歪まないよう色のみのフィルターに差し替える。ここに無い生き物は
+// 自身の filterType（色専用）＋ fp をそのまま使う。
+const PANO_COLOR: Record<string, { filter: string; fp?: Record<string, unknown> }> = {
+  horse: { filter: "dichro" }, // 旧"panorama"（2色覚＋バレル）→ 色のみ
+  goat: { filter: "dichro" }, // 旧"horizoneye"（横伸ばし）→ 色のみ
+  chameleon: { filter: "tetra", fp: { saturation: 1.7, uvTint: [150, 80, 255], uvStrength: 0.15, sharp: 0 } }, // 旧dualeye(左右分割)→高彩度
+  spider: { filter: "mono", fp: { tint: [200, 205, 215], boost: 0.9 } }, // 旧multieye(8眼)→ほぼモノクロ
+  foureyedfish: { filter: "mono", fp: { tint: [120, 180, 205], boost: 1.1 } }, // 旧spliteye(上下分割)→青緑
+  flamingo: { filter: "mono", fp: { tint: [255, 140, 160], boost: 1.1 } }, // 旧upsidedown(上下反転)→ピンク
 };
 
 // マスター画像を fov に応じて中心からクロップして ctx いっぱいに描画
@@ -339,6 +307,10 @@ export default function ViewScreen({
   const [loadingText, setLoadingText] = useState("");
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const [trivia, setTrivia] = useState("");
+  // スクロール式パノラマ用の画像（フィルター済みマスター＝生き物のめ／元色マスター＝人間のめ）と人間切替
+  const [panoUrl, setPanoUrl] = useState("");
+  const [panoHumanUrl, setPanoHumanUrl] = useState("");
+  const [showHuman, setShowHuman] = useState(false);
   // マスター拡張画像（写真1枚につき1回生成し全生き物で使い回す）と生成中Promise（多重生成防止）
   const masterImgRef = useRef<HTMLImageElement | null>(null);
   const masterPromiseRef = useRef<Promise<HTMLImageElement | null> | null>(null);
@@ -477,6 +449,7 @@ export default function ViewScreen({
       // --- STEP 1: Loading ---
       setLoadingText(`${c.name}に転生中...`);
       setProcessing(true);
+      setShowHuman(false); // 生き物を切り替えたら生き物のめから
 
       // --- STEP 2: マスター拡張画像を用意（広視野=exp>1.0 のときだけ。写真1枚に1回生成し全生き物で使い回す） ---
       let master: HTMLImageElement | null = null;
@@ -519,13 +492,12 @@ export default function ViewScreen({
       }
 
       const useMaster = exp > 1.0 && !!master;
-      const transform = VISION_TRANSFORM[creatureId] ?? { kind: "none" as const };
-      const colorFilter = VISION_COLOR[creatureId] ?? c.filterType;
-      // 色のみのフィルターに差し替えた場合は fp を渡さない（既定値を使う）
-      const colorFp = colorFilter === c.filterType ? c.fp : {};
+      const override = PANO_COLOR[creatureId];
+      const colorFilter = override?.filter ?? c.filterType;
+      const colorFp = override ? (override.fp ?? {}) : c.fp;
 
       try {
-        // --- STEP 3: マスター画像を fov でクロップ（広視野）／元写真（狭視野） ---
+        // --- STEP 3: 正面ビュー（シェア用にcanvasRefへ）。マスターをfovでクロップ／狭視野は元写真 ---
         try {
           if (useMaster && master) {
             cropMasterForFov(ctx, master, fov?.fov ?? 360, w, h);
@@ -544,7 +516,7 @@ export default function ViewScreen({
           ctx.drawImage(originalImage, 0, 0, w, h);
         }
 
-        // --- STEP 4: 色・質感フィルター（色はここで全部やる） ---
+        // --- STEP 4: 色・質感フィルター（色はここで全部やる。幾何変換はしない） ---
         applyFilter(ctx, w, h, colorFilter, colorFp);
 
         // --- STEP 5: 狭視野(exp<1.0)は中央ズーム＋周辺暗転 ---
@@ -570,38 +542,28 @@ export default function ViewScreen({
           ctx.fillRect(0, 0, w, h);
         }
 
-        // --- STEP 6: 生き物ごとの幾何変換（マスター使用時のみ） ---
-        if (useMaster) {
-          switch (transform.kind) {
-            case "circular":
-              applyCircularFisheye(ctx, w, h, transform.strength);
-              break;
-            case "panorama":
-              applyPanoramaBand(ctx, w, h);
-              break;
-            case "centered":
-              applyCenteredDistortion(ctx, w, h, transform.strength);
-              break;
-            case "horse": {
-              // 円形魚眼 + 中心の盲点（真正面が見えない）
-              applyCircularFisheye(ctx, w, h, 0.96);
-              const cx = w / 2, cy = h / 2;
-              const blindR = Math.min(w, h) * 0.08;
-              ctx.beginPath();
-              ctx.arc(cx, cy, blindR, 0, Math.PI * 2);
-              ctx.fillStyle = "#000";
-              ctx.fill();
-              break;
+        // --- STEP 6: スクロール式パノラマ用の画像を用意（広視野のみ） ---
+        // マスター拡張画像全体に色フィルターを適用した1枚を作り、PanoramaViewerに渡す。
+        // 人間の目用は色フィルターなしのマスター（元の色）。
+        if (useMaster && master) {
+          try {
+            const mw = master.naturalWidth, mh = master.naturalHeight;
+            const pc = document.createElement("canvas");
+            pc.width = mw; pc.height = mh;
+            const pctx = pc.getContext("2d")!;
+            pctx.drawImage(master, 0, 0);
+            applyFilter(pctx, mw, mh, colorFilter, colorFp);
+            const url = pc.toDataURL("image/jpeg", 0.9);
+            if (renderVersionRef.current === thisVersion) {
+              setPanoUrl(url);
+              setPanoHumanUrl(master.src);
             }
-            case "eagle":
-              applyEagleCenterZoom(ctx, w, h);
-              break;
-            case "none":
-            default:
-              // 既存フィルターが形状も担当（分割眼・反転など）→追加変換なし
-              break;
+          } catch (e) {
+            console.error("[pano] build failed:", e);
+            if (renderVersionRef.current === thisVersion) { setPanoUrl(""); setPanoHumanUrl(""); }
           }
-          console.log("[view] transform:", transform.kind, "creature:", creatureId);
+        } else if (renderVersionRef.current === thisVersion) {
+          setPanoUrl(""); setPanoHumanUrl(""); // 狭視野はパノラマなし（通常表示）
         }
       } catch (e) {
         console.error("[draw] Rendering pipeline failed:", e);
@@ -781,46 +743,61 @@ export default function ViewScreen({
         </div>
       </div>
 
-      {/* Canvas area */}
-      <div
-        className="relative"
-        style={{
-          borderRadius: 18, overflow: "hidden",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-        }}
-        onMouseDown={() => setIsHolding(true)}
-        onMouseUp={() => setIsHolding(false)}
-        onMouseLeave={() => setIsHolding(false)}
-        onTouchStart={(e) => { e.preventDefault(); setIsHolding(true); }}
-        onTouchEnd={() => setIsHolding(false)}
-        onTouchCancel={() => setIsHolding(false)}
-      >
-        <canvas
-          ref={canvasRef}
-          className="block w-full"
-          style={{ height: "auto", aspectRatio: canvasRatio ?? undefined }}
-        />
-        <canvas
-          ref={humanCanvasRef}
-          className="absolute top-0 left-0 block w-full"
-          style={{
-            height: "auto", aspectRatio: canvasRatio ?? undefined,
-            opacity: isHolding ? 1 : 0,
-            transition: "opacity 0.3s ease", pointerEvents: "none",
-          }}
-        />
+      {/* 表示エリア */}
+      <div className="relative">
+        {/* 広視野: スクロール式パノラマ（Street Viewのように見回す） */}
+        {panoUrl ? (
+          <PanoramaViewer
+            imageUrl={showHuman ? panoHumanUrl : panoUrl}
+            fov={showHuman ? 120 : fovData?.fov ?? 360}
+            height={400}
+            label={showHuman ? "👁 人間のめ" : `${creature.name}のめ`}
+          />
+        ) : null}
+
+        {/* 狭視野（人間・フクロウ・深海魚・モグラ）: 通常表示＋長押しで人間のめ。
+            広視野でもシェア用にcanvasは常時描画（パノラマ時は非表示）。 */}
         <div
+          className="relative"
           style={{
-            position: "absolute", top: 12, left: "50%",
-            transform: "translateX(-50%)", padding: "6px 16px",
-            borderRadius: 100,
-            background: isHolding ? "rgba(255,255,255,0.9)" : `${catColor?.accent ?? "#999"}ee`,
-            color: isHolding ? "#333" : "#fff",
-            fontSize: 12, fontWeight: 900,
-            transition: "all 0.3s ease", pointerEvents: "none",
+            display: panoUrl ? "none" : "block",
+            borderRadius: 18, overflow: "hidden",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
           }}
+          onMouseDown={() => setIsHolding(true)}
+          onMouseUp={() => setIsHolding(false)}
+          onMouseLeave={() => setIsHolding(false)}
+          onTouchStart={(e) => { e.preventDefault(); setIsHolding(true); }}
+          onTouchEnd={() => setIsHolding(false)}
+          onTouchCancel={() => setIsHolding(false)}
         >
-          {isHolding ? "👁 人間のめ" : `${creature.name}のめ`}
+          <canvas
+            ref={canvasRef}
+            className="block w-full"
+            style={{ height: "auto", aspectRatio: canvasRatio ?? undefined }}
+          />
+          <canvas
+            ref={humanCanvasRef}
+            className="absolute top-0 left-0 block w-full"
+            style={{
+              height: "auto", aspectRatio: canvasRatio ?? undefined,
+              opacity: isHolding ? 1 : 0,
+              transition: "opacity 0.3s ease", pointerEvents: "none",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute", top: 12, left: "50%",
+              transform: "translateX(-50%)", padding: "6px 16px",
+              borderRadius: 100,
+              background: isHolding ? "rgba(255,255,255,0.9)" : `${catColor?.accent ?? "#999"}ee`,
+              color: isHolding ? "#333" : "#fff",
+              fontSize: 12, fontWeight: 900,
+              transition: "all 0.3s ease", pointerEvents: "none",
+            }}
+          >
+            {isHolding ? "👁 人間のめ" : `${creature.name}のめ`}
+          </div>
         </div>
 
         {/* Loading overlay */}
@@ -869,6 +846,24 @@ export default function ViewScreen({
           </div>
         )}
       </div>
+
+      {/* 人間の目に切り替えるボタン（パノラマ表示時のみ・下に配置） */}
+      {panoUrl && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
+          <button
+            onClick={() => setShowHuman((v) => !v)}
+            style={{
+              padding: "10px 20px", borderRadius: 100, border: "none",
+              background: showHuman ? (catColor?.accent ?? "#999") : "#2D2D2D",
+              color: "#fff", fontWeight: 900, fontSize: 14,
+              cursor: "pointer", fontFamily: "inherit",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            }}
+          >
+            {showHuman ? `🐾 ${creature.name}の目に戻す` : "👁 人間の目で見る"}
+          </button>
+        </div>
+      )}
 
       {/* Hint + FOV */}
       {creature.id === "human" ? (
