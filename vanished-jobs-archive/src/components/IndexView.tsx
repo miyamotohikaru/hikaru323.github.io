@@ -14,6 +14,7 @@ import {
   JobStatus,
 } from "@/data/jobs";
 import { useLang, dict } from "@/lib/lang";
+import { saveReturn } from "@/lib/returnNav";
 
 function Chip({
   active,
@@ -226,6 +227,7 @@ export default function IndexView() {
               <Link
                 key={j.no}
                 href={`/jobs/${j.no}`}
+                onClick={() => saveReturn()}
                 className="vja-rise transition-transform hover:-translate-y-1"
               >
                 <JobCard job={j} />

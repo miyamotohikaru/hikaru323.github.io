@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Job } from "@/data/jobs";
+import { saveReturn } from "@/lib/returnNav";
 
 /**
  * イラストがチップから少しはみ出すスタイルのリンクチップ（背景丸なし）。
@@ -36,6 +39,7 @@ export default function ArtChip({
   return (
     <Link
       href={href}
+      onClick={() => saveReturn()}
       className={`relative inline-flex items-center whitespace-nowrap rounded-xl tracking-wider transition-transform hover:-translate-y-0.5 ${
         sm ? "h-11 pr-2.5 text-[10px] md:h-14 md:pr-4 md:text-xs" : "h-20 pr-5 text-sm"
       } ${pad} ${ongoing ? "border border-dashed border-vja-blue text-vja-blue" : ""}`}

@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import TabBar from "@/components/TabBar";
 import { LangProvider } from "@/lib/lang";
+import ScrollRestorer from "@/components/ScrollRestorer";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -42,6 +43,7 @@ export default function RootLayout({
         className={`${playfair.variable} ${shippori.variable} ${plexMono.variable} antialiased`}
       >
         <LangProvider>
+          <ScrollRestorer />
           <Header />
           <main className="pb-20 md:pb-0">{children}</main>
           <Footer />

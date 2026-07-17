@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import JobCard from "@/components/JobCard";
 import ArtChip from "@/components/ArtChip";
+import BackButton from "@/components/BackButton";
 import { jobs, jobByNo, statusMeta, causeLabel } from "@/data/jobs";
 import { details } from "@/data/details";
 import { lineageChains } from "@/data/lineage";
@@ -56,12 +57,7 @@ export default async function JobPage({
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8">
       {/* 戻る */}
       <div className="flex flex-wrap items-center gap-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 rounded-full border border-vja-ink bg-vja-paper px-5 py-2 text-xs font-semibold tracking-[0.2em] transition-colors hover:bg-vja-ink hover:text-vja-cream"
-        >
-          ← <T ja="索引にもどる" en="Back to index" />
-        </Link>
+        <BackButton />
         <span className="font-mono-label text-[11px] tracking-[0.2em] text-vja-ink-soft">
           NO.{job.no} {job.name}
         </span>
