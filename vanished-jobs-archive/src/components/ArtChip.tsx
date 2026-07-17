@@ -27,8 +27,8 @@ export default function ArtChip({
 
   const pad = withArt
     ? sm
-      ? "pl-[5.4rem] md:pl-[6.2rem]"
-      : "pl-[8.6rem]"
+      ? "pl-[4.7rem] md:pl-[5.4rem]"
+      : "pl-[7.8rem]"
     : sm
       ? "pl-3"
       : "pl-5";
@@ -49,8 +49,8 @@ export default function ArtChip({
           height={280}
           className={`pointer-events-none absolute bottom-1 left-1 ${
             sm
-              ? "h-[160%] max-w-[4.7rem] md:max-w-[5.5rem]"
-              : "h-[155%] max-w-[7.6rem]"
+              ? "h-[133%] max-w-[4rem] md:max-w-[4.7rem]"
+              : "h-[133%] max-w-[6.6rem]"
           }`}
           style={{ objectFit: "contain", objectPosition: "left bottom", width: "auto" }}
         />
