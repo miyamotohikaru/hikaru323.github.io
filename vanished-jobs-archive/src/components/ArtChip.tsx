@@ -49,7 +49,7 @@ export default function ArtChip({
           height={280}
           className={`pointer-events-none absolute bottom-1 left-1 ${
             sm
-              ? "h-[133%] max-w-[3rem] md:max-w-[4.7rem]"
+              ? "h-[122%] max-w-[3rem] md:max-w-[4.7rem]"
               : "h-[133%] max-w-[6.6rem]"
           }`}
           style={{ objectFit: "contain", objectPosition: "left bottom", width: "auto" }}
