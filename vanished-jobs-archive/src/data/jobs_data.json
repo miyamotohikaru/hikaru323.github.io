@@ -2438,7 +2438,7 @@
   "summary": "こうもり傘の輸入・国産化で市場を失った",
   "successor": "洋傘(工芸・舞台用に存続)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/101.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2462,7 +2462,7 @@
   "summary": "鍋釜の穴をハンダで塞いで回った。「直すより買う」時代に敗れた",
   "successor": "買い替え文化",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/102.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2486,7 +2486,7 @@
   "summary": "すり減った下駄の歯だけ交換した超サステナブル業。履物ごと消えた",
   "successor": "靴産業",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/103.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2510,7 +2510,7 @@
   "summary": "キセルの竹管を蒸気で掃除・交換。商品の消滅と心中した",
   "successor": "紙巻たばこ→電子たばこ",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/104.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2534,7 +2534,7 @@
   "summary": "銭湯で客の背中を流した。最後の一人の引退が報じられた「命日のある職業」",
   "successor": "内風呂の普及",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/105.png",
   "hasFullBody": true,
   "endLabel": "〜2010年代",
   "textColor": "#3B2A1E"
@@ -2558,7 +2558,7 @@
   "summary": "氷冷蔵庫へ氷を配達。昭和40年代後半、冷蔵庫の勝利で終幕",
   "successor": "電気冷蔵庫",
   "lineageId": "reikyaku",
-  "image": null,
+  "image": "jobs/106.png",
   "hasFullBody": false,
   "endLabel": "〜昭和40s",
   "textColor": "#F3EEE0"
@@ -2582,7 +2582,7 @@
   "summary": "ロバ(馬)が引く屋台で蒸しパンを売った移動販売",
   "successor": "パン量販・コンビニ",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/107.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2606,7 +2606,7 @@
   "summary": "「ポンッ」の爆発音で子供を集めた移動加工業",
   "successor": "菓子産業(イベント実演で存続)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/108.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2630,7 +2630,7 @@
   "summary": "拍子木と水あめ。「街頭の動画配信者」はテレビに視聴者を奪われた",
   "successor": "テレビ→YouTube",
   "lineageId": "monogatari",
-  "image": null,
+  "image": "jobs/109.png",
   "hasFullBody": false,
   "endLabel": "〜30s",
   "textColor": "#F3EEE0"
@@ -2654,7 +2654,7 @@
   "summary": "無声映画に声と物語を与えた語り。トーキー化で一斉失業し争議に",
   "successor": "声優・ナレーター(現役弁士も数名)",
   "lineageId": "monogatari",
-  "image": null,
+  "image": "jobs/110.png",
   "hasFullBody": true,
   "endLabel": "〜1930s",
   "textColor": "#F3EEE0"
@@ -2679,7 +2679,7 @@
   "summary": "映画館の巨大看板を手描きした絵師。印刷技術が筆を置かせた",
   "successor": "大判印刷",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/111.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2703,7 +2703,7 @@
   "summary": "鳴り物と仮装で店開きを宣伝した人間広告メディア",
   "successor": "広告代理店・SNS広告(芸能として少数存続)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/112.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2727,7 +2727,7 @@
   "summary": "店頭で商品を身につけて見せた「生きた広告」。派遣販売員の原型",
   "successor": "販売員・デモンストレーター",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/113.png",
   "hasFullBody": false,
   "endLabel": "",
   "textColor": "#F3EEE0"
@@ -2751,7 +2751,7 @@
   "summary": "給油接客の専門職。セルフ化はレジ無人化の先行事例",
   "successor": "セルフスタンド",
   "lineageId": "sekkyaku",
-  "image": null,
+  "image": "jobs/114.png",
   "hasFullBody": false,
   "endLabel": "〜昭和初期",
   "textColor": "#3B2A1E"
@@ -2776,7 +2776,7 @@
   "summary": "カフェーで接客した女性たち。大正モダンの光と影",
   "successor": "喫茶店・接客業",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/115.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2800,7 +2800,7 @@
   "summary": "役所前で書類を代筆。消滅ではなく「国家資格に進化」した珍しい型",
   "successor": "行政書士・司法書士",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/116.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2824,7 +2824,7 @@
   "summary": "竹かご一つで都市の資源循環を回した。理念だけがSDGsとして帰ってきた",
   "successor": "廃品回収→リサイクル産業",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/117.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2849,7 +2849,7 @@
   "summary": "糞尿が肥料として売買された循環経済の担い手だった",
   "successor": "下水道+化学肥料",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/118.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2873,7 +2873,7 @@
   "summary": "戦後の街角の代名詞。今は一足数千円の職人業として細く復活",
   "successor": "駅前から高級サービスへ少数転生",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/119.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2897,7 +2897,7 @@
   "summary": "損料屋→貸本屋→レンタルビデオ→配信という「借りる文化」の中継点",
   "successor": "レンタルビデオ→サブスク",
   "lineageId": "taiyo",
-  "image": null,
+  "image": "jobs/120.png",
   "hasFullBody": false,
   "endLabel": "〜昭和40s",
   "textColor": "#3B2A1E"
@@ -2921,7 +2921,7 @@
   "summary": "街頭でバイオリンを弾き歌本を売った。「演歌」の語源はここにある",
   "successor": "レコード歌手",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/121.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2945,7 +2945,7 @@
   "summary": "酒場を回りリクエストで演奏。カラオケマシンに客を奪われた",
   "successor": "カラオケ(少数の現役が残る)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/122.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2969,7 +2969,7 @@
   "summary": "日当240円=「ニコヨン」。失業対策事業の日雇い労働者",
   "successor": "派遣労働",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/123.png",
   "hasFullBody": false,
   "endLabel": "〜戦後",
   "textColor": "#3B2A1E"
@@ -2993,7 +2993,7 @@
   "summary": "住み込みの年季奉公。労働基準法と義務教育が終わらせた",
   "successor": "新卒採用・インターン",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/124.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -3017,7 +3017,7 @@
   "summary": "御真影を売り歩いた時代の徒花。政治体制の転換で一夜にして消滅",
   "successor": "─",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/125.png",
   "hasFullBody": false,
   "endLabel": "〜戦前",
   "textColor": "#3B2A1E"
@@ -3041,7 +3041,7 @@
   "summary": "統制経済が生んだ非合法流通業。「経済の正常化」という死因を持つ",
   "successor": "正規流通の回復",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/126.png",
   "hasFullBody": false,
   "endLabel": "〜戦後",
   "textColor": "#3B2A1E"
@@ -3066,7 +3066,7 @@
   "summary": "山に住み椀や盆を挽いた漂泊の職能集団",
   "successor": "樹脂製品(伝統工芸として存続)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/127.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -3091,7 +3091,7 @@
   "summary": "1ミリの狂いなく床を測る「歪みの見極め」の技能職",
   "successor": "機械生産・フローリング",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/128.png",
   "hasFullBody": false,
   "endLabel": "",
   "textColor": "#3B2A1E"
@@ -3115,7 +3115,7 @@
   "summary": "船底の錆をハンマーで叩き落とす音から「かんかん虫」。港の最底辺労働",
   "successor": "高圧洗浄・防錆技術",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/129.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -3140,7 +3140,7 @@
   "summary": "粗悪な用紙の大衆雑誌群。「3号(合)でつぶれる」が名の由来",
   "successor": "週刊誌・娯楽出版",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/130.png",
   "hasFullBody": false,
   "endLabel": "〜戦後",
   "textColor": "#F3EEE0"
@@ -3164,7 +3164,7 @@
   "summary": "スクープを雑誌に売り込んだ一匹狼。誌面の「トップ」を狙うが語源",
   "successor": "フリーランス記者",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/131.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -3188,7 +3188,7 @@
   "summary": "深夜の「電報です」は緊急の代名詞だった。今は祝電・弔電の儀礼に",
   "successor": "慶弔電報のみ残存",
   "lineageId": "tsushin",
-  "image": null,
+  "image": "jobs/132.png",
   "hasFullBody": false,
   "endLabel": "〜平成",
   "textColor": "#3B2A1E"
@@ -3212,7 +3212,7 @@
   "summary": "マムシを捕って薬用に卸した。民間薬市場とともに消えた",
   "successor": "製薬産業",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/133.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -3236,7 +3236,7 @@
   "summary": "鉄道で野菜や魚を担いで都市へ運んだ。「かつぎ屋」の記憶",
   "successor": "スーパー→ネット通販",
   "lineageId": "sekkyaku",
-  "image": null,
+  "image": "jobs/134.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -3260,7 +3260,7 @@
   "summary": "櫓の上から火事を見張り半鐘を打った。通報インフラが視力を代替した",
   "successor": "119番通報・火災報知器",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/135.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -3284,7 +3284,7 @@
   "summary": "手サインで売買を成立させた職人技。1999年の閉場日という「命日」を持つ",
   "successor": "電子取引→アルゴリズム取引",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/136.png",
   "hasFullBody": false,
   "endLabel": "〜1999",
   "textColor": "#F3EEE0"
@@ -3308,7 +3308,7 @@
   "summary": "専用機の誕生から生産終了まで約25年。最短寿命級の職業",
   "successor": "パーソナルコンピュータ",
   "lineageId": "keisan",
-  "image": null,
+  "image": "jobs/137.png",
   "hasFullBody": false,
   "endLabel": "〜2000s",
   "textColor": "#F3EEE0"
@@ -3332,7 +3332,7 @@
   "summary": "毎月家庭を回って現金を集めた。決済の電子化が家庭訪問を終わらせた",
   "successor": "口座振替→キャッシュレス",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/138.png",
   "hasFullBody": false,
   "endLabel": "〜平成",
   "textColor": "#3B2A1E"
@@ -3356,7 +3356,7 @@
   "summary": "電話加入権という「資産」を売買した。権利自体が無価値化して消滅",
   "successor": "携帯電話・IP電話",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/139.png",
   "hasFullBody": false,
   "endLabel": "〜平成",
   "textColor": "#F3EEE0"
@@ -3381,7 +3381,7 @@
   "summary": "伯楽の末裔。農耕から牛馬が消え、目利きの出番も消えた",
   "successor": "農機・家畜市場の制度化",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/140.png",
   "hasFullBody": false,
   "endLabel": "〜平成",
   "textColor": "#3B2A1E"
@@ -3405,7 +3405,7 @@
   "summary": "統計分類からは消えたが、芸能としてはテレビとネットに転生した",
   "successor": "ものまね芸人・YouTuber",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/141.png",
   "hasFullBody": false,
   "endLabel": "〜平成",
   "textColor": "#3B2A1E"
@@ -3430,7 +3430,7 @@
   "summary": "ガソリンガール→セルフスタンド(No.114)の再演が進行中",
   "successor": "セルフレジ・無人店舗",
   "lineageId": "sekkyaku",
-  "image": null,
+  "image": "jobs/142.png",
   "hasFullBody": true,
   "endLabel": "〜いま",
   "textColor": "#F3EEE0"
@@ -3454,7 +3454,7 @@
   "summary": "「進行中」がほぼ「完了」に達した最速例",
   "successor": "ETC",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/143.png",
   "hasFullBody": false,
   "endLabel": "〜いま",
   "textColor": "#3B2A1E"
@@ -3478,7 +3478,7 @@
   "summary": "電話交換手(No.046)の直系子孫。同じ死因が二度目の訪問中",
   "successor": "AI音声ボット",
   "lineageId": "tsushin",
-  "image": null,
+  "image": "jobs/144.png",
   "hasFullBody": false,
   "endLabel": "〜いま",
   "textColor": "#3B2A1E"
@@ -3502,7 +3502,7 @@
   "summary": "キーパンチャー(No.057)の直系子孫",
   "successor": "OCR・RPA・LLM",
   "lineageId": "keisan",
-  "image": null,
+  "image": "jobs/145.png",
   "hasFullBody": false,
   "endLabel": "〜いま",
   "textColor": "#F3EEE0"
@@ -3526,7 +3526,7 @@
   "summary": "静かに消えていく訪問職。誰も気づかないうちにいなくなる",
   "successor": "スマートメーター",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/146.png",
   "hasFullBody": false,
   "endLabel": "〜いま",
   "textColor": "#3B2A1E"
@@ -3550,7 +3550,7 @@
   "summary": "店舗網ごと縮小。「銀行に行く」という行為自体が消えつつある",
   "successor": "ネットバンキング・ATM",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/147.png",
   "hasFullBody": false,
   "endLabel": "〜いま",
   "textColor": "#3B2A1E"
@@ -3574,7 +3574,7 @@
   "summary": "消滅ではなく「AIの校閲者」への変質が進む。弁士→声優の再演か",
   "successor": "機械翻訳→ポストエディット職へ",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/148.png",
   "hasFullBody": false,
   "endLabel": "〜いま",
   "textColor": "#F3EEE0"
@@ -3598,7 +3598,7 @@
   "summary": "馬方→御者→運転手→自動運転。交通系譜の現在地",
   "successor": "自動運転",
   "lineageId": "idou",
-  "image": null,
+  "image": "jobs/149.png",
   "hasFullBody": false,
   "endLabel": "〜いま",
   "textColor": "#3B2A1E"
@@ -3623,7 +3623,7 @@
   "summary": "計算手(No.015)の子孫たち。帳簿は人の手を離れつつある",
   "successor": "会計ソフト・自動仕訳AI",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/150.png",
   "hasFullBody": false,
   "endLabel": "〜いま",
   "textColor": "#3B2A1E"
@@ -3647,7 +3647,7 @@
   "summary": "生成AIとの摩擦の最前線。「消滅か変質か」が今まさに争われている",
   "successor": "画像生成AI",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/151.png",
   "hasFullBody": false,
   "endLabel": "〜いま",
   "textColor": "#F3EEE0"
