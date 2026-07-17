@@ -261,14 +261,14 @@ async function generateMaster(normalizedBlob: Blob): Promise<HTMLImageElement | 
 // 既存filterTypeが形状まで焼くもの（分割眼・上下反転・魚眼など）は、
 // パノラマが歪まないよう色のみのフィルターに差し替える。ここに無い生き物は
 // 自身の filterType（色専用）＋ fp をそのまま使う。
+// パノラマ画像に使う色フィルターの上書き。horse/goatの"panorama"/"horizoneye"は
+// バレル/横伸ばしの形状を焼くのでスクロールパノラマには不向き→色のみ(dichro)にする。
+// それ以外（カメレオン=dualeye, ヨツメウオ=spliteye 等）は本来のfilterTypeをそのまま
+// パノラマ画像に適用し、スクロールで見回せるようにする（＝形状フィルターもパノラマに乗る）。
 const PANO_COLOR: Record<string, { filter: string; fp?: Record<string, unknown> }> = {
-  horse: { filter: "dichro" }, // 旧"panorama"（2色覚＋バレル）→ 色のみ（スクロールで視野を表現）
-  goat: { filter: "dichro" }, // 旧"horizoneye"（横伸ばし）→ 色のみ
+  horse: { filter: "dichro" },
+  goat: { filter: "dichro" },
 };
-
-// 形状を焼き込む＝その生き物固有の見え方を持つ種。スクロールパノラマにせず、
-// 拡張したマスターに本来のフィルター(dualeye/spliteye/multieye/upsidedown)を適用して表示する。
-const SHAPE_CREATURES = new Set(["chameleon", "foureyedfish", "spider", "flamingo"]);
 
 // マスター画像を fov に応じて中心からクロップして ctx いっぱいに描画
 function cropMasterForFov(
@@ -545,8 +545,7 @@ export default function ViewScreen({
         // --- STEP 6: スクロール式パノラマ用の画像を用意（広視野・形状組以外） ---
         // マスター拡張画像全体に色フィルターを適用した1枚を作り、PanoramaViewerに渡す。
         // 人間の目用は色フィルターなしのマスター（元の色）。
-        // 形状組(カメレオン等)は上のcanvasに本来のフィルターが乗っているのでパノラマにしない。
-        if (useMaster && master && !SHAPE_CREATURES.has(creatureId)) {
+        if (useMaster && master) {
           try {
             const mw = master.naturalWidth, mh = master.naturalHeight;
             const pc = document.createElement("canvas");
@@ -853,10 +852,13 @@ export default function ViewScreen({
       {panoUrl && (
         <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
           <button
-            onPointerDown={() => setShowHuman(true)}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture?.(e.pointerId); // 指の微動で離れないよう捕捉
+              setShowHuman(true);
+            }}
             onPointerUp={() => setShowHuman(false)}
-            onPointerLeave={() => setShowHuman(false)}
             onPointerCancel={() => setShowHuman(false)}
+            onLostPointerCapture={() => setShowHuman(false)}
             style={{
               padding: "10px 20px", borderRadius: 100, border: "none",
               background: showHuman ? (catColor?.accent ?? "#999") : "#2D2D2D",
