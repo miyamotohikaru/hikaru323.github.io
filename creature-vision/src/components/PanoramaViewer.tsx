@@ -32,7 +32,6 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
   const rafRef = useRef(0);
   const maxRef = useRef(0); // 片側に振れる最大量(px)
   const centerRef = useRef(0); // マスターを窓中央に置くためのオフセット(px)
-  const speedRef = useRef(0.3); // px/frame
   const startAtRef = useRef(0); // この時刻(performance.now)まで正面で固定
 
   const autoRef = useRef(true);
@@ -83,8 +82,6 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
       centerRef.current = (cw - sw) / 2; // 中央=元写真が窓中央に来る
       // frozen(人間の目)は見回さない＝振れ幅0。それ以外はfovで制限
       maxRef.current = frozen ? 0 : Math.max(0, ((sw - cw) / 2) * viewableRatio);
-      // 片道 AUTO_ONEWAY_SEC 秒でゆっくり
-      speedRef.current = Math.max(0.08, (2 * maxRef.current) / (AUTO_ONEWAY_SEC * 60));
       // クランプ
       posRef.current = Math.max(-maxRef.current, Math.min(maxRef.current, posRef.current));
       applyTransform();
@@ -92,11 +89,17 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
     recompute();
     window.addEventListener("resize", recompute);
 
+    // 経過時間(dt)ベースで動かす＝フレームレートに依存せず片道 AUTO_ONEWAY_SEC 秒
+    let last = performance.now();
     function loop() {
+      const now = performance.now();
+      const dt = now - last;
+      last = now;
       const M = maxRef.current;
-      const holding = performance.now() < startAtRef.current; // 開始2秒は固定
+      const holding = now < startAtRef.current; // 開始2秒は固定
       if (autoRef.current && !draggingRef.current && !holding && M > 0) {
-        posRef.current += dirRef.current * speedRef.current;
+        const pxPerMs = (2 * M) / (AUTO_ONEWAY_SEC * 1000);
+        posRef.current += dirRef.current * pxPerMs * dt;
         if (posRef.current <= -M) { posRef.current = -M; dirRef.current = 1; }  // 右端→左へ
         if (posRef.current >= M) { posRef.current = M; dirRef.current = -1; }   // 左端→右へ
       }
