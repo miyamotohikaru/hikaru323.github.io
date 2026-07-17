@@ -502,7 +502,7 @@
   "summary": "煙突内部に子供を登らせた。段階的立法で禁止された「倫理による消滅」の代表",
   "successor": "児童労働規制+掃除器具",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/021.png",
   "hasFullBody": false,
   "endLabel": "〜1875",
   "textColor": "#3B2A1E"
@@ -526,7 +526,7 @@
   "summary": "頭蓋の凹凸で性格を診断した。前提が科学に敗れた型の消滅",
   "successor": "神経科学(理論自体が否定)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/022.png",
   "hasFullBody": false,
   "endLabel": "〜19c末",
   "textColor": "#F3EEE0"
@@ -550,7 +550,7 @@
   "summary": "凍結した湖から氷塊を切り出す冬の重労働。氷貿易は一大産業だった",
   "successor": "製氷機→冷蔵庫",
   "lineageId": "reikyaku",
-  "image": null,
+  "image": "jobs/023.png",
   "hasFullBody": false,
   "endLabel": "〜20c初",
   "textColor": "#3B2A1E"
@@ -574,7 +574,7 @@
   "summary": "アイスボックス時代の生命線。冷蔵庫の普及で消滅",
   "successor": "電気冷蔵庫",
   "lineageId": "reikyaku",
-  "image": "jobs/iceman.png",
+  "image": "jobs/024.png",
   "hasFullBody": true,
   "endLabel": "〜1950年代",
   "textColor": "#F3EEE0"
@@ -598,7 +598,7 @@
   "summary": "フェレット・テリア犬・罠を駆使した。職能は現代の駆除業へ継承",
   "successor": "害虫駆除業者",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/025.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#3B2A1E"
@@ -622,7 +622,7 @@
   "summary": "鐘を鳴らし街頭でニュースを叫ぶ「人間タイムライン」",
   "successor": "新聞→ラジオ→SNS(儀礼的に残存)",
   "lineageId": "monogatari",
-  "image": null,
+  "image": "jobs/026.png",
   "hasFullBody": false,
   "endLabel": "〜19c",
   "textColor": "#F3EEE0"
@@ -646,7 +646,7 @@
   "summary": "テムズ川の泥から換金物を拾う貧困少年。今はライセンス制のホビーに転生",
   "successor": "許可制の趣味・考古活動として復活",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/027.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#3B2A1E"
@@ -671,7 +671,7 @@
   "summary": "ロンドンの下水道で硬貨や金属を探した。立入禁止化で消滅",
   "successor": "─",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/028.png",
   "hasFullBody": false,
   "endLabel": "〜19c",
   "textColor": "#F3EEE0"
@@ -695,7 +695,7 @@
   "summary": "ぼろ布・骨・くず鉄を回収した。日本の屑屋と同系譜の都市循環業",
   "successor": "廃品回収→リサイクル産業",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/029.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#F3EEE0"
@@ -719,7 +719,7 @@
   "summary": "「キャブ」の語源。運転手という職業の直接の祖先",
   "successor": "タクシー運転手",
   "lineageId": "idou",
-  "image": null,
+  "image": "jobs/030.png",
   "hasFullBody": false,
   "endLabel": "〜20c初",
   "textColor": "#3B2A1E"

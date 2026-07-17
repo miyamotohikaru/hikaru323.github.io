@@ -31,8 +31,8 @@ function BearPlaceholder() {
   );
 }
 
-/** はみ出し気味に大きく置く画像（受け渡しREADME指定：ノッカーアップ・氷配達人） */
-const OVERSIZED = new Set(["jobs/knocker.png", "jobs/iceman.png"]);
+/** はみ出し気味に大きく置く画像（現在は該当なし。必要ならパスを追加） */
+const OVERSIZED = new Set<string>([]);
 
 /** 画像ごとの位置微調整（絵柄がカード中央に来るように） */
 const NUDGE: Record<string, string> = {};
