@@ -987,7 +987,7 @@
   "summary": "自転車で電報を届けた少年たち。日本の電報配達と同系譜",
   "successor": "電話→SMS",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/041.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#3B2A1E"
@@ -1011,7 +1011,7 @@
   "summary": "単調な作業場で新聞や小説を読み聞かせたインテリ職。労働者が給料から雇った",
   "successor": "ラジオ",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/042.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#3B2A1E"
@@ -1035,7 +1035,7 @@
   "summary": "写真術第一世代。より速く安い技術に追われた「技術に生まれ技術に死んだ」職",
   "successor": "写真館→写真家",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/043.png",
   "hasFullBody": false,
   "endLabel": "〜1860s",
   "textColor": "#F3EEE0"
@@ -1059,7 +1059,7 @@
   "summary": "活字を一本ずつ拾って組んだ。グーテンベルク以来500年続いた職の終焉",
   "successor": "写植オペレーター→DTP",
   "lineageId": "insatsu",
-  "image": "jobs/kappan.png",
+  "image": "jobs/044.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#3B2A1E"
@@ -1083,7 +1083,7 @@
   "summary": "溶けた鉛で一行ずつ活字を鋳造する機械の操作工",
   "successor": "写植→DTP",
   "lineageId": "insatsu",
-  "image": null,
+  "image": "jobs/045.png",
   "hasFullBody": false,
   "endLabel": "〜1980s",
   "textColor": "#3B2A1E"
@@ -1108,7 +1108,7 @@
   "summary": "手動でプラグを差し替え回線を接続。日本では明治23年〜昭和40年代、女性の花形職だった",
   "successor": "自動交換機→コールセンター→AI音声",
   "lineageId": "tsushin",
-  "image": "jobs/denwa.png",
+  "image": "jobs/046.png",
   "hasFullBody": true,
   "endLabel": "〜20c後半",
   "textColor": "#3B2A1E"
@@ -1132,7 +1132,7 @@
   "summary": "日本では「エレベーターガール」として百貨店の顔に。バブル崩壊後の人員削減で消滅へ",
   "successor": "押しボタン式エレベーター",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/047.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#F3EEE0"
@@ -1156,7 +1156,7 @@
   "summary": "ボウリング場の奥でピンを手で並べ直した少年たち",
   "successor": "自動ピンセッター機",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/048.png",
   "hasFullBody": false,
   "endLabel": "〜1950s",
   "textColor": "#3B2A1E"
@@ -1181,7 +1181,7 @@
   "summary": "「日本最後の灯台守」の年が特定できる、命日を持つ職業",
   "successor": "自動化・遠隔監視",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/049.png",
   "hasFullBody": false,
   "endLabel": "〜2006",
   "textColor": "#F3EEE0"
@@ -1205,7 +1205,7 @@
   "summary": "自分の血でシラミを育てワクチン原料にした。占領下では知識人の隠れ蓑にもなった",
   "successor": "チフスワクチンの工業生産",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/050.png",
   "hasFullBody": false,
   "endLabel": "〜40s",
   "textColor": "#F3EEE0"

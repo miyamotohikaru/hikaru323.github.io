@@ -49,9 +49,16 @@ export default async function JobPage({
   const chain = job.lineageId
     ? lineageChains.find((c) => c.id === job.lineageId)
     : undefined;
-  const related = jobs
-    .filter((j) => j.no !== no && j.category === job.category)
-    .slice(0, 3);
+  // おなじ時代のなかま: 章内でカードごとに顔ぶれをローテーションさせる
+  const sameCat = jobs.filter((j) => j.category === job.category);
+  const idxInCat = sameCat.findIndex((j) => j.no === no);
+  const others = sameCat.filter((j) => j.no !== no);
+  const related = others.length
+    ? Array.from(
+        { length: Math.min(3, others.length) },
+        (_, i) => others[(idxInCat + i) % others.length]
+      )
+    : [];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8">
