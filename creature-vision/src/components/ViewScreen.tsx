@@ -853,8 +853,8 @@ export default function ViewScreen({
         <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
           <button
             onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture?.(e.pointerId); // 指の微動で離れないよう捕捉
-              setShowHuman(true);
+              setShowHuman(true); // 先に切替（capture失敗でも確実に人間へ）
+              try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* 指の微動対策・best effort */ }
             }}
             onPointerUp={() => setShowHuman(false)}
             onPointerCancel={() => setShowHuman(false)}
