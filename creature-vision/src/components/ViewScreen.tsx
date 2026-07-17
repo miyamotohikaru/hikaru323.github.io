@@ -262,13 +262,13 @@ async function generateMaster(normalizedBlob: Blob): Promise<HTMLImageElement | 
 // パノラマが歪まないよう色のみのフィルターに差し替える。ここに無い生き物は
 // 自身の filterType（色専用）＋ fp をそのまま使う。
 const PANO_COLOR: Record<string, { filter: string; fp?: Record<string, unknown> }> = {
-  horse: { filter: "dichro" }, // 旧"panorama"（2色覚＋バレル）→ 色のみ
+  horse: { filter: "dichro" }, // 旧"panorama"（2色覚＋バレル）→ 色のみ（スクロールで視野を表現）
   goat: { filter: "dichro" }, // 旧"horizoneye"（横伸ばし）→ 色のみ
-  chameleon: { filter: "tetra", fp: { saturation: 1.7, uvTint: [150, 80, 255], uvStrength: 0.15, sharp: 0 } }, // 旧dualeye(左右分割)→高彩度
-  spider: { filter: "mono", fp: { tint: [200, 205, 215], boost: 0.9 } }, // 旧multieye(8眼)→ほぼモノクロ
-  foureyedfish: { filter: "mono", fp: { tint: [120, 180, 205], boost: 1.1 } }, // 旧spliteye(上下分割)→青緑
-  flamingo: { filter: "mono", fp: { tint: [255, 140, 160], boost: 1.1 } }, // 旧upsidedown(上下反転)→ピンク
 };
+
+// 形状を焼き込む＝その生き物固有の見え方を持つ種。スクロールパノラマにせず、
+// 拡張したマスターに本来のフィルター(dualeye/spliteye/multieye/upsidedown)を適用して表示する。
+const SHAPE_CREATURES = new Set(["chameleon", "foureyedfish", "spider", "flamingo"]);
 
 // マスター画像を fov に応じて中心からクロップして ctx いっぱいに描画
 function cropMasterForFov(
@@ -542,10 +542,11 @@ export default function ViewScreen({
           ctx.fillRect(0, 0, w, h);
         }
 
-        // --- STEP 6: スクロール式パノラマ用の画像を用意（広視野のみ） ---
+        // --- STEP 6: スクロール式パノラマ用の画像を用意（広視野・形状組以外） ---
         // マスター拡張画像全体に色フィルターを適用した1枚を作り、PanoramaViewerに渡す。
         // 人間の目用は色フィルターなしのマスター（元の色）。
-        if (useMaster && master) {
+        // 形状組(カメレオン等)は上のcanvasに本来のフィルターが乗っているのでパノラマにしない。
+        if (useMaster && master && !SHAPE_CREATURES.has(creatureId)) {
           try {
             const mw = master.naturalWidth, mh = master.naturalHeight;
             const pc = document.createElement("canvas");
@@ -848,20 +849,24 @@ export default function ViewScreen({
         )}
       </div>
 
-      {/* 人間の目に切り替えるボタン（パノラマ表示時のみ・下に配置） */}
+      {/* 人間の目ボタン（パノラマ表示時のみ・押している間だけ人間の目） */}
       {panoUrl && (
         <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
           <button
-            onClick={() => setShowHuman((v) => !v)}
+            onPointerDown={() => setShowHuman(true)}
+            onPointerUp={() => setShowHuman(false)}
+            onPointerLeave={() => setShowHuman(false)}
+            onPointerCancel={() => setShowHuman(false)}
             style={{
               padding: "10px 20px", borderRadius: 100, border: "none",
               background: showHuman ? (catColor?.accent ?? "#999") : "#2D2D2D",
               color: "#fff", fontWeight: 900, fontSize: 14,
               cursor: "pointer", fontFamily: "inherit",
               boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+              touchAction: "none", userSelect: "none",
             }}
           >
-            {showHuman ? `🐾 ${creature.name}の目に戻す` : "👁 人間の目で見る"}
+            {showHuman ? "👁 人間のめ（はなすと戻る）" : "👆 押している間だけ人間の目"}
           </button>
         </div>
       )}
