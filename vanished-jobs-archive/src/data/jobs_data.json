@@ -1958,7 +1958,7 @@
   "summary": "明治日本発の発明品。今は浅草・鎌倉の観光職に転生",
   "successor": "タクシー(観光人力車として存続)",
   "lineageId": "idou",
-  "image": null,
+  "image": "jobs/081.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -1982,7 +1982,7 @@
   "summary": "馬で荷を運ぶ物流の担い手。「馬子にも衣装」に痕跡が残る",
   "successor": "運送業",
   "lineageId": "idou",
-  "image": null,
+  "image": "jobs/082.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2006,7 +2006,7 @@
   "summary": "橋が架かるたびに一つずつ消えていった",
   "successor": "橋・道路インフラ",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/083.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2030,7 +2030,7 @@
   "summary": "船荷を人力で積み下ろした。コンテナという「規格」が職業を消した",
   "successor": "ガントリークレーン・港湾機械化",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/084.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2054,7 +2054,7 @@
   "summary": "駅で旅客の荷物を運んだ。プルマンポーターの日本版",
   "successor": "コインロッカー・宅配",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/085.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2078,7 +2078,7 @@
   "summary": "三越オーダーメイド制服の憧れ職から機械化へ",
   "successor": "ワンマンバス→ICカード",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/086.png",
   "hasFullBody": false,
   "endLabel": "〜昭和40s",
   "textColor": "#3B2A1E"
@@ -2102,7 +2102,7 @@
   "summary": "路面電車網の廃止とともに大量転職した",
   "successor": "地下鉄・バス(荒川線等に少数残存)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/087.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2126,7 +2126,7 @@
   "summary": "石炭をくべる火夫とペアの重労働。技能継承が今は観光資源",
   "successor": "電車運転士(観光SLで技能保存)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/088.png",
   "hasFullBody": false,
   "endLabel": "〜昭和50s",
   "textColor": "#F3EEE0"
@@ -2150,7 +2150,7 @@
   "summary": "手動で遮断機を上げ下げした。かつて全国の踏切に人がいた",
   "successor": "自動遮断機",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/089.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2174,7 +2174,7 @@
   "summary": "改札鋏のリズミカルな音は駅の音風景だった。平成初期に一斉消滅",
   "successor": "自動改札機→ICカード",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/090.png",
   "hasFullBody": true,
   "endLabel": "〜1990s",
   "textColor": "#3B2A1E"
@@ -2198,7 +2198,7 @@
   "summary": "満員電車に乗客を押し込む。海外から見た「日本の奇職」の代表",
   "successor": "ホームドア・輸送力増強で減少",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/091.png",
   "hasFullBody": false,
   "endLabel": "",
   "textColor": "#F3EEE0"
@@ -2222,7 +2222,7 @@
   "summary": "斧と鋸だけで巨木を伐った山の民",
   "successor": "チェーンソー・高性能林業機械",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/092.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2246,7 +2246,7 @@
   "summary": "地下数百メートルの最危険職。閉山の歴史は地域社会の消滅史でもある",
   "successor": "石油・電力産業",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/093.png",
   "hasFullBody": false,
   "endLabel": "〜平成",
   "textColor": "#3B2A1E"
@@ -2270,7 +2270,7 @@
   "summary": "人力で垂直に数十メートル掘った。水道が来るたびに廃業した",
   "successor": "水道インフラ",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/094.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2294,7 +2294,7 @@
   "summary": "大家が親代わりだった住まい。食事・門限・電話取次つき",
   "successor": "賃貸アパート・学生マンション",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/095.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2318,7 +2318,7 @@
   "summary": "新聞社が原稿・写真の輸送に鳩を運用。屋上に鳩舎と専任係がいた",
   "successor": "電話→FAX→ネット回線",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/096.png",
   "hasFullBody": false,
   "endLabel": "〜昭和30s",
   "textColor": "#3B2A1E"
@@ -2342,7 +2342,7 @@
   "summary": "花形専門職から全人類の基礎スキルへ。国勢調査からも削除された",
   "successor": "ワープロ操作員→PC(全員がタイピストに)",
   "lineageId": "keisan",
-  "image": null,
+  "image": "jobs/097.png",
   "hasFullBody": false,
   "endLabel": "〜平成",
   "textColor": "#F3EEE0"
@@ -2366,7 +2366,7 @@
   "summary": "着物を解いて洗い、板に張って乾かす。和装文化と運命共同体",
   "successor": "クリーニング店(着物専門で少数存続)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/098.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -2390,7 +2390,7 @@
   "summary": "村に一軒あった金属のよろず屋。伝統工芸として細く続く",
   "successor": "工場生産(刃物産地・刀匠として存続)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/099.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#3B2A1E"
@@ -2414,7 +2414,7 @@
   "summary": "照明が電気になり、提灯は「灯り」から「記号」になった",
   "successor": "電気照明(祭礼・看板用に存続)",
   "lineageId": "hikari",
-  "image": null,
+  "image": "jobs/100.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
