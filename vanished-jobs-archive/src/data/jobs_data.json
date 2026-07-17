@@ -358,7 +358,7 @@
   "summary": "「コンピュータ」は職業名だった。NASAの軌道計算も人間の手で行われた",
   "successor": "電子計算機→プログラマー",
   "lineageId": "keisan",
-  "image": "jobs/keisanshu.png",
+  "image": "jobs/015.png",
   "hasFullBody": true,
   "endLabel": "〜1960s",
   "textColor": "#F3EEE0"
@@ -382,7 +382,7 @@
   "summary": "棒や豆鉄砲で窓を叩き労働者を起こした。「目覚まし屋を起こす目覚まし屋」の小噺が残る",
   "successor": "目覚まし時計→スマホアラーム",
   "lineageId": "jikoku",
-  "image": "jobs/knocker.png",
+  "image": "jobs/016.png",
   "hasFullBody": true,
   "endLabel": "〜1970年代",
   "textColor": "#F3EEE0"
@@ -454,7 +454,7 @@
   "summary": "自分の脚を餌に沼でヒルを集めた。瀉血療法の否定と乱獲で消滅",
   "successor": "近代医学(瀉血の否定)",
   "lineageId": "iryo",
-  "image": "jobs/leech.png",
+  "image": "jobs/019.png",
   "hasFullBody": true,
   "endLabel": "〜19c末",
   "textColor": "#3B2A1E"
