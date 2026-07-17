@@ -743,7 +743,7 @@
   "summary": "馬の靴屋。輸送の主役交代で激減し、競走馬の世界に生き残る",
   "successor": "競馬・乗馬産業で存続",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/031.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#F3EEE0"
@@ -767,7 +767,7 @@
   "summary": "木製車輪の専門職。タイヤの登場で丸ごと不要になった",
   "successor": "自動車整備工",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/032.png",
   "hasFullBody": false,
   "endLabel": "〜20c初",
   "textColor": "#F3EEE0"
@@ -792,7 +792,7 @@
   "summary": "あらゆる容器が樽だった時代の花形。日本の桶屋も同系譜",
   "successor": "ウイスキー・ワイン樽で存続",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/033.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#3B2A1E"
@@ -816,7 +816,7 @@
   "summary": "機械に仕事を奪われた象徴。ラッダイト運動(機械打ち壊し)の主役",
   "successor": "力織機→繊維工場",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/034.png",
   "hasFullBody": false,
   "endLabel": "〜19c",
   "textColor": "#F3EEE0"
@@ -841,7 +841,7 @@
   "summary": "稼働中の紡績機の下に潜り糸くずを回収した子供。危険ゆえ立法で禁止",
   "successor": "─",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/035.png",
   "hasFullBody": false,
   "endLabel": "〜19c",
   "textColor": "#F3EEE0"
@@ -866,7 +866,7 @@
   "summary": "石炭から石を手で選り分けた児童労働。写真報道が世論を動かした",
   "successor": "選炭機械",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/036.png",
   "hasFullBody": false,
   "endLabel": "〜1920年代",
   "textColor": "#3B2A1E"
@@ -891,7 +891,7 @@
   "summary": "黄燐中毒「燐性顎疽」に苦しんだ。1888年のストライキは労働運動史の転換点",
   "successor": "安全マッチの工業生産",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/037.png",
   "hasFullBody": false,
   "endLabel": "〜19c",
   "textColor": "#F3EEE0"
@@ -915,7 +915,7 @@
   "summary": "歌でリズムを合わせて枕木を直した。労働歌はブルースの源流の一つ",
   "successor": "保線機械",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/038.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#3B2A1E"
@@ -939,7 +939,7 @@
   "summary": "馬を乗り継ぐ速達便。電信の開通で約18ヶ月で消滅した最短命職業",
   "successor": "電信→電話→メール",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/039.png",
   "hasFullBody": false,
   "endLabel": "〜61",
   "textColor": "#3B2A1E"
@@ -963,7 +963,7 @@
   "summary": "モールス信号のプロフェッショナル。通信職の始祖",
   "successor": "電話→FAX→Eメール",
   "lineageId": "tsushin",
-  "image": null,
+  "image": "jobs/040.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#F3EEE0"
