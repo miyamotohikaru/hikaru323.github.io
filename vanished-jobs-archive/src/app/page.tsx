@@ -10,9 +10,15 @@ export default function Home() {
         <p className="font-mono-label text-[10px] tracking-[0.5em] text-vja-ink-soft">
           ISSUE 02
         </p>
-        <h1 className="font-logo mt-4 text-4xl font-bold tracking-wide md:text-6xl">
-          Vanished Jobs Archive.
+        <h1 className="mt-4 text-4xl font-bold tracking-wide md:text-6xl">
+          <T
+            ja="消滅職業図鑑"
+            en={<span className="font-logo">Vanished Jobs Archive.</span>}
+          />
         </h1>
+        <p className="font-mono-label mt-3 text-[10px] tracking-[0.4em] text-vja-ink-soft">
+          <T ja="VANISHED JOBS ARCHIVE." en="消滅職業図鑑" />
+        </p>
         <p className="mt-5 text-sm font-semibold tracking-wider md:text-base">
           <T
             ja="「コンピュータ」は、かつて人間の職業だった。"

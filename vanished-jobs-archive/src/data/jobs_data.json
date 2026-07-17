@@ -1474,7 +1474,7 @@
   "summary": "街のDPE店。「現像に出す」という行為ごと消えた",
   "successor": "デジタル写真・スマホ",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/061.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#F3EEE0"
@@ -1498,7 +1498,7 @@
   "summary": "身分ごと制度的に廃止された。世界史でも稀な「階級全体の失業」",
   "successor": "官吏・軍人・警察官",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/062.png",
   "hasFullBody": false,
   "endLabel": "〜1876",
   "textColor": "#3B2A1E"
@@ -1522,7 +1522,7 @@
   "summary": "実在した諜報職。近代国家の情報機関に役割を譲った",
   "successor": "諜報機関(観光・エンタメで転生)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/063.png",
   "hasFullBody": false,
   "endLabel": "〜明治",
   "textColor": "#3B2A1E"
@@ -1546,7 +1546,7 @@
   "summary": "人が人を担いで運ぶ都市交通。人力車というイノベーションに敗れた",
   "successor": "人力車夫→タクシー",
   "lineageId": "idou",
-  "image": null,
+  "image": "jobs/064.png",
   "hasFullBody": false,
   "endLabel": "〜江戸期",
   "textColor": "#F3EEE0"
@@ -1571,7 +1571,7 @@
   "summary": "「運ぶ需要」は不滅で、形態だけが変わり続ける系譜の起点",
   "successor": "郵便→宅配便→フードデリバリー",
   "lineageId": "tsushin",
-  "image": null,
+  "image": "jobs/065.png",
   "hasFullBody": false,
   "endLabel": "〜明治",
   "textColor": "#3B2A1E"
@@ -1595,7 +1595,7 @@
   "summary": "事件を刷って街頭で読み売りした。日本のニュースメディアの祖",
   "successor": "新聞→ネットニュース",
   "lineageId": "monogatari",
-  "image": null,
+  "image": "jobs/066.png",
   "hasFullBody": false,
   "endLabel": "〜江戸期",
   "textColor": "#3B2A1E"
@@ -1620,7 +1620,7 @@
   "summary": "法令が引き金となった転換。職能は理美容業として存続",
   "successor": "理容師・美容師",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/067.png",
   "hasFullBody": false,
   "endLabel": "〜1871",
   "textColor": "#F3EEE0"
@@ -1644,7 +1644,7 @@
   "summary": "破壊消火の華形集団。組織ごと近代消防へ制度転換",
   "successor": "消防士",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/068.png",
   "hasFullBody": false,
   "endLabel": "〜明治",
   "textColor": "#F3EEE0"
@@ -1668,7 +1668,7 @@
   "summary": "同心の私的な手先という非公式雇用。近代警察が吸収した",
   "successor": "警察官・刑事",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/069.png",
   "hasFullBody": false,
   "endLabel": "〜江戸期",
   "textColor": "#3B2A1E"
@@ -1692,7 +1692,7 @@
   "summary": "世襲のオランダ語通訳。鎖国という制度が生み、開国が解体した",
   "successor": "通訳者・翻訳者",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/070.png",
   "hasFullBody": false,
   "endLabel": "〜江戸期",
   "textColor": "#F3EEE0"
@@ -1716,7 +1716,7 @@
   "summary": "布団から祝儀袋まで何でも貸した。「所有しない消費」の先祖",
   "successor": "貸本屋→レンタルビデオ→サブスク",
   "lineageId": "taiyo",
-  "image": null,
+  "image": "jobs/071.png",
   "hasFullBody": false,
   "endLabel": "〜明治",
   "textColor": "#F3EEE0"
@@ -1740,7 +1740,7 @@
   "summary": "天秤棒一本で魚も野菜も売り歩いた零細商の基本形",
   "successor": "小売店→スーパー→ネット通販",
   "lineageId": "sekkyaku",
-  "image": null,
+  "image": "jobs/072.png",
   "hasFullBody": false,
   "endLabel": "〜明治",
   "textColor": "#3B2A1E"
@@ -1764,7 +1764,7 @@
   "summary": "「きんぎょ〜え〜きんぎょ」の売り声は夏の音風景だった",
   "successor": "ペットショップ",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/073.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -1788,7 +1788,7 @@
   "summary": "視覚障害者の職業保障でもあった。国家資格として制度に編入",
   "successor": "あん摩マッサージ指圧師(国家資格)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/074.png",
   "hasFullBody": false,
   "endLabel": "",
   "textColor": "#F3EEE0"
@@ -1812,7 +1812,7 @@
   "summary": "奉公人の周旋業。人材ビジネスの原型",
   "successor": "職業安定所・人材紹介業",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/075.png",
   "hasFullBody": false,
   "endLabel": "〜明治",
   "textColor": "#3B2A1E"
@@ -1836,7 +1836,7 @@
   "summary": "宴席を盛り上げる男性の職業芸人。「たいこもち」は慣用句にだけ残った",
   "successor": "現役は全国に数名",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/076.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -1860,7 +1860,7 @@
   "summary": "レンズ越しに絵物語を見せる街頭装置。動画メディアの曽祖父",
   "successor": "映画→テレビ",
   "lineageId": "monogatari",
-  "image": null,
+  "image": "jobs/077.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -1884,7 +1884,7 @@
   "summary": "路上で軍記物を語った。屋内の「講談」として芸能化して存続",
   "successor": "講談師(伝統芸能化)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/078.png",
   "hasFullBody": false,
   "endLabel": "〜明治",
   "textColor": "#3B2A1E"
@@ -1909,7 +1909,7 @@
   "summary": "農閑期の女性たちが薬を売り歩いた出稼ぎ行商",
   "successor": "製薬・薬局",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/079.png",
   "hasFullBody": false,
   "endLabel": "〜昭和",
   "textColor": "#F3EEE0"
@@ -1933,7 +1933,7 @@
   "summary": "「先用後利」=使った分だけ後払い。サブスクの江戸版",
   "successor": "配置薬ビジネスとして縮小存続",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/080.png",
   "hasFullBody": false,
   "endLabel": "〜現在",
   "textColor": "#3B2A1E"

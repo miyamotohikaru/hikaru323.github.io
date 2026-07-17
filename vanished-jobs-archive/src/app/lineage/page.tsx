@@ -4,7 +4,7 @@ import ArtChip from "@/components/ArtChip";
 import { lineageChains, LineageNode } from "@/data/lineage";
 import { T } from "@/lib/lang";
 
-export const metadata: Metadata = { title: "系譜 | Vanished Jobs Archive." };
+export const metadata: Metadata = { title: "系譜 | 消滅職業図鑑" };
 
 const chainTitleEn: Record<string, string> = {
   通信: "Communication",

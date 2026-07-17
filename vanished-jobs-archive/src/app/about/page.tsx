@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import JobCard from "@/components/JobCard";
 import { jobByNo, stats, statusMeta, causeLabel } from "@/data/jobs";
 
-export const metadata: Metadata = { title: "About | Vanished Jobs Archive." };
+export const metadata: Metadata = { title: "About | 消滅職業図鑑" };
 
 export default function AboutPage() {
   const sampleCard = jobByNo.get("015")!;

@@ -26,7 +26,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vanished Jobs Archive.",
+  title: "消滅職業図鑑 | Vanished Jobs Archive.",
   description:
     "「コンピュータ」は、かつて人間の職業だった。消えた職業151種を、こすくまくんと記録する図鑑。",
   robots: { index: false, follow: false },

@@ -38,8 +38,12 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-vja-line bg-vja-bg/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-8">
         <Link href="/" className="flex items-baseline gap-3">
-          <span className="font-logo text-lg font-bold italic tracking-wide md:text-xl">
-            Vanished Jobs Archive.
+          <span className="text-lg font-bold tracking-wide md:text-xl">
+            {lang === "en" ? (
+              <span className="font-logo italic">Vanished Jobs Archive.</span>
+            ) : (
+              "消滅職業図鑑"
+            )}
           </span>
           <span className="font-mono-label hidden text-[10px] tracking-[0.2em] text-vja-ink-soft sm:inline">
             ARCHIVE · {stats.total} ENTRIES
