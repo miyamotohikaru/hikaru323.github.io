@@ -7,9 +7,11 @@ interface PanoramaViewerProps {
   fov: number; // 生き物の視野角（見回せる範囲を決める）
   photoAspect: number; // アップロード写真の縦横比 (w/h)。覗き窓のサイズをこれに合わせる
   label?: string; // 左上ラベル（例「馬のめ」）
+  frozen?: boolean; // true=回転も見回しもしない固定表示（人間の目＝元写真サイズ）
 }
 
-const AUTO_ONEWAY_SEC = 20; // 片道の秒数（本当にゆっくり）
+const AUTO_ONEWAY_SEC = 60; // 片道の秒数（本当にゆっくり）
+const START_HOLD_MS = 2000; // 開始時、最初の場所で固定しておく時間
 
 /**
  * 「元写真サイズの覗き窓」の後ろで360°パノラマがゆっくり回る方式。
@@ -18,7 +20,7 @@ const AUTO_ONEWAY_SEC = 20; // 片道の秒数（本当にゆっくり）
  * - 放置すると右へゆっくりパン→端で折り返して左へ、を往復（fovで振れ幅が変わる）。
  * - ドラッグ/スワイプで手動でも見回せる。端・余白はクリーム色(#FFF9F2)。
  */
-export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaViewerProps) {
+export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = false }: PanoramaViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgElRef = useRef<HTMLImageElement | null>(null);
 
@@ -31,6 +33,7 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaVi
   const maxRef = useRef(0); // 片側に振れる最大量(px)
   const centerRef = useRef(0); // マスターを窓中央に置くためのオフセット(px)
   const speedRef = useRef(0.3); // px/frame
+  const startAtRef = useRef(0); // この時刻(performance.now)まで正面で固定
 
   const autoRef = useRef(true);
   const [autoOn, setAutoOn] = useState(true);
@@ -51,10 +54,11 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaVi
     img.src = imageUrl;
   }, [imageUrl]);
 
-  // 画像が変わったら正面へ戻し、ヒントを数秒表示
+  // 画像が変わったら正面へ戻し、最初の2秒は固定→その後 右へ動き出す
   useEffect(() => {
     posRef.current = 0;
-    dirRef.current = -1;
+    dirRef.current = -1; // -1=右へ見に行く
+    startAtRef.current = performance.now() + START_HOLD_MS;
     setHintVisible(true);
     const t = setTimeout(() => setHintVisible(false), 2600);
     return () => clearTimeout(t);
@@ -77,10 +81,10 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaVi
       const sw = imgW * scale;
       setScaledW(sw);
       centerRef.current = (cw - sw) / 2; // 中央=元写真が窓中央に来る
-      // fovで振れ幅を制限。360°=端まで、狭いほど中央付近だけ
-      maxRef.current = Math.max(0, ((sw - cw) / 2) * viewableRatio);
+      // frozen(人間の目)は見回さない＝振れ幅0。それ以外はfovで制限
+      maxRef.current = frozen ? 0 : Math.max(0, ((sw - cw) / 2) * viewableRatio);
       // 片道 AUTO_ONEWAY_SEC 秒でゆっくり
-      speedRef.current = Math.max(0.12, (2 * maxRef.current) / (AUTO_ONEWAY_SEC * 60));
+      speedRef.current = Math.max(0.08, (2 * maxRef.current) / (AUTO_ONEWAY_SEC * 60));
       // クランプ
       posRef.current = Math.max(-maxRef.current, Math.min(maxRef.current, posRef.current));
       applyTransform();
@@ -90,7 +94,8 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaVi
 
     function loop() {
       const M = maxRef.current;
-      if (autoRef.current && !draggingRef.current && M > 0) {
+      const holding = performance.now() < startAtRef.current; // 開始2秒は固定
+      if (autoRef.current && !draggingRef.current && !holding && M > 0) {
         posRef.current += dirRef.current * speedRef.current;
         if (posRef.current <= -M) { posRef.current = -M; dirRef.current = 1; }  // 右端→左へ
         if (posRef.current >= M) { posRef.current = M; dirRef.current = -1; }   // 左端→右へ
@@ -104,7 +109,7 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaVi
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", recompute);
     };
-  }, [imgW, imgH, viewableRatio, applyTransform]);
+  }, [imgW, imgH, viewableRatio, frozen, applyTransform]);
 
   // ドラッグ（pointer=タッチ・マウス両対応）
   const onPointerDown = useCallback((e: React.PointerEvent) => {
@@ -146,7 +151,7 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaVi
           borderRadius: 18,
           overflow: "hidden",
           background: "#FFF9F2",
-          cursor: "grab",
+          cursor: frozen ? "default" : "grab",
           touchAction: "none",
           userSelect: "none",
           boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
@@ -184,7 +189,7 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaVi
           </div>
         )}
 
-        {hintVisible && (
+        {hintVisible && !frozen && (
           <div
             style={{
               position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)",
@@ -198,19 +203,21 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label }: PanoramaVi
         )}
       </div>
 
-      {/* 自動で見回す ON/OFF */}
-      <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
-        <button
-          onClick={toggleAuto}
-          style={{
-            padding: "9px 18px", borderRadius: 100, border: "2px solid rgba(0,0,0,0.06)",
-            background: "#fff", color: "#555", fontWeight: 700, fontSize: 13,
-            cursor: "pointer", fontFamily: "inherit",
-          }}
-        >
-          {autoOn ? "⏸ 自動で見回すのを止める" : "▶ 自動で見回す"}
-        </button>
-      </div>
+      {/* 自動で見回す ON/OFF（人間の目=固定表示のときは出さない） */}
+      {!frozen && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
+          <button
+            onClick={toggleAuto}
+            style={{
+              padding: "9px 18px", borderRadius: 100, border: "2px solid rgba(0,0,0,0.06)",
+              background: "#fff", color: "#555", fontWeight: 700, fontSize: 13,
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            {autoOn ? "⏸ 自動で見回すのを止める" : "▶ 自動で見回す"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

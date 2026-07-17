@@ -751,6 +751,7 @@ export default function ViewScreen({
             imageUrl={showHuman ? panoHumanUrl : panoUrl}
             fov={showHuman ? 120 : fovData?.fov ?? 360}
             photoAspect={canvasRatio ?? 1}
+            frozen={showHuman}
             label={showHuman ? "👁 人間のめ" : `${creature.name}のめ`}
           />
         ) : null}
