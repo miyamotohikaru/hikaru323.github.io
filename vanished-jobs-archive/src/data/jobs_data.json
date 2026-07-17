@@ -1230,7 +1230,7 @@
   "summary": "「ラジウム・ガールズ」。筆先を舐めて被曝した悲劇が労働者保護法を生んだ",
   "successor": "労働安全法制",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/051.png",
   "hasFullBody": false,
   "endLabel": "〜1930s",
   "textColor": "#3B2A1E"
@@ -1254,7 +1254,7 @@
   "summary": "寝台列車の給仕。黒人中産階級と公民権運動の母体にもなった歴史的職業",
   "successor": "航空客室乗務員",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/052.png",
   "hasFullBody": false,
   "endLabel": "〜1960s",
   "textColor": "#F3EEE0"
@@ -1279,7 +1279,7 @@
   "summary": "毎朝玄関に瓶を届けた「定期宅配」の元祖",
   "successor": "スーパー+冷蔵庫(宅配サブスクで一部復活)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/053.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#F3EEE0"
@@ -1304,7 +1304,7 @@
   "summary": "丸太に乗って川を下る木材運搬。日本でも「筏師」として各地の川にいた",
   "successor": "陸送トラック",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/054.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#3B2A1E"
@@ -1328,7 +1328,7 @@
   "summary": "フィルム交換の職人技はデジタルシネマで無用に。資格職から兼務作業へ",
   "successor": "デジタル映写(ボタン一つに)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/055.png",
   "hasFullBody": false,
   "endLabel": "",
   "textColor": "#F3EEE0"
@@ -1353,7 +1353,7 @@
   "summary": "人間の発話速度で文字を刻む特殊技能。国会・法廷の記録を支えた",
   "successor": "録音→音声認識AI(法廷等に少数残存)",
   "lineageId": "kiroku",
-  "image": null,
+  "image": "jobs/056.png",
   "hasFullBody": false,
   "endLabel": "〜20c",
   "textColor": "#F3EEE0"
@@ -1377,7 +1377,7 @@
   "summary": "パンチカードに穿孔してデータを作った。データ入力職の始祖",
   "successor": "データ入力作業員→OCR・AI",
   "lineageId": "keisan",
-  "image": null,
+  "image": "jobs/057.png",
   "hasFullBody": false,
   "endLabel": "〜1980s",
   "textColor": "#3B2A1E"
@@ -1401,7 +1401,7 @@
   "summary": "生放送でドアの音も馬の足音も手作業で鳴らした。技能は映画音響へ継承",
   "successor": "フォーリーアーティスト(映画音響)",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/058.png",
   "hasFullBody": false,
   "endLabel": "〜1950s",
   "textColor": "#F3EEE0"
@@ -1426,7 +1426,7 @@
   "summary": "コックピットの3人目。コンピュータが座席ごと消した高度専門職",
   "successor": "計器の電子化・2人乗務化",
   "lineageId": null,
-  "image": null,
+  "image": "jobs/059.png",
   "hasFullBody": false,
   "endLabel": "〜1980s",
   "textColor": "#3B2A1E"
@@ -1450,7 +1450,7 @@
   "summary": "誕生から消滅まで約30年。「新作」「準新作」の棚は一世代の記憶に",
   "successor": "サブスク配信",
   "lineageId": "taiyo",
-  "image": null,
+  "image": "jobs/060.png",
   "hasFullBody": false,
   "endLabel": "〜2010s",
   "textColor": "#3B2A1E"
