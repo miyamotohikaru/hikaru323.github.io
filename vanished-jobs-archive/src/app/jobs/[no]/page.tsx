@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import JobCard from "@/components/JobCard";
+import ArtChip from "@/components/ArtChip";
 import { jobs, jobByNo, statusMeta, causeLabel } from "@/data/jobs";
 import { details } from "@/data/details";
 import { lineageChains } from "@/data/lineage";
@@ -267,25 +268,20 @@ export default async function JobPage({
           <p className="font-mono-label text-[10px] tracking-[0.4em] text-vja-ink-soft">
             <T ja="おなじ時代に消えたなかま" en="VANISHED IN THE SAME ERA" />
           </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div className="mt-14 grid gap-x-4 gap-y-10 sm:grid-cols-3">
             {related.map((r) => (
-              <Link
-                key={r.no}
-                href={`/jobs/${r.no}`}
-                className="flex items-center gap-4 rounded-lg px-5 py-4 transition-transform hover:-translate-y-0.5"
-                style={{ background: r.color, color: r.textColor }}
-              >
-                <div>
-                  <p className="text-sm font-bold tracking-wider">
+              <ArtChip key={r.no} job={r} href={`/jobs/${r.no}`} size="lg">
+                <span>
+                  <span className="block text-sm font-bold tracking-wider">
                     <T ja={r.name} en={r.en} />
-                  </p>
-                  <p className="mt-1 text-[11px] opacity-85">
+                  </span>
+                  <span className="mt-1 block text-[11px] opacity-85">
                     {statusMeta[r.status].mark}
                     <T ja={statusMeta[r.status].label} en={dict.status[r.status]} />{" "}
                     {r.endLabel}
-                  </p>
-                </div>
-              </Link>
+                  </span>
+                </span>
+              </ArtChip>
             ))}
           </div>
         </section>

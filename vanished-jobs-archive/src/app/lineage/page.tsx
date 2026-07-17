@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import Image from "next/image";
 import { jobByNo } from "@/data/jobs";
+import ArtChip from "@/components/ArtChip";
 import { lineageChains, LineageNode } from "@/data/lineage";
 import { T } from "@/lib/lang";
 
@@ -27,37 +26,16 @@ function NodeChip({ node }: { node: LineageNode }) {
 
   if (!job) {
     return (
-      <span className="inline-flex h-10 items-center whitespace-nowrap rounded border border-vja-line bg-vja-paper px-3 text-xs italic tracking-wider text-vja-ink-soft md:h-12">
+      <span className="inline-flex h-12 items-center whitespace-nowrap rounded-xl border border-vja-line bg-vja-paper px-3 text-xs italic tracking-wider text-vja-ink-soft md:h-14">
         {node.label}
       </span>
     );
   }
   return (
-    <Link
-      href={`/jobs/${job.no}`}
-      className={`inline-flex h-10 items-center gap-2 whitespace-nowrap rounded px-3 text-xs tracking-wider transition-transform hover:-translate-y-0.5 md:h-12 ${
-        node.ongoing ? "border border-dashed border-vja-blue text-vja-blue" : ""
-      }`}
-      style={
-        node.ongoing
-          ? undefined
-          : job.image
-            ? { background: job.color, color: job.textColor }
-            : { background: "var(--vja-ink)", color: "var(--vja-cream)" }
-      }
-    >
-      {job.image && (
-        <Image
-          src={`/${job.image}`}
-          alt=""
-          width={36}
-          height={36}
-          className="h-7 w-7 rounded-full bg-vja-cream object-contain md:h-9 md:w-9"
-        />
-      )}
+    <ArtChip job={job} href={`/jobs/${job.no}`} ongoing={!!node.ongoing}>
       <T ja={node.label} en={job.en} />
       {node.ongoing ? " ▲" : ""}
-    </Link>
+    </ArtChip>
   );
 }
 
@@ -96,7 +74,7 @@ export default function LineagePage() {
             </h2>
 
             {/* PC: 横並び */}
-            <div className="mt-4 hidden overflow-x-auto pb-2 md:block">
+            <div className="mt-2 hidden overflow-x-auto pb-2 pt-8 md:block">
               <div className="flex w-max items-center gap-2">
                 {chain.nodes.map((n, i) => (
                   <span key={i} className="flex items-center gap-2">
@@ -109,7 +87,7 @@ export default function LineagePage() {
 
             {/* 携帯: 縦並び（ふるい↑ → いま↓） */}
             <div className="mt-4 md:hidden">
-              <div className="ml-3 flex flex-col items-start gap-2.5 border-l border-vja-line pl-5">
+              <div className="ml-3 mt-3 flex flex-col items-start gap-3 border-l border-vja-line pl-5 pt-2">
                 {chain.nodes.map((n, i) => (
                   <span key={i} className="flex flex-col items-start gap-2.5">
                     {i > 0 && (

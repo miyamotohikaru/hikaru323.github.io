@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import {
   jobs,
   stats,
@@ -11,6 +9,7 @@ import {
   categorySubtitles,
   JobStatus,
 } from "@/data/jobs";
+import ArtChip from "@/components/ArtChip";
 import { useLang, dict } from "@/lib/lang";
 
 /** 中央軸に置く「機械・技術・制度」のできごと(章ごと) */
@@ -39,34 +38,15 @@ function JobChip({ job, en }: { job: (typeof jobs)[number]; en: boolean }) {
   const name = en ? job.en : job.name;
   const long = name.length > (en ? 16 : 8);
   return (
-    <Link
-      href={`/jobs/${job.no}`}
-      className={`inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded px-2.5 tracking-wider transition-transform hover:-translate-y-0.5 md:h-12 md:gap-2 md:px-3 ${
-        long ? "text-[9px] md:text-[11px]" : "text-[11px] md:text-xs"
-      } ${
-        job.status === "ongoing" ? "border border-dashed border-vja-blue text-vja-blue" : ""
-      }`}
-      style={
-        job.status === "ongoing"
-          ? undefined
-          : { background: job.color, color: job.textColor }
-      }
-    >
-      {job.image && (
-        <Image
-          src={`/${job.image}`}
-          alt=""
-          width={36}
-          height={36}
-          className="h-7 w-7 rounded-full bg-vja-cream object-contain md:h-9 md:w-9"
-        />
-      )}
-      <span className="font-semibold">{name}</span>
-      <span className="text-[9px] opacity-85 md:text-[10px]">
-        {m.mark}
-        {job.endLabel}
+    <ArtChip job={job} href={`/jobs/${job.no}`} ongoing={job.status === "ongoing"}>
+      <span className={long ? "text-[9px] md:text-[11px]" : undefined}>
+        <span className="font-semibold">{name}</span>{" "}
+        <span className="text-[9px] opacity-85 md:text-[10px]">
+          {m.mark}
+          {job.endLabel}
+        </span>
       </span>
-    </Link>
+    </ArtChip>
   );
 }
 
@@ -152,15 +132,15 @@ export default function TimelineView() {
               </div>
 
               {/* 職業チップ:中央軸の左右(携帯でも2列を維持) */}
-              <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 md:gap-x-16">
-                <div className="flex flex-col items-end gap-3">
+              <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-3 md:gap-x-16">
+                <div className="flex flex-col items-end gap-4">
                   {list
                     .filter((_, i) => i % 2 === 0)
                     .map((j) => (
                       <JobChip key={j.no} job={j} en={en} />
                     ))}
                 </div>
-                <div className="flex flex-col items-start gap-3">
+                <div className="flex flex-col items-start gap-4">
                   {list
                     .filter((_, i) => i % 2 === 1)
                     .map((j) => (
