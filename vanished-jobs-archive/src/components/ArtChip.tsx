@@ -27,7 +27,7 @@ export default function ArtChip({
 
   const pad = withArt
     ? sm
-      ? "pl-[4.7rem] md:pl-[5.4rem]"
+      ? "pl-[3.6rem] md:pl-[5.4rem]"
       : "pl-[7.8rem]"
     : sm
       ? "pl-3"
@@ -37,7 +37,7 @@ export default function ArtChip({
     <Link
       href={href}
       className={`relative inline-flex items-center whitespace-nowrap rounded-xl tracking-wider transition-transform hover:-translate-y-0.5 ${
-        sm ? "h-12 pr-3 text-[11px] md:h-14 md:pr-4 md:text-xs" : "h-20 pr-5 text-sm"
+        sm ? "h-11 pr-2.5 text-[10px] md:h-14 md:pr-4 md:text-xs" : "h-20 pr-5 text-sm"
       } ${pad} ${ongoing ? "border border-dashed border-vja-blue text-vja-blue" : ""}`}
       style={ongoing ? undefined : { background: job.color, color: job.textColor }}
     >
@@ -49,7 +49,7 @@ export default function ArtChip({
           height={280}
           className={`pointer-events-none absolute bottom-1 left-1 ${
             sm
-              ? "h-[133%] max-w-[4rem] md:max-w-[4.7rem]"
+              ? "h-[133%] max-w-[3rem] md:max-w-[4.7rem]"
               : "h-[133%] max-w-[6.6rem]"
           }`}
           style={{ objectFit: "contain", objectPosition: "left bottom", width: "auto" }}

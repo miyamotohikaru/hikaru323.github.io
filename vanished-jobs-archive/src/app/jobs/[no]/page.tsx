@@ -268,7 +268,7 @@ export default async function JobPage({
           <p className="font-mono-label text-[10px] tracking-[0.4em] text-vja-ink-soft">
             <T ja="おなじ時代に消えたなかま" en="VANISHED IN THE SAME ERA" />
           </p>
-          <div className="mt-14 grid gap-x-4 gap-y-10 sm:grid-cols-3">
+          <div className="mt-14 grid gap-x-4 gap-y-14 sm:grid-cols-3">
             {related.map((r) => (
               <ArtChip key={r.no} job={r} href={`/jobs/${r.no}`} size="lg">
                 <span>

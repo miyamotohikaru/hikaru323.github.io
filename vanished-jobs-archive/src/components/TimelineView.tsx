@@ -39,9 +39,9 @@ function JobChip({ job, en }: { job: (typeof jobs)[number]; en: boolean }) {
   const long = name.length > (en ? 16 : 8);
   return (
     <ArtChip job={job} href={`/jobs/${job.no}`} ongoing={job.status === "ongoing"}>
-      <span className={long ? "text-[9px] md:text-[11px]" : undefined}>
+      <span className={long ? "text-[8.5px] md:text-[11px]" : "text-[9.5px] md:text-xs"}>
         <span className="font-semibold">{name}</span>{" "}
-        <span className="text-[9px] opacity-85 md:text-[10px]">
+        <span className="text-[8px] opacity-85 md:text-[10px]">
           {m.mark}
           {job.endLabel}
         </span>
@@ -132,7 +132,7 @@ export default function TimelineView() {
               </div>
 
               {/* 職業チップ:中央軸の左右(携帯でも2列を維持) */}
-              <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-3 md:gap-x-16">
+              <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-3 md:gap-x-16">
                 <div className="flex flex-col items-end gap-4">
                   {list
                     .filter((_, i) => i % 2 === 0)
