@@ -241,12 +241,22 @@ export default function UploadScreen({ creatures, onFile, preselectedCreature }:
           >
             えらぶ →
           </div>
+          {/* カード全体を覆う透明なfile input。display:noneだとモバイルでタップから
+              ファイル選択が起動しないため、opacity:0で重ねてタップを直接受ける。 */}
           <input
             ref={inputRef}
             type="file"
             accept="image/*"
-            className="hidden"
             onChange={(e) => handleFile(e.target.files)}
+            aria-label="写真をえらぶ"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              opacity: 0,
+              cursor: "pointer",
+            }}
           />
         </label>
       </div>
