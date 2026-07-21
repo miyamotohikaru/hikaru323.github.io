@@ -97,6 +97,12 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
+/** data: / blob: URL を Blob 化（パノラマ用マスター画像のアップロードに使う） */
+async function urlToBlob(url: string): Promise<Blob> {
+  const res = await fetch(url);
+  return res.blob();
+}
+
 async function generateShareImage(
   creatureCanvas: HTMLCanvasElement,
   humanCanvas: HTMLCanvasElement,
@@ -600,17 +606,29 @@ export default function ViewScreen({
     const humanCanvas = humanCanvasRef.current;
     if (!creatureCanvas || !humanCanvas) return null;
     try {
-      // OGP用の合成画像と、長押し切り替え用の個別画像（生き物のめ／人間のめ）を生成
-      const [composite, creatureImg, humanImg] = await Promise.all([
-        generateShareImage(creatureCanvas, humanCanvas, creature),
-        canvasToBlob(creatureCanvas),
-        canvasToBlob(humanCanvas),
-      ]);
+      // OGP用の合成画像（正面ビューの左右並び）は共通
+      const composite = await generateShareImage(creatureCanvas, humanCanvas, creature);
       const fd = new FormData();
       fd.append("image", composite, `${creature.id}.png`);
-      fd.append("creatureImage", creatureImg, `${creature.id}-creature.png`);
-      fd.append("humanImage", humanImg, `${creature.id}-human.png`);
       fd.append("creatureId", creature.id);
+
+      if (panoUrl && panoHumanUrl) {
+        // パノラマ表示の生き物: フィルター済みマスター(生き物のめ)＋元色マスター(人間のめ)を共有。
+        // → シェアページも本編と同じスクロールパノラマ＋押している間だけ人間の目にできる。
+        const [cimg, himg] = await Promise.all([urlToBlob(panoUrl), urlToBlob(panoHumanUrl)]);
+        fd.append("creatureImage", cimg, `${creature.id}-creature.jpg`);
+        fd.append("humanImage", himg, `${creature.id}-human.jpg`);
+        fd.append("panorama", "1");
+        fd.append("photoAspect", String(canvasRatio ?? 1));
+      } else {
+        // 狭視野など: 従来どおり正面ビューの個別画像（長押し切替）
+        const [cimg, himg] = await Promise.all([
+          canvasToBlob(creatureCanvas),
+          canvasToBlob(humanCanvas),
+        ]);
+        fd.append("creatureImage", cimg, `${creature.id}-creature.png`);
+        fd.append("humanImage", himg, `${creature.id}-human.png`);
+      }
       const res = await fetch("/api/share", { method: "POST", body: fd });
       if (!res.ok) {
         console.error("[share] create failed:", res.status);
@@ -622,7 +640,7 @@ export default function ViewScreen({
       console.error("[share] create error:", e);
       return null;
     }
-  }, [creature]);
+  }, [creature, panoUrl, panoHumanUrl, canvasRatio]);
 
   // シェアメニューを開いた瞬間にURLを先読み生成しておく（about:blankの待ち時間を消す）
   const prepareShareUrl = useCallback(async () => {
