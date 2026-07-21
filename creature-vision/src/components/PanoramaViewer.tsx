@@ -206,21 +206,26 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
         )}
       </div>
 
-      {/* 自動で見回す ON/OFF（人間の目=固定表示のときは出さない） */}
-      {!frozen && (
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
-          <button
-            onClick={toggleAuto}
-            style={{
-              padding: "9px 18px", borderRadius: 100, border: "2px solid rgba(0,0,0,0.06)",
-              background: "#fff", color: "#555", fontWeight: 700, fontSize: 13,
-              cursor: "pointer", fontFamily: "inherit",
-            }}
-          >
-            {autoOn ? "⏸ 自動で見回すのを止める" : "▶ 自動で見回す"}
-          </button>
-        </div>
-      )}
+      {/* 自動で見回す ON/OFF。人間の目(frozen)では見えないが、レイアウトずれ防止で
+          領域は残す（visibility:hiddenで高さ確保）。 */}
+      <div
+        style={{
+          display: "flex", justifyContent: "center", marginTop: 12,
+          visibility: frozen ? "hidden" : "visible",
+        }}
+      >
+        <button
+          onClick={toggleAuto}
+          disabled={frozen}
+          style={{
+            padding: "9px 18px", borderRadius: 100, border: "2px solid rgba(0,0,0,0.06)",
+            background: "#fff", color: "#555", fontWeight: 700, fontSize: 13,
+            cursor: "pointer", fontFamily: "inherit",
+          }}
+        >
+          {autoOn ? "⏸ 自動で見回すのを止める" : "▶ 自動で見回す"}
+        </button>
+      </div>
     </div>
   );
 }

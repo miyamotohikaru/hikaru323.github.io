@@ -266,8 +266,9 @@ async function generateMaster(normalizedBlob: Blob): Promise<HTMLImageElement | 
 // それ以外（カメレオン=dualeye, ヨツメウオ=spliteye 等）は本来のfilterTypeをそのまま
 // パノラマ画像に適用し、スクロールで見回せるようにする（＝形状フィルターもパノラマに乗る）。
 const PANO_COLOR: Record<string, { filter: string; fp?: Record<string, unknown> }> = {
-  horse: { filter: "dichro" },
-  goat: { filter: "dichro" },
+  // 馬・ヤギとも二色覚（黄と青だけ）。ヤギは後段で横長レターボックス（長方形瞳孔）を追加。
+  horse: { filter: "dichro", fp: { channels: [[255, 216, 0], [10, 90, 255]] } },
+  goat: { filter: "dichro", fp: { channels: [[255, 216, 0], [10, 90, 255]] } },
 };
 
 // マスター画像を fov に応じて中心からクロップして ctx いっぱいに描画
@@ -553,6 +554,21 @@ export default function ViewScreen({
             const pctx = pc.getContext("2d")!;
             pctx.drawImage(master, 0, 0);
             applyFilter(pctx, mw, mh, colorFilter, colorFp);
+            // ヤギ: 横長の長方形瞳孔＝水平の帯だけクッキリ、上下は暗い(レターボックス)。
+            // 馬との違いを表現（馬は上下を暗くせず、より広いフルパノラマ）。
+            if (creatureId === "goat") {
+              const band = mh * 0.3;
+              const gTop = pctx.createLinearGradient(0, 0, 0, band);
+              gTop.addColorStop(0, "rgba(0,0,0,0.9)");
+              gTop.addColorStop(1, "rgba(0,0,0,0)");
+              pctx.fillStyle = gTop;
+              pctx.fillRect(0, 0, mw, band);
+              const gBot = pctx.createLinearGradient(0, mh - band, 0, mh);
+              gBot.addColorStop(0, "rgba(0,0,0,0)");
+              gBot.addColorStop(1, "rgba(0,0,0,0.9)");
+              pctx.fillStyle = gBot;
+              pctx.fillRect(0, mh - band, mw, band);
+            }
             const url = pc.toDataURL("image/jpeg", 0.9);
             if (renderVersionRef.current === thisVersion) {
               setPanoUrl(url);
