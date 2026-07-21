@@ -5,6 +5,7 @@ import ClientProviders from "@/components/ClientProviders";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileScrollConverter from "@/components/MobileScrollConverter";
+import { EASTER_EGG_HTML } from "./easterEgg";
 
 export const metadata: Metadata = {
   title: "存在しない言葉辞典",
@@ -65,6 +66,8 @@ export default function RootLayout({
         )}
       </head>
       <body>
+        {/* view-source イースターエッグ: こす.くまの宣言文を先頭付近にコメントで出す */}
+        <div style={{ display: "none" }} aria-hidden="true" dangerouslySetInnerHTML={{ __html: EASTER_EGG_HTML }} />
         <ClientProviders>
           <Header />
           <div className="page-wrapper">
