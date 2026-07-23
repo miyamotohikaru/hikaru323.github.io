@@ -268,7 +268,7 @@ export default function Home() {
           await openLimitModal(payload, display, authorToken);
           return;
         }
-        setSaveError(data.error || "掲載に失敗しました。");
+        setSaveError(data.busy ? t("error.busy") : data.error || "掲載に失敗しました。");
         return;
       }
 
