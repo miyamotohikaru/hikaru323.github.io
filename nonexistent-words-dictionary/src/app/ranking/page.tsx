@@ -19,11 +19,12 @@ const SPINE_COLORS = [
   { bg: "linear-gradient(180deg, #5a4838, #4a3828)", text: "#e0d8c8" },
   { bg: "linear-gradient(180deg, #2e2e3a, #1e1e2a)", text: "#c8c8d8" },
   { bg: "linear-gradient(180deg, #583828, #482818)", text: "#d8c8b8" },
+  { bg: "linear-gradient(180deg, #4a2e4a, #38203a)", text: "#d8c0d4" },
 ];
 
 // 品詞ごとに色を固定で割り当てる（同じ品詞は同じ色＝本棚が品詞で色分けされる）
 const POS_ORDER = [
-  "名詞", "動詞", "形容詞", "形容動詞", "副詞", "感動詞", "連体詞", "接続詞",
+  "名詞", "動詞", "形容詞", "形容動詞", "副詞", "感動詞", "連体詞", "接続詞", "ことわざ",
 ];
 // 英語品詞 → 日本語品詞へ正規化（同じ意味は同じ色に）
 const POS_EN_MAP: Record<string, string> = {
