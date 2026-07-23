@@ -248,7 +248,7 @@ export default function RankingPage() {
       {loading ? (
         <p className="loading-text">{t("loading.text")}</p>
       ) : fetchError ? (
-        <p className="empty-text">データの取得に失敗しました。ページを再読み込みしてください。</p>
+        <p className="empty-text">{t("error.busy")}</p>
       ) : words.length === 0 ? (
         <p className="empty-text">{t("common.noPostsYet")}</p>
       ) : (
