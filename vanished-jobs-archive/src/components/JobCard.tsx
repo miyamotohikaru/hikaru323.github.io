@@ -1,0 +1,113 @@
+"use client";
+
+import Image from "next/image";
+import { Job, statusMeta } from "@/data/jobs";
+import { useLang } from "@/lib/lang";
+import { dict } from "@/lib/dict";
+import { enDetails } from "@/data/en";
+
+/** 収録外用のプレースホルダー：線画のこすくまくん */
+function BearPlaceholder() {
+  return (
+    <svg
+      viewBox="0 0 100 110"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-[72%] w-auto opacity-80"
+    >
+      <circle cx="30" cy="22" r="9" />
+      <circle cx="70" cy="22" r="9" />
+      <ellipse cx="50" cy="38" rx="26" ry="22" />
+      <circle cx="41" cy="35" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="59" cy="35" r="1.6" fill="currentColor" stroke="none" />
+      <path d="M47 43 q3 2.5 6 0" />
+      <path d="M31 57 q-8 14 -6 30 q1 12 11 15 q6 2 14 2 q8 0 14 -2 q10 -3 11 -15 q2 -16 -6 -30" />
+      <ellipse cx="30" cy="72" rx="7" ry="11" transform="rotate(18 30 72)" />
+      <ellipse cx="70" cy="72" rx="7" ry="11" transform="rotate(-18 70 72)" />
+      <ellipse cx="42" cy="103" rx="8" ry="5" />
+      <ellipse cx="58" cy="103" rx="8" ry="5" />
+    </svg>
+  );
+}
+
+/** はみ出し気味に大きく置く画像（現在は該当なし。必要ならパスを追加） */
+const OVERSIZED = new Set<string>([]);
+
+/** 画像ごとの位置微調整（絵柄がカード中央に来るように） */
+const NUDGE: Record<string, string> = {};
+
+/** 全角=1・半角=0.5 で実効文字数を数える（長い名前の縮小率計算用） */
+function effLen(s: string) {
+  let n = 0;
+  for (const ch of s) n += ch.charCodeAt(0) > 0xff ? 1 : 0.5;
+  return n;
+}
+
+export default function JobCard({ job }: { job: Job }) {
+  const { lang } = useLang();
+  const en = lang === "en";
+  const tr = enDetails[job.no];
+  const oversized = job.image ? OVERSIZED.has(job.image) : false;
+
+  const name = en ? job.en : job.name;
+  const subName = en ? job.name : job.en;
+  const quote = en && tr?.quote ? tr.quote : job.quote;
+  const badge = en
+    ? `${statusMeta[job.status].mark}${dict.status[job.status]}${job.endLabel ? ` ${job.endLabel}` : ""}`
+    : `${statusMeta[job.status].mark}${statusMeta[job.status].label}${job.endLabel ? ` ${job.endLabel}` : ""}`;
+
+  // 名前は必ず1行に収める: カード内幅86cqwに対し収まるサイズへ縮小（上限8.8cqw）
+  const nameSize = Math.min(8.8, 84 / effLen(name));
+
+  return (
+    <div className="@container block h-full w-full">
+      <div
+        className="relative flex aspect-[34/47] w-full flex-col overflow-hidden rounded-[6cqw] px-[7cqw] pb-[7cqw] pt-[6cqw] shadow-[0_2px_10px_rgba(58,46,34,0.18)]"
+        style={{ background: job.color, color: job.textColor }}
+      >
+        <div className="flex items-start justify-between">
+          <span className="font-mono-label text-[3.4cqw] tracking-[0.25em] opacity-90">
+            NO.{job.no}
+          </span>
+          <span
+            className="whitespace-nowrap rounded-full px-[3.4cqw] py-[1cqw] text-[3.2cqw] tracking-wider"
+            style={{ background: job.textColor, color: job.color }}
+          >
+            {badge}
+          </span>
+        </div>
+
+        <div className="flex min-h-0 flex-1 items-center justify-center py-[2cqw]">
+          {job.image ? (
+            <Image
+              src={`/${job.image}`}
+              alt={job.name}
+              width={400}
+              height={400}
+              className={`h-full w-auto object-contain ${oversized ? "scale-115" : ""}`}
+              style={NUDGE[job.image] ? { transform: NUDGE[job.image] } : undefined}
+            />
+          ) : (
+            <BearPlaceholder />
+          )}
+        </div>
+
+        <div className="text-center">
+          <p
+            className="whitespace-nowrap font-bold leading-tight"
+            style={{ fontSize: `${nameSize}cqw` }}
+          >
+            {name}
+          </p>
+          <p className="font-mono-label mt-[1.6cqw] text-[2.9cqw] uppercase tracking-[0.35em] opacity-80">
+            {subName}
+          </p>
+          <p className="mt-[3.4cqw] text-[3.5cqw] leading-snug opacity-90">
+            「{quote}」
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
