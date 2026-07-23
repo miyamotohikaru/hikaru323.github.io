@@ -19,7 +19,7 @@ const REGISTER_LIMIT = 5;
 const NEW_WORD_ID = "__new__";
 
 // 品詞の選択肢（編集パネルのプルダウン用）
-const POS_OPTIONS_JA = ["名詞", "動詞", "形容詞", "形容動詞", "副詞", "感動詞", "連体詞", "接続詞", "感嘆詞"];
+const POS_OPTIONS_JA = ["名詞", "動詞", "形容詞", "形容動詞", "副詞", "感動詞", "連体詞", "接続詞", "感嘆詞", "ことわざ"];
 const POS_OPTIONS_EN = ["noun", "verb", "adjective", "adverb", "conjunction", "interjection"];
 
 // カタカナをひらがなに変換
