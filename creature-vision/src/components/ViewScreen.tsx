@@ -356,6 +356,7 @@ export default function ViewScreen({
   const [loadingText, setLoadingText] = useState("");
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const [trivia, setTrivia] = useState("");
+  const [progress, setProgress] = useState(0); // 生成待ちの擬似プログレス(0-100)
   // スクロール式パノラマ用の画像（フィルター済みマスター＝生き物のめ／元色マスター＝人間のめ）と人間切替
   const [panoUrl, setPanoUrl] = useState("");
   const [panoHumanUrl, setPanoHumanUrl] = useState("");
@@ -399,6 +400,16 @@ export default function ViewScreen({
     }, 1800);
     return () => clearInterval(interval);
   }, [expanding]);
+
+  // 生成待ちの擬似プログレスバー。時間経過で伸び、最後はゆっくり95%に漸近（完了で画面が消える）
+  useEffect(() => {
+    if (!(processing || expanding)) { setProgress(0); return; }
+    setProgress(6);
+    const iv = setInterval(() => {
+      setProgress((p) => (p >= 95 ? 95 : p + (96 - p) * 0.06));
+    }, 200);
+    return () => clearInterval(iv);
+  }, [processing, expanding]);
 
   // 変換中＋シェアリンク準備中の豆知識（ランダムで開始→2.5秒ごとに3つをローテーション）
   useEffect(() => {
@@ -898,6 +909,21 @@ export default function ViewScreen({
             >
               {expanding ? loadingTexts[loadingTextIndex] : loadingText}
             </p>
+
+            {/* 擬似プログレスバー（生成待ちの目安） */}
+            <div style={{ width: 220, maxWidth: "70%", marginTop: 14 }}>
+              <div style={{ height: 8, borderRadius: 100, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.round(progress)}%`,
+                    borderRadius: 100,
+                    background: `${catColor?.accent ?? "#F5A623"}`,
+                    transition: "width 0.2s ease",
+                  }}
+                />
+              </div>
+            </div>
 
             {/* 豆知識カード */}
             {trivia && (
