@@ -304,6 +304,12 @@ async function generateBestMaster(normalizedBlob: Blob): Promise<HTMLImageElemen
   return scored[0].img;
 }
 
+// マスター拡張画像を「写真(File)単位」でページを跨いで保持するモジュールキャッシュ。
+// 戻って生き物を選び直しても（ViewScreen再マウントでも）同じ写真なら再生成しない。
+// WeakMapなので写真を変えて参照が消えれば自動で破棄される。
+const MASTER_CACHE = new WeakMap<File, HTMLImageElement>();
+const MASTER_PROMISE_CACHE = new WeakMap<File, Promise<HTMLImageElement | null>>();
+
 /* ── 色フィルターの上書き（スクロールパノラマ用・色のみ） ── */
 // スクロール方式では「見回す」が視野を担当するので、色覚だけを別レイヤーで適用する。
 // 既存filterTypeが形状まで焼くもの（分割眼・上下反転・魚眼など）は、
@@ -361,9 +367,7 @@ export default function ViewScreen({
   const [panoUrl, setPanoUrl] = useState("");
   const [panoHumanUrl, setPanoHumanUrl] = useState("");
   const [showHuman, setShowHuman] = useState(false);
-  // マスター拡張画像（写真1枚につき1回生成し全生き物で使い回す）と生成中Promise（多重生成防止）
-  const masterImgRef = useRef<HTMLImageElement | null>(null);
-  const masterPromiseRef = useRef<Promise<HTMLImageElement | null> | null>(null);
+  // マスター拡張画像は写真(File)単位のモジュールキャッシュ(MASTER_CACHE)で保持する。
   const normalizedBlobRef = useRef<Blob | null>(null);
   // 正規化（API送信用画像の用意）の進行中Promise。描画がこれを await できる。
   const normalizedBlobPromiseRef = useRef<Promise<Blob> | null>(null);
@@ -433,9 +437,7 @@ export default function ViewScreen({
   // Normalize image for API on mount
   useEffect(() => {
     let cancelled = false;
-    // 写真が変わったらマスター拡張画像を破棄（次の生き物選択で1回だけ再生成）
-    masterImgRef.current = null;
-    masterPromiseRef.current = null;
+    // マスターは写真(File)単位のキャッシュなので、写真ごとに自然にmiss→生成される。
     // 正規化のPromiseをrefに保持。描画が正規化より先に走っても、
     // handleCreatureChange側でこのPromiseを await できる（レース対策）。
     const p = normalizeImage(mediaFile, 1024).then(({ blob }) => {
@@ -514,8 +516,9 @@ export default function ViewScreen({
       // --- STEP 2: マスター拡張画像を用意（広視野=exp>1.0 のときだけ。写真1枚に1回生成し全生き物で使い回す） ---
       let master: HTMLImageElement | null = null;
       if (exp > 1.0) {
-        if (masterImgRef.current) {
-          master = masterImgRef.current; // 生成済み → 即座に使い回し
+        const cached = MASTER_CACHE.get(mediaFile);
+        if (cached) {
+          master = cached; // 生成済み（同じ写真なら戻ってきても即座に使い回し）
         } else {
           // 正規化が描画より遅れて完了するレースがある（最初の生き物で発生）。
           // ここで正規化の完了を待ってから生成する（待たないとマスターが永久にスキップされる）。
@@ -529,16 +532,18 @@ export default function ViewScreen({
             setLoadingText("🔭 視界をひろげてるよ...");
             setExpanding(true);
             try {
-              // 多重生成防止: 生成Promiseを共有。2枚生成して良い方を採用。
-              if (!masterPromiseRef.current) {
-                masterPromiseRef.current = generateBestMaster(blob);
+              // 多重生成防止: 写真単位で生成Promiseを共有。2枚生成して良い方を採用。
+              let p = MASTER_PROMISE_CACHE.get(mediaFile);
+              if (!p) {
+                p = generateBestMaster(blob);
+                MASTER_PROMISE_CACHE.set(mediaFile, p);
               }
-              master = await masterPromiseRef.current;
-              if (master) masterImgRef.current = master;
-              else masterPromiseRef.current = null; // 失敗時は次回リトライ可
+              master = await p;
+              if (master) MASTER_CACHE.set(mediaFile, master);
+              else MASTER_PROMISE_CACHE.delete(mediaFile); // 失敗時は次回リトライ可
             } catch (e) {
               console.error("[master] failed:", e);
-              masterPromiseRef.current = null;
+              MASTER_PROMISE_CACHE.delete(mediaFile);
             }
           }
           setExpanding(false);
@@ -650,7 +655,7 @@ export default function ViewScreen({
         setLoadingText("");
       }
     },
-    [creatures]
+    [creatures, mediaFile]
   );
 
   // 比較画像を生成→アップロードしてOGP付きシェアページURLを返す（失敗時はnull）
