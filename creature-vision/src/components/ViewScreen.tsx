@@ -873,7 +873,7 @@ export default function ViewScreen({
                 <p style={{ fontSize: 13, fontWeight: 900, color: "#E8A838", marginBottom: 6 }}>
                   💡 豆知識
                 </p>
-                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#5F5E5A" }}>
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#5F5E5A", whiteSpace: "pre-line" }}>
                   {trivia}
                 </p>
               </div>
