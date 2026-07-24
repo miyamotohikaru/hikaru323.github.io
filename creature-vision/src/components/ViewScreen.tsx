@@ -262,6 +262,48 @@ async function generateMaster(normalizedBlob: Blob): Promise<HTMLImageElement | 
   }
 }
 
+// 拡張画像の良し悪しをスコア化。横幅（拡張量）が大きく、継ぎ目（縦の線）が
+// 目立たないほど高スコア。線が入った失敗画像を弾くのに使う。
+function masterScore(img: HTMLImageElement): number {
+  const widthRatio = img.naturalWidth / Math.max(1, img.naturalHeight);
+  let seamRatio = 1;
+  try {
+    const w = 240;
+    const h = Math.max(1, Math.round((w * img.naturalHeight) / img.naturalWidth));
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const cx = c.getContext("2d", { willReadFrequently: true })!;
+    cx.drawImage(img, 0, 0, w, h);
+    const d = cx.getImageData(0, 0, w, h).data;
+    const col = new Float64Array(w);
+    for (let x = 1; x < w; x++) {
+      let s = 0;
+      for (let y = 0; y < h; y++) {
+        const i = (y * w + x) * 4, j = (y * w + x - 1) * 4;
+        const l1 = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const l2 = 0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2];
+        s += Math.abs(l1 - l2);
+      }
+      col[x] = s / h;
+    }
+    let mean = 0; for (let x = 1; x < w; x++) mean += col[x]; mean /= (w - 1);
+    let max = 0; for (let x = 1; x < w; x++) if (col[x] > max) max = col[x];
+    seamRatio = max / (mean + 0.001); // 継ぎ目の縦線があるとここが跳ねる
+  } catch { /* ignore */ }
+  return widthRatio - seamRatio * 0.15;
+}
+
+// 2枚生成して「完全に拡張がうまくいった方（線が入っていない・広い方）」を選ぶ。
+async function generateBestMaster(normalizedBlob: Blob): Promise<HTMLImageElement | null> {
+  const [a, b] = await Promise.all([generateMaster(normalizedBlob), generateMaster(normalizedBlob)]);
+  const cands = [a, b].filter(Boolean) as HTMLImageElement[];
+  if (cands.length === 0) return null;
+  if (cands.length === 1) return cands[0];
+  const scored = cands.map((img) => ({ img, s: masterScore(img) })).sort((x, y) => y.s - x.s);
+  console.log("[master] 2候補スコア:", scored.map((z) => z.s.toFixed(2)).join(", "), "→ 良い方を採用");
+  return scored[0].img;
+}
+
 /* ── 色フィルターの上書き（スクロールパノラマ用・色のみ） ── */
 // スクロール方式では「見回す」が視野を担当するので、色覚だけを別レイヤーで適用する。
 // 既存filterTypeが形状まで焼くもの（分割眼・上下反転・魚眼など）は、
@@ -358,9 +400,9 @@ export default function ViewScreen({
     return () => clearInterval(interval);
   }, [expanding]);
 
-  // 変換中の豆知識（ランダムで開始→2.5秒ごとに3つをローテーション）
+  // 変換中＋シェアリンク準備中の豆知識（ランダムで開始→2.5秒ごとに3つをローテーション）
   useEffect(() => {
-    if (!(processing || expanding)) return;
+    if (!(processing || expanding || preparingShare)) return;
     const list = TRIVIA[creature.id] || [];
     if (list.length === 0) { setTrivia(""); return; }
     let i = Math.floor(Math.random() * list.length);
@@ -370,7 +412,7 @@ export default function ViewScreen({
       setTrivia(list[i]);
     }, 2500);
     return () => clearInterval(interval);
-  }, [processing, expanding, creature.id]);
+  }, [processing, expanding, preparingShare, creature.id]);
 
   const loadingTexts = [
     `${creature.name}の視点に変換中...`,
@@ -476,9 +518,9 @@ export default function ViewScreen({
             setLoadingText("🔭 視界をひろげてるよ...");
             setExpanding(true);
             try {
-              // 多重生成防止: 生成Promiseを共有
+              // 多重生成防止: 生成Promiseを共有。2枚生成して良い方を採用。
               if (!masterPromiseRef.current) {
-                masterPromiseRef.current = generateMaster(blob);
+                masterPromiseRef.current = generateBestMaster(blob);
               }
               master = await masterPromiseRef.current;
               if (master) masterImgRef.current = master;
@@ -786,6 +828,7 @@ export default function ViewScreen({
             fov={showHuman ? 120 : fovData?.fov ?? 360}
             photoAspect={canvasRatio ?? 1}
             frozen={showHuman}
+            loop={!showHuman && (fovData?.fov ?? 0) >= 360}
             label={showHuman ? "👁 人間のめ" : `${creature.name}のめ`}
           />
         ) : null}
@@ -816,7 +859,7 @@ export default function ViewScreen({
             className="absolute top-0 left-0 block w-full"
             style={{
               height: "auto", aspectRatio: canvasRatio ?? undefined,
-              opacity: isHolding ? 1 : 0,
+              opacity: (isHolding || showHuman) ? 1 : 0,
               transition: "opacity 0.3s ease", pointerEvents: "none",
             }}
           />
@@ -825,13 +868,13 @@ export default function ViewScreen({
               position: "absolute", top: 12, left: "50%",
               transform: "translateX(-50%)", padding: "6px 16px",
               borderRadius: 100,
-              background: isHolding ? "rgba(255,255,255,0.9)" : `${catColor?.accent ?? "#999"}ee`,
-              color: isHolding ? "#333" : "#fff",
+              background: (isHolding || showHuman) ? "rgba(255,255,255,0.9)" : `${catColor?.accent ?? "#999"}ee`,
+              color: (isHolding || showHuman) ? "#333" : "#fff",
               fontSize: 12, fontWeight: 900,
               transition: "all 0.3s ease", pointerEvents: "none",
             }}
           >
-            {isHolding ? "👁 人間のめ" : `${creature.name}のめ`}
+            {(isHolding || showHuman) ? "👁 人間のめ" : `${creature.name}のめ`}
           </div>
         </div>
 
@@ -882,8 +925,9 @@ export default function ViewScreen({
         )}
       </div>
 
-      {/* 人間の目ボタン（パノラマ表示時のみ・押している間だけ人間の目） */}
-      {panoUrl && (
+      {/* 人間の目ボタン（人間以外の全生き物・押している間だけ人間の目）。
+          パノラマは画像を切替、狭視野(モグラ/深海魚等)は人間canvasを重ねる。 */}
+      {creature.id !== "human" && (
         <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
           <button
             onPointerDown={(e) => {
@@ -908,14 +952,11 @@ export default function ViewScreen({
       )}
 
       {/* Hint + FOV */}
-      {creature.id === "human" ? (
+      {creature.id === "human" && (
         <p className="mt-3 text-center" style={{ fontSize: 13, color: "#999", fontWeight: 500, lineHeight: 1.8 }}>
-          これがあなたの世界。でも電磁スペクトルのたった0.0035%しか見えていません。
+          これがあなたの世界。
+          <br />でも電磁スペクトルのたった0.0035%しか見えていません。
           <br />他の生き物をタップして、別の世界を覗いてみよう。
-        </p>
-      ) : (
-        <p className="mt-2 text-center" style={{ fontSize: 12, color: "#bbb", fontWeight: 700 }}>
-          👆 長押しで人間の目に戻る
         </p>
       )}
 
@@ -939,6 +980,14 @@ export default function ViewScreen({
             <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>
               {preparingShare ? "リンク準備中…" : "シェアする"}
             </p>
+            {preparingShare && trivia && (
+              <div style={{ background: "#FFF8EC", borderRadius: 12, padding: "10px 14px", marginBottom: 12, maxWidth: 260 }}>
+                <p style={{ fontSize: 11, fontWeight: 900, color: "#E8A838", marginBottom: 4 }}>💡 豆知識</p>
+                <p key={trivia} style={{ fontSize: 12.5, lineHeight: 1.55, color: "#5F5E5A", whiteSpace: "pre-line" }}>
+                  {trivia}
+                </p>
+              </div>
+            )}
             <div className="flex gap-5">
               {([["x", <XIcon key="x" />, "X"], ["line", <LineIcon key="l" />, "LINE"], ["facebook", <FacebookIcon key="f" />, "Facebook"]] as const).map(([sns, icon, label]) => (
                 <button

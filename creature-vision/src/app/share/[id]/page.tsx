@@ -112,10 +112,10 @@ export default async function SharePage({
           marginBottom: 16,
         }}
       >
-        🐾 自分の写真でも{creature.name}の目を試す
+        🐾 自分の写真でも<br />{creature.name}の目を試す
       </Link>
 
-      <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 20 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 20, textAlign: "center" }}>
         {creature.name}の目で見た世界
       </h1>
 
