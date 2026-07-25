@@ -2609,6 +2609,55 @@ select:focus-visible,
 .tategaki-search-button:hover:not(:disabled) { background-color: var(--accentDim); }
 .tategaki-search-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* 未入力のうちは「引く」を控えめ色にして視線を奪わない。入力されると赤く"押せる"状態に。 */
+.tategaki-search-button.is-empty { background-color: var(--textMute); }
+
+/* 未入力のとき、入力欄をやわらかく明滅させて「まずここに入力」と視線を誘導する。 */
+@keyframes searchInviteGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(179, 57, 42, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(179, 57, 42, 0.14); }
+}
+.tategaki-search-input-wrap.is-inviting {
+  border-color: var(--accent);
+  animation: searchInviteGlow 2.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tategaki-search-input-wrap.is-inviting {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(179, 57, 42, 0.12);
+  }
+}
+
+/* トップ: 本棚（ほかの言葉）への導線。ぱっと見で分かる横書きのピルリンク。
+   PCは横並びレイアウト（row-reverse）を崩さないよう、注記類と同じく絶対配置で
+   下部中央に置く。モバイルは下の@mediaで通常フロー（検索の直下）に戻す。 */
+.home-browse-link {
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.5rem 1.1rem;
+  writing-mode: horizontal-tb;
+  text-orientation: initial;
+  font-size: 0.9375rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  border: 1px solid var(--textSoft);
+  border-radius: 999px;
+  text-decoration: none;
+  white-space: nowrap;
+  z-index: 2;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+.home-browse-link:hover {
+  color: #fff;
+  border-color: var(--accent);
+  background-color: var(--accent);
+}
+
 .tategaki-search-note {
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -3746,6 +3795,16 @@ textarea.tategaki-search-input {
     left: auto;
     bottom: auto;
     letter-spacing: 0.1em;
+  }
+
+  /* 導線ピルはモバイルでは絶対配置を解除し、検索の直下（通常フロー）に置く */
+  .home-browse-link {
+    position: static;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
   }
 
   /* ===== 3. 検索結果（モバイル：フル画面横スクロール） ===== */
