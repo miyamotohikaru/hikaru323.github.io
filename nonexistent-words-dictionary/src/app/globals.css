@@ -3805,6 +3805,17 @@ textarea.tategaki-search-input {
   .result-pos-label { font-size: 0.75rem; margin-left: 6px; padding: 3px 6px; }
   .result-definition { margin-left: 6px; font-size: 0.8125rem; line-height: 1.8; }
 
+  /* 編集モード：モバイルでは .h-scroll が overflow-y:hidden で縦スクロールできず、
+     フィールドが縦に長いと用例欄が画面下で切れて触れなくなる。編集フォーム自体を
+     縦スクロール可能なボックスにして、すべてのフィールド（用例含む）に届くようにする。 */
+  .result-edit-fields {
+    max-height: calc(100dvh - 96px - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 12px 28px;
+  }
+  .result-edit-textarea { min-height: 92px; }
+
   .result-register-col {
     padding: 16px 12px;
     min-width: 200px;
