@@ -566,7 +566,7 @@ export default function Home() {
               </div>
             </form>
             <Link href="/ranking" className="home-browse-link">
-              {isEnMode ? "Read other words →" : "ほかの言葉を読む →"}
+              {isEnMode ? "Browse registered words →" : "登録された言葉を見る →"}
             </Link>
             {lookupError && (
               <p className="search-lookup-error" role="alert">{lookupError}</p>

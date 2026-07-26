@@ -2612,19 +2612,18 @@ select:focus-visible,
 /* 未入力のうちは「引く」を控えめ色にして視線を奪わない。入力されると赤く"押せる"状態に。 */
 .tategaki-search-button.is-empty { background-color: var(--textMute); }
 
-/* 未入力のとき、入力欄をやわらかく明滅させて「まずここに入力」と視線を誘導する。 */
-@keyframes searchInviteGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(179, 57, 42, 0); }
-  50% { box-shadow: 0 0 0 4px rgba(179, 57, 42, 0.14); }
+/* 未入力のとき、入力欄の枠だけを赤で点滅させて「まずここに入力」と視線を誘導する。 */
+@keyframes searchInviteBlink {
+  0%, 45% { border-color: var(--accent); }
+  55%, 100% { border-color: var(--textSoft); }
 }
 .tategaki-search-input-wrap.is-inviting {
-  border-color: var(--accent);
-  animation: searchInviteGlow 2.2s ease-in-out infinite;
+  animation: searchInviteBlink 1.3s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .tategaki-search-input-wrap.is-inviting {
     animation: none;
-    box-shadow: 0 0 0 3px rgba(179, 57, 42, 0.12);
+    border-color: var(--accent);
   }
 }
 
