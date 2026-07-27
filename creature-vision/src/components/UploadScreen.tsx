@@ -109,9 +109,14 @@ export default function UploadScreen({ creatures, onFile, preselectedCreature }:
             <div style={{ fontSize: 17, fontWeight: 900, color: INK, marginBottom: 10 }}>
               ❓ このアプリについて
             </div>
-            <p style={{ fontSize: 14, lineHeight: 1.7, color: "#5a4a3a", marginBottom: 16 }}>
-              動物の視野角（見える範囲）を楽しめるアプリです。写真をアップすると、
-              いろんな生き物の目で見た世界に変換できます。
+            <p style={{ fontSize: 14, lineHeight: 1.75, color: "#5a4a3a", marginBottom: 14 }}>
+              同じ景色でも、生き物によって<b>「見えている世界」はまるで違います</b>。
+              写真をアップすると、犬の2色覚・トンボの複眼・ヘビの赤外線視覚…など、
+              いろんな生き物の目で見た世界に変わります。
+            </p>
+            <p style={{ fontSize: 14, lineHeight: 1.75, color: "#5a4a3a", marginBottom: 16 }}>
+              人間が見ている世界も、じつは<b>「人間用にフィルタリングされた一部」</b>。
+              それを、遊びながら体感できます。
             </p>
             <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 6 }}>
               💡 上手に生成するコツ
