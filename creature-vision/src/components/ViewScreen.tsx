@@ -405,15 +405,15 @@ export default function ViewScreen({
     return () => clearInterval(interval);
   }, [expanding]);
 
-  // 生成待ちの擬似プログレスバー。時間経過で伸び、最後はゆっくり95%に漸近（完了で画面が消える）
+  // 生成待ち／シェア準備中の擬似プログレスバー。時間経過で伸び、最後はゆっくり95%に漸近。
   useEffect(() => {
-    if (!(processing || expanding)) { setProgress(0); return; }
+    if (!(processing || expanding || preparingShare)) { setProgress(0); return; }
     setProgress(6);
     const iv = setInterval(() => {
       setProgress((p) => (p >= 95 ? 95 : p + (96 - p) * 0.06));
     }, 200);
     return () => clearInterval(iv);
-  }, [processing, expanding]);
+  }, [processing, expanding, preparingShare]);
 
   // 変換中＋シェアリンク準備中の豆知識（ランダムで開始→2.5秒ごとに3つをローテーション）
   useEffect(() => {
@@ -1011,6 +1011,18 @@ export default function ViewScreen({
             <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>
               {preparingShare ? "リンク準備中…" : "シェアする"}
             </p>
+            {preparingShare && (
+              <div style={{ width: "100%", maxWidth: 260, marginBottom: 12 }}>
+                <div style={{ height: 8, borderRadius: 100, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      height: "100%", width: `${Math.round(progress)}%`, borderRadius: 100,
+                      background: catColor?.accent ?? "#F5A623", transition: "width 0.2s ease",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             {preparingShare && trivia && (
               <div style={{ background: "#FFF8EC", borderRadius: 12, padding: "10px 14px", marginBottom: 12, maxWidth: 260 }}>
                 <p style={{ fontSize: 11, fontWeight: 900, color: "#E8A838", marginBottom: 4 }}>💡 豆知識</p>
