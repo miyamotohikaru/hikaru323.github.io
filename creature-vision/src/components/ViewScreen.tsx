@@ -596,10 +596,16 @@ export default function ViewScreen({
           const sy = (h - cropH) / 2;
           ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
 
-          const darkness = Math.max(0, 1 - exp) * 0.8;
+          // 狭いほど（1-exp が大きいほど）見える円を小さく・周辺を真っ暗にして可視範囲を狭める。
+          // モグラ(exp0.17)は小さな中心スポットだけ、フクロウ(exp0.9)はほぼそのまま。
+          const maxR = Math.min(w, h) / 2;
+          const narrow = Math.max(0, 1 - exp); // 0(広い)〜1(狭い)
+          const innerR = maxR * (0.5 - narrow * 0.42); // 見える円の半径
+          const outerR = maxR * (1.05 - narrow * 0.5);
+          const darkness = Math.min(0.94, narrow * 1.1); // 周辺の暗さ
           const vg = ctx.createRadialGradient(
-            w / 2, h / 2, w * exp * 0.3,
-            w / 2, h / 2, w * 0.6
+            w / 2, h / 2, Math.max(2, innerR),
+            w / 2, h / 2, Math.max(innerR + 4, outerR)
           );
           vg.addColorStop(0, "rgba(0,0,0,0)");
           vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
