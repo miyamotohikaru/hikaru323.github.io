@@ -565,7 +565,7 @@ export default function Home() {
                 </button>
               </div>
             </form>
-            <Link href="/ranking" className="home-browse-link">
+            <Link href="/ranking" className={`home-browse-link ${word.trim() ? "is-typing" : ""}`}>
               {isEnMode ? "Browse registered words →" : "登録された言葉を見る →"}
             </Link>
             {lookupError && (
