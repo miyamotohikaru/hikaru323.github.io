@@ -3821,6 +3821,10 @@ textarea.tategaki-search-input {
     background: none;
     border: none;
   }
+  /* 入力中はキーボードで下部が狭まり被るため、携帯では入力があるとき導線を隠す */
+  .home-browse-link.is-typing {
+    display: none;
+  }
 
   /* ===== 3. 検索結果（モバイル：フル画面横スクロール） ===== */
   .h-scroll {
