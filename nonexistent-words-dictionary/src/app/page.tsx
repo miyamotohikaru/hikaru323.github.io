@@ -183,7 +183,11 @@ export default function Home() {
   const handleSearch = async (e?: { preventDefault?: () => void }) => {
     e?.preventDefault?.();
     const trimmed = word.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      // 空のまま「引く」を押しても無反応だったのを、入力を促す案内に（初見殺し対策）
+      setLookupError(isEnMode ? "Please enter a word first." : "まず、ことばを入力してください。");
+      return;
+    }
 
     setPhase("loading");
     setResult(null);
@@ -527,13 +531,13 @@ export default function Home() {
             <div className="tategaki-search-rule" />
             <form onSubmit={handleSearch} className="tategaki-search-form">
               <span className="tategaki-search-label">{isEnMode ? "Word" : "読み（ひらがな）"}</span>
-              <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""}`}>
+              <div className={`tategaki-search-input-wrap ${isEnMode ? "en-mode" : ""} ${word.trim() ? "" : "is-inviting"}`}>
                 <div className="tategaki-search-field">
                   {isEnMode ? (
                     <input
                       type="text"
                       value={word}
-                      onChange={(e) => setWord(e.target.value)}
+                      onChange={(e) => { setWord(e.target.value); if (lookupError) setLookupError(null); }}
                       aria-label="Word"
                       placeholder="register a word"
                       className="tategaki-search-input en-mode"
@@ -545,9 +549,9 @@ export default function Home() {
                     <VerticalTextInput
                       variant="search"
                       value={word}
-                      onChange={setWord}
+                      onChange={(v) => { setWord(v); if (lookupError) setLookupError(null); }}
                       onEnter={() => handleSearch()}
-                      placeholder="ことばを登録する"
+                      placeholder="ここに入力"
                       ariaLabel="読み（ひらがな）"
                       maxLength={20}
                     />
@@ -555,13 +559,15 @@ export default function Home() {
                 </div>
                 <button
                   type="submit"
-                  className="tategaki-search-button"
-                  disabled={!word.trim()}
+                  className={`tategaki-search-button ${word.trim() ? "" : "is-empty"}`}
                 >
-                  引く
+                  {isEnMode ? "Register a word" : "言葉を登録する"}
                 </button>
               </div>
             </form>
+            <Link href="/ranking" className="home-browse-link">
+              {isEnMode ? "Browse registered words →" : "登録された言葉を見る →"}
+            </Link>
             {lookupError && (
               <p className="search-lookup-error" role="alert">{lookupError}</p>
             )}
