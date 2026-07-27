@@ -551,7 +551,7 @@ export default function Home() {
                       value={word}
                       onChange={(v) => { setWord(v); if (lookupError) setLookupError(null); }}
                       onEnter={() => handleSearch()}
-                      placeholder="ことばを登録する"
+                      placeholder="ここに入力"
                       ariaLabel="読み（ひらがな）"
                       maxLength={20}
                     />
@@ -561,7 +561,7 @@ export default function Home() {
                   type="submit"
                   className={`tategaki-search-button ${word.trim() ? "" : "is-empty"}`}
                 >
-                  引く
+                  {isEnMode ? "Register a word" : "言葉を登録する"}
                 </button>
               </div>
             </form>
