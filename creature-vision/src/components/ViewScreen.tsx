@@ -590,8 +590,11 @@ export default function ViewScreen({
           filtered.width = w;
           filtered.height = h;
           filtered.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
-          const cropW = w * exp;
-          const cropH = h * exp;
+          // ズームは極端にしすぎない（0.5未満だと暗い一点に寄って真っ黒になりがち）。
+          // 「狭さ」は下の小さな可視円で表現する。
+          const zoom = Math.max(exp, 0.5);
+          const cropW = w * zoom;
+          const cropH = h * zoom;
           const sx = (w - cropW) / 2;
           const sy = (h - cropH) / 2;
           ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
