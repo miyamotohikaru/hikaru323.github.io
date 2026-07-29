@@ -8,7 +8,7 @@ const INK = "#2a2018";
 const CREAM = "#fff8eb";
 
 const MARQUEE_IDS = [
-  "kosukuma","human","dog","horse","goat","chameleon","frog",
+  "kosukuma","human","dog","chameleon","frog",
   "eagle","owl","bat","cockroach","mantis","spider","koala",
   "dolphin","shark","octopus","foureyedfish","deepsea","snake",
   "mshrimp","mole","flamingo","pigeon",
@@ -24,6 +24,7 @@ interface Props {
 export default function UploadScreen({ creatures, onFile, preselectedCreature }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleFile = useCallback(
     (files: FileList | null) => {
@@ -59,6 +60,74 @@ export default function UploadScreen({ creatures, onFile, preselectedCreature }:
           zIndex: 0,
         }}
       />
+
+      {/* ❓ ヘルプ（右上） */}
+      <button
+        onClick={() => setShowHelp(true)}
+        aria-label="このアプリについて"
+        style={{
+          position: "absolute", top: 14, right: 14, zIndex: 5,
+          width: 40, height: 40, borderRadius: "50%",
+          border: `2px solid ${INK}`, background: "#fff", color: INK,
+          fontSize: 18, fontWeight: 900, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: `3px 3px 0 ${INK}`,
+        }}
+      >
+        ？
+      </button>
+
+      {showHelp && (
+        <div
+          onClick={() => setShowHelp(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            background: "rgba(42,32,24,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff", borderRadius: 20, border: `2px solid ${INK}`,
+              boxShadow: `6px 6px 0 ${INK}`, maxWidth: 340, width: "100%",
+              padding: "22px 22px 20px", position: "relative",
+              fontFamily: "'Zen Maru Gothic', sans-serif",
+            }}
+          >
+            <button
+              onClick={() => setShowHelp(false)}
+              aria-label="閉じる"
+              style={{
+                position: "absolute", top: 10, right: 12, border: "none",
+                background: "none", fontSize: 20, cursor: "pointer", color: "#999",
+              }}
+            >
+              ✕
+            </button>
+            <div style={{ fontSize: 17, fontWeight: 900, color: INK, marginBottom: 10 }}>
+              ❓ このアプリについて
+            </div>
+            <p style={{ fontSize: 14, lineHeight: 1.75, color: "#5a4a3a", marginBottom: 14 }}>
+              同じ景色でも、生き物によって<b>「見えている世界」はまるで違います</b>。
+              写真をアップすると、犬の2色覚・トンボの複眼・ヘビの赤外線視覚…など、
+              いろんな生き物の目で見た世界に変わります。
+            </p>
+            <p style={{ fontSize: 14, lineHeight: 1.75, color: "#5a4a3a", marginBottom: 16 }}>
+              人間が見ている世界も、じつは<b>「人間用にフィルタリングされた一部」</b>。
+              それを、遊びながら体感できます。
+            </p>
+            <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 6 }}>
+              💡 上手に生成するコツ
+            </div>
+            <p style={{ fontSize: 14, lineHeight: 1.7, color: "#5a4a3a" }}>
+              スマホの <b>0.5倍（超広角）</b> で <b>横向き</b> に撮った写真だと、
+              まわりの景色がキレイに拡張されやすいよ。
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Hero section */}
       <div

@@ -262,6 +262,54 @@ async function generateMaster(normalizedBlob: Blob): Promise<HTMLImageElement | 
   }
 }
 
+// 拡張画像の良し悪しをスコア化。横幅（拡張量）が大きく、継ぎ目（縦の線）が
+// 目立たないほど高スコア。線が入った失敗画像を弾くのに使う。
+function masterScore(img: HTMLImageElement): number {
+  const widthRatio = img.naturalWidth / Math.max(1, img.naturalHeight);
+  let seamRatio = 1;
+  try {
+    const w = 240;
+    const h = Math.max(1, Math.round((w * img.naturalHeight) / img.naturalWidth));
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const cx = c.getContext("2d", { willReadFrequently: true })!;
+    cx.drawImage(img, 0, 0, w, h);
+    const d = cx.getImageData(0, 0, w, h).data;
+    const col = new Float64Array(w);
+    for (let x = 1; x < w; x++) {
+      let s = 0;
+      for (let y = 0; y < h; y++) {
+        const i = (y * w + x) * 4, j = (y * w + x - 1) * 4;
+        const l1 = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const l2 = 0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2];
+        s += Math.abs(l1 - l2);
+      }
+      col[x] = s / h;
+    }
+    let mean = 0; for (let x = 1; x < w; x++) mean += col[x]; mean /= (w - 1);
+    let max = 0; for (let x = 1; x < w; x++) if (col[x] > max) max = col[x];
+    seamRatio = max / (mean + 0.001); // 継ぎ目の縦線があるとここが跳ねる
+  } catch { /* ignore */ }
+  return widthRatio - seamRatio * 0.15;
+}
+
+// 2枚生成して「完全に拡張がうまくいった方（線が入っていない・広い方）」を選ぶ。
+async function generateBestMaster(normalizedBlob: Blob): Promise<HTMLImageElement | null> {
+  const [a, b] = await Promise.all([generateMaster(normalizedBlob), generateMaster(normalizedBlob)]);
+  const cands = [a, b].filter(Boolean) as HTMLImageElement[];
+  if (cands.length === 0) return null;
+  if (cands.length === 1) return cands[0];
+  const scored = cands.map((img) => ({ img, s: masterScore(img) })).sort((x, y) => y.s - x.s);
+  console.log("[master] 2候補スコア:", scored.map((z) => z.s.toFixed(2)).join(", "), "→ 良い方を採用");
+  return scored[0].img;
+}
+
+// マスター拡張画像を「写真(File)単位」でページを跨いで保持するモジュールキャッシュ。
+// 戻って生き物を選び直しても（ViewScreen再マウントでも）同じ写真なら再生成しない。
+// WeakMapなので写真を変えて参照が消えれば自動で破棄される。
+const MASTER_CACHE = new WeakMap<File, HTMLImageElement>();
+const MASTER_PROMISE_CACHE = new WeakMap<File, Promise<HTMLImageElement | null>>();
+
 /* ── 色フィルターの上書き（スクロールパノラマ用・色のみ） ── */
 // スクロール方式では「見回す」が視野を担当するので、色覚だけを別レイヤーで適用する。
 // 既存filterTypeが形状まで焼くもの（分割眼・上下反転・魚眼など）は、
@@ -306,7 +354,6 @@ export default function ViewScreen({
   const humanCanvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [isHolding, setIsHolding] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [shareFeedback, setShareFeedback] = useState(false);
   const [canvasRatio, setCanvasRatio] = useState<number | null>(null);
@@ -314,13 +361,12 @@ export default function ViewScreen({
   const [loadingText, setLoadingText] = useState("");
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const [trivia, setTrivia] = useState("");
+  const [progress, setProgress] = useState(0); // 生成待ちの擬似プログレス(0-100)
   // スクロール式パノラマ用の画像（フィルター済みマスター＝生き物のめ／元色マスター＝人間のめ）と人間切替
   const [panoUrl, setPanoUrl] = useState("");
   const [panoHumanUrl, setPanoHumanUrl] = useState("");
   const [showHuman, setShowHuman] = useState(false);
-  // マスター拡張画像（写真1枚につき1回生成し全生き物で使い回す）と生成中Promise（多重生成防止）
-  const masterImgRef = useRef<HTMLImageElement | null>(null);
-  const masterPromiseRef = useRef<Promise<HTMLImageElement | null> | null>(null);
+  // マスター拡張画像は写真(File)単位のモジュールキャッシュ(MASTER_CACHE)で保持する。
   const normalizedBlobRef = useRef<Blob | null>(null);
   // 正規化（API送信用画像の用意）の進行中Promise。描画がこれを await できる。
   const normalizedBlobPromiseRef = useRef<Promise<Blob> | null>(null);
@@ -358,9 +404,19 @@ export default function ViewScreen({
     return () => clearInterval(interval);
   }, [expanding]);
 
-  // 変換中の豆知識（ランダムで開始→2.5秒ごとに3つをローテーション）
+  // 生成待ち／シェア準備中の擬似プログレスバー。時間経過で伸び、最後はゆっくり95%に漸近。
   useEffect(() => {
-    if (!(processing || expanding)) return;
+    if (!(processing || expanding || preparingShare)) { setProgress(0); return; }
+    setProgress(6);
+    const iv = setInterval(() => {
+      setProgress((p) => (p >= 95 ? 95 : p + (96 - p) * 0.06));
+    }, 200);
+    return () => clearInterval(iv);
+  }, [processing, expanding, preparingShare]);
+
+  // 変換中＋シェアリンク準備中の豆知識（ランダムで開始→2.5秒ごとに3つをローテーション）
+  useEffect(() => {
+    if (!(processing || expanding || preparingShare)) return;
     const list = TRIVIA[creature.id] || [];
     if (list.length === 0) { setTrivia(""); return; }
     let i = Math.floor(Math.random() * list.length);
@@ -370,7 +426,7 @@ export default function ViewScreen({
       setTrivia(list[i]);
     }, 2500);
     return () => clearInterval(interval);
-  }, [processing, expanding, creature.id]);
+  }, [processing, expanding, preparingShare, creature.id]);
 
   const loadingTexts = [
     `${creature.name}の視点に変換中...`,
@@ -380,9 +436,7 @@ export default function ViewScreen({
   // Normalize image for API on mount
   useEffect(() => {
     let cancelled = false;
-    // 写真が変わったらマスター拡張画像を破棄（次の生き物選択で1回だけ再生成）
-    masterImgRef.current = null;
-    masterPromiseRef.current = null;
+    // マスターは写真(File)単位のキャッシュなので、写真ごとに自然にmiss→生成される。
     // 正規化のPromiseをrefに保持。描画が正規化より先に走っても、
     // handleCreatureChange側でこのPromiseを await できる（レース対策）。
     const p = normalizeImage(mediaFile, 1024).then(({ blob }) => {
@@ -461,8 +515,9 @@ export default function ViewScreen({
       // --- STEP 2: マスター拡張画像を用意（広視野=exp>1.0 のときだけ。写真1枚に1回生成し全生き物で使い回す） ---
       let master: HTMLImageElement | null = null;
       if (exp > 1.0) {
-        if (masterImgRef.current) {
-          master = masterImgRef.current; // 生成済み → 即座に使い回し
+        const cached = MASTER_CACHE.get(mediaFile);
+        if (cached) {
+          master = cached; // 生成済み（同じ写真なら戻ってきても即座に使い回し）
         } else {
           // 正規化が描画より遅れて完了するレースがある（最初の生き物で発生）。
           // ここで正規化の完了を待ってから生成する（待たないとマスターが永久にスキップされる）。
@@ -476,16 +531,18 @@ export default function ViewScreen({
             setLoadingText("🔭 視界をひろげてるよ...");
             setExpanding(true);
             try {
-              // 多重生成防止: 生成Promiseを共有
-              if (!masterPromiseRef.current) {
-                masterPromiseRef.current = generateMaster(blob);
+              // 多重生成防止: 写真単位で生成Promiseを共有。2枚生成して良い方を採用。
+              let p = MASTER_PROMISE_CACHE.get(mediaFile);
+              if (!p) {
+                p = generateBestMaster(blob);
+                MASTER_PROMISE_CACHE.set(mediaFile, p);
               }
-              master = await masterPromiseRef.current;
-              if (master) masterImgRef.current = master;
-              else masterPromiseRef.current = null; // 失敗時は次回リトライ可
+              master = await p;
+              if (master) MASTER_CACHE.set(mediaFile, master);
+              else MASTER_PROMISE_CACHE.delete(mediaFile); // 失敗時は次回リトライ可
             } catch (e) {
               console.error("[master] failed:", e);
-              masterPromiseRef.current = null;
+              MASTER_PROMISE_CACHE.delete(mediaFile);
             }
           }
           setExpanding(false);
@@ -526,25 +583,36 @@ export default function ViewScreen({
         // --- STEP 4: 色・質感フィルター（色はここで全部やる。幾何変換はしない） ---
         applyFilter(ctx, w, h, colorFilter, colorFp);
 
-        // --- STEP 5: 狭視野(exp<1.0)は中央ズーム＋周辺暗転 ---
+        // --- STEP 5: 狭視野(exp<1.0)は中央ズーム＋周辺を背景色(クリーム)でマスク ---
         if (exp > 0 && exp < 1.0) {
           const filtered = document.createElement("canvas");
           filtered.width = w;
           filtered.height = h;
           filtered.getContext("2d")!.drawImage(ctx.canvas, 0, 0);
-          const cropW = w * exp;
-          const cropH = h * exp;
+          // ズームは極端にしすぎない（0.5未満だと暗い一点に寄って真っ黒になりがち）。
+          // 「狭さ」は下の小さな可視円で表現する。
+          const zoom = Math.max(exp, 0.5);
+          const cropW = w * zoom;
+          const cropH = h * zoom;
           const sx = (w - cropW) / 2;
           const sy = (h - cropH) / 2;
           ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
 
-          const darkness = Math.max(0, 1 - exp) * 0.8;
+          // 狭いほど（1-exp が大きいほど）見える円を小さくし、外側は「背景色(クリーム)」で
+          // マスクして“見えていない部分＝背景”に。黒くはしない。
+          // モグラ(exp0.17)は小さな中心スポットだけ、フクロウ(110°)は控えめに。
+          const maxR = Math.min(w, h) / 2;
+          // 控えめな側(フクロウ110°)も「その分だけ」効くよう、弱い側を少し持ち上げる補正。
+          const narrow = Math.pow(Math.max(0, 1 - exp), 0.62); // フクロウ:~0.24 / モグラ:~0.89
+          const innerR = maxR * (0.5 - narrow * 0.43); // 見える円（狭いほど小さい）
+          const outerR = maxR * (1.05 - narrow * 0.45);
+          const CREAM = "255, 249, 242"; // #FFF9F2（アプリ背景）
           const vg = ctx.createRadialGradient(
-            w / 2, h / 2, w * exp * 0.3,
-            w / 2, h / 2, w * 0.6
+            w / 2, h / 2, Math.max(2, innerR),
+            w / 2, h / 2, Math.max(innerR + 4, outerR)
           );
-          vg.addColorStop(0, "rgba(0,0,0,0)");
-          vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
+          vg.addColorStop(0, `rgba(${CREAM}, 0)`);
+          vg.addColorStop(1, `rgba(${CREAM}, 1)`); // 外側は完全に背景色
           ctx.fillStyle = vg;
           ctx.fillRect(0, 0, w, h);
         }
@@ -597,7 +665,7 @@ export default function ViewScreen({
         setLoadingText("");
       }
     },
-    [creatures]
+    [creatures, mediaFile]
   );
 
   // 比較画像を生成→アップロードしてOGP付きシェアページURLを返す（失敗時はnull）
@@ -786,6 +854,7 @@ export default function ViewScreen({
             fov={showHuman ? 120 : fovData?.fov ?? 360}
             photoAspect={canvasRatio ?? 1}
             frozen={showHuman}
+            loop={!showHuman && (fovData?.fov ?? 0) >= 360}
             label={showHuman ? "👁 人間のめ" : `${creature.name}のめ`}
           />
         ) : null}
@@ -799,12 +868,6 @@ export default function ViewScreen({
             borderRadius: 18, overflow: "hidden",
             boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
           }}
-          onMouseDown={() => setIsHolding(true)}
-          onMouseUp={() => setIsHolding(false)}
-          onMouseLeave={() => setIsHolding(false)}
-          onTouchStart={(e) => { e.preventDefault(); setIsHolding(true); }}
-          onTouchEnd={() => setIsHolding(false)}
-          onTouchCancel={() => setIsHolding(false)}
         >
           <canvas
             ref={canvasRef}
@@ -816,7 +879,7 @@ export default function ViewScreen({
             className="absolute top-0 left-0 block w-full"
             style={{
               height: "auto", aspectRatio: canvasRatio ?? undefined,
-              opacity: isHolding ? 1 : 0,
+              opacity: showHuman ? 1 : 0,
               transition: "opacity 0.3s ease", pointerEvents: "none",
             }}
           />
@@ -825,13 +888,13 @@ export default function ViewScreen({
               position: "absolute", top: 12, left: "50%",
               transform: "translateX(-50%)", padding: "6px 16px",
               borderRadius: 100,
-              background: isHolding ? "rgba(255,255,255,0.9)" : `${catColor?.accent ?? "#999"}ee`,
-              color: isHolding ? "#333" : "#fff",
+              background: showHuman ? "rgba(255,255,255,0.9)" : `${catColor?.accent ?? "#999"}ee`,
+              color: showHuman ? "#333" : "#fff",
               fontSize: 12, fontWeight: 900,
               transition: "all 0.3s ease", pointerEvents: "none",
             }}
           >
-            {isHolding ? "👁 人間のめ" : `${creature.name}のめ`}
+            {showHuman ? "👁 人間のめ" : `${creature.name}のめ`}
           </div>
         </div>
 
@@ -856,6 +919,21 @@ export default function ViewScreen({
               {expanding ? loadingTexts[loadingTextIndex] : loadingText}
             </p>
 
+            {/* 擬似プログレスバー（生成待ちの目安） */}
+            <div style={{ width: 220, maxWidth: "70%", marginTop: 14 }}>
+              <div style={{ height: 8, borderRadius: 100, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.round(progress)}%`,
+                    borderRadius: 100,
+                    background: `${catColor?.accent ?? "#F5A623"}`,
+                    transition: "width 0.2s ease",
+                  }}
+                />
+              </div>
+            </div>
+
             {/* 豆知識カード */}
             {trivia && (
               <div
@@ -873,7 +951,7 @@ export default function ViewScreen({
                 <p style={{ fontSize: 13, fontWeight: 900, color: "#E8A838", marginBottom: 6 }}>
                   💡 豆知識
                 </p>
-                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#5F5E5A" }}>
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#5F5E5A", whiteSpace: "pre-line" }}>
                   {trivia}
                 </p>
               </div>
@@ -882,8 +960,9 @@ export default function ViewScreen({
         )}
       </div>
 
-      {/* 人間の目ボタン（パノラマ表示時のみ・押している間だけ人間の目） */}
-      {panoUrl && (
+      {/* 人間の目ボタン（人間以外の全生き物・押している間だけ人間の目）。
+          パノラマは画像を切替、狭視野(モグラ/深海魚等)は人間canvasを重ねる。 */}
+      {creature.id !== "human" && (
         <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
           <button
             onPointerDown={(e) => {
@@ -908,14 +987,11 @@ export default function ViewScreen({
       )}
 
       {/* Hint + FOV */}
-      {creature.id === "human" ? (
+      {creature.id === "human" && (
         <p className="mt-3 text-center" style={{ fontSize: 13, color: "#999", fontWeight: 500, lineHeight: 1.8 }}>
-          これがあなたの世界。でも電磁スペクトルのたった0.0035%しか見えていません。
+          これがあなたの世界。
+          <br />でも電磁スペクトルのたった0.0035%しか見えていません。
           <br />他の生き物をタップして、別の世界を覗いてみよう。
-        </p>
-      ) : (
-        <p className="mt-2 text-center" style={{ fontSize: 12, color: "#bbb", fontWeight: 700 }}>
-          👆 長押しで人間の目に戻る
         </p>
       )}
 
@@ -939,6 +1015,26 @@ export default function ViewScreen({
             <p style={{ fontSize: 13, fontWeight: 700, color: "#999", marginBottom: 12 }}>
               {preparingShare ? "リンク準備中…" : "シェアする"}
             </p>
+            {preparingShare && (
+              <div style={{ width: "100%", maxWidth: 260, marginBottom: 12 }}>
+                <div style={{ height: 8, borderRadius: 100, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      height: "100%", width: `${Math.round(progress)}%`, borderRadius: 100,
+                      background: catColor?.accent ?? "#F5A623", transition: "width 0.2s ease",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            {preparingShare && trivia && (
+              <div style={{ background: "#FFF8EC", borderRadius: 12, padding: "10px 14px", marginBottom: 12, maxWidth: 260 }}>
+                <p style={{ fontSize: 11, fontWeight: 900, color: "#E8A838", marginBottom: 4 }}>💡 豆知識</p>
+                <p key={trivia} style={{ fontSize: 12.5, lineHeight: 1.55, color: "#5F5E5A", whiteSpace: "pre-line" }}>
+                  {trivia}
+                </p>
+              </div>
+            )}
             <div className="flex gap-5">
               {([["x", <XIcon key="x" />, "X"], ["line", <LineIcon key="l" />, "LINE"], ["facebook", <FacebookIcon key="f" />, "Facebook"]] as const).map(([sns, icon, label]) => (
                 <button

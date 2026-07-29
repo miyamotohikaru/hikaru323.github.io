@@ -8,6 +8,7 @@ interface PanoramaViewerProps {
   photoAspect: number; // アップロード写真の縦横比 (w/h)。覗き窓のサイズをこれに合わせる
   label?: string; // 左上ラベル（例「馬のめ」）
   frozen?: boolean; // true=回転も見回しもしない固定表示（人間の目＝元写真サイズ）
+  loop?: boolean; // true=一方向にぐるっと回り続ける(360°用)。false=左右に往復
 }
 
 const AUTO_ONEWAY_SEC = 60; // 片道の秒数（本当にゆっくり）
@@ -20,7 +21,7 @@ const START_HOLD_MS = 2000; // 開始時、最初の場所で固定しておく�
  * - 放置すると右へゆっくりパン→端で折り返して左へ、を往復（fovで振れ幅が変わる）。
  * - ドラッグ/スワイプで手動でも見回せる。端・余白はクリーム色(#FFF9F2)。
  */
-export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = false }: PanoramaViewerProps) {
+export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = false, loop = false }: PanoramaViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgElRef = useRef<HTMLImageElement | null>(null);
 
@@ -91,7 +92,7 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
 
     // 経過時間(dt)ベースで動かす＝フレームレートに依存せず片道 AUTO_ONEWAY_SEC 秒
     let last = performance.now();
-    function loop() {
+    function tick() {
       const now = performance.now();
       const dt = now - last;
       last = now;
@@ -99,20 +100,31 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
       const holding = now < startAtRef.current; // 開始2秒は固定
       if (autoRef.current && !draggingRef.current && !holding && M > 0) {
         const pxPerMs = (2 * M) / (AUTO_ONEWAY_SEC * 1000);
-        posRef.current += dirRef.current * pxPerMs * dt;
-        if (posRef.current <= -M) { posRef.current = -M; dirRef.current = 1; }  // 右端→左へ
-        if (posRef.current >= M) { posRef.current = M; dirRef.current = -1; }   // 左端→右へ
+        if (loop) {
+          posRef.current -= pxPerMs * dt; // 自動は右回り（一方向）
+        } else {
+          // それ以外: 左右に往復
+          posRef.current += dirRef.current * pxPerMs * dt;
+          if (posRef.current <= -M) { posRef.current = -M; dirRef.current = 1; }
+          if (posRef.current >= M) { posRef.current = M; dirRef.current = -1; }
+        }
       }
-      posRef.current = Math.max(-M, Math.min(M, posRef.current));
+      // 360°(loop)は両端で反対側へワープして無限に回り続ける（左右どちらの操作でも）。
+      if (loop && M > 0) {
+        const s = 2 * M;
+        posRef.current = (((posRef.current + M) % s) + s) % s - M;
+      } else {
+        posRef.current = Math.max(-M, Math.min(M, posRef.current));
+      }
       applyTransform();
-      rafRef.current = requestAnimationFrame(loop);
+      rafRef.current = requestAnimationFrame(tick);
     }
-    rafRef.current = requestAnimationFrame(loop);
+    rafRef.current = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", recompute);
     };
-  }, [imgW, imgH, viewableRatio, frozen, applyTransform]);
+  }, [imgW, imgH, viewableRatio, frozen, loop, applyTransform]);
 
   // ドラッグ（pointer=タッチ・マウス両対応）
   const onPointerDown = useCallback((e: React.PointerEvent) => {
@@ -127,10 +139,15 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
     if (!draggingRef.current) return;
     const M = maxRef.current;
     let next = startPosRef.current + (e.clientX - startXRef.current); // 1:1
-    next = Math.max(-M, Math.min(M, next));
+    if (loop && M > 0) {
+      const s = 2 * M; // 360°はドラッグでも端で反対側へワープ（左回りでも無限に）
+      next = (((next + M) % s) + s) % s - M;
+    } else {
+      next = Math.max(-M, Math.min(M, next));
+    }
     posRef.current = next;
     applyTransform();
-  }, [applyTransform]);
+  }, [applyTransform, loop]);
 
   const onPointerUp = useCallback(() => { draggingRef.current = false; }, []);
 
