@@ -584,7 +584,7 @@ export default function ViewScreen({
         // --- STEP 4: 色・質感フィルター（色はここで全部やる。幾何変換はしない） ---
         applyFilter(ctx, w, h, colorFilter, colorFp);
 
-        // --- STEP 5: 狭視野(exp<1.0)は中央ズーム＋周辺暗転 ---
+        // --- STEP 5: 狭視野(exp<1.0)は中央ズーム＋周辺を背景色(クリーム)でマスク ---
         if (exp > 0 && exp < 1.0) {
           const filtered = document.createElement("canvas");
           filtered.width = w;
@@ -599,21 +599,21 @@ export default function ViewScreen({
           const sy = (h - cropH) / 2;
           ctx.drawImage(filtered, sx, sy, cropW, cropH, 0, 0, w, h);
 
-          // 狭いほど（1-exp が大きいほど）見える円を小さく・周辺を真っ暗にして可視範囲を狭める。
-          // モグラ(exp0.17)は小さな中心スポットだけ、フクロウ(exp0.9)はほぼそのまま。
+          // 狭いほど（1-exp が大きいほど）見える円を小さくし、外側は「背景色(クリーム)」で
+          // マスクして“見えていない部分＝背景”に。黒くはしない。
+          // モグラ(exp0.17)は小さな中心スポットだけ、フクロウ(110°)は控えめに。
           const maxR = Math.min(w, h) / 2;
-          // 120°より狭いぶんだけ暗転で狭める。expは概ね fov/120。
           // 控えめな側(フクロウ110°)も「その分だけ」効くよう、弱い側を少し持ち上げる補正。
           const narrow = Math.pow(Math.max(0, 1 - exp), 0.62); // フクロウ:~0.24 / モグラ:~0.89
           const innerR = maxR * (0.5 - narrow * 0.43); // 見える円（狭いほど小さい）
-          const outerR = maxR * (1.0 - narrow * 0.5);
-          const darkness = Math.min(0.72, narrow * 0.82); // 周辺の暗さ
+          const outerR = maxR * (1.05 - narrow * 0.45);
+          const CREAM = "255, 249, 242"; // #FFF9F2（アプリ背景）
           const vg = ctx.createRadialGradient(
             w / 2, h / 2, Math.max(2, innerR),
             w / 2, h / 2, Math.max(innerR + 4, outerR)
           );
-          vg.addColorStop(0, "rgba(0,0,0,0)");
-          vg.addColorStop(1, `rgba(0,0,0,${darkness})`);
+          vg.addColorStop(0, `rgba(${CREAM}, 0)`);
+          vg.addColorStop(1, `rgba(${CREAM}, 1)`); // 外側は完全に背景色
           ctx.fillStyle = vg;
           ctx.fillRect(0, 0, w, h);
         }
