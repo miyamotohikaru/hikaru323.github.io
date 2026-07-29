@@ -354,7 +354,6 @@ export default function ViewScreen({
   const humanCanvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [isHolding, setIsHolding] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [shareFeedback, setShareFeedback] = useState(false);
   const [canvasRatio, setCanvasRatio] = useState<number | null>(null);
@@ -869,12 +868,6 @@ export default function ViewScreen({
             borderRadius: 18, overflow: "hidden",
             boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
           }}
-          onMouseDown={() => setIsHolding(true)}
-          onMouseUp={() => setIsHolding(false)}
-          onMouseLeave={() => setIsHolding(false)}
-          onTouchStart={(e) => { e.preventDefault(); setIsHolding(true); }}
-          onTouchEnd={() => setIsHolding(false)}
-          onTouchCancel={() => setIsHolding(false)}
         >
           <canvas
             ref={canvasRef}
@@ -886,7 +879,7 @@ export default function ViewScreen({
             className="absolute top-0 left-0 block w-full"
             style={{
               height: "auto", aspectRatio: canvasRatio ?? undefined,
-              opacity: (isHolding || showHuman) ? 1 : 0,
+              opacity: showHuman ? 1 : 0,
               transition: "opacity 0.3s ease", pointerEvents: "none",
             }}
           />
@@ -895,13 +888,13 @@ export default function ViewScreen({
               position: "absolute", top: 12, left: "50%",
               transform: "translateX(-50%)", padding: "6px 16px",
               borderRadius: 100,
-              background: (isHolding || showHuman) ? "rgba(255,255,255,0.9)" : `${catColor?.accent ?? "#999"}ee`,
-              color: (isHolding || showHuman) ? "#333" : "#fff",
+              background: showHuman ? "rgba(255,255,255,0.9)" : `${catColor?.accent ?? "#999"}ee`,
+              color: showHuman ? "#333" : "#fff",
               fontSize: 12, fontWeight: 900,
               transition: "all 0.3s ease", pointerEvents: "none",
             }}
           >
-            {(isHolding || showHuman) ? "👁 人間のめ" : `${creature.name}のめ`}
+            {showHuman ? "👁 人間のめ" : `${creature.name}のめ`}
           </div>
         </div>
 
