@@ -602,12 +602,12 @@ export default function ViewScreen({
           // 狭いほど（1-exp が大きいほど）見える円を小さく・周辺を真っ暗にして可視範囲を狭める。
           // モグラ(exp0.17)は小さな中心スポットだけ、フクロウ(exp0.9)はほぼそのまま。
           const maxR = Math.min(w, h) / 2;
-          const narrow = Math.max(0, 1 - exp); // 0(広い)〜1(狭い)
-          // 見える円を小さくして「範囲が狭い」を表現。暗さは中程度に留め、
-          // 中心の小窓はちゃんと見えるようにする（真っ黒にしない）。
-          const innerR = maxR * (0.5 - narrow * 0.43); // モグラ:約0.14 / フクロウ:約0.46
-          const outerR = maxR * (1.0 - narrow * 0.5);  // モグラ:約0.58 / フクロウ:約0.95
-          const darkness = Math.min(0.72, narrow * 0.82); // モグラ:約0.68 / フクロウ:約0.08
+          // 120°より狭いぶんだけ暗転で狭める。expは概ね fov/120。
+          // 控えめな側(フクロウ110°)も「その分だけ」効くよう、弱い側を少し持ち上げる補正。
+          const narrow = Math.pow(Math.max(0, 1 - exp), 0.62); // フクロウ:~0.24 / モグラ:~0.89
+          const innerR = maxR * (0.5 - narrow * 0.43); // 見える円（狭いほど小さい）
+          const outerR = maxR * (1.0 - narrow * 0.5);
+          const darkness = Math.min(0.72, narrow * 0.82); // 周辺の暗さ
           const vg = ctx.createRadialGradient(
             w / 2, h / 2, Math.max(2, innerR),
             w / 2, h / 2, Math.max(innerR + 4, outerR)
