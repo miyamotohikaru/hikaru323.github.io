@@ -101,9 +101,7 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
       if (autoRef.current && !draggingRef.current && !holding && M > 0) {
         const pxPerMs = (2 * M) / (AUTO_ONEWAY_SEC * 1000);
         if (loop) {
-          // 360°: 右へ回り続け、右端まで行ったら左端へワープしてループ
-          posRef.current -= pxPerMs * dt;
-          if (posRef.current <= -M) posRef.current += 2 * M;
+          posRef.current -= pxPerMs * dt; // 自動は右回り（一方向）
         } else {
           // それ以外: 左右に往復
           posRef.current += dirRef.current * pxPerMs * dt;
@@ -111,7 +109,13 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
           if (posRef.current >= M) { posRef.current = M; dirRef.current = -1; }
         }
       }
-      posRef.current = Math.max(-M, Math.min(M, posRef.current));
+      // 360°(loop)は両端で反対側へワープして無限に回り続ける（左右どちらの操作でも）。
+      if (loop && M > 0) {
+        const s = 2 * M;
+        posRef.current = (((posRef.current + M) % s) + s) % s - M;
+      } else {
+        posRef.current = Math.max(-M, Math.min(M, posRef.current));
+      }
       applyTransform();
       rafRef.current = requestAnimationFrame(tick);
     }
@@ -135,10 +139,15 @@ export function PanoramaViewer({ imageUrl, fov, photoAspect, label, frozen = fal
     if (!draggingRef.current) return;
     const M = maxRef.current;
     let next = startPosRef.current + (e.clientX - startXRef.current); // 1:1
-    next = Math.max(-M, Math.min(M, next));
+    if (loop && M > 0) {
+      const s = 2 * M; // 360°はドラッグでも端で反対側へワープ（左回りでも無限に）
+      next = (((next + M) % s) + s) % s - M;
+    } else {
+      next = Math.max(-M, Math.min(M, next));
+    }
     posRef.current = next;
     applyTransform();
-  }, [applyTransform]);
+  }, [applyTransform, loop]);
 
   const onPointerUp = useCallback(() => { draggingRef.current = false; }, []);
 
