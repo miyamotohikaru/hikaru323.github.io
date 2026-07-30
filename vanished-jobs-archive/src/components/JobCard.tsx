@@ -5,6 +5,7 @@ import { Job, statusMeta } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
 import { dict } from "@/lib/dict";
 import { enDetails } from "@/data/en";
+import { yearSpans, fmtYear, lifespan } from "@/data/years";
 
 /** 収録外用のプレースホルダー：線画のこすくまくん */
 function BearPlaceholder() {
@@ -60,6 +61,22 @@ export default function JobCard({ job }: { job: Job }) {
   // 名前は必ず1行に収める: カード内幅86cqwに対し収まるサイズへ縮小（上限8.8cqw）
   const nameSize = Math.min(8.8, 84 / effLen(name));
 
+  const span = yearSpans[job.no];
+  if (span) {
+    return (
+      <NewCard
+        job={job}
+        en={en}
+        name={name}
+        subName={subName}
+        quote={quote}
+        oversized={oversized}
+        reading={span.reading}
+        span={span}
+      />
+    );
+  }
+
   return (
     <div className="@container block h-full w-full">
       <div
@@ -107,6 +124,137 @@ export default function JobCard({ job }: { job: Job }) {
             「{quote}」
           </p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** 年代スライダー付きの新デザインカード（yearSpans に登録されたカードのみ） */
+function NewCard({
+  job,
+  en,
+  name,
+  subName,
+  quote,
+  oversized,
+  reading,
+  span,
+}: {
+  job: Job;
+  en: boolean;
+  name: string;
+  subName: string;
+  quote: string;
+  oversized: boolean;
+  reading: string;
+  span: { start: number; end: number; axisMin: number; axisMax: number };
+}) {
+  const statusLabel = en ? dict.status[job.status] : statusMeta[job.status].label;
+  const nameSize = Math.min(11, 90 / effLen(name));
+
+  const range = span.axisMax - span.axisMin;
+  const pos = (y: number) =>
+    Math.max(0, Math.min(100, ((y - span.axisMin) / range) * 100));
+  const left = pos(span.start);
+  const knob = pos(span.end);
+  const width = Math.max(0, knob - left);
+  const years = lifespan(span.start, span.end);
+
+  return (
+    <div className="@container block h-full w-full">
+      <div
+        className="relative flex aspect-[34/47] w-full flex-col overflow-hidden rounded-[6cqw] px-[7cqw] pb-[6cqw] pt-[6.5cqw] shadow-[0_2px_10px_rgba(58,46,34,0.18)]"
+        style={{ background: job.color, color: job.textColor }}
+      >
+        {/* 上段: NO. と ステータスピル */}
+        <div className="flex items-center justify-between">
+          <span className="font-logo text-[8.2cqw] font-bold italic tracking-wide">
+            NO.{job.no}
+          </span>
+          <span
+            className="whitespace-nowrap rounded-full px-[5.5cqw] py-[2cqw] text-[6cqw] font-bold tracking-[0.15em]"
+            style={{ background: job.textColor, color: job.color }}
+          >
+            {statusLabel}
+          </span>
+        </div>
+
+        {/* イラスト */}
+        <div className="flex min-h-0 flex-1 items-center justify-center py-[1cqw]">
+          {job.image ? (
+            <Image
+              src={`/${job.image}`}
+              alt={job.name}
+              width={400}
+              height={400}
+              className={`h-full w-auto object-contain ${oversized ? "scale-115" : ""}`}
+            />
+          ) : (
+            <BearPlaceholder />
+          )}
+        </div>
+
+        {/* 読み・名前・英名 */}
+        <div className="text-center">
+          {!en && (
+            <p className="text-[3.4cqw] font-semibold tracking-[0.5em] opacity-80">
+              {reading}
+            </p>
+          )}
+          <p
+            className="mt-[1cqw] whitespace-nowrap font-bold leading-none"
+            style={{ fontSize: `${nameSize}cqw` }}
+          >
+            {name}
+          </p>
+          <p className="font-mono-label mt-[1.8cqw] text-[3.1cqw] uppercase tracking-[0.35em] opacity-80">
+            {subName}
+          </p>
+        </div>
+
+        {/* 年代スライダー */}
+        <div className="mt-[4cqw]">
+          <div className="flex items-end justify-between">
+            <span className="font-logo text-[7cqw] font-bold leading-none">
+              {fmtYear(span.start)}
+            </span>
+            <span className="font-logo text-[7cqw] font-bold leading-none">
+              {fmtYear(span.end)}
+            </span>
+          </div>
+          <div className="relative mt-[2.4cqw] h-[1.6cqw]">
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{ background: job.textColor, opacity: 0.25 }}
+            />
+            <div
+              className="absolute top-0 h-full rounded-full"
+              style={{ left: `${left}%`, width: `${width}%`, background: job.textColor }}
+            />
+            <div
+              className="absolute top-1/2 h-[4.2cqw] w-[4.2cqw] -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                left: `${knob}%`,
+                background: job.textColor,
+                boxShadow: `0 0 0 1.4cqw ${job.color}`,
+              }}
+            />
+          </div>
+          <div className="mt-[1.6cqw] flex justify-between text-[3cqw] opacity-55">
+            <span>{fmtYear(span.axisMin)}</span>
+            <span>{fmtYear(span.axisMax)}</span>
+          </div>
+        </div>
+
+        {/* 寿命 */}
+        <p className="mt-[2.4cqw] text-center text-[3cqw] tracking-[0.15em] opacity-70">
+          {en ? `lasted about ${years} years` : `約${years}年つづいた`}
+        </p>
+
+        {/* ひとこと */}
+        <p className="mt-[1.6cqw] text-center text-[3.6cqw] leading-snug opacity-90">
+          「{quote}」
+        </p>
       </div>
     </div>
   );
