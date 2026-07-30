@@ -5,7 +5,7 @@ import { Job, statusMeta } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
 import { dict } from "@/lib/dict";
 import { enDetails } from "@/data/en";
-import { yearSpans, fmtYear, lifespan } from "@/data/years";
+import { yearSpans, fmtYear, lifespan, AXIS_MIN, AXIS_MAX } from "@/data/years";
 
 /** 収録外用のプレースホルダー：線画のこすくまくん */
 function BearPlaceholder() {
@@ -147,14 +147,14 @@ function NewCard({
   quote: string;
   oversized: boolean;
   reading: string;
-  span: { start: number; end: number; axisMin: number; axisMax: number };
+  span: { start: number; end: number };
 }) {
   const statusLabel = en ? dict.status[job.status] : statusMeta[job.status].label;
   const nameSize = Math.min(11, 90 / effLen(name));
 
-  const range = span.axisMax - span.axisMin;
+  const range = AXIS_MAX - AXIS_MIN;
   const pos = (y: number) =>
-    Math.max(0, Math.min(100, ((y - span.axisMin) / range) * 100));
+    Math.max(0, Math.min(100, ((y - AXIS_MIN) / range) * 100));
   const left = pos(span.start);
   const knob = pos(span.end);
   const width = Math.max(0, knob - left);
@@ -168,7 +168,7 @@ function NewCard({
       >
         {/* 上段: NO. と ステータスピル */}
         <div className="flex items-center justify-between">
-          <span className="font-logo text-[8.2cqw] font-bold italic tracking-wide">
+          <span className="font-mono-label text-[7cqw] font-medium tracking-[0.12em]">
             NO.{job.no}
           </span>
           <span
@@ -241,13 +241,13 @@ function NewCard({
             />
           </div>
           <div className="mt-[1.6cqw] flex justify-between text-[3cqw] opacity-55">
-            <span>{fmtYear(span.axisMin)}</span>
-            <span>{fmtYear(span.axisMax)}</span>
+            <span>{fmtYear(AXIS_MIN)}</span>
+            <span>{fmtYear(AXIS_MAX)}</span>
           </div>
         </div>
 
         {/* 寿命 */}
-        <p className="mt-[2.4cqw] text-center text-[3cqw] tracking-[0.15em] opacity-70">
+        <p className="mt-[2.8cqw] text-center text-[4.4cqw] font-semibold tracking-[0.1em] opacity-80">
           {en ? `lasted about ${years} years` : `約${years}年つづいた`}
         </p>
 

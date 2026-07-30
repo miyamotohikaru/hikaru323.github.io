@@ -2,20 +2,21 @@
  * カード新デザイン用の年代データ。
  * このマップに no があるカードだけ新レイアウト（年代スライダー付き）で表示する。
  * まずは 001-003 のみ。順次全151件に広げる。
- * start/end/axisMin/axisMax は西暦（負=紀元前）。
+ * start/end は西暦（負=紀元前）。軸は全カード共通で AXIS_MIN..AXIS_MAX に固定。
  */
+export const AXIS_MIN = 0;
+export const AXIS_MAX = 2026;
+
 export type YearSpan = {
   reading: string;
   start: number;
   end: number;
-  axisMin: number;
-  axisMax: number;
 };
 
 export const yearSpans: Record<string, YearSpan> = {
-  "001": { reading: "しょき", start: -3000, end: 1450, axisMin: -3000, axisMax: 1500 },
-  "002": { reading: "ぎんゆうしじん", start: 500, end: 1500, axisMin: 0, axisMax: 1600 },
-  "003": { reading: "しゃほんさいしょくし", start: 500, end: 1500, axisMin: 0, axisMax: 1600 },
+  "001": { reading: "しょき", start: -3000, end: 1450 },
+  "002": { reading: "ぎんゆうしじん", start: 500, end: 1500 },
+  "003": { reading: "しゃほんさいしょくし", start: 500, end: 1500 },
 };
 
 /** 西暦を表示用文字列に（負=紀元前） */
