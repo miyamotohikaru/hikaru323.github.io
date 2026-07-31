@@ -19,12 +19,12 @@ export default function Header() {
     href === "/" ? pathname === "/" || pathname.startsWith("/jobs") : pathname.startsWith(href);
 
   const langToggle = (
-    <span className="font-mono-label flex items-center overflow-hidden rounded-full border border-vja-line text-[10px] tracking-widest">
+    <span className="font-mono-label flex items-center overflow-hidden rounded-full border border-vja-line text-[11px] tracking-widest">
       {(["ja", "en"] as const).map((l) => (
         <button
           key={l}
           onClick={() => setLang(l)}
-          className={`px-2.5 py-1 uppercase ${
+          className={`px-4 py-2 uppercase md:px-3 md:py-1.5 ${
             lang === l ? "bg-vja-ink text-vja-cream" : "text-vja-ink-soft hover:text-vja-ink"
           }`}
         >

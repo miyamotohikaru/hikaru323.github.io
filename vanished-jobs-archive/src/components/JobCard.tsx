@@ -247,8 +247,8 @@ function NewCard({
         </div>
 
         {/* 寿命 */}
-        <p className="mt-[2.8cqw] text-center text-[4.4cqw] font-semibold tracking-[0.1em] opacity-80">
-          {en ? `lasted about ${years} years` : `約${years}年つづいた`}
+        <p className="mt-[1.6cqw] text-center text-[6cqw] font-bold tracking-[0.06em] opacity-85">
+          {en ? `~ ${years} yrs` : `約${years}年つづいた`}
         </p>
 
         {/* ひとこと */}

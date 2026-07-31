@@ -106,7 +106,7 @@ export default async function JobPage({
             RECORD NO.{job.no} ·{" "}
             <T ja={job.category} en={dict.category[job.category]} />
           </p>
-          <h1 className="mt-3 text-4xl font-bold tracking-[0.15em] md:text-5xl">
+          <h1 className="mt-3 break-words text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl md:tracking-[0.15em]">
             <T ja={job.name} en={job.en} />
           </h1>
           <p className="font-mono-label mt-3 text-xs tracking-[0.2em] text-vja-ink-soft">

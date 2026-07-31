@@ -52,3 +52,12 @@ body {
 .vja-rise {
   animation: vja-rise 0.45s ease both;
 }
+
+/* 携帯のみ横スクロールを防止（PCは詳細カードのstickyを保つため対象外） */
+@media (max-width: 767px) {
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+}

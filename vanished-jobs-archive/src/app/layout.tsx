@@ -45,7 +45,9 @@ export default function RootLayout({
         <LangProvider>
           <ScrollRestorer />
           <Header />
-          <main className="pb-20 md:pb-0">{children}</main>
+          <main className="overflow-x-hidden pb-20 md:overflow-x-visible md:pb-0">
+            {children}
+          </main>
           <Footer />
           <TabBar />
         </LangProvider>
