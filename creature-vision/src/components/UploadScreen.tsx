@@ -91,7 +91,9 @@ export default function UploadScreen({ creatures, onFile, preselectedCreature }:
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "#fff", borderRadius: 20, border: `2px solid ${INK}`,
-              boxShadow: `6px 6px 0 ${INK}`, maxWidth: 340, width: "100%",
+              boxShadow: `6px 6px 0 ${INK}`,
+              // 改行したテキストの幅にボックスをぴったり合わせる（右側の余白をなくす）
+              width: "fit-content", maxWidth: "min(360px, calc(100vw - 40px))",
               padding: "22px 22px 20px", position: "relative",
               fontFamily: "'Zen Maru Gothic', sans-serif",
             }}
@@ -109,20 +111,25 @@ export default function UploadScreen({ creatures, onFile, preselectedCreature }:
             <div style={{ fontSize: 17, fontWeight: 900, color: INK, marginBottom: 10 }}>
               ❓ このアプリについて
             </div>
-            <p style={{ fontSize: 14, lineHeight: 1.75, color: "#5a4a3a", marginBottom: 14 }}>
-              同じ景色でも、生き物によって<b>「見えている世界」はまるで違います</b>。
-              写真をアップすると、犬の2色覚・トンボの複眼・ヘビの赤外線視覚…など、
+            <p style={{ fontSize: 14, lineHeight: 1.9, color: "#5a4a3a", marginBottom: 14 }}>
+              同じ景色でも、生き物によって<br />
+              <b>「見えている世界」はまるで違います</b>。<br />
+              写真をアップすると、<br />
+              犬の2色覚・トンボの複眼・<br />
+              ヘビの赤外線視覚…など、<br />
               いろんな生き物の目で見た世界に変わります。
             </p>
-            <p style={{ fontSize: 14, lineHeight: 1.75, color: "#5a4a3a", marginBottom: 16 }}>
-              人間が見ている世界も、じつは<b>「人間用にフィルタリングされた一部」</b>。
+            <p style={{ fontSize: 14, lineHeight: 1.9, color: "#5a4a3a", marginBottom: 16 }}>
+              人間が見ている世界も、じつは<br />
+              <b>「人間用にフィルタリングされた一部」</b>。<br />
               それを、遊びながら体感できます。
             </p>
             <div style={{ fontSize: 15, fontWeight: 900, color: INK, marginBottom: 6 }}>
               💡 上手に生成するコツ
             </div>
-            <p style={{ fontSize: 14, lineHeight: 1.7, color: "#5a4a3a" }}>
-              スマホの <b>0.5倍（超広角）</b> で <b>横向き</b> に撮った写真だと、
+            <p style={{ fontSize: 14, lineHeight: 1.9, color: "#5a4a3a" }}>
+              スマホの <b>0.5倍（超広角）</b> で <br />
+              <b>横向き</b> に撮った写真だと、<br />
               まわりの景色がキレイに拡張されやすいよ。
             </p>
           </div>

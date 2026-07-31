@@ -762,7 +762,9 @@ export default function ViewScreen({
           shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}&url=${encodeURIComponent(url)}`;
           break;
         case "line":
-          shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(fullText)}`;
+          // lineit/share はブラウザの共有ページに飛ぶ→変。line.me/R/share はLINEアプリを
+          // 直接開いて送信先を選べる（テキスト末尾にURLを入れるとカード表示になる）。
+          shareUrl = `https://line.me/R/share?text=${encodeURIComponent(`${fullText}\n${url}`)}`;
           break;
         case "facebook":
           shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(fullText)}`;
@@ -1039,9 +1041,17 @@ export default function ViewScreen({
               {([["x", <XIcon key="x" />, "X"], ["line", <LineIcon key="l" />, "LINE"], ["facebook", <FacebookIcon key="f" />, "Facebook"]] as const).map(([sns, icon, label]) => (
                 <button
                   key={sns}
-                  onClick={() => shareToSns(sns)}
-                  className="flex flex-col items-center gap-1 cursor-pointer"
-                  style={{ background: "none", border: "none", padding: 0 }}
+                  onClick={() => { if (!preparingShare) shareToSns(sns); }}
+                  disabled={preparingShare}
+                  className="flex flex-col items-center gap-1"
+                  style={{
+                    background: "none", border: "none", padding: 0,
+                    // リンク準備中はSNSを押せないように（準備完了で押せる）
+                    cursor: preparingShare ? "not-allowed" : "pointer",
+                    opacity: preparingShare ? 0.4 : 1,
+                    pointerEvents: preparingShare ? "none" : "auto",
+                    transition: "opacity 0.2s",
+                  }}
                 >
                   <div
                     className="flex items-center justify-center"
