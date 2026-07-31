@@ -91,7 +91,9 @@ export default function UploadScreen({ creatures, onFile, preselectedCreature }:
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "#fff", borderRadius: 20, border: `2px solid ${INK}`,
-              boxShadow: `6px 6px 0 ${INK}`, maxWidth: 340, width: "100%",
+              boxShadow: `6px 6px 0 ${INK}`,
+              // 改行したテキストの幅にボックスをぴったり合わせる（右側の余白をなくす）
+              width: "fit-content", maxWidth: "min(360px, calc(100vw - 40px))",
               padding: "22px 22px 20px", position: "relative",
               fontFamily: "'Zen Maru Gothic', sans-serif",
             }}
@@ -126,7 +128,8 @@ export default function UploadScreen({ creatures, onFile, preselectedCreature }:
               💡 上手に生成するコツ
             </div>
             <p style={{ fontSize: 14, lineHeight: 1.9, color: "#5a4a3a" }}>
-              スマホの <b>0.5倍（超広角）</b> で <b>横向き</b> に撮った写真だと、<br />
+              スマホの <b>0.5倍（超広角）</b> で <br />
+              <b>横向き</b> に撮った写真だと、<br />
               まわりの景色がキレイに拡張されやすいよ。
             </p>
           </div>
