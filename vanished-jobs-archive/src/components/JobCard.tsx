@@ -5,7 +5,7 @@ import { Job, statusMeta } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
 import { dict } from "@/lib/dict";
 import { enDetails } from "@/data/en";
-import { yearSpans, fmtYear, lifespan, AXIS_MIN, AXIS_MAX } from "@/data/years";
+import { yearSpans, fmtYear, lifespan } from "@/data/years";
 
 /** 収録外用のプレースホルダー：線画のこすくまくん */
 function BearPlaceholder() {
@@ -152,12 +152,6 @@ function NewCard({
   const statusLabel = en ? dict.status[job.status] : statusMeta[job.status].label;
   const nameSize = Math.min(11, 90 / effLen(name));
 
-  const range = AXIS_MAX - AXIS_MIN;
-  const pos = (y: number) =>
-    Math.max(0, Math.min(100, ((y - AXIS_MIN) / range) * 100));
-  const left = pos(span.start);
-  const knob = pos(span.end);
-  const width = Math.max(0, knob - left);
   const years = lifespan(span.start, span.end);
 
   return (
@@ -212,47 +206,33 @@ function NewCard({
           </p>
         </div>
 
-        {/* 年代スライダー */}
-        <div className="mt-[4cqw]">
-          <div className="flex items-end justify-between">
-            <span className="font-logo text-[7cqw] font-bold leading-none">
-              {fmtYear(span.start)}
-            </span>
-            <span className="font-logo text-[7cqw] font-bold leading-none">
-              {fmtYear(span.end)}
-            </span>
-          </div>
-          <div className="relative mt-[2.4cqw] h-[1.6cqw]">
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{ background: job.textColor, opacity: 0.25 }}
-            />
-            <div
-              className="absolute top-0 h-full rounded-full"
-              style={{ left: `${left}%`, width: `${width}%`, background: job.textColor }}
-            />
-            <div
-              className="absolute top-1/2 h-[4.2cqw] w-[4.2cqw] -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{
-                left: `${knob}%`,
-                background: job.textColor,
-                boxShadow: `0 0 0 1.4cqw ${job.color}`,
-              }}
-            />
-          </div>
-          <div className="mt-[1.6cqw] flex justify-between text-[3cqw] opacity-55">
-            <span>{fmtYear(AXIS_MIN)}</span>
-            <span>{fmtYear(AXIS_MAX)}</span>
-          </div>
+        {/* 年代パネル */}
+        <div
+          className="mt-[3.2cqw] rounded-[4cqw] px-[4cqw] pb-[3cqw] pt-[3.6cqw] text-center"
+          style={{ background: job.textColor, color: job.color }}
+        >
+          <p className="font-logo whitespace-nowrap font-bold leading-none">
+            {en ? (
+              <span className="text-[8.5cqw]">
+                {fmtYear(span.start)} – {fmtYear(span.end)}
+              </span>
+            ) : (
+              <>
+                <span className="text-[9.5cqw]">{fmtYear(span.start)}</span>
+                <span className="text-[5cqw]">年</span>
+                <span className="text-[7cqw]">〜</span>
+                <span className="text-[9.5cqw]">{fmtYear(span.end)}</span>
+                <span className="text-[5cqw]">年</span>
+              </>
+            )}
+          </p>
+          <p className="mt-[1.4cqw] text-[3.6cqw] font-semibold tracking-[0.05em] opacity-90">
+            {en ? `lasted about ${years} years` : `およそ${years}年続いた`}
+          </p>
         </div>
 
-        {/* 寿命 */}
-        <p className="mt-[1.6cqw] text-center text-[6cqw] font-bold tracking-[0.06em] opacity-85">
-          {en ? `~ ${years} yrs` : `約${years}年つづいた`}
-        </p>
-
         {/* ひとこと */}
-        <p className="mt-[1.6cqw] text-center text-[3.6cqw] leading-snug opacity-90">
+        <p className="mt-[3cqw] text-center text-[3.6cqw] leading-snug opacity-90">
           「{quote}」
         </p>
       </div>
