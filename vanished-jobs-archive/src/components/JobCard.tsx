@@ -154,6 +154,12 @@ function NewCard({
 
   const years = lifespan(span.start, span.end);
 
+  // 年号パネルの文字は桁数に応じて縮小し必ずパネル内に収める（紀元前3000等の長い年号対応）
+  const yearChars = fmtYear(span.start).length + fmtYear(span.end).length;
+  const bigSize = Math.min(9.5, 84 / (yearChars + 4));
+  const subSize = bigSize * 0.55;
+  const tildeSize = bigSize * 0.78;
+
   return (
     <div className="@container block h-full w-full">
       <div
@@ -213,16 +219,16 @@ function NewCard({
         >
           <p className="font-logo whitespace-nowrap font-bold leading-none">
             {en ? (
-              <span className="text-[8.5cqw]">
+              <span style={{ fontSize: `${bigSize}cqw` }}>
                 {fmtYear(span.start)} – {fmtYear(span.end)}
               </span>
             ) : (
               <>
-                <span className="text-[9.5cqw]">{fmtYear(span.start)}</span>
-                <span className="text-[5cqw]">年</span>
-                <span className="text-[7cqw]">〜</span>
-                <span className="text-[9.5cqw]">{fmtYear(span.end)}</span>
-                <span className="text-[5cqw]">年</span>
+                <span style={{ fontSize: `${bigSize}cqw` }}>{fmtYear(span.start)}</span>
+                <span style={{ fontSize: `${subSize}cqw` }}>年</span>
+                <span style={{ fontSize: `${tildeSize}cqw` }}>〜</span>
+                <span style={{ fontSize: `${bigSize}cqw` }}>{fmtYear(span.end)}</span>
+                <span style={{ fontSize: `${subSize}cqw` }}>年</span>
               </>
             )}
           </p>
