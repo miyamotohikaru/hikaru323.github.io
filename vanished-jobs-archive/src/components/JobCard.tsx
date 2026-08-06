@@ -155,7 +155,7 @@ function NewCard({
 
   // 上段の年代表記は桁数に応じて縮小（B.C.3000等の長い年号対応）
   const yearChars = fmtYear(span.start).length + fmtYear(span.end).length;
-  const bigSize = Math.min(6.4, 52 / (yearChars + 3));
+  const bigSize = Math.min(8, 74 / (yearChars + 2));
   const subSize = bigSize * 0.6;
   const tildeSize = bigSize * 0.72;
 
@@ -193,7 +193,7 @@ function NewCard({
 
         {/* 細い下線（全幅） */}
         <div
-          className="mt-[1.2cqw] w-[92%] border-b"
+          className="mt-[1.2cqw] -ml-[7cqw] w-[60cqw] border-b"
           style={{ borderColor: job.textColor }}
         />
 
