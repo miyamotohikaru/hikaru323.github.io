@@ -19,9 +19,9 @@ export const yearSpans: Record<string, YearSpan> = {
   "003": { reading: "しゃほんさいしょくし", start: 500, end: 1500 },
 };
 
-/** 西暦を表示用文字列に（負=紀元前） */
+/** 西暦を表示用文字列に（負=B.C.） */
 export function fmtYear(y: number): string {
-  return y < 0 ? `紀元前${-y}` : String(y);
+  return y < 0 ? `B.C.${-y}` : String(y);
 }
 
 /** 活動年数（続いた年数）をきりよく丸める */

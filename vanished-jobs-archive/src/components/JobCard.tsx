@@ -129,7 +129,7 @@ export default function JobCard({ job }: { job: Job }) {
   );
 }
 
-/** 年代スライダー付きの新デザインカード（yearSpans に登録されたカードのみ） */
+/** 年代付きの新デザインカード（yearSpans に登録されたカードのみ） */
 function NewCard({
   job,
   en,
@@ -151,33 +151,74 @@ function NewCard({
 }) {
   const statusLabel = en ? dict.status[job.status] : statusMeta[job.status].label;
   const nameSize = Math.min(11, 90 / effLen(name));
-
   const years = lifespan(span.start, span.end);
 
-  // 年号パネルの文字は桁数に応じて縮小し必ずパネル内に収める（紀元前3000等の長い年号対応）
+  // 上段の年代表記は桁数に応じて縮小（B.C.3000等の長い年号対応）
   const yearChars = fmtYear(span.start).length + fmtYear(span.end).length;
-  const bigSize = Math.min(9.5, 84 / (yearChars + 4));
-  const subSize = bigSize * 0.55;
-  const tildeSize = bigSize * 0.78;
+  const bigSize = Math.min(5.6, 48 / (yearChars + 3));
+  const subSize = bigSize * 0.6;
+  const tildeSize = bigSize * 0.72;
+
+  // ステータス別の締め文言
+  const closing = en
+    ? {
+        extinct: `vanished after ~${years} yrs`,
+        transformed: `changed after ~${years} yrs`,
+        ongoing: `~${years} yrs, still ongoing`,
+      }[job.status]
+    : {
+        extinct: `およそ${years}年続いて消えた`,
+        transformed: `およそ${years}年続いて姿を変えた`,
+        ongoing: `およそ${years}年、いまも進行中`,
+      }[job.status];
 
   return (
     <div className="@container block h-full w-full">
       <div
-        className="relative flex aspect-[34/47] w-full flex-col overflow-hidden rounded-[6cqw] px-[7cqw] pb-[6cqw] pt-[6.5cqw] shadow-[0_2px_10px_rgba(58,46,34,0.18)]"
+        className="relative flex aspect-[34/47] w-full flex-col overflow-hidden rounded-[6cqw] px-[7cqw] pb-[6cqw] pt-[6cqw] shadow-[0_2px_10px_rgba(58,46,34,0.18)]"
         style={{ background: job.color, color: job.textColor }}
       >
-        {/* 上段: NO. と ステータスピル */}
-        <div className="flex items-center justify-between">
-          <span className="font-mono-label text-[7cqw] font-medium tracking-[0.12em]">
-            NO.{job.no}
-          </span>
+        {/* 上段: NO.＋年代 と ステータスピル */}
+        <div className="flex items-start justify-between">
+          <div className="min-w-0">
+            <span
+              className="font-mono-label inline-block border-b-2 pb-[1.4cqw] text-[7cqw] font-medium tracking-[0.12em]"
+              style={{ borderColor: job.textColor }}
+            >
+              NO.{job.no}
+            </span>
+            <p className="mt-[2.4cqw] whitespace-nowrap font-bold leading-none">
+              {en ? (
+                <span style={{ fontSize: `${bigSize}cqw` }}>
+                  {fmtYear(span.start)} – {fmtYear(span.end)}
+                </span>
+              ) : (
+                <>
+                  <span style={{ fontSize: `${bigSize}cqw` }}>
+                    {fmtYear(span.start)}
+                  </span>
+                  <span style={{ fontSize: `${subSize}cqw` }}>年</span>
+                  <span style={{ fontSize: `${tildeSize}cqw` }}>〜</span>
+                  <span style={{ fontSize: `${bigSize}cqw` }}>
+                    {fmtYear(span.end)}
+                  </span>
+                  <span style={{ fontSize: `${subSize}cqw` }}>年</span>
+                </>
+              )}
+            </p>
+          </div>
           <span
-            className="whitespace-nowrap rounded-full px-[5.5cqw] py-[2cqw] text-[6cqw] font-bold tracking-[0.15em]"
+            className="ml-[3cqw] shrink-0 whitespace-nowrap rounded-full px-[5.5cqw] py-[2cqw] text-[6cqw] font-bold tracking-[0.15em]"
             style={{ background: job.textColor, color: job.color }}
           >
             {statusLabel}
           </span>
         </div>
+
+        {/* ひとこと */}
+        <p className="mt-[3.4cqw] text-center text-[3.8cqw] leading-snug opacity-90">
+          「{quote}」
+        </p>
 
         {/* イラスト */}
         <div className="flex min-h-0 flex-1 items-center justify-center py-[1cqw]">
@@ -212,35 +253,13 @@ function NewCard({
           </p>
         </div>
 
-        {/* 年代パネル */}
+        {/* 締めパネル */}
         <div
-          className="mt-[3.2cqw] rounded-[4cqw] px-[4cqw] pb-[3cqw] pt-[3.6cqw] text-center"
+          className="mt-[3.4cqw] rounded-full px-[5cqw] py-[2.8cqw] text-center"
           style={{ background: job.textColor, color: job.color }}
         >
-          <p className="font-logo whitespace-nowrap font-bold leading-none">
-            {en ? (
-              <span style={{ fontSize: `${bigSize}cqw` }}>
-                {fmtYear(span.start)} – {fmtYear(span.end)}
-              </span>
-            ) : (
-              <>
-                <span style={{ fontSize: `${bigSize}cqw` }}>{fmtYear(span.start)}</span>
-                <span style={{ fontSize: `${subSize}cqw` }}>年</span>
-                <span style={{ fontSize: `${tildeSize}cqw` }}>〜</span>
-                <span style={{ fontSize: `${bigSize}cqw` }}>{fmtYear(span.end)}</span>
-                <span style={{ fontSize: `${subSize}cqw` }}>年</span>
-              </>
-            )}
-          </p>
-          <p className="mt-[1.4cqw] text-[3.6cqw] font-semibold tracking-[0.05em] opacity-90">
-            {en ? `lasted about ${years} years` : `およそ${years}年続いた`}
-          </p>
+          <p className="text-[3.8cqw] font-bold tracking-[0.06em]">{closing}</p>
         </div>
-
-        {/* ひとこと */}
-        <p className="mt-[3cqw] text-center text-[3.6cqw] leading-snug opacity-90">
-          「{quote}」
-        </p>
       </div>
     </div>
   );
