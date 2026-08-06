@@ -227,7 +227,7 @@ export default function IndexView() {
                 key={j.no}
                 href={`/jobs/${j.no}`}
                 onClick={() => saveReturn()}
-                className="vja-rise transition-transform hover:-translate-y-1"
+                className="vja-rise"
               >
                 <JobCard job={j} />
               </Link>
