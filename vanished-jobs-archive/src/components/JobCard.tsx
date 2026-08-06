@@ -182,7 +182,7 @@ function NewCard({
         <div className="flex items-start justify-between">
           <div className="min-w-0">
             <span
-              className="font-mono-label inline-block border-b-2 pb-[1.4cqw] text-[7cqw] font-medium tracking-[0.12em]"
+              className="font-mono-label inline-block border-b-2 pb-[0.5cqw] text-[7cqw] font-medium tracking-[0.12em]"
               style={{ borderColor: job.textColor }}
             >
               NO.{job.no}
