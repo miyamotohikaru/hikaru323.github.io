@@ -193,7 +193,7 @@ function NewCard({
 
         {/* 細い下線（全幅） */}
         <div
-          className="mt-[1.2cqw] w-full border-b"
+          className="mt-[1.2cqw] w-[92%] border-b"
           style={{ borderColor: job.textColor }}
         />
 
