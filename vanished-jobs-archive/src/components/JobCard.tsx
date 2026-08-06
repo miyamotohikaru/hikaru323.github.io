@@ -198,7 +198,7 @@ function NewCard({
         />
 
         {/* 年代 */}
-        <p className="whitespace-nowrap font-bold leading-none">
+        <p className="mt-[2px] whitespace-nowrap font-bold leading-none">
           {en ? (
             <span style={{ fontSize: `${bigSize}cqw` }}>
               {fmtYear(span.start)} – {fmtYear(span.end)}
