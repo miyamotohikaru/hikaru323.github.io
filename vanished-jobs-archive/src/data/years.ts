@@ -24,6 +24,16 @@ export const yearSpans: Record<string, YearSpan> = {
   "008": { reading: "つみくいにん", start: 1650, end: 1906 },
   "009": { reading: "なきおんな", start: -2000, end: 2026 },
   "010": { reading: "きし", start: 900, end: 1600 },
+  "011": { reading: "しりゃくせんいん", start: 1500, end: 1856 },
+  "012": { reading: "みずうり", start: -500, end: 1880 },
+  "013": { reading: "いねむりおこしがかり", start: 1650, end: 1880 },
+  "014": { reading: "おいすがかり", start: 1500, end: 1780 },
+  "015": { reading: "けいさんしゅ", start: 1600, end: 1960 },
+  "016": { reading: "のっかーあっぷ", start: 1800, end: 1975 },
+  "017": { reading: "てんとうふ", start: 1750, end: 1950 },
+  "018": { reading: "たいまつもち", start: 1600, end: 1850 },
+  "019": { reading: "ひるさいしゅうにん", start: 1700, end: 1900 },
+  "020": { reading: "したいとうくつにん", start: 1750, end: 1832 },
 };
 
 /** 西暦を表示用文字列に（負=B.C.） */
