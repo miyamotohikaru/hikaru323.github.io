@@ -180,7 +180,7 @@ function NewCard({
       >
         {/* 上段: NO. と ステータスピル */}
         <div className="flex items-center justify-between">
-          <span className="font-mono-label text-[7.5cqw] font-medium tracking-[0.12em]">
+          <span className="font-futura text-[7.5cqw] font-semibold tracking-[0.08em]">
             NO.{job.no}
           </span>
           <span
@@ -219,7 +219,7 @@ function NewCard({
         </p>
 
         {/* ひとこと */}
-        <p className="mt-[2.8cqw] text-center text-[4.8cqw] leading-snug opacity-90">
+        <p className="mt-[2.8cqw] translate-y-[5px] text-center text-[4.8cqw] leading-snug opacity-90">
           「{quote}」
         </p>
 

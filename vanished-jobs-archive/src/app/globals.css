@@ -34,6 +34,10 @@ body {
   font-family: var(--font-playfair), serif;
 }
 
+.font-futura {
+  font-family: var(--font-jost), "Futura", "Century Gothic", sans-serif;
+}
+
 .font-mono-label {
   font-family: var(--font-plex-mono), monospace;
 }
