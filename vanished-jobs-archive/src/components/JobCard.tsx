@@ -178,35 +178,11 @@ function NewCard({
         className="relative flex aspect-[34/47] w-full flex-col overflow-hidden rounded-[6cqw] px-[7cqw] pb-[6cqw] pt-[6cqw] shadow-[0_2px_10px_rgba(58,46,34,0.18)]"
         style={{ background: job.color, color: job.textColor }}
       >
-        {/* 上段: NO.＋年代 と ステータスピル */}
-        <div className="flex items-start justify-between">
-          <div className="min-w-0">
-            <span
-              className="font-mono-label inline-block border-b-2 pb-[0.5cqw] text-[7cqw] font-medium tracking-[0.12em]"
-              style={{ borderColor: job.textColor }}
-            >
-              NO.{job.no}
-            </span>
-            <p className="mt-[1cqw] whitespace-nowrap font-bold leading-none">
-              {en ? (
-                <span style={{ fontSize: `${bigSize}cqw` }}>
-                  {fmtYear(span.start)} – {fmtYear(span.end)}
-                </span>
-              ) : (
-                <>
-                  <span style={{ fontSize: `${bigSize}cqw` }}>
-                    {fmtYear(span.start)}
-                  </span>
-                  <span style={{ fontSize: `${subSize}cqw` }}>年</span>
-                  <span style={{ fontSize: `${tildeSize}cqw` }}>〜</span>
-                  <span style={{ fontSize: `${bigSize}cqw` }}>
-                    {fmtYear(span.end)}
-                  </span>
-                  <span style={{ fontSize: `${subSize}cqw` }}>年</span>
-                </>
-              )}
-            </p>
-          </div>
+        {/* 上段: NO. と ステータスピル */}
+        <div className="flex items-center justify-between">
+          <span className="font-mono-label text-[7.5cqw] font-medium tracking-[0.12em]">
+            NO.{job.no}
+          </span>
           <span
             className="ml-[3cqw] shrink-0 whitespace-nowrap rounded-full px-[5.5cqw] py-[2cqw] text-[6cqw] font-bold tracking-[0.15em]"
             style={{ background: job.textColor, color: job.color }}
@@ -215,8 +191,35 @@ function NewCard({
           </span>
         </div>
 
+        {/* 細い下線（全幅） */}
+        <div
+          className="mt-[1.2cqw] w-full border-b"
+          style={{ borderColor: job.textColor }}
+        />
+
+        {/* 年代 */}
+        <p className="mt-[1.2cqw] whitespace-nowrap font-bold leading-none">
+          {en ? (
+            <span style={{ fontSize: `${bigSize}cqw` }}>
+              {fmtYear(span.start)} – {fmtYear(span.end)}
+            </span>
+          ) : (
+            <>
+              <span style={{ fontSize: `${bigSize}cqw` }}>
+                {fmtYear(span.start)}
+              </span>
+              <span style={{ fontSize: `${subSize}cqw` }}>年</span>
+              <span style={{ fontSize: `${tildeSize}cqw` }}>〜</span>
+              <span style={{ fontSize: `${bigSize}cqw` }}>
+                {fmtYear(span.end)}
+              </span>
+              <span style={{ fontSize: `${subSize}cqw` }}>年</span>
+            </>
+          )}
+        </p>
+
         {/* ひとこと */}
-        <p className="mt-[3.4cqw] text-center text-[3.8cqw] leading-snug opacity-90">
+        <p className="mt-[2.8cqw] text-center text-[4.8cqw] leading-snug opacity-90">
           「{quote}」
         </p>
 
@@ -228,7 +231,7 @@ function NewCard({
               alt={job.name}
               width={400}
               height={400}
-              className={`h-full w-auto object-contain ${oversized ? "scale-115" : ""}`}
+              className="h-full w-auto scale-[1.15] object-contain"
             />
           ) : (
             <BearPlaceholder />
