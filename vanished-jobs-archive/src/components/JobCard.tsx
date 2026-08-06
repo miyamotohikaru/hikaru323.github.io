@@ -155,7 +155,7 @@ function NewCard({
 
   // 上段の年代表記は桁数に応じて縮小（B.C.3000等の長い年号対応）
   const yearChars = fmtYear(span.start).length + fmtYear(span.end).length;
-  const bigSize = Math.min(5.6, 48 / (yearChars + 3));
+  const bigSize = Math.min(6.4, 52 / (yearChars + 3));
   const subSize = bigSize * 0.6;
   const tildeSize = bigSize * 0.72;
 
@@ -187,7 +187,7 @@ function NewCard({
             >
               NO.{job.no}
             </span>
-            <p className="mt-[2.4cqw] whitespace-nowrap font-bold leading-none">
+            <p className="mt-[1cqw] whitespace-nowrap font-bold leading-none">
               {en ? (
                 <span style={{ fontSize: `${bigSize}cqw` }}>
                   {fmtYear(span.start)} – {fmtYear(span.end)}
