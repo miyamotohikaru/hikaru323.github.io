@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import JobCard from "@/components/JobCard";
 import TiltCard from "@/components/TiltCard";
+import DeckView from "@/components/DeckView";
 import {
   jobs,
   stats,
@@ -71,6 +72,16 @@ export default function IndexView() {
   const [region, setRegion] = useState<string[]>([]);
   const [cause, setCause] = useState<number[]>([]);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
+  /** 一覧(グリッド) か 束(デッキ) か。選んだ表示は次回も引き継ぐ */
+  const [mode, setMode] = useState<"grid" | "deck">("grid");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("vja-view");
+    if (saved === "deck" || saved === "grid") setMode(saved);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("vja-view", mode);
+  }, [mode]);
 
   const filtered = useMemo(() => {
     let list = jobs.filter(
@@ -119,9 +130,28 @@ export default function IndexView() {
               </span>
             )}
           </button>
-          <span className="font-mono-label text-xs tracking-[0.25em] text-vja-ink-soft">
-            {filtered.length} / {stats.total}
-          </span>
+          <div className="flex items-center gap-4">
+            {/* 表示の切り替え（索引グリッドはそのまま残し、束表示を足す） */}
+            <div className="vja-modes" role="group" aria-label={en ? "view" : "表示"}>
+              <button
+                onClick={() => setMode("grid")}
+                aria-pressed={mode === "grid"}
+                className={mode === "grid" ? "is-on" : ""}
+              >
+                {en ? "GRID" : "一覧"}
+              </button>
+              <button
+                onClick={() => setMode("deck")}
+                aria-pressed={mode === "deck"}
+                className={mode === "deck" ? "is-on" : ""}
+              >
+                {en ? "DECK" : "束"}
+              </button>
+            </div>
+            <span className="font-mono-label text-xs tracking-[0.25em] text-vja-ink-soft">
+              {filtered.length} / {stats.total}
+            </span>
+          </div>
         </div>
 
         {open && (
@@ -213,7 +243,7 @@ export default function IndexView() {
         )}
       </div>
 
-      {/* カードグリッド */}
+      {/* カードグリッド / 束 */}
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 md:px-8">
         {filtered.length === 0 ? (
           <p className="py-16 text-center text-sm text-vja-ink-soft">
@@ -221,6 +251,8 @@ export default function IndexView() {
               ? "No cards match these filters."
               : "この条件のカードは、見つかりませんでした。"}
           </p>
+        ) : mode === "deck" ? (
+          <DeckView key={filtered.map((j) => j.no).join(",")} jobs={filtered} />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5">
             {filtered.map((j, i) => (
@@ -228,9 +260,10 @@ export default function IndexView() {
                 key={j.no}
                 href={`/jobs/${j.no}`}
                 onClick={() => saveReturn()}
-                className="vja-rise block"
-                // 1枚ずつ配られるように少しずつ遅らせる（長くなりすぎないよう頭打ち）
-                style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
+                // 1枚ずつ配られるように少しずつ遅らせる。
+                // 151枚すべてを動かすとレイヤーが増えるので最初の12枚だけにする
+                className={i < 12 ? "vja-rise block" : "block"}
+                style={i < 12 ? { animationDelay: `${i * 45}ms` } : undefined}
               >
                 <TiltCard variant="index">
                   <JobCard job={j} />

@@ -71,26 +71,28 @@ body {
   position: relative;
   display: block;
   container-type: inline-size;
-  border-radius: 6cqw;
+  /* 静止時は 3D 変形を持たせない。151枚ぶんの合成レイヤーが常時できてしまうため */
+  transform: none;
+  transition: transform 0.5s cubic-bezier(0.22, 0.9, 0.24, 1);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+/* 触れているあいだだけ 3D にして、キビキビ動かす */
+.vja-tilt.is-live {
   transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry))
     translate3d(0, var(--lift), 0) scale(var(--tscale));
   transform-style: preserve-3d;
-  /* 指・マウスが離れたときはゆっくり戻す */
-  transition: transform 0.5s cubic-bezier(0.22, 0.9, 0.24, 1);
-  -webkit-tap-highlight-color: transparent;
-}
-/* 追従中はキビキビ動かす */
-.vja-tilt.is-live {
   transition: transform 0.09s ease-out;
   will-change: transform;
 }
 
-/* 光のたまり（ポインタ位置に追従） */
+/* 光のたまり（ポインタ位置に追従）。角丸はカード面と同じ 6cqw を自分で持つ
+   （inherit にすると .vja-tilt 自身が container なので cqw が別物に解決される） */
 .vja-glare,
 .vja-holo {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
+  border-radius: 6cqw;
   pointer-events: none;
   opacity: var(--glare);
   transition: opacity 0.4s ease;
@@ -118,15 +120,220 @@ body {
   mix-blend-mode: overlay;
 }
 
+/* 表示切り替え（一覧 / 束） */
+.vja-modes {
+  display: inline-flex;
+  border: 1px solid var(--vja-line);
+  border-radius: 9999px;
+  padding: 2px;
+  background: var(--vja-paper);
+}
+.vja-modes button {
+  border-radius: 9999px;
+  padding: 0.25rem 0.85rem;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--vja-ink-soft);
+  transition: background 0.24s ease, color 0.24s ease;
+}
+.vja-modes button.is-on {
+  background: var(--vja-ink);
+  color: var(--vja-cream);
+}
+
+/* ============================================================
+   デッキ表示（カードの束）
+   ============================================================ */
+.vja-deck {
+  /* カードは 34:47。
+     iOS Safari の vh はツールバーを畳んだ高さ(lvh)で固定されるので、
+     高さの制限は必ず svh で書く。そうしないと携帯で操作ボタンが画面外に落ちる。
+     300px = ヘッダ59 + タブバー41 + カード下の操作系119 + 余白81 */
+  --deck-w: min(72vw, calc((100svh - 300px) / 1.382), 330px);
+  /* カード面の角丸と必ず一致させる。6cqw はここでは自分自身がコンテナになってしまい
+     ビューポート基準に化けるので使わない */
+  --card-r: calc(var(--deck-w) * 0.06);
+  width: 100%;
+  height: calc(var(--deck-w) * 1.382 + 96px);
+  cursor: grab;
+  perspective: 1500px;
+  /* 束のまわりだけ明るく持ち上げ、外周をわずかに落として、光の当たった一角に置く */
+  background: radial-gradient(
+      66% 54% at 50% 42%,
+      rgba(248, 244, 234, 0.95) 0%,
+      rgba(244, 240, 229, 0.55) 40%,
+      rgba(244, 240, 229, 0) 72%
+    ),
+    radial-gradient(
+      120% 100% at 50% 50%,
+      rgba(58, 46, 34, 0) 58%,
+      rgba(58, 46, 34, 0.045) 100%
+    );
+}
+.vja-deck:active {
+  cursor: grabbing;
+}
+@media (min-width: 768px) {
+  /* 300px はスマホのツールバーぶんの見込み。PCではそこまで要らないので取り戻す */
+  .vja-deck {
+    --deck-w: min(30vw, calc((100svh - 190px) / 1.382), 440px);
+  }
+}
+
+.vja-deck-card {
+  position: absolute;
+  width: var(--deck-w);
+  /* 手で持った下端を支点に扇状へ開く */
+  transform-origin: 50% 92%;
+}
+/* 動かすのは前面カードだけ。全枚数を常時レイヤー化しない */
+.vja-deck-card.is-front {
+  cursor: pointer;
+  will-change: transform;
+  /* 影は box-shadow で焼く。drag/ジャイロで変形するたび再フィルタされる
+     drop-shadow はここでは使わない */
+}
+.vja-deck-card.is-front .vja-tilt {
+  box-shadow: 0 2px 3px rgba(58, 46, 34, 0.1), 0 22px 30px rgba(58, 46, 34, 0.2);
+  border-radius: var(--card-r);
+}
+/* 奥のカードの代役（ぼかしきると色の板と同じなので、板で描いて描画を節約する） */
+.vja-deck-proxy {
+  width: 100%;
+  aspect-ratio: 34 / 47;
+  border-radius: var(--card-r);
+  box-shadow: inset 0 0 0 1px rgba(58, 46, 34, 0.09);
+}
+/* 奥にあるほど紙色をかぶせて明るくする。透明にして消すと霧になり四角が読めなくなる */
+.vja-deck-card:not(.is-front)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--card-r);
+  background: var(--vja-paper);
+  opacity: var(--veil, 0);
+  pointer-events: none;
+}
+
+/* 束の下に敷く影。カードの下端に合わせ、拡散する影と接地の影を分けて置く */
+.vja-deck-shadow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--deck-w) * 1.06);
+  height: calc(var(--deck-w) * 0.2);
+  transform: translate(-50%, calc(var(--deck-w) * 0.691 - 6px));
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    rgba(58, 46, 34, 0.22) 0%,
+    rgba(58, 46, 34, 0.09) 34%,
+    rgba(58, 46, 34, 0.02) 60%,
+    rgba(58, 46, 34, 0) 76%
+  );
+  pointer-events: none;
+}
+/* 接地の濃い一本。ぼかしフィルタは使わずグラデーションで柔らかくする */
+.vja-deck-shadow::after {
+  content: "";
+  position: absolute;
+  left: 22%;
+  top: 26%;
+  width: 56%;
+  height: 14%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgba(58, 46, 34, 0.34) 0%,
+    rgba(58, 46, 34, 0.1) 48%,
+    rgba(58, 46, 34, 0) 74%
+  );
+}
+
+.vja-deck-nav {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(58, 46, 34, 0.14);
+  background: transparent;
+  transition: border-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+.vja-deck-nav:hover:not(:disabled) {
+  border-color: rgba(58, 46, 34, 0.38);
+  transform: scale(1.04);
+}
+.vja-deck-nav:disabled {
+  opacity: 0.45;
+}
+.vja-deck-nav:disabled .vja-chev {
+  border-color: rgba(58, 46, 34, 0.4);
+}
+
+/* キーボード操作の居場所がわかるように */
+.vja-deck-nav:focus-visible,
+.vja-deck-hit:focus-visible,
+.vja-modes button:focus-visible {
+  outline: 2px solid var(--vja-accent);
+  outline-offset: 3px;
+}
+/* 塗りつぶしの三角はこのページには強すぎるので、細い山形にする */
+.vja-chev {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-left: 1px solid rgba(58, 46, 34, 0.55);
+  border-bottom: 1px solid rgba(58, 46, 34, 0.55);
+}
+.vja-chev.is-prev {
+  transform: rotate(45deg) translate(1px, -1px);
+}
+.vja-chev.is-next {
+  transform: rotate(-135deg) translate(1px, -1px);
+}
+
+/* 束のどこを見ているかの細いレール */
+.vja-deck-rail {
+  position: relative;
+  width: min(52vw, 220px);
+  height: 1px;
+  padding: 0 3px;
+  background: var(--vja-line);
+}
+.vja-deck-rail b {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1px;
+  background: rgba(58, 46, 34, 0.28);
+  transition: width 0.4s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.vja-deck-rail span {
+  position: absolute;
+  top: -1.5px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 9999px;
+  background: var(--vja-accent);
+  transition: left 0.4s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+
 /* 「かざす」モード */
 /* backdrop-filter は携帯で重く、合成の不具合も出るので使わず、濃いめの幕で見せる */
 .vja-viewer {
   background: rgba(28, 22, 16, 0.9);
   animation: vja-fade 0.22s ease both;
 }
+/* 影は box-shadow で焼く。drop-shadow だとジャイロで傾けるたびに
+   40px ぶんのフィルタが掛け直され、携帯で描画が落ちる */
 .vja-viewer-card {
   animation: vja-pop 0.34s cubic-bezier(0.22, 1.2, 0.3, 1) both;
-  filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.45));
+}
+.vja-viewer-card .vja-tilt {
+  border-radius: 6cqw;
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.45);
 }
 @keyframes vja-fade {
   from {
@@ -152,6 +359,13 @@ body {
   .vja-viewer-card {
     animation: none;
   }
+  .vja-deck-card {
+    filter: none !important;
+  }
+  .vja-deck-rail b,
+  .vja-deck-rail span {
+    transition: none;
+  }
   .vja-tilt {
     transform: none !important;
     transition: none;
@@ -171,5 +385,13 @@ body {
   body {
     overflow-x: hidden;
     max-width: 100%;
+  }
+}
+
+/* PCでも、束からはみ出したカードで横スクロールバーが出ないようにする。
+   clip はスクロールコンテナを作らないので、sticky ヘッダーを壊さない */
+@media (min-width: 768px) {
+  body {
+    overflow-x: clip;
   }
 }

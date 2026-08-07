@@ -46,6 +46,8 @@ export default function CardStage({
   return (
     <>
       <div
+        // 「かざす」中は背面のカードを読み上げ対象から外す（同じカードが二重に読まれるため）
+        aria-hidden={zoom || undefined}
         className="mx-auto max-w-[340px] cursor-pointer touch-pan-y select-none"
         onPointerDown={(e) => {
           start.current = { x: e.clientX, y: e.clientY, t: Date.now() };
@@ -63,6 +65,12 @@ export default function CardStage({
             if (dx < 0 && nextNo) go(nextNo);
             else if (dx > 0 && prevNo) go(prevNo);
           }
+        }}
+        // 途中でジェスチャが打ち切られたとき、古い開始点を残さない
+        // （残すと次の無関係な指離しで誤って隣のカードへ飛ぶ）
+        onPointerCancel={() => {
+          start.current = null;
+          swiped.current = false;
         }}
         // タップ／クリックで「かざす」。直前がフリックだったときは開かない。
         onClick={() => {
@@ -97,6 +105,7 @@ function CardViewer({
   const { lang } = useLang();
   const en = lang === "en";
   const box = useRef<HTMLDivElement>(null);
+  const shell = useRef<HTMLDivElement>(null);
   const [needsGyroTap, setNeedsGyroTap] = useState(false);
   const [gyro, setGyro] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -118,15 +127,52 @@ function CardViewer({
     el.style.setProperty("--glare", "0.8");
   }, []);
 
-  // 開いている間は背面をスクロールさせない
+  // 開いている間は背面をスクロールさせない。
+  // iOS Safari は overflow:hidden だけでは止まらないので、位置を固定して戻す方式にする。
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const y = window.scrollY;
+    const s = document.body.style;
+    const prev = { position: s.position, top: s.top, width: s.width, overflow: s.overflow };
+    s.position = "fixed";
+    s.top = `-${y}px`;
+    s.width = "100%";
+    s.overflow = "hidden";
+    return () => {
+      s.position = prev.position;
+      s.top = prev.top;
+      s.width = prev.width;
+      s.overflow = prev.overflow;
+      window.scrollTo(0, y);
+    };
+  }, []);
+
+  // Esc で閉じる／Tab をこの中に閉じ込める／閉じたら元の場所へフォーカスを戻す
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const root = shell.current;
+    root?.querySelector<HTMLElement>("button")?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !root) return;
+      const f = root.querySelectorAll<HTMLElement>("button, [href], [tabindex]:not([tabindex='-1'])");
+      if (!f.length) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
+      opener?.focus?.();
     };
   }, [onClose]);
 
@@ -174,15 +220,17 @@ function CardViewer({
 
   return createPortal(
     <div
+      ref={shell}
       className="vja-viewer fixed inset-0 z-[100] flex flex-col items-center justify-center px-6"
       onClick={safeClose}
       role="dialog"
       aria-modal="true"
+      aria-label={en ? "Card, full screen" : "カードを全画面で見る"}
     >
       {/* 登場アニメは外側で。内側(.vja-tilt)の transform を上書きしないため */}
       <div
         className="vja-viewer-card w-full"
-        style={{ width: "min(86vw, 52vh)", maxWidth: 460 }}
+        style={{ width: "min(86vw, 52svh)", maxWidth: 460 }}
       >
         <div
           ref={box}
