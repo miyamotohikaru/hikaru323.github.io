@@ -224,7 +224,7 @@ body {
 /* ピント面より手前の板だけは、地の色より少し沈ませて重さを出す
    （被写界深度は「手前にも外れている」ことで初めて奥行きに見える） */
 .vja-deck-card.is-near::after {
-  background: color-mix(in oklab, var(--vja-bg) 88%, var(--vja-ink));
+  background: color-mix(in oklab, var(--vja-bg) 78%, var(--vja-ink));
 }
 
 /* 束の下に敷く影。カードの下端に合わせ、拡散する影と接地の影を分けて置く */

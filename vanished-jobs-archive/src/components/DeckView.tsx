@@ -59,7 +59,9 @@ type Stop = {
  */
 const STOPS: Record<number, Stop> = {
   [-2]: { x: -0.66, y: 0.26, rot: -15, scale: 1.09, blur: 16, sat: 0.55, opacity: 0, veil: 0.6, tone: 1 },
-  [-1]: { x: -0.34, y: 0.13, rot: -8.5, scale: 1.045, blur: 11, sat: 0.55, opacity: 0.42, veil: 0.6, tone: 1 },
+  // 手前の1枚だけは透かさない。透かすと背景の明るさが必ず混ざって沈みきらず、
+  // 「近すぎてぼけている側」が消えてしまう（＝奥へ引くだけの絵になる）
+  [-1]: { x: -0.34, y: 0.13, rot: -8.5, scale: 1.045, blur: 11, sat: 0.55, opacity: 1, veil: 0.6, tone: 1 },
   [0]: { x: 0, y: 0, rot: 0, scale: 1, blur: 0, sat: 1, opacity: 1, veil: 0, tone: 0 },
   [1]: { x: 0.095, y: -0.042, rot: 3.2, scale: 0.962, blur: 2, sat: 0.55, opacity: 0.78, veil: 0.5, tone: 1 },
   [2]: { x: -0.135, y: -0.078, rot: -5.2, scale: 0.922, blur: 4.5, sat: 0.55, opacity: 0.62, veil: 0.62, tone: 1 },
