@@ -76,8 +76,13 @@ type Flip = {
   /** 手前側／奥側に何枚出すか */
   ahead: number;
   behind: number;
-  /** 本物のカードを描くスロット（手前から順に。携帯では先頭2つだけ使う） */
+  /** 本物のカードを描くスロット */
   real: number[];
+  /**
+   * 触る端末で本物のカードを描くスロット。描画を軽くするため既定では減らすが、
+   * 左右に並ぶ案では両隣を必ず本物にする（片側だけ中身のない板になってしまうため）
+   */
+  realTouch: number[];
   origin: string;
   perspective: number;
   /** カード1枚ぶん送るのに要る指の移動距離（カード幅に対する比） */
@@ -99,6 +104,7 @@ export const FLIPS: Flip[] = [
     ahead: 1,
     behind: 4,
     real: [0, 1, 2],
+    realTouch: [0, 1],
     origin: "50% 92%",
     perspective: 1500,
     travel: 0.34,
@@ -125,6 +131,7 @@ export const FLIPS: Flip[] = [
     ahead: 3,
     behind: 3,
     real: [0, 1, -1],
+    realTouch: [0, 1, -1],
     origin: "50% 50%",
     perspective: 1400,
     travel: 0.5,
@@ -152,6 +159,7 @@ export const FLIPS: Flip[] = [
     ahead: 1,
     behind: 3,
     real: [0, 1],
+    realTouch: [0, 1],
     origin: "50% 50%",
     perspective: 1200,
     travel: 0.34,
@@ -180,6 +188,7 @@ export const FLIPS: Flip[] = [
     behind: 4,
     // 扇は左右どちらにも開くので、手前側にも本物のカードを1枚置く
     real: [0, 1, -1, 2],
+    realTouch: [0, 1, -1],
     origin: "50% 260%",
     perspective: 1600,
     travel: 0.34,
@@ -206,6 +215,7 @@ export const FLIPS: Flip[] = [
     ahead: 1,
     behind: 3,
     real: [0, 1],
+    realTouch: [0, 1],
     origin: "0% 50%",
     perspective: 1100,
     travel: 0.4,
@@ -579,7 +589,7 @@ export default function DeckView({
   const slots: number[] = [];
   for (let k = -flip.ahead; k <= flip.behind; k++) slots.push(k);
   // 触る端末では本物のカードを2枚までにして、ぼかしと画像の負担を減らす
-  const realSlots = new Set(touch ? flip.real.slice(0, 2) : flip.real);
+  const realSlots = new Set(touch ? flip.realTouch : flip.real);
 
   return (
     <div className="select-none">
