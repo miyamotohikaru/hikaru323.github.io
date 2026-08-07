@@ -35,8 +35,10 @@ type Stop = {
   y: number;
   /** 画面内での回転 */
   rot: number;
-  /** 縦軸まわりの回転（ページをめくる動き） */
+  /** 縦軸まわりの回転（ページをめくる動き・円弧上の回り込み） */
   rotY: number;
+  /** 奥行き。カード幅に対する比。負ほど奥 */
+  z: number;
   scale: number;
   blur: number;
   sat: number;
@@ -52,6 +54,7 @@ const base: Stop = {
   y: 0,
   rot: 0,
   rotY: 0,
+  z: 0,
   scale: 1,
   blur: 0,
   sat: 0.55,
@@ -84,7 +87,8 @@ type Flip = {
    */
   realTouch: number[];
   origin: string;
-  perspective: number;
+  /** 遠近の強さ。カード幅に対する比 */
+  perspectiveW: number;
   /** カード1枚ぶん送るのに要る指の移動距離（カード幅に対する比） */
   travel: number;
   /** 束の上下に要る余白（カード幅に対する比） */
@@ -92,6 +96,47 @@ type Flip = {
   /** 手前に外れた板を地の色より沈ませるか */
   nearDark: boolean;
 };
+
+/** 横ながしで前後に並べる枚数 */
+const RAIL_N = 10;
+/** 横ながしの遠近の強さ（カード幅に対する比）。並びの逆算にも使う */
+const RAIL_PERSP = 3.2;
+
+/**
+ * 横ながしの並びを円弧としてつくる。
+ *
+ * 単純に「横へずらして奥へ退かせる」と、遠近で縮むぶんのほうが勝ってしまい、
+ * 奥のカードが手前のカードの裏に完全に隠れる。そこで
+ * 「投影後に見える外側の縁をどこに置きたいか」を先に決め、そこから逆算する。
+ * 縁の間隔は奥へ行くほど詰まるので、遠近のついた厚みとして読める。
+ */
+function railStops(): Record<number, Stop> {
+  const out: Record<number, Stop> = { 0: FOCUS };
+  // 遠いカードは小さく薄くなるため、ぼかしは近い数枚だけでよい（描画も軽くなる）
+  const blur = [0, 2, 3, 2.5, 2, 1.5, 1, 0.5, 0, 0, 0, 0];
+  const veil = [0, 0.28, 0.42, 0.52, 0.6, 0.66, 0.71, 0.75, 0.79, 0.82, 0.85, 0.88];
+  for (let n = 1; n <= RAIL_N + 1; n++) {
+    const z = -0.3 * n; // 一定の割合で奥へ退く
+    const k = RAIL_PERSP / (RAIL_PERSP - z); // 遠近で縮む率
+    // 外側の縁の行き先。奥へ行くほど間隔が詰まりながらも必ず外へ広がる
+    // 手前の1枚はしっかり見せ、そこから先は詰めながら必ず外へ広げる
+    const edge = 1.1 + 0.42 * (1 - Math.exp(-0.34 * n));
+    const x = edge / k - 0.5;
+    const rotY = Math.min(12 * n, 44); // 外側の辺が奥へ向くように回す
+    const opacity = n <= RAIL_N - 1 ? 1 : n === RAIL_N ? 0.8 : 0;
+    for (const side of [1, -1]) {
+      out[n * side] = S({
+        x: x * side,
+        z,
+        rotY: rotY * side,
+        blur: blur[n],
+        veil: veil[n],
+        opacity,
+      });
+    }
+  }
+  return out;
+}
 
 export const FLIPS: Flip[] = [
   {
@@ -106,7 +151,7 @@ export const FLIPS: Flip[] = [
     real: [0, 1, 2],
     realTouch: [0, 1],
     origin: "50% 92%",
-    perspective: 1500,
+    perspectiveW: 3.4,
     travel: 0.34,
     pad: 0.14,
     nearDark: true,
@@ -122,32 +167,22 @@ export const FLIPS: Flip[] = [
     },
   },
   {
-    // 横一列。前後のカードが両脇から覗くので、いま何番めかが分かりやすい
+    // 円弧に並ぶ列。奥へ行くほど回り込みながら小さくなるので、束の厚みが見える
     id: "rail",
     ja: "横ながし",
     en: "RAIL",
-    min: -3,
-    max: 3,
-    ahead: 3,
-    behind: 3,
+    min: -RAIL_N - 1,
+    max: RAIL_N + 1,
+    ahead: RAIL_N,
+    behind: RAIL_N,
     real: [0, 1, -1],
     realTouch: [0, 1, -1],
     origin: "50% 50%",
-    perspective: 1400,
+    perspectiveW: RAIL_PERSP,
     travel: 0.5,
     pad: 0.1,
     nearDark: false,
-    stops: {
-      // 間隔は等しく。ここが不揃いだと、同じだけ指を動かしても
-      // 束のどこにいるかで送りの速さが変わってしまう
-      [-3]: S({ x: -2.58, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
-      [-2]: S({ x: -1.72, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
-      [-1]: S({ x: -0.86, scale: 0.93, blur: 2, veil: 0.28 }),
-      [0]: FOCUS,
-      [1]: S({ x: 0.86, scale: 0.93, blur: 2, veil: 0.28 }),
-      [2]: S({ x: 1.72, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
-      [3]: S({ x: 2.58, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
-    },
+    stops: railStops(),
   },
   {
     // 手札から一枚ずつ放る。抜けていくカードは色を保ったまま大きく回る
@@ -161,7 +196,7 @@ export const FLIPS: Flip[] = [
     real: [0, 1],
     realTouch: [0, 1],
     origin: "50% 50%",
-    perspective: 1200,
+    perspectiveW: 2.7,
     travel: 0.34,
     pad: 0.12,
     nearDark: false,
@@ -190,7 +225,7 @@ export const FLIPS: Flip[] = [
     real: [0, 1, -1, 2],
     realTouch: [0, 1, -1],
     origin: "50% 260%",
-    perspective: 1600,
+    perspectiveW: 3.6,
     travel: 0.34,
     pad: 0.22,
     nearDark: false,
@@ -217,7 +252,7 @@ export const FLIPS: Flip[] = [
     real: [0, 1],
     realTouch: [0, 1],
     origin: "0% 50%",
-    perspective: 1100,
+    perspectiveW: 2.5,
     travel: 0.4,
     pad: 0.12,
     nearDark: false,
@@ -261,6 +296,7 @@ function sample(flip: Flip, rel: number): Stop {
     y: lerp(a.y, b.y, t),
     rot: lerp(a.rot, b.rot, t),
     rotY: lerp(a.rotY, b.rotY, t),
+    z: lerp(a.z, b.z, t),
     scale: lerp(a.scale, b.scale, t),
     blur: lerp(a.blur, b.blur, t),
     sat: lerp(a.sat, b.sat, t),
@@ -345,7 +381,7 @@ export default function DeckView({
       const s = sample(f, rel);
       // 位置はピント面からの距離だけで決める。指を動かした向きで左右を入れ替えると、
       // 逆向きに引いた瞬間に「前のカード」が反対側へ飛び、送り方が左右で変わってしまう
-      const depth = -Math.abs(rel) * 12;
+      const depth = s.z * w;
       el.style.transform =
         `translate3d(${(s.x * w).toFixed(2)}px, ${(s.y * h).toFixed(2)}px, ${depth.toFixed(1)}px) ` +
         `rotateX(${(Math.min(Math.abs(rel), 3) * -1.6).toFixed(2)}deg) ` +
@@ -596,9 +632,10 @@ export default function DeckView({
       <div
         ref={stage}
         className="vja-deck relative mx-auto flex items-center justify-center"
+        data-flip={flip.id}
         style={{
           ["--deck-origin" as string]: flip.origin,
-          ["--deck-persp" as string]: `${flip.perspective}px`,
+          ["--deck-persp" as string]: `calc(var(--deck-w) * ${flip.perspectiveW})`,
           // 画面の高さからカード幅を決めるときは、めくり方ごとの余白ぶんも見込む
           ["--deck-fit" as string]: (1.382 + flip.pad).toFixed(3),
         }}

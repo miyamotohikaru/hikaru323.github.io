@@ -261,6 +261,12 @@ body {
   opacity: var(--veil, 0);
   pointer-events: none;
 }
+/* 円弧に並ぶ横ながしは、奥のカードが薄い縁だけの姿になる。
+   膜は絵柄の上に乗るので、縁の線は膜の側に持たせないと一緒に沈んでしまう */
+.vja-deck[data-flip="rail"] .vja-deck-card:not(.is-front)::after {
+  box-shadow: inset 0 0 0 1px rgba(58, 46, 34, 0.11);
+}
+
 /* ピント面より手前の板だけは、地の色より少し沈ませて重さを出す
    （被写界深度は「手前にも外れている」ことで初めて奥行きに見える） */
 .vja-deck-card.is-near::after {
