@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import JobCard from "@/components/JobCard";
+import TiltCard from "@/components/TiltCard";
 import {
   jobs,
   stats,
@@ -222,14 +223,18 @@ export default function IndexView() {
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5">
-            {filtered.map((j) => (
+            {filtered.map((j, i) => (
               <Link
                 key={j.no}
                 href={`/jobs/${j.no}`}
                 onClick={() => saveReturn()}
-                className="vja-rise"
+                className="vja-rise block"
+                // 1枚ずつ配られるように少しずつ遅らせる（長くなりすぎないよう頭打ち）
+                style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
               >
-                <JobCard job={j} />
+                <TiltCard variant="index">
+                  <JobCard job={j} />
+                </TiltCard>
               </Link>
             ))}
           </div>

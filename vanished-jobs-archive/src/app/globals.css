@@ -57,6 +57,114 @@ body {
   animation: vja-rise 0.45s ease both;
 }
 
+/* ============================================================
+   カードを「手に持つ」ための3D・光沢（カード面のデザインには触れない）
+   ============================================================ */
+.vja-tilt {
+  --rx: 0deg;
+  --ry: 0deg;
+  --gx: 50%;
+  --gy: 50%;
+  --lift: 0px;
+  --tscale: 1;
+  --glare: 0;
+  position: relative;
+  display: block;
+  container-type: inline-size;
+  border-radius: 6cqw;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry))
+    translate3d(0, var(--lift), 0) scale(var(--tscale));
+  transform-style: preserve-3d;
+  /* 指・マウスが離れたときはゆっくり戻す */
+  transition: transform 0.5s cubic-bezier(0.22, 0.9, 0.24, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+/* 追従中はキビキビ動かす */
+.vja-tilt.is-live {
+  transition: transform 0.09s ease-out;
+  will-change: transform;
+}
+
+/* 光のたまり（ポインタ位置に追従） */
+.vja-glare,
+.vja-holo {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--glare);
+  transition: opacity 0.4s ease;
+}
+.vja-glare {
+  background: radial-gradient(
+    circle at var(--gx) var(--gy),
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0) 48%
+  );
+  mix-blend-mode: soft-light;
+}
+/* 傾けたときに走る虹色のすじ（うっすら） */
+.vja-holo {
+  background: linear-gradient(
+    100deg,
+    transparent 34%,
+    rgba(255, 214, 138, 0.28) 44%,
+    rgba(176, 74, 60, 0.22) 50%,
+    rgba(111, 130, 150, 0.26) 56%,
+    transparent 66%
+  );
+  background-size: 260% 260%;
+  background-position: var(--gx) var(--gy);
+  mix-blend-mode: overlay;
+}
+
+/* 「かざす」モード */
+/* backdrop-filter は携帯で重く、合成の不具合も出るので使わず、濃いめの幕で見せる */
+.vja-viewer {
+  background: rgba(28, 22, 16, 0.9);
+  animation: vja-fade 0.22s ease both;
+}
+.vja-viewer-card {
+  animation: vja-pop 0.34s cubic-bezier(0.22, 1.2, 0.3, 1) both;
+  filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.45));
+}
+@keyframes vja-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes vja-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vja-viewer,
+  .vja-viewer-card {
+    animation: none;
+  }
+  .vja-tilt {
+    transform: none !important;
+    transition: none;
+  }
+  .vja-glare,
+  .vja-holo {
+    display: none;
+  }
+  .vja-rise {
+    animation: none;
+  }
+}
+
 /* 携帯のみ横スクロールを防止（PCは詳細カードのstickyを保つため対象外） */
 @media (max-width: 767px) {
   html,

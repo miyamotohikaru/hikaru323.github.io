@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import JobCard from "@/components/JobCard";
+import CardStage from "@/components/CardStage";
 import ArtChip from "@/components/ArtChip";
 import BackButton from "@/components/BackButton";
 import { jobs, jobByNo, statusMeta, causeLabel } from "@/data/jobs";
@@ -74,9 +75,9 @@ export default async function JobPage({
         {/* 左:カード */}
         <div>
           <div className="md:sticky md:top-20">
-            <div className="mx-auto max-w-[340px]">
+            <CardStage prevNo={prev?.no} nextNo={next?.no}>
               <JobCard job={job} />
-            </div>
+            </CardStage>
             <div className="mt-6 flex items-center justify-center gap-3">
               {prev ? (
                 <Link
