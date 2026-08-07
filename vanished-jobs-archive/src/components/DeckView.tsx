@@ -93,50 +93,45 @@ type Flip = {
   travel: number;
   /** 束の上下に要る余白（カード幅に対する比） */
   pad: number;
+  /** 携帯でのカード幅（画面幅に対する%）。省略時は72 */
+  narrowVW?: number;
   /** 手前に外れた板を地の色より沈ませるか */
   nearDark: boolean;
 };
 
-/** 横ながしで前後に並べる枚数 */
-const RAIL_N = 10;
-/** 横ながしの遠近の強さ（カード幅に対する比）。並びの逆算にも使う */
+/** 横ながしは円筒に貼った回転台。位置は10個で一周する */
+const RAIL_FACES = 10;
+/** 円筒の半径（カード幅に対する比）。大きいほどカード同士の隙間が開く */
+const RAIL_R = 1.85;
+/** 横ながしの遠近の強さ（カード幅に対する比） */
 const RAIL_PERSP = 3.2;
+/** 90度を越えた位置のカードは裏を向く。そこは背面として描く */
+const railIsBack = (n: number) => Math.abs(((360 / RAIL_FACES) * n) % 360) > 90;
 
 /**
- * 横ながしの並びを円弧としてつくる。
+ * 横ながしの並びを、円筒に貼った回転台としてつくる。
  *
- * 単純に「横へずらして奥へ退かせる」と、遠近で縮むぶんのほうが勝ってしまい、
- * 奥のカードが手前のカードの裏に完全に隠れる。そこで
- * 「投影後に見える外側の縁をどこに置きたいか」を先に決め、そこから逆算する。
- * 縁の間隔は奥へ行くほど詰まるので、遠近のついた厚みとして読める。
+ * 奥へ一列に退かせる並べ方だと、横幅をいくらでも食うので携帯に収まらない。
+ * 円筒なら、正面の数枚のほかは向こう側へ回り込むだけなので幅を食わず、
+ * カード同士の隙間から裏を向いたカードの背面が覗いて「一周ぶんある」と分かる。
  */
 function railStops(): Record<number, Stop> {
   const out: Record<number, Stop> = { 0: FOCUS };
-  // 遠いカードは小さく薄くなるため、ぼかしは近い数枚だけでよい（描画も軽くなる）
-  const blur = [0, 2, 3, 2.5, 2, 1.5, 1, 0.5, 0, 0, 0, 0];
-  const veil = [0, 0.28, 0.42, 0.52, 0.6, 0.66, 0.71, 0.75, 0.79, 0.82, 0.85, 0.88];
-  for (let n = 1; n <= RAIL_N + 1; n++) {
-    const z = -0.3 * n; // 一定の割合で奥へ退く
-    const k = RAIL_PERSP / (RAIL_PERSP - z); // 遠近で縮む率
-    const rotY = Math.min(12 * n, 44); // 外側の辺が奥へ向くように回す
-    // 外側の縁の行き先。手前の1枚はしっかり見せ、そこから先は等比で詰めながら
-    // 必ず外へ広げる。間隔が最後まで数ピクセル残るので、奥まで一枚ずつ数えられる
-    const edge = 1.2 + 0.425 * (1 - Math.pow(0.8, n - 1));
-    // 回転すると見かけの幅が cos ぶん縮む。ここを入れないと縁が内側に寄り、
-    // 奥のカードが手前の裏に潰れて5〜6枚しか読めなくなる
-    const half = 0.5 * Math.cos((rotY * Math.PI) / 180);
-    const x = edge / k - half;
-    const opacity = n <= RAIL_N - 1 ? 1 : n === RAIL_N ? 0.8 : 0;
-    for (const side of [1, -1]) {
-      out[n * side] = S({
-        x: x * side,
-        z,
-        rotY: rotY * side,
-        blur: blur[n],
-        veil: veil[n],
-        opacity,
-      });
-    }
+  // 背面は暗さを残す。地の色で薄めすぎると、灰色の壁が一枚あるように見えてしまう
+  const veil = [0, 0.18, 0.35, 0.26, 0.34, 0.4, 0.4];
+  const blur = [0, 0, 2, 0, 0, 0, 0];
+  for (let n = -5; n <= 6; n++) {
+    if (n === 0) continue;
+    const deg = (360 / RAIL_FACES) * n;
+    const th = (deg * Math.PI) / 180;
+    const a = Math.min(Math.abs(n), 6);
+    out[n] = S({
+      x: RAIL_R * Math.sin(th),
+      z: RAIL_R * (Math.cos(th) - 1),
+      rotY: deg, // 円筒の接線に沿わせる
+      veil: veil[a],
+      blur: blur[a],
+    });
   }
   return out;
 }
@@ -170,20 +165,22 @@ export const FLIPS: Flip[] = [
     },
   },
   {
-    // 円弧に並ぶ列。奥へ行くほど回り込みながら小さくなるので、束の厚みが見える
+    // 円筒に貼った回転台。隙間から裏を向いたカードが覗き、一周ぶんの厚みが見える
     id: "rail",
     ja: "横ながし",
     en: "RAIL",
-    min: -RAIL_N - 1,
-    max: RAIL_N + 1,
-    ahead: RAIL_N,
-    behind: RAIL_N,
-    real: [0, 1, -1],
+    min: -5,
+    max: 6,
+    ahead: 4,
+    behind: 5,
+    real: [0, 1, -1, 2, -2],
     realTouch: [0, 1, -1],
     origin: "50% 50%",
     perspectiveW: RAIL_PERSP,
     travel: 0.5,
     pad: 0.1,
+    // 回転台は横に場所が要るので、携帯ではカードを一回り小さくして並ぶ余地をつくる
+    narrowVW: 55,
     nearDark: false,
     stops: railStops(),
   },
@@ -641,6 +638,7 @@ export default function DeckView({
           ["--deck-persp" as string]: `calc(var(--deck-w) * ${flip.perspectiveW})`,
           // 画面の高さからカード幅を決めるときは、めくり方ごとの余白ぶんも見込む
           ["--deck-fit" as string]: (1.382 + flip.pad).toFixed(3),
+          ["--deck-vw" as string]: `${flip.narrowVW ?? 72}`,
         }}
         onPointerDown={(e) => {
           if (reducedRef.current) return;
@@ -744,13 +742,15 @@ export default function DeckView({
               </div>
             );
           const job = jobs[idx];
+          // 円筒の向こう側に回り込んだ位置は、カードの裏面として描く
+          const back = flip.id === "rail" && railIsBack(k);
           return (
             <div
               key={k}
               ref={(el) => void nodes.current.set(k, el)}
               className={`vja-deck-card ${k === 0 ? "is-front" : ""} ${
                 k < 0 && flip.nearDark ? "is-near" : ""
-              }`}
+              } ${back ? "is-back" : ""}`}
               aria-hidden={k !== 0}
             >
               {/* 絵柄はこの中。ぼかしとセピアはここにだけ掛け、膜(::after)は素のまま残す */}
@@ -776,6 +776,8 @@ export default function DeckView({
                       <JobCard job={job} />
                     </TiltCard>
                   </a>
+                ) : back ? (
+                  <div className="vja-deck-back" aria-hidden />
                 ) : realSlots.has(k) ? (
                   <JobCard job={job} />
                 ) : (
