@@ -15,6 +15,13 @@ const STEPS = [
   "あてたら こすくまくんが 宇宙へ飛んで なまえが 永久にトロフィーへ",
 ] as const;
 
+/** 剣そだての説明。ステップとは別の「知っておくと楽しい」情報 */
+const GEAR = [
+  { icon: "🎨", text: "けんの いろは 8しょくから えらべるよ" },
+  { icon: "🏅", text: "10本 刺すごとに チャームが 1こ ふえる(ぜんぶで12こ)" },
+  { icon: "✨", text: "こすくまくんを とばすと、ぎん・きんの けんが つかえるよ" },
+] as const;
+
 export default function HelpModal({ open, onClose }: HelpModalProps) {
   if (!open) return null;
   return (
@@ -38,6 +45,16 @@ export default function HelpModal({ open, onClose }: HelpModalProps) {
             </li>
           ))}
         </ol>
+        <ul className="help-gear">
+          {GEAR.map((g) => (
+            <li key={g.text} className="help-gear-row">
+              <span className="help-gear-icon" aria-hidden="true">
+                {g.icon}
+              </span>
+              <span>{g.text}</span>
+            </li>
+          ))}
+        </ul>
         <p className="help-cooldown">⏱️ 1分に1回だけ 刺せるよ</p>
         <button type="button" className="btn btn-primary" onClick={onClose}>
           とじる

@@ -6,12 +6,21 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { SWORD_COLORS } from "@/lib/config";
+import {
+  CHARMS,
+  charmLevelOf,
+  SWORD_COLORS,
+  SWORD_SKINS,
+} from "@/lib/config";
 import { useGameStore } from "@/game/store";
 import { onGameEvent } from "@/game/events";
 import Feed from "./Feed";
 import CooldownPill from "./CooldownPill";
 import HelpModal from "./HelpModal";
+import SwordArt, { effectiveHex } from "./SwordArt";
+import { SkinUnlockCard, SwordRack } from "./SwordRack";
+import { CharmGet } from "./CharmShelf";
+import GearDrawer from "./GearDrawer";
 import "./ui.css";
 
 export default function Hud() {
@@ -26,12 +35,18 @@ export default function Hud() {
   const confirmStab = useGameStore((s) => s.confirmStab);
   const cancelSelect = useGameStore((s) => s.cancelSelect);
   const swordColor = useGameStore((s) => s.swordColor);
-  const setSwordColor = useGameStore((s) => s.setSwordColor);
+  const swordSkin = useGameStore((s) => s.swordSkin);
   const myStabs = useGameStore((s) => s.myStabs);
   const myTotal = useGameStore((s) => s.myTotal);
 
   const [helpOpen, setHelpOpen] = useState(false);
+  const [gearOpen, setGearOpen] = useState(false);
   const [flashId, setFlashId] = useState(0);
+
+  // 刺しはじめたら「したく」はしまう(カットシーンの邪魔をしない)
+  useEffect(() => {
+    if (phase !== "idle" && phase !== "confirming") setGearOpen(false);
+  }, [phase]);
 
   // 当たりの瞬間の白フラッシュ(単発イベントを購読して0.15秒で消す)
   useEffect(
@@ -67,6 +82,22 @@ export default function Hud() {
     phase === "suspense" ||
     phase === "safe";
 
+  // ── いま持っている剣の説明(確認シートの装備バー用) ──
+  const skin = SWORD_SKINS[swordSkin] ?? SWORD_SKINS[0];
+  const colorName = SWORD_COLORS[swordColor]?.name ?? SWORD_COLORS[0].name;
+  // 色がのるスキンは「クリスタルの みずいろ」、固有色のスキンは「ぎんの けん」
+  const swordLabel = skin.tinted
+    ? `${skin.name}の ${colorName}`
+    : `${skin.name}の けん`;
+  const charmCount = charmLevelOf(myTotal);
+  const nextCharm = CHARMS[charmCount];
+  const charmSub = nextCharm
+    ? `チャーム ${charmCount}こ ・ つぎまで あと${Math.max(
+        1,
+        nextCharm.need - myTotal
+      )}本`
+    : `チャーム ${charmCount}こ ぜんぶ そろった！`;
+
   return (
     <div className="hud">
       {/* ── 上部バー ── */}
@@ -82,7 +113,7 @@ export default function Hud() {
             <div className="hud-badge hud-badge-mine">
               <span
                 className="my-color-dot"
-                style={{ background: SWORD_COLORS[swordColor]?.hex }}
+                style={{ background: effectiveHex(swordColor, swordSkin) }}
               />
               きみの けん この代<b>{myStabs.length}</b>本 / 計
               <b>{myTotal.toLocaleString()}</b>回
@@ -121,25 +152,52 @@ export default function Hud() {
         </div>
       )}
 
+      {/* ── けんの したく(右下のボタン → 引き出し) ── */}
+      {phase === "idle" && (
+        <button
+          type="button"
+          className="kk-fab"
+          aria-label="けんの したく"
+          aria-haspopup="dialog"
+          onClick={() => setGearOpen(true)}
+        >
+          <span className="kk-fab-sword">
+            <SwordArt color={swordColor} skin={swordSkin} />
+          </span>
+          <span className="kk-fab-label">したく</span>
+          {charmCount > 0 && (
+            <span className="kk-fab-badge" aria-hidden="true">
+              {charmCount}
+            </span>
+          )}
+        </button>
+      )}
+
       {/* ── 確認シート ── */}
       {phase === "confirming" && (
         <div className="confirm-sheet" role="dialog" aria-label="かくにん">
           <p className="confirm-text">この あなに けんを 刺す…？</p>
-          <div className="color-row" role="radiogroup" aria-label="けんのいろ">
-            <span className="color-label">けんの色</span>
-            {SWORD_COLORS.map((c, i) => (
-              <button
-                key={c.hex}
-                type="button"
-                role="radio"
-                aria-checked={swordColor === i}
-                aria-label={c.name}
-                className={`color-dot${swordColor === i ? " sel" : ""}`}
-                style={{ background: c.hex }}
-                onClick={() => setSwordColor(i)}
-              />
-            ))}
-          </div>
+
+          {/* いま持っている剣。押すと したく引き出しがひらく */}
+          <button
+            type="button"
+            className="kk-equip"
+            aria-haspopup="dialog"
+            onClick={() => setGearOpen(true)}
+          >
+            <span className="kk-equip-emoji" aria-hidden="true">
+              {skin.emoji}
+            </span>
+            <span className="kk-equip-txt">
+              <b>{swordLabel}</b>
+              <small>{charmSub}</small>
+            </span>
+            <span className="kk-equip-go">したく</span>
+          </button>
+
+          {/* 剣ラック: つまんで えらぶ */}
+          <SwordRack />
+
           <div className="confirm-buttons">
             <button type="button" className="btn btn-cancel" onClick={cancelSelect}>
               やめとく
@@ -201,6 +259,9 @@ export default function Hud() {
         </div>
       )}
 
+      {/* ── とばした人へのごほうび(新しい剣・チャーム) ── */}
+      {phase === "trophy" && <SkinUnlockCard />}
+
       {/* ── 新ラウンド降臨バナー ── */}
       {phase === "new-round" && (
         <div className="center-stage">
@@ -210,6 +271,9 @@ export default function Hud() {
           </div>
         </div>
       )}
+
+      {/* ── チャーム獲得のお祝い(音と同時に、こすくまくんのあたりで) ── */}
+      <CharmGet />
 
       {/* ── 通信状態 ── */}
       {!connected && <div className="conn-warn">つうしん よわい…</div>}
@@ -223,6 +287,7 @@ export default function Hud() {
         />
       )}
 
+      <GearDrawer open={gearOpen} onClose={() => setGearOpen(false)} />
       <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );

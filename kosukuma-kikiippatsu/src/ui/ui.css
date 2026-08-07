@@ -620,6 +620,33 @@
   font-weight: 800;
   margin-top: 1px;
 }
+/* 剣そだての説明。手順(番号つき)とは別の「知っておくと楽しい」情報なので、
+   薄い成型トレイ風の地に載せて、番号リストと視覚的に切り分ける */
+.help-gear {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  text-align: left;
+  border-radius: 14px;
+  background: rgba(58, 55, 48, 0.06);
+}
+.help-gear-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.5;
+  opacity: 0.86;
+}
+.help-gear-icon {
+  flex: none;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
 .help-cooldown {
   background: rgba(255, 107, 107, 0.12);
   color: var(--danger);
@@ -827,42 +854,1002 @@
   }
 }
 
-/* ── 剣の色えらび(確認シート内) ─────────────────────── */
-.color-row {
+/* ============================================================
+   剣ラック / しあげ / チャーム  (接頭辞 kk-)
+   ねらいは「実物の黒ひげ危機一発のパッケージと並べても同じおもちゃに見える」。
+   ・面には必ず厚みを持たせる(内側の白ハイライト + 下に濃い色のベタ影)
+   ・押すと沈む(translateY + 影を薄く)
+   ・動きは transform/opacity だけ。レイアウトは揺らさない
+   ============================================================ */
+
+:root {
+  /* ラックの成型樹脂(すこし温かみのあるグレー。クリーム色のシートから浮く) */
+  --kk-tray-top: #e5dec8;
+  --kk-tray-face: #c5bca1;
+  --kk-tray-deep: #9a9179;
+  --kk-panel: linear-gradient(180deg, #f8f4e4, #e8e2cc);
+  --kk-panel-edge: rgba(58, 55, 48, 0.1);
+  --kk-panel-drop: rgba(58, 55, 48, 0.18);
+}
+
+/* SwordArt の svg は箱の幅にあわせて伸びる(高さは viewBox 比で決まる) */
+.kk-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── 剣ラック(たるの横に並んだ、あの剣たち) ──────────── */
+.kk-rack {
+  position: relative;
+  height: 104px;
+  /* シートの外へすこし張り出して、剣1本ぶんの幅(≒42px)をかせぐ */
+  margin: 0 -8px 16px;
+}
+/* ラックの土台。上面(明るい)と前面(暗い)の2段で厚みを出す */
+.kk-rack-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 27px;
+  border-radius: 11px;
+  background: linear-gradient(
+    180deg,
+    var(--kk-tray-top) 0 36%,
+    var(--kk-tray-face) 36% 100%
+  );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.08),
+    0 3px 0 var(--kk-tray-deep),
+    0 7px 12px rgba(5, 7, 26, 0.22);
+}
+.kk-rack-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+/* 剣1本ぶんのスロット。細くても縦に長いので指では外さない */
+.kk-slot {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+/* 土台に空いた穴(剣が挿さっているように見せる) */
+.kk-slot-hole {
+  position: absolute;
+  left: 50%;
+  bottom: 15px;
+  width: 17px;
+  height: 7px;
+  margin-left: -8.5px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 28%,
+    rgba(0, 0, 0, 0.6),
+    rgba(0, 0, 0, 0.32)
+  );
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+.kk-slot-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 13px;
+  width: 26px;
+  height: 9px;
+  margin-left: -13px;
+  border-radius: 50%;
+  background: rgba(60, 50, 20, 0.3);
+  filter: blur(3px);
+  transition:
+    transform 0.22s var(--spring),
+    opacity 0.22s ease;
+}
+.kk-slot-sword {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  display: block;
+  width: 28px;
+  max-width: 100%;
+  margin-left: -14px;
+  transform-origin: 50% 100%;
+  transition:
+    transform 0.22s var(--spring),
+    filter 0.2s ease;
+}
+/* えらんだ1本のうしろに金のあかり。となりの剣と混ざらないための「間」 */
+.kk-slot.sel::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  width: 54px;
+  height: 92px;
+  margin-left: -27px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 52%,
+    rgba(255, 217, 61, 0.55),
+    rgba(255, 217, 61, 0) 68%
+  );
+}
+/* えらんだ1本は、ラックからスッと持ち上がって前に出る */
+.kk-slot.sel .kk-slot-sword {
+  transform: translateY(-11px);
+  filter: drop-shadow(0 7px 7px rgba(5, 7, 26, 0.35));
+  animation: kk-sword-bob 2.8s ease-in-out 0.35s infinite;
+}
+.kk-slot.sel .kk-slot-shadow {
+  transform: scale(0.72);
+  opacity: 0.5;
+}
+.kk-slot:active .kk-slot-sword {
+  transform: translateY(3px) scale(0.96);
+}
+.kk-slot.sel:active .kk-slot-sword {
+  animation: none;
+  transform: translateY(-6px) scale(0.97);
+}
+@media (hover: hover) {
+  .kk-slot:hover .kk-slot-sword {
+    transform: translateY(-6px);
+  }
+}
+/* ラックの前板。剣先を隠すので「挿さっている」と読める */
+.kk-rack-lip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  height: 17px;
+  border-radius: 0 0 11px 11px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(100% / 8 - 1px),
+      rgba(60, 50, 20, 0.14) calc(100% / 8 - 1px) calc(100% / 8)
+    ),
+    linear-gradient(180deg, var(--kk-tray-face), var(--kk-tray-deep));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 3px 0 var(--kk-tray-deep);
+  pointer-events: none;
+}
+
+/* ── いま持っている剣(確認シートの装備バー) ───────────── */
+.kk-equip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 46px;
+  margin-bottom: 10px;
+  padding: 7px 8px 7px 8px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--kk-panel);
+  box-shadow:
+    inset 0 0 0 2px var(--kk-panel-edge),
+    inset 0 2px 0 rgba(255, 255, 255, 0.8),
+    0 2px 0 var(--kk-panel-drop);
+  font-family: var(--font-game);
+  color: var(--ui-text);
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.14s var(--spring),
+    box-shadow 0.14s ease;
+}
+.kk-equip:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 0 0 2px var(--kk-panel-edge),
+    inset 0 2px 0 rgba(255, 255, 255, 0.8);
+}
+.kk-equip-emoji {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 26%, #fff, #e4ddc3);
+  box-shadow:
+    inset 0 -2px 3px rgba(0, 0, 0, 0.14),
+    inset 0 2px 2px rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+  font-size: 15px;
+  line-height: 1;
+}
+.kk-equip-txt {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.kk-equip-txt b {
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kk-equip-txt small {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(58, 55, 48, 0.62);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kk-equip-go {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(58, 55, 48, 0.1);
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(58, 55, 48, 0.72);
+}
+.kk-equip-go::after {
+  content: " ▸";
+}
+
+/* ── したくボタン(idle の右下) ───────────────────────── */
+.kk-fab {
+  position: absolute;
+  right: calc(12px + env(safe-area-inset-right));
+  bottom: calc(26px + env(safe-area-inset-bottom));
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 58px;
+  padding: 8px 0 7px;
+  border: 0;
+  border-radius: 19px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 254, 242, 0.97),
+    rgba(232, 226, 202, 0.97)
+  );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    0 4px 0 rgba(88, 82, 62, 0.55),
+    0 10px 20px rgba(5, 7, 26, 0.45);
+  font-family: var(--font-game);
+  color: var(--ui-text);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  animation: pop-in 0.35s var(--spring) both;
+  transition:
+    transform 0.14s var(--spring),
+    box-shadow 0.14s ease;
+}
+.kk-fab:active {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 rgba(88, 82, 62, 0.55),
+    0 4px 10px rgba(5, 7, 26, 0.45);
+}
+.kk-fab-sword {
+  display: block;
+  width: 16px;
+}
+.kk-fab-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: rgba(58, 55, 48, 0.72);
+}
+.kk-fab-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ui-text);
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 2px 0 rgba(120, 90, 0, 0.45);
+}
+
+/* ── したく引き出し ──────────────────────────────────── */
+.kk-drawer-back {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  pointer-events: auto;
+  background: rgba(5, 7, 26, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: fade-in 0.2s ease both;
+}
+.kk-drawer {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 440px);
+  max-height: min(80vh, 640px);
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  border-radius: 26px 26px 0 0;
+  background: var(--ui);
+  color: var(--ui-text);
+  box-shadow: 0 -12px 40px rgba(5, 7, 26, 0.6);
+  pointer-events: auto;
+  transform: translateX(-50%);
+  animation: kk-drawer-up 0.38s var(--spring) both;
+}
+.kk-drawer-grip {
+  display: block;
+  width: 42px;
+  height: 5px;
+  margin: 9px auto 0;
+  border-radius: 999px;
+  background: rgba(58, 55, 48, 0.2);
+}
+.kk-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 8px 16px;
+}
+.kk-drawer-title {
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+.kk-drawer-x {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(58, 55, 48, 0.09);
+  color: rgba(58, 55, 48, 0.75);
+  font-family: var(--font-game);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.14s var(--spring);
+}
+.kk-drawer-x:active {
+  transform: scale(0.88);
+}
+.kk-drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 2px 14px 8px;
+  min-height: 0; /* flex列の中でスクロールさせるため */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.kk-sec-label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: rgba(58, 55, 48, 0.5);
+}
+
+/* ── しあげ(スキン)の陳列棚 ─────────────────────────── */
+.kk-skins {
+  display: flex;
+  gap: 6px;
+}
+.kk-skin {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 2px 7px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--kk-panel);
+  box-shadow:
+    inset 0 0 0 2px var(--kk-panel-edge),
+    inset 0 2px 0 rgba(255, 255, 255, 0.8),
+    0 2px 0 var(--kk-panel-drop);
+  font-family: var(--font-game);
+  color: var(--ui-text);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.16s var(--spring),
+    box-shadow 0.16s ease,
+    background 0.16s ease;
+}
+.kk-skin:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 0 0 2px var(--kk-panel-edge),
+    inset 0 2px 0 rgba(255, 255, 255, 0.8);
+}
+.kk-skin-stage {
+  position: relative;
+  display: block;
+  width: 21px;
+}
+/* 台に立っているように、足元へ小さな影 */
+.kk-skin-stage::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 20px;
+  height: 6px;
+  margin-left: -10px;
+  border-radius: 50%;
+  background: rgba(60, 50, 20, 0.22);
+  filter: blur(2px);
+}
+.kk-skin-name {
+  min-height: 22px;
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.kk-skin-sub {
+  min-height: 11px;
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  color: rgba(58, 55, 48, 0.55);
+}
+/* えらんでいるものは金のふちで持ち上がる(誇らしく見せる) */
+.kk-skin.sel {
+  background: linear-gradient(180deg, #fff9dc, #ffe9a2);
+  box-shadow:
+    inset 0 0 0 2.5px var(--accent),
+    inset 0 2px 0 rgba(255, 255, 255, 0.85),
+    0 3px 0 rgba(150, 115, 0, 0.35);
+  transform: translateY(-2px);
+}
+.kk-skin.sel .kk-skin-sub {
+  color: #a97a09;
+}
+/* 未解放: 灰色にしずんで、鍵がかかっている */
+.kk-skin.lock {
+  background: linear-gradient(180deg, #efece0, #dcd7c5);
+}
+/* 未解放でも「どんな剣か」は見せる(欲しくなってもらう) */
+.kk-skin.lock .kk-skin-stage {
+  filter: grayscale(0.55) brightness(0.98) opacity(0.62);
+}
+.kk-skin.lock .kk-skin-name {
+  color: rgba(58, 55, 48, 0.5);
+}
+/* 鍵は剣より広い範囲に置いて、細い剣の上でも埋もれないようにする */
+.kk-skin-lock {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -11px;
+  right: -11px;
+  display: grid;
+  place-items: center;
+  /* 白い丸は背景で描く(疑似要素だと鍵の前に出てしまう) */
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 254, 242, 0.92) 0 13px,
+    rgba(255, 254, 242, 0) 13.5px
+  );
+  font-size: 16px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+.kk-skins-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border-radius: 11px;
+  background: rgba(58, 55, 48, 0.07);
+}
+.kk-skins-hint {
+  flex: 1 1 auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  color: rgba(58, 55, 48, 0.7);
+}
+.kk-skins-hint b {
+  font-weight: 800;
+  color: var(--ui-text);
+}
+/* とばした回数は勲章あつかい(金) */
+.kk-wins {
+  flex: none;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffe27a, #f6bf3d);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 2px 0 rgba(150, 115, 0, 0.35);
+  font-size: 10px;
+  font-weight: 800;
+  color: #5c4405;
+  white-space: nowrap;
+}
+.kk-wins b {
+  font-size: 13px;
+}
+
+/* ── チャーム ───────────────────────────────────────── */
+.kk-disc {
+  position: relative;
+  width: var(--kk-charm-d);
+  height: var(--kk-charm-d);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background-color: var(--kk-charm-c);
+  background-image:
+    radial-gradient(
+      circle at 34% 26%,
+      rgba(255, 255, 255, 0.92),
+      rgba(255, 255, 255, 0) 46%
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.26));
+  box-shadow:
+    inset 0 -2px 3px rgba(0, 0, 0, 0.22),
+    inset 0 2px 2px rgba(255, 255, 255, 0.6),
+    0 2px 3px rgba(5, 7, 26, 0.3);
+}
+/* 剣にぶら下げるための金具 */
+.kk-disc::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--kk-charm-d) * -0.12);
+  left: 50%;
+  width: calc(var(--kk-charm-d) * 0.26);
+  height: calc(var(--kk-charm-d) * 0.26);
+  margin-left: calc(var(--kk-charm-d) * -0.13);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(58, 55, 48, 0.28);
+}
+.kk-disc-face {
+  font-size: calc(var(--kk-charm-d) * 0.48);
+  line-height: 1;
+}
+.kk-disc.ghost {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+}
+
+.kk-charms-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.kk-charms-head .kk-sec-label {
+  margin-bottom: 0;
+}
+.kk-charms-count {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(58, 55, 48, 0.5);
+}
+.kk-charms-count b {
+  font-size: 15px;
+  color: var(--ui-text);
+}
+/* 受け皿の並んだトレイ(コレクションの台紙) */
+.kk-charms-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 7px 6px;
+  margin-top: 7px;
+  padding: 11px 9px 9px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--kk-tray-top), var(--kk-tray-face));
+  box-shadow:
+    inset 0 3px 5px rgba(60, 50, 20, 0.25),
+    inset 0 -2px 0 rgba(255, 255, 255, 0.4),
+    0 2px 0 var(--kk-tray-deep);
+}
+.kk-charm-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+/* まだ手に入れていない受け皿は、くぼんだ穴に見せる */
+.kk-charm-empty {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 35%,
+    rgba(60, 50, 20, 0.32),
+    rgba(60, 50, 20, 0.15)
+  );
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.62);
+}
+.kk-charm-need {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: rgba(58, 55, 48, 0.62);
+}
+.kk-charm-slot.got .kk-charm-need {
+  color: rgba(58, 55, 48, 0.35);
+}
+/* つぎに手に入るものだけ、金のふちで期待させる */
+.kk-charm-slot.next .kk-charm-empty {
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 0 2px var(--accent),
+    0 0 10px rgba(255, 217, 61, 0.6);
+}
+.kk-charm-slot.next .kk-charm-need {
+  color: #a97a09;
+}
+.kk-charms-next {
+  margin-top: 9px;
+}
+.kk-charms-line {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: rgba(58, 55, 48, 0.8);
+}
+.kk-charms-line b {
+  font-weight: 800;
+  color: var(--ui-text);
+}
+.kk-charms-line em {
+  font-style: normal;
+  font-weight: 800;
+  color: #c4820c;
+}
+.kk-charms-done {
+  color: #c4820c;
+  font-weight: 800;
+}
+.kk-charms-bar {
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: rgba(58, 55, 48, 0.14);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+.kk-charms-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffe680, #f2b23c);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  transition: width 0.45s ease;
+}
+
+/* ── チャーム ゲット！(獲得の瞬間) ────────────────────── */
+.kk-charmget {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  z-index: 45;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  text-align: center;
+}
+.kk-charmget-in {
+  display: grid;
+  justify-items: center;
+  animation:
+    kk-charmget-in 0.5s var(--spring) both,
+    kk-charmget-out 0.55s ease 2.35s forwards;
+}
+/* 光・波紋・チャームを同じマスに重ねる(DOMを増やさない) */
+.kk-charmget-rays,
+.kk-charmget-ring,
+.kk-charmget-disc {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+}
+.kk-charmget-rays {
+  width: 170px;
+  height: 170px;
+  /* 負のマージンで「場所は取らないが大きく光る」。
+     セーフ！スタンプと重ならないよう、ブロックの高さを低く保つため */
+  margin: -43px;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 217, 61, 0.55) 0deg 3.4deg,
+    rgba(255, 217, 61, 0) 3.4deg 22.5deg
+  );
+  -webkit-mask-image: radial-gradient(
+    closest-side,
+    transparent 26%,
+    #000 40%,
+    #000 62%,
+    transparent 88%
+  );
+  mask-image: radial-gradient(
+    closest-side,
+    transparent 26%,
+    #000 40%,
+    #000 62%,
+    transparent 88%
+  );
+  animation: kk-spin 9s linear infinite;
+}
+.kk-charmget-ring {
+  width: 84px;
+  height: 84px;
+  border: 4px solid rgba(255, 217, 61, 0.85);
+  border-radius: 50%;
+  animation: kk-shock 0.95s ease-out 0.05s both;
+}
+.kk-charmget-disc {
+  filter: drop-shadow(0 6px 12px rgba(5, 7, 26, 0.55));
+  animation: kk-medal-pop 0.6s var(--spring) both;
+}
+.kk-charmget-title {
+  grid-row: 2;
+  margin-top: 10px;
+  font-size: clamp(1.15rem, 6.2vw, 1.75rem);
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--accent);
+  -webkit-text-stroke: 6px var(--space-deep);
+  paint-order: stroke fill;
+  text-shadow: 0 0 20px rgba(255, 217, 61, 0.6);
+}
+.kk-charmget-name {
+  grid-row: 3;
+  margin-top: 2px;
+  font-size: clamp(0.85rem, 4.2vw, 1.1rem);
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--ui);
+  -webkit-text-stroke: 5px var(--space-deep);
+  paint-order: stroke fill;
+}
+
+/* ── とばした人へのごほうび(trophyフェーズ) ────────────── */
+.kk-unlock {
+  position: absolute;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 16;
+  width: min(calc(100% - 28px), 380px);
+  padding: 14px 16px 12px;
+  border-radius: 22px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 254, 242, 0.97),
+    rgba(247, 241, 216, 0.97)
+  );
+  box-shadow:
+    inset 0 0 0 2.5px rgba(255, 217, 61, 0.9),
+    0 12px 34px rgba(5, 7, 26, 0.55);
+  text-align: center;
+  pointer-events: none;
+  overflow: hidden;
+  transform: translateX(-50%);
+  /* 名前が刻まれた(1.0s)あとに、追い打ちで発表する */
+  animation: kk-unlock-in 0.6s var(--spring) 1.6s both;
+}
+.kk-unlock-glow {
+  position: absolute;
+  inset: -45%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 217, 61, 0.3),
+    transparent 25%,
+    rgba(255, 217, 61, 0.3) 50%,
+    transparent 75%,
+    rgba(255, 217, 61, 0.3)
+  );
+  animation: kk-spin 9s linear infinite;
+}
+.kk-unlock-title,
+.kk-unlock-row,
+.kk-unlock-charm,
+.kk-unlock-note {
+  position: relative;
+}
+.kk-unlock-title {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+.kk-unlock-title b {
+  font-size: 1.15em;
+  color: #c1830c;
+}
+.kk-unlock-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 6px;
+}
+.kk-unlock-sword {
+  display: block;
+  width: 30px;
+  filter: drop-shadow(0 4px 6px rgba(5, 7, 26, 0.3));
+  animation: kk-unlock-sword 0.8s var(--spring) 1.95s both;
+}
+.kk-unlock-charm {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin: 2px 0 12px;
-  flex-wrap: wrap;
-}
-
-.color-label {
-  font-size: 12px;
+  gap: 9px;
+  margin-top: 10px;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--ui-text);
-  opacity: 0.65;
-  margin-right: 2px;
+}
+.kk-unlock-charm b {
+  font-weight: 800;
+}
+.kk-unlock-note {
+  margin-top: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(58, 55, 48, 0.55);
 }
 
-.color-dot {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-  padding: 0;
-  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* ── 剣まわりのキーフレーム ──────────────────────────── */
+/* えらんだ剣がゆっくり息をする(選択位置 -11px を保つ) */
+@keyframes kk-sword-bob {
+  0%,
+  100% {
+    transform: translateY(-11px);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+@keyframes kk-drawer-up {
+  from {
+    transform: translate(-50%, 100%);
+  }
+  to {
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes kk-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes kk-shock {
+  0% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+@keyframes kk-medal-pop {
+  0% {
+    transform: scale(0) rotate(-40deg);
+  }
+  60% {
+    transform: scale(1.16) rotate(7deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+@keyframes kk-charmget-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes kk-charmget-out {
+  to {
+    opacity: 0;
+    transform: translateY(-26px) scale(0.94);
+  }
+}
+@keyframes kk-unlock-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 44px) scale(0.9);
+  }
+  62% {
+    opacity: 1;
+    transform: translate(-50%, -5px) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+@keyframes kk-unlock-sword {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) rotate(-16deg) scale(0.6);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-4px) rotate(5deg) scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0) scale(1);
+  }
 }
 
-.color-dot:hover {
-  transform: scale(1.15);
-}
-
-.color-dot.sel {
-  border-color: var(--ui-text);
-  transform: scale(1.22);
+/* せまい/低い画面ではラックを一段小さくする(シートが画面を占めすぎない) */
+@media (max-height: 700px) {
+  .kk-rack {
+    height: 92px;
+  }
+  .kk-slot-sword {
+    width: 25px;
+    margin-left: -12.5px;
+  }
+  .kk-equip {
+    min-height: 42px;
+    margin-bottom: 8px;
+  }
 }
 
 /* ── 自分の刺し回数バッジ ───────────────────────────── */
@@ -878,4 +1865,116 @@
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.9);
   flex-shrink: 0;
+}
+
+/* ── フィードの中身(「いま起きたこと」を読ませる) ─────────
+   既存の .feed / .feed-row / .feed-flag / .feed-win はそのまま使い、
+   ここには足りない分だけを足す。古い行を薄くする nth-child より後ろに
+   置いてあるので、.feed-fresh / .feed-live が上書きできる。 */
+.feed-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* 「せかいの ようす」の見出し。ここが生きている画面だと分かる目印 */
+.feed-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: rgba(255, 254, 242, 0.55);
+  text-shadow: 0 1px 4px rgba(5, 7, 26, 0.9);
+}
+.feed-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--safe);
+  box-shadow: 0 0 6px rgba(124, 227, 139, 0.9);
+  animation: feed-live-pulse 1.9s ease-in-out infinite;
+}
+@keyframes feed-live-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* 行の中身: 文言は詰まったら三点リーダ、番号と時刻は右に固定幅で */
+.feed-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.feed-hole {
+  flex: none;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 254, 242, 0.48);
+  font-variant-numeric: tabular-nums;
+}
+.feed-time {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 254, 242, 0.42);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 起きたばかりの行は薄めない */
+.feed-row.feed-fresh {
+  opacity: 1;
+}
+
+/* この端末で刺した行 */
+.feed-row.feed-mine {
+  color: var(--accent);
+  border-color: rgba(255, 217, 61, 0.28);
+}
+.feed-row.feed-mine .feed-hole,
+.feed-row.feed-mine .feed-time {
+  color: rgba(255, 217, 61, 0.6);
+}
+
+/* いま3Dで剣が降ってきている最中の行。着弾までのあいだ光る */
+.feed-row.feed-live {
+  opacity: 1;
+  color: var(--ui);
+  background: rgba(5, 7, 26, 0.66);
+  border-color: rgba(255, 254, 242, 0.45);
+  animation:
+    feed-in 0.35s var(--spring) both,
+    feed-live-row 0.9s ease-in-out infinite;
+}
+.feed-row.feed-live .feed-hole,
+.feed-row.feed-live .feed-time {
+  color: rgba(255, 254, 242, 0.72);
+}
+@keyframes feed-live-row {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(255, 254, 242, 0);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(255, 254, 242, 0.3);
+  }
+}
+
+/* 動きを減らす設定では、点滅系はとめて色だけで伝える */
+@media (prefers-reduced-motion: reduce) {
+  .feed-live-dot,
+  .feed-row.feed-live {
+    animation: none;
+  }
 }

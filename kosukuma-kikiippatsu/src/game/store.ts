@@ -372,6 +372,17 @@ export const useGameStore = create<GameState>((set, get) => {
     });
   };
 
+  /**
+   * 授与式で「けんのスキンを手に入れた」を知らせる。名前が刻まれる演出
+   * (1.0秒)のすこし後に鳴らして、ごほうびが二段構えに見えるようにする。
+   */
+  const announceSkins = () => {
+    if (get().newSkins.length === 0) return;
+    setTimeout(() => {
+      if (get().newSkins.length > 0) emitGameEvent("skin-unlock");
+    }, 1600);
+  };
+
   /** カットシーン中に退避した最新状態があれば反映する */
   const flushPending = () => {
     if (pendingState) {
@@ -821,6 +832,7 @@ export const useGameStore = create<GameState>((set, get) => {
         emitGameEvent("fanfare");
         emitGameEvent("trophy");
         setPhase("trophy");
+        announceSkins();
         get().showToast("デモモードだから きろくには のこらないよ");
         await sleep(T_TROPHY);
         emitGameEvent("new-round");
@@ -883,6 +895,7 @@ export const useGameStore = create<GameState>((set, get) => {
         emitGameEvent("fanfare");
         emitGameEvent("trophy");
         setPhase("trophy");
+        announceSkins();
         await sleep(T_TROPHY);
         emitGameEvent("new-round");
         setPhase("new-round");
@@ -977,4 +990,11 @@ export const useGameStore = create<GameState>((set, get) => {
 /** チャームの定義(UI/3Dから index で引く) */
 export function charmAt(index: number) {
   return CHARMS[Math.min(Math.max(index, 0), CHARMS.length - 1)];
+}
+
+// 開発時だけ window.__kk からストアを触れるようにする。
+// 「他の人が刺した瞬間」や「チャーム獲得」のように、ひとりでは再現しづらい
+// 状態を手で作って見た目を確認するため(本番ビルドには含まれない)。
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+  (window as unknown as { __kk: typeof useGameStore }).__kk = useGameStore;
 }

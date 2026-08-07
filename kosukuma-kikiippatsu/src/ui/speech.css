@@ -1,0 +1,417 @@
+/* ============================================================
+   こすくまくんの吹き出し
+   こすくまくんは目が点で口がない。だから吹き出しが「声」になる。
+   - 暗い宇宙の上でも読めるよう、地色はほぼ白・線は濃紺・文字は太字
+   - 尻尾はJSがフレームごとに描き直して、いつも頭を指している
+   - 位置(transform)はJSが .sb-root/.sb-wrap に、動きのくせ(CSSアニメ)は
+     .sb-body に。同じ要素の transform を奪い合わせないための分業
+   ============================================================ */
+
+.sb-layer {
+  position: absolute;
+  inset: 0;
+  /* 3D(canvas)の上、HUD(z-index:10)の下 */
+  z-index: 5;
+  pointer-events: none;
+  font-family: var(--font-game);
+  /* バネのイージング(ui.cssに依存しないよう自前で持つ) */
+  --sb-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 頭のよこの点。JSが translate + scale する */
+.sb-root {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  /* 画面外へ出たとき、パッと消えずに ふっと消える */
+  transition: opacity 0.14s linear;
+}
+
+/* 吹き出し本体のオフセット。画面のはしでは内側へずれる(尻尾が伸びて追う) */
+.sb-wrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* ── 本体 ────────────────────────────────────────────── */
+.sb-body {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: max-content;
+  min-width: 3.4em;
+  max-width: min(58vw, 250px);
+  padding: 9px 15px 10px;
+  /* transform-origin は尻尾の付け根にJSが合わせる(頭から生えて見せる) */
+  transform-origin: 16px 100%;
+  /* 出たあとも止まって見えないよう、ごくゆっくり息をする */
+  animation:
+    sb-pop 0.42s var(--sb-spring) both,
+    sb-breathe 3.6s ease-in-out 0.5s infinite;
+
+  /* tone の既定(normal) */
+  --sb-fill: #fffef2;
+  --sb-line: #10163a;
+  --sb-ink: #35322b;
+  --sb-radius: 20px;
+}
+
+/* 尻尾+地色のかたまり。影はここに落とす(尻尾だけ暗くならないように) */
+.sb-shape {
+  position: absolute;
+  inset: 0;
+  filter: drop-shadow(0 5px 11px rgba(5, 7, 26, 0.55));
+}
+
+/* まるい地色。尻尾の付け根をこれで隠すので、必ず不透明にすること */
+.sb-fill {
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--sb-line);
+  border-radius: var(--sb-radius);
+  background: var(--sb-fill);
+  box-shadow: inset 0 -4px 0 rgba(16, 22, 58, 0.05);
+}
+
+/* 尻尾。1x1のSVGに overflow:visible で、本体ローカル座標のまま描く */
+.sb-tail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+}
+.sb-tail path {
+  fill: var(--sb-fill);
+  stroke: var(--sb-line);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* セリフ。position:relative で .sb-fill より前面に置く */
+.sb-text {
+  position: relative;
+  color: var(--sb-ink);
+  font-size: clamp(13.5px, 3.9vw, 16px);
+  font-weight: 800;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* ── tone: happy(うれしい) ──────────────────────────── */
+.sb-happy {
+  --sb-fill: #fff8d9;
+  --sb-line: #4b3505;
+  --sb-ink: #4a3808;
+  --sb-radius: 22px;
+  animation:
+    sb-pop 0.44s var(--sb-spring) both,
+    sb-hop 1.6s ease-in-out 0.5s infinite;
+}
+/* きらきら(2つの星が交互にまたたく) */
+.sb-spark {
+  position: absolute;
+  right: -13px;
+  top: -15px;
+  overflow: visible;
+}
+.sb-spark path {
+  fill: var(--accent, #ffd93d);
+  stroke: var(--sb-line);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+.sb-spark-a {
+  transform-origin: 27px 14px;
+  animation: sb-twinkle 1.9s ease-in-out infinite;
+}
+.sb-spark-b {
+  transform-origin: 12px 25px;
+  animation: sb-twinkle 1.9s ease-in-out 0.65s infinite;
+}
+
+/* ── tone: worry(こわい・しんぱい) ─────────────────── */
+.sb-worry {
+  --sb-fill: #eef1ff;
+  --sb-line: #1b2350;
+  --sb-ink: #3a4067;
+  --sb-radius: 19px 17px 19px 16px;
+  animation:
+    sb-pop 0.4s var(--sb-spring) both,
+    sb-shiver 0.62s ease-in-out 0.45s infinite;
+}
+
+/* ── tone: shock(びっくり) ─────────────────────────── */
+/* ギザギザは clip-path。境界線は border では出せないので drop-shadow で描く */
+.sb-shock {
+  --sb-fill: #fff1f0;
+  --sb-line: #7a1220;
+  --sb-ink: #7a1f2a;
+  padding: 13px 19px 14px;
+  animation:
+    sb-pop-hard 0.36s var(--sb-spring) both,
+    sb-quake 0.4s ease-in-out 0.36s 3;
+}
+/* ギザギザの縁取りは、尻尾もふくめたシルエット全体にかける。
+   そのぶん尻尾じたいの線は消す(二重にならないように) */
+.sb-shock .sb-tail path {
+  stroke: none;
+}
+.sb-shock .sb-shape {
+  filter:
+    drop-shadow(2px 0 0 var(--sb-line)) drop-shadow(-2px 0 0 var(--sb-line))
+    drop-shadow(0 2px 0 var(--sb-line)) drop-shadow(0 -2px 0 var(--sb-line))
+    drop-shadow(0 5px 12px rgba(5, 7, 26, 0.5));
+}
+.sb-shock .sb-fill {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  clip-path: polygon(
+    0% 6px,
+    7% 0px,
+    14% 5px,
+    21% 0px,
+    29% 5px,
+    36% 0px,
+    43% 5px,
+    50% 0px,
+    57% 5px,
+    64% 0px,
+    71% 5px,
+    79% 0px,
+    86% 5px,
+    93% 0px,
+    100% 6px,
+    calc(100% - 5px) 25%,
+    100% 50%,
+    calc(100% - 5px) 75%,
+    100% calc(100% - 6px),
+    93% 100%,
+    86% calc(100% - 5px),
+    79% 100%,
+    71% calc(100% - 5px),
+    64% 100%,
+    57% calc(100% - 5px),
+    50% 100%,
+    43% calc(100% - 5px),
+    36% 100%,
+    29% calc(100% - 5px),
+    21% 100%,
+    14% calc(100% - 5px),
+    7% 100%,
+    0% calc(100% - 6px),
+    5px 75%,
+    0% 50%,
+    5px 25%
+  );
+}
+
+/* ── tone: sleepy(ねむい) ──────────────────────────── */
+.sb-sleepy {
+  --sb-fill: #f3f1ff;
+  --sb-line: #2a2450;
+  --sb-ink: #47437a;
+  /* すこし いびつな丸で、ふわっとした雲みたいに */
+  --sb-radius: 26px 22px 26px 20px;
+  animation:
+    sb-pop 0.5s var(--sb-spring) both,
+    sb-drowsy 4.4s ease-in-out 0.55s infinite;
+}
+/* zzz(小さいのから大きいのへ、ふわふわ昇っていく) */
+.sb-zzz {
+  position: absolute;
+  right: -2px;
+  top: -12px;
+  width: 0;
+  height: 0;
+}
+.sb-zzz i {
+  position: absolute;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--sb-fill);
+  -webkit-text-stroke: 3px var(--sb-line);
+  paint-order: stroke fill;
+  animation: sb-z 3s ease-in-out infinite;
+}
+.sb-zzz i:nth-child(1) {
+  left: 0;
+  bottom: 0;
+  font-size: 11px;
+}
+.sb-zzz i:nth-child(2) {
+  left: 7px;
+  bottom: 7px;
+  font-size: 14px;
+  animation-delay: 0.6s;
+}
+.sb-zzz i:nth-child(3) {
+  left: 16px;
+  bottom: 15px;
+  font-size: 17px;
+  animation-delay: 1.2s;
+}
+
+/* ── 消えるとき: 尻尾の付け根(=頭)へ吸い込まれて消える ── */
+.sb-body.sb-leave {
+  animation: sb-out 0.22s cubic-bezier(0.4, 0, 0.85, 0.4) both;
+}
+
+/* ── キーフレーム ────────────────────────────────────── */
+/* ぽんっと出る(ちょっと回りながら) */
+@keyframes sb-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-10deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.1) rotate(2.5deg);
+  }
+  78% {
+    transform: scale(0.97) rotate(-1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+/* びっくりは もっと勢いよく */
+@keyframes sb-pop-hard {
+  0% {
+    opacity: 0;
+    transform: scale(0.15) rotate(-14deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18) rotate(4deg);
+  }
+  75% {
+    transform: scale(0.95) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+/* すっと消える */
+@keyframes sb-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.58) translateY(3px);
+  }
+}
+/* ふつうのときの ゆるい呼吸 */
+@keyframes sb-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-1.5px) scale(1.008);
+  }
+}
+/* うれしいときの ぴょこぴょこ */
+@keyframes sb-hop {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-2.5px) scale(1.015, 0.99);
+  }
+  70% {
+    transform: translateY(0.5px) scale(0.99, 1.008);
+  }
+}
+/* しんぱいなときの こまかいふるえ */
+@keyframes sb-shiver {
+  0%,
+  100% {
+    transform: rotate(0deg) translateX(0);
+  }
+  25% {
+    transform: rotate(-0.7deg) translateX(-0.7px);
+  }
+  75% {
+    transform: rotate(0.7deg) translateX(0.7px);
+  }
+}
+/* びっくりの ぐらぐら(3回だけ) */
+@keyframes sb-quake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  20% {
+    transform: translate(-1.6px, 0.8px) rotate(-1.1deg);
+  }
+  55% {
+    transform: translate(1.6px, -0.8px) rotate(1.1deg);
+  }
+  80% {
+    transform: translate(-0.8px, 0) rotate(-0.4deg);
+  }
+}
+/* ねむいときの ゆっくり沈んで浮く */
+@keyframes sb-drowsy {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(2.5px) rotate(-0.6deg);
+  }
+}
+/* zzz が ふわっと昇って消える */
+@keyframes sb-z {
+  0% {
+    opacity: 0;
+    transform: translate(0, 4px) scale(0.7) rotate(-8deg);
+  }
+  22% {
+    opacity: 1;
+  }
+  65% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(7px, -15px) scale(1.05) rotate(10deg);
+  }
+}
+/* きらきら */
+@keyframes sb-twinkle {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.6) rotate(-8deg);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.08) rotate(6deg);
+  }
+}
+
+/* ── アクセシビリティ: 動きを減らす設定を尊重 ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  .sb-layer .sb-body,
+  .sb-layer .sb-body * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .sb-root {
+    transition: none;
+  }
+}

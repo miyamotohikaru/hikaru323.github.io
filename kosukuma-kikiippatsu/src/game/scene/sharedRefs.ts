@@ -23,6 +23,10 @@ export const speechAnchor = {
   visible: false,
   /** 遠いほど小さく出す(0.6〜1.15くらい) */
   scale: 1,
+  /** 画面上のこすくまくんの高さ(頭のてっぺん〜足元, CSSピクセル) */
+  bodyH: 0,
+  /** 画面上のこすくまくんの横はば(CSSピクセル) */
+  bodyW: 0,
 };
 
 /**
