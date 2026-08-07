@@ -43,8 +43,10 @@ type Stop = {
   blur: number;
   sat: number;
   opacity: number;
-  /** 上から重ねる紙色の濃さ。奥行きは「薄める」のではなく「明るくする」で出す */
+  /** 上から重ねる地色の濃さ。奥行きは「薄める」のではなく「地の色へ寄せる」で出す */
   veil: number;
+  /** セピアへ寄せる量。カードごとの色相を暖色軸へ畳んで、束の中で色が浮かないようにする */
+  tone: number;
 };
 
 /**
@@ -56,14 +58,14 @@ type Stop = {
  * 不透明のまま紙色で明るくし、ぼかしは控えめにすると「奥にあるカード」に見える。
  */
 const STOPS: Record<number, Stop> = {
-  [-2]: { x: -0.66, y: 0.26, rot: -15, scale: 1.09, blur: 16, sat: 0.8, opacity: 0, veil: 0.62 },
-  [-1]: { x: -0.34, y: 0.13, rot: -8.5, scale: 1.045, blur: 11, sat: 0.8, opacity: 0.42, veil: 0.62 },
-  [0]: { x: 0, y: 0, rot: 0, scale: 1, blur: 0, sat: 1, opacity: 1, veil: 0 },
-  [1]: { x: 0.095, y: -0.042, rot: 3.2, scale: 0.962, blur: 2, sat: 0.8, opacity: 0.78, veil: 0.42 },
-  [2]: { x: -0.135, y: -0.078, rot: -5.2, scale: 0.922, blur: 4.5, sat: 0.8, opacity: 0.62, veil: 0.58 },
-  [3]: { x: 0.195, y: -0.112, rot: 8, scale: 0.878, blur: 7, sat: 0.8, opacity: 0.48, veil: 0.7 },
-  [4]: { x: -0.255, y: -0.145, rot: -10.5, scale: 0.83, blur: 9, sat: 0.8, opacity: 0.36, veil: 0.8 },
-  [5]: { x: 0.3, y: -0.175, rot: 13, scale: 0.79, blur: 11, sat: 0.8, opacity: 0, veil: 0.85 },
+  [-2]: { x: -0.66, y: 0.26, rot: -15, scale: 1.09, blur: 16, sat: 0.55, opacity: 0, veil: 0.6, tone: 1 },
+  [-1]: { x: -0.34, y: 0.13, rot: -8.5, scale: 1.045, blur: 11, sat: 0.55, opacity: 0.42, veil: 0.6, tone: 1 },
+  [0]: { x: 0, y: 0, rot: 0, scale: 1, blur: 0, sat: 1, opacity: 1, veil: 0, tone: 0 },
+  [1]: { x: 0.095, y: -0.042, rot: 3.2, scale: 0.962, blur: 2, sat: 0.55, opacity: 0.78, veil: 0.5, tone: 1 },
+  [2]: { x: -0.135, y: -0.078, rot: -5.2, scale: 0.922, blur: 4.5, sat: 0.55, opacity: 0.62, veil: 0.62, tone: 1 },
+  [3]: { x: 0.195, y: -0.112, rot: 8, scale: 0.878, blur: 7, sat: 0.55, opacity: 0.48, veil: 0.72, tone: 1 },
+  [4]: { x: -0.255, y: -0.145, rot: -10.5, scale: 0.83, blur: 9, sat: 0.55, opacity: 0.36, veil: 0.82, tone: 1 },
+  [5]: { x: 0.3, y: -0.175, rot: 13, scale: 0.79, blur: 11, sat: 0.55, opacity: 0, veil: 0.86, tone: 1 },
 };
 const REL_MIN = -2;
 const REL_MAX = 5;
@@ -100,6 +102,7 @@ function sample(rel: number): Stop {
     sat: lerp(a.sat, b.sat, t),
     opacity: lerp(a.opacity, b.opacity, t),
     veil: lerp(a.veil, b.veil, t),
+    tone: lerp(a.tone, b.tone, t),
   };
 }
 
@@ -170,10 +173,17 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
         `rotate(${s.rot.toFixed(2)}deg) scale(${s.scale.toFixed(4)})`;
       el.style.opacity = s.opacity.toFixed(3);
       el.style.setProperty("--veil", s.veil.toFixed(3));
-      el.style.filter =
-        s.blur < 0.05
-          ? "none"
-          : `blur(${s.blur.toFixed(2)}px) saturate(${s.sat.toFixed(2)}) brightness(1.06)`;
+      // ぼかしとセピアはカードの絵柄だけに掛ける。
+      // 地の色をかぶせる膜(::after)まで一緒にセピアにすると、束全体が黄色く濁る。
+      // sepia は「どんな色相でも必ず R>G>B の暖色軸に畳む」唯一の操作で、
+      // saturate では色相のずれの符号が残るため緑のカードは緑のまま浮いてしまう。
+      const face = el.firstElementChild as HTMLElement | null;
+      if (face) {
+        face.style.filter =
+          s.blur < 0.05 && s.tone < 0.01
+            ? "none"
+            : `blur(${s.blur.toFixed(2)}px) sepia(${s.tone.toFixed(3)}) saturate(${s.sat.toFixed(2)})`;
+      }
       el.style.zIndex = String(
         rel >= 0 ? Math.round(100 - rel * 10) : Math.round(96 + rel * 4)
       );
@@ -497,46 +507,49 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
             <div
               key={k}
               ref={(el) => void nodes.current.set(k, el)}
-              className={`vja-deck-card ${k === 0 ? "is-front" : ""}`}
+              className={`vja-deck-card ${k === 0 ? "is-front" : ""} ${k < 0 ? "is-near" : ""}`}
               aria-hidden={k !== 0}
             >
-              {k === 0 ? (
-                <a
-                  href={`/jobs/${job.no}`}
-                  className="vja-deck-hit block"
-                  draggable={false}
-                  onClick={(ev) => {
-                    // ドラッグの流れで出たクリックでは遷移させない
-                    if (suppress.current) {
-                      suppress.current = false;
-                      ev.preventDefault();
-                      return;
-                    }
-                    navigator.vibrate?.([0, 12]);
-                    saveReturn();
-                  }}
-                >
-                  <TiltCard variant="hero" enabled={!dragging}>
-                    <JobCard job={job} />
-                  </TiltCard>
-                </a>
-              ) : REAL_SLOTS.has(k) ? (
-                <JobCard job={job} />
-              ) : (
-                // ぼかしきったカードは色の板と見分けがつかないので板で描く
-                <div
-                  className="vja-deck-proxy"
-                  style={{ background: plateColor(job.color) }}
-                  aria-hidden
-                />
-              )}
+              {/* 絵柄はこの中。ぼかしとセピアはここにだけ掛け、膜(::after)は素のまま残す */}
+              <div className="vja-deck-face">
+                {k === 0 ? (
+                  <a
+                    href={`/jobs/${job.no}`}
+                    className="vja-deck-hit block"
+                    draggable={false}
+                    onClick={(ev) => {
+                      // ドラッグの流れで出たクリックでは遷移させない
+                      if (suppress.current) {
+                        suppress.current = false;
+                        ev.preventDefault();
+                        return;
+                      }
+                      navigator.vibrate?.([0, 12]);
+                      saveReturn();
+                    }}
+                  >
+                    <TiltCard variant="hero" enabled={!dragging}>
+                      <JobCard job={job} />
+                    </TiltCard>
+                  </a>
+                ) : REAL_SLOTS.has(k) ? (
+                  <JobCard job={job} />
+                ) : (
+                  // ぼかしきったカードは色の板と見分けがつかないので板で描く
+                  <div
+                    className="vja-deck-proxy"
+                    style={{ background: plateColor(job.color) }}
+                    aria-hidden
+                  />
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
       {/* 位置と操作の案内 */}
-      <div className="mt-9 flex flex-col items-center gap-4">
+      <div className="mt-9 flex flex-col items-center">
         <div className="flex items-center gap-7">
           <button
             onClick={() => step(-1)}
@@ -563,12 +576,13 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
           </button>
         </div>
 
-        <div className="vja-deck-rail" aria-hidden>
+        {/* レールは番号の付属物として近づけ、案内文だけを離す */}
+        <div className="vja-deck-rail mt-2.5" aria-hidden>
           <b style={{ width: `${progress}%` }} />
           <span style={{ left: `${progress}%` }} />
         </div>
 
-        <p className="font-mono-label text-[9.5px] tracking-[0.3em] text-vja-ink-soft opacity-50">
+        <p className="mt-5 font-mono-label text-[9.5px] tracking-[0.3em] text-vja-ink-soft opacity-50">
           {en ? "DRAG TO FLIP · TAP TO OPEN" : "ドラッグでめくる ・ タップでひらく"}
         </p>
       </div>

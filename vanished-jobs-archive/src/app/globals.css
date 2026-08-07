@@ -198,6 +198,10 @@ body {
   box-shadow: 0 2px 3px rgba(58, 46, 34, 0.1), 0 22px 30px rgba(58, 46, 34, 0.2);
   border-radius: var(--card-r);
 }
+/* 絵柄の入れ物。ぼかしとセピアはここにだけ掛かる（膜には掛けない） */
+.vja-deck-face {
+  width: 100%;
+}
 /* 奥のカードの代役（ぼかしきると色の板と同じなので、板で描いて描画を節約する） */
 .vja-deck-proxy {
   width: 100%;
@@ -205,15 +209,22 @@ body {
   border-radius: var(--card-r);
   box-shadow: inset 0 0 0 1px rgba(58, 46, 34, 0.09);
 }
-/* 奥にあるほど紙色をかぶせて明るくする。透明にして消すと霧になり四角が読めなくなる */
+/* 奥にあるほど地の色をかぶせて、背景へ収束させる。
+   紙色(--vja-paper)は地の色(--vja-bg)より明るいので、そちらへ寄せると
+   奥のカードがページより明るくなり「光漏れ」に見えてしまう。 */
 .vja-deck-card:not(.is-front)::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: var(--card-r);
-  background: var(--vja-paper);
+  background: var(--vja-bg);
   opacity: var(--veil, 0);
   pointer-events: none;
+}
+/* ピント面より手前の板だけは、地の色より少し沈ませて重さを出す
+   （被写界深度は「手前にも外れている」ことで初めて奥行きに見える） */
+.vja-deck-card.is-near::after {
+  background: color-mix(in oklab, var(--vja-bg) 88%, var(--vja-ink));
 }
 
 /* 束の下に敷く影。カードの下端に合わせ、拡散する影と接地の影を分けて置く */
