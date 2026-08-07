@@ -185,8 +185,10 @@ export default function Hud() {
             aria-haspopup="dialog"
             onClick={() => setGearOpen(true)}
           >
-            <span className="kk-equip-emoji" aria-hidden="true">
-              {skin.emoji}
+            {/* 絵文字の🗡は小さくすると暗い斜線になって画像切れに見えるので、
+                実物の剣をそのまま小さく置く */}
+            <span className="kk-equip-icon">
+              <SwordArt color={swordColor} skin={swordSkin} charms={charmCount} />
             </span>
             <span className="kk-equip-txt">
               <b>{swordLabel}</b>

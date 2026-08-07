@@ -29,7 +29,7 @@ import { hashString, mulberry32, randRange } from "@/lib/prng";
 import { makeCharmGeometry } from "./charmGeometry";
 
 // ── 寸法 ────────────────────────────────────────────
-// TOMYの公式パーツ写真をピクセル計測した実測比率に合わせてある(全長=100%):
+// TOMYの公式パーツ写真をピクセル計測した実測比率(剣の見えている全体=100%):
 //   刃の長さ 44% / 刃の幅 : 刃の長さ = 0.55 / 鍔の幅 = 刃の幅の1.6倍
 //
 // いちばん大事なのは「実物は刃も握りも柄頭も同じ厚みの平たい1枚の板」だという
@@ -37,45 +37,52 @@ import { makeCharmGeometry } from "./charmGeometry";
 // 「細い板 + 細い円柱 + 上に乗った球」で作ると、剣ではなく待ち針に見える。
 
 /**
- * 月面から出る高さ。全景の密度がこの値で決まる。
- * 木の葉の刃と平たい握りにしたぶん1本あたりの面積が増えるので、高さは
- * 大きめに詰めてある(0.7181 → 0.53)。月を埋めるのは高さではなく面積なので、
- * 正面シルエットの実面積で -17% になるところを狙っている。
- * これで1000本刺さっても剣が数えられる(= 潰れて面にならない)。
+ * 月面から出る高さ。全景での剣の密度バランスがこの値で決まっているので固定。
  */
-const EXPOSED_H = 0.53;
+const EXPOSED_H = 0.7181;
 
-// 鍔: 細長いバーの両端に丸いボス。実測の「刃幅の1.6倍」がそのまま外端になる
-const GUARD_HALF_L = 0.138; // 鍔の半分の長さ(= 外端)
-const GUARD_BOSS_R = 0.031; // 端の丸いボスの半径
-const GUARD_BAR_HALF_H = 0.022; // 中央のバーの半分の高さ
-const GUARD_HALF_H = GUARD_BOSS_R; // 鍔の高さの半分(いちばん高いのはボス)
-const GUARD_THICK = 0.062; // 鍔だけ少し厚くして、部品として立たせる
+// ── ここから下は、すべて「月面から見えている剣」を基準に導出する ──────
+// 実測比率は "剣が全部見えている写真" の比率なので、刃が月に埋まるこの
+// ゲームでは、埋まったぶんを含めた全長に当てはめてはいけない。
+// (それをやると、見えている刃が縦より横に長い「へら」になってしまう)
 
-// 握り: 円柱ではなく、刃とほぼ同じ幅の平たい板。はしご状の溝が入る
-const GRIP_LEN = 0.245;
-const GRIP_HALF_W = 0.082;
-const GRIP_THICK = 0.046;
-const GRIP_RIB_THICK = 0.06; // はしごの桟はひと回り厚い
-const GRIP_NOTCH = 0.014; // 溝で細くなる量(輪郭にもはしごを出す)
+/** 見えている刃の長さ = 見えている剣の44%(実測) */
+const BLADE_TOP = EXPOSED_H * 0.44;
+/** 柄まわり(鍔+握り+柄頭)の高さ = 見えている剣の56%(実測) */
+const HILT_H = EXPOSED_H - BLADE_TOP;
 
-// 柄頭: 球ではなく、平たく開いた三つ葉の板(球はRPGの短剣の記号で、玩具ではない)
-const POMMEL_H = 0.094;
-const POMMEL_HALF_W = 0.086;
-const POMMEL_LOBE_R = 0.032; // 三つ葉ひと粒の半径
-const POMMEL_THICK = 0.046;
+/** 刃の半幅。実測「刃の幅 : 刃の長さ = 0.55」を"見えている刃"に当てる */
+const BLADE_HALF_W = (BLADE_TOP * 0.55) / 2;
+const BLADE_THICK = 0.04;
+/** 刃は月の中へも少し伸ばす(刺す・降ってくる演出で使う) */
+const BLADE_BURY = BLADE_TOP * 0.3;
+const BLADE_LEN = BLADE_TOP + BLADE_BURY;
+
+// 柄の内訳(実測: 鍔17.5% / 握り59% / 柄頭23.5%)
 const POMMEL_SINK = 0.008; // 握りへ少しめり込ませて、浮いて見せない
 
-/** 柄まわり(鍔+握り+柄頭)の高さ */
-const HILT_H = GUARD_HALF_H * 2 + GRIP_LEN + POMMEL_H - POMMEL_SINK;
+// 鍔: 細長いバーの両端に丸いボス。実測「鍔の幅 = 刃の幅の1.6倍」を保つため
+// 刃幅から導出する(刃の太さを変えても鍔が鍔に見えなくならない)
+const GUARD_HALF_L = BLADE_HALF_W * 1.6;
+const GUARD_HALF_H = (HILT_H * 0.175) / 2;
+const GUARD_BOSS_R = GUARD_HALF_H; // いちばん高いのは端のボス
+const GUARD_BAR_HALF_H = GUARD_BOSS_R * 0.7; // 中央のバーはボスより細い
+const GUARD_THICK = 0.062; // 鍔だけ少し厚くして、部品として立たせる
 
-// 実測比率 刃44% : 柄56% から刃の寸法を出す(数字をいじっても比率が崩れない)
-const BLADE_LEN = (HILT_H * 44) / 56;
-const BLADE_HALF_W = (BLADE_LEN * 0.55) / 2; // 刃の幅 = 刃の長さの0.55倍 = 木の葉
-const BLADE_THICK = 0.04;
+// 柄頭: 球ではなく、平たく開いた三つ葉の板(球はRPGの短剣の記号で、玩具ではない)
+const POMMEL_H = HILT_H * 0.235;
+const POMMEL_HALF_W = BLADE_HALF_W; // 実測「刃と同じ幅」
+const POMMEL_LOBE_R = POMMEL_HALF_W * 0.37; // 三つ葉ひと粒の半径
+const POMMEL_THICK = 0.046;
 
-const BLADE_TOP = EXPOSED_H - HILT_H; // 月面から出ている刃の長さ
-const BLADE_BURY = BLADE_LEN - BLADE_TOP; // 原点より下(月の中)に埋まる長さ
+// 握り: 円柱ではなく、刃とほぼ同じ幅の平たい板。はしご状の溝が入る。
+// 残りの高さを握りに割り当てるので、鍔+握り+柄頭 = HILT_H が常に成り立つ
+const GRIP_LEN = HILT_H - GUARD_HALF_H * 2 - POMMEL_H + POMMEL_SINK;
+const GRIP_HALF_W = BLADE_HALF_W * 0.95;
+const GRIP_THICK = 0.046;
+const GRIP_RIB_THICK = 0.06; // はしごの桟はひと回り厚い
+const GRIP_NOTCH = GRIP_HALF_W * 0.17; // 溝で細くなる量(輪郭にもはしごを出す)
+
 const GUARD_Y = BLADE_TOP + GUARD_HALF_H; // 鍔の中心の高さ
 const GRIP_Y = GUARD_Y + GUARD_HALF_H; // 握りのはじまり
 const POMMEL_Y = GRIP_Y + GRIP_LEN - POMMEL_SINK; // 三つ葉板の付け根
@@ -83,7 +90,7 @@ const TOP_Y = POMMEL_Y + POMMEL_H; // = EXPOSED_H
 
 /** チャームをぶら下げる点(鍔の端の下面)。刃に重ならないよう外側へ寄せてある */
 const CHARM_ANCHOR = new THREE.Vector3(
-  GUARD_HALF_L - 0.004,
+  GUARD_HALF_L,
   BLADE_TOP, // 鍔の下面ちょうど。浮かせない
   0
 );
@@ -160,17 +167,23 @@ const BLADE_PROFILE: number[][] = [
   [1.0, 0.76], // 鍔ぎわ
 ];
 
+/** 刃の面取り。ExtrudeGeometry の面取りは輪郭より外へ膨らむので後で差し引く */
+const BLADE_BEVEL = 0.006;
+
 /** 刃。平たく幅の広い木の葉。面取りが成型プラスチックの角のハイライトになる */
 function makeBlade(q: SwordQuality): THREE.BufferGeometry {
   // 遠景はひとつ飛ばしでサンプルする(表はひとつなので形は崩れない)
   const rows =
     q === "hero" ? BLADE_PROFILE : BLADE_PROFILE.filter((_, i) => i % 2 === 0);
   const tip = -BLADE_BURY;
+  // 面取りのぶん外へ太るので、輪郭はそのぶん内側に作る。
+  // こうしないと出来上がりが実測比 0.55 より6%ほど太ってしまう
+  const w = BLADE_HALF_W - BLADE_BEVEL;
   const right: number[][] = [];
   const left: number[][] = [];
   for (const [u, h] of rows) {
     const y = tip + BLADE_LEN * u;
-    const x = BLADE_HALF_W * h;
+    const x = w * h;
     right.push([x, y]);
     left.push([-x, y]);
   }
@@ -178,7 +191,7 @@ function makeBlade(q: SwordQuality): THREE.BufferGeometry {
   return extrudePlate(
     shapeFrom([...right, ...left.reverse()]),
     BLADE_THICK,
-    0.006,
+    BLADE_BEVEL,
     q === "hero" ? 2 : 1,
     1
   );
@@ -495,11 +508,10 @@ export interface ToySword {
 }
 
 // チャームは鍔の端から、キーホルダーのように束ねてぶら下げる。
-// 落差は「輪に通っている」ように見える範囲でだけ変える(離れると浮いて見える)。
-// 寸法は剣の縮小(EXPOSED_H 0.7181→0.6)に合わせて同じ比率で詰めてある
-const CHARM_SIZE = 0.071; // いちばん長い辺の長さ
-const CHARM_DROP = [0.025, 0.029, 0.027]; // ぶら下げ点から本体の上端まで
-const CHARM_Z = [-0.035, 0, 0.035]; // 前後にずらして重ならないように
+// 落差は「輪に通っている」ように見える範囲でだけ変える(離れると浮いて見える)
+const CHARM_SIZE = 0.085; // いちばん長い辺の長さ
+const CHARM_DROP = [0.03, 0.035, 0.032]; // ぶら下げ点から本体の上端まで
+const CHARM_Z = [-0.042, 0, 0.042]; // 前後にずらして重ならないように
 const CHARM_TILT = [0.2, 0.04, 0.32]; // 外へ開く角度(rad)
 const CHARM_SPEED = [2.3, 1.8, 2.7]; // 揺れの速さ
 
@@ -529,7 +541,7 @@ export function buildToySword(opts: ToySwordOptions): ToySword {
   const shown = Math.min(Math.max(opts.charm, 0), CHARM_VISIBLE_MAX);
   if (shown > 0) {
     // 輪(キーホルダーのリング)は3つで共有する
-    const ringGeo = new THREE.TorusGeometry(0.013, 0.004, 4, 10);
+    const ringGeo = new THREE.TorusGeometry(0.016, 0.005, 4, 10);
     const ringMat = makeSwordMaterial(1, "#e8eefc"); // ぎんの質感を借りる
     charmGeos.push(ringGeo);
     charmMats.push(ringMat);
@@ -542,7 +554,7 @@ export function buildToySword(opts: ToySwordOptions): ToySword {
       pivot.position.z += CHARM_Z[i];
 
       const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.position.y = -0.013;
+      ring.position.y = -0.016;
 
       const geo = makeCharmGeometry(charm.shape, CHARM_SIZE);
       const mat = new THREE.MeshPhysicalMaterial({

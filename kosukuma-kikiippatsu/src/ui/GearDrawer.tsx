@@ -39,8 +39,9 @@ export default function GearDrawer({ open, onClose }: GearDrawerProps) {
         aria-modal="true"
         aria-label="けんの したく"
       >
-        <span className="kk-drawer-grip" aria-hidden="true" />
+        {/* 見出しは樽の赤。クリーム一色だとパネル全体が無効状態に見えてしまう */}
         <div className="kk-drawer-head">
+          <span className="kk-drawer-grip" aria-hidden="true" />
           <h2 className="kk-drawer-title">けんの したく</h2>
           <button
             type="button"
@@ -54,11 +55,11 @@ export default function GearDrawer({ open, onClose }: GearDrawerProps) {
 
         <div className="kk-drawer-body">
           <section className="kk-sec">
-            <p className="kk-sec-label">いろ</p>
+            <p className="kk-sec-label kk-label-color">いろ</p>
             <SwordRack />
           </section>
           <section className="kk-sec">
-            <p className="kk-sec-label">しあげ</p>
+            <p className="kk-sec-label kk-label-skin">しあげ</p>
             <SkinRack />
           </section>
           <section className="kk-sec">

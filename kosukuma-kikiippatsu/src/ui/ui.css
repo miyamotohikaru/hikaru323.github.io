@@ -369,20 +369,19 @@
   pointer-events: none;
 }
 
-/* セーフ！スタンプ */
+/* セーフ！スタンプ。
+   枠+半透明の箱+ネオンの光は「配信オーバーレイの字幕」の文法なので使わない。
+   下の .banner-big と同じ「箱なし・太い暗色フチ」に揃えて、3Dの中に置かれた
+   ステッカーとして立たせる。 */
 .stamp {
   font-size: clamp(3rem, 16vw, 5rem);
   font-weight: 800;
+  line-height: 1.1;
   color: var(--safe);
-  border: 0.09em solid var(--safe);
-  border-radius: 0.25em;
-  padding: 0.02em 0.35em 0.08em;
-  letter-spacing: 0.06em;
-  background: rgba(5, 7, 26, 0.35);
-  text-shadow: 0 0 18px rgba(124, 227, 139, 0.5);
-  box-shadow:
-    0 0 30px rgba(124, 227, 139, 0.25),
-    inset 0 0 22px rgba(124, 227, 139, 0.15);
+  letter-spacing: 0.04em;
+  -webkit-text-stroke: 10px var(--space-deep);
+  paint-order: stroke fill;
+  text-shadow: 0 0 28px rgba(124, 227, 139, 0.5);
   transform: rotate(-8deg);
   animation: stamp-in 0.45s var(--spring) both;
 }
@@ -870,6 +869,15 @@
   --kk-panel: linear-gradient(180deg, #f8f4e4, #e8e2cc);
   --kk-panel-edge: rgba(58, 55, 48, 0.1);
   --kk-panel-drop: rgba(58, 55, 48, 0.18);
+  /* 実物の箱は「赤い樽 + 原色の剣 + 青い台」。クリーム一色だと画面ぜんぶが
+     無効状態に見えてしまうので、樽の赤と台の青を成型樹脂として持ちこむ */
+  --kk-blue-top: #5f8ee8;
+  --kk-blue-face: #3f66c4;
+  --kk-blue-deep: #2a4693;
+  --kk-navy: linear-gradient(180deg, #33406e, #232c52);
+  --kk-red-top: #ff8272;
+  --kk-red-face: #e8503f;
+  --kk-red-deep: #b4382a;
 }
 
 /* SwordArt の svg は箱の幅にあわせて伸びる(高さは viewBox 比で決まる) */
@@ -882,9 +890,10 @@
 /* ── 剣ラック(たるの横に並んだ、あの剣たち) ──────────── */
 .kk-rack {
   position: relative;
-  height: 104px;
+  /* 剣が実物比率で太くなったぶん、同じ見え幅なら背は低くなる(縦を節約できる) */
+  height: 100px;
   /* シートの外へすこし張り出して、剣1本ぶんの幅(≒42px)をかせぐ */
-  margin: 0 -8px 16px;
+  margin: 0 -8px 14px;
 }
 /* ラックの土台。上面(明るい)と前面(暗い)の2段で厚みを出す */
 .kk-rack-bar {
@@ -959,11 +968,12 @@
 .kk-slot-sword {
   position: absolute;
   left: 50%;
-  bottom: 8px;
+  /* 剣先は前板(17px)のうしろに隠れたまま、刃がなるべく多く見える高さ */
+  bottom: 9px;
   display: block;
-  width: 28px;
+  width: 35px;
   max-width: 100%;
-  margin-left: -14px;
+  margin-left: -17.5px;
   transform-origin: 50% 100%;
   transition:
     transform 0.22s var(--spring),
@@ -1062,20 +1072,12 @@
     inset 0 0 0 2px var(--kk-panel-edge),
     inset 0 2px 0 rgba(255, 255, 255, 0.8);
 }
-.kk-equip-emoji {
+/* いま持っている剣の実物ミニチュア(絵文字は使わない) */
+.kk-equip-icon {
   flex: none;
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: radial-gradient(circle at 34% 26%, #fff, #e4ddc3);
-  box-shadow:
-    inset 0 -2px 3px rgba(0, 0, 0, 0.14),
-    inset 0 2px 2px rgba(255, 255, 255, 0.9),
-    0 1px 2px rgba(0, 0, 0, 0.12);
-  font-size: 15px;
-  line-height: 1;
+  display: block;
+  width: 17px;
+  filter: drop-shadow(0 1px 1px rgba(5, 7, 26, 0.28));
 }
 .kk-equip-txt {
   flex: 1 1 auto;
@@ -1103,10 +1105,13 @@
   flex: none;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(58, 55, 48, 0.1);
+  background: linear-gradient(180deg, var(--kk-blue-top), var(--kk-blue-face));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 2px 0 var(--kk-blue-deep);
   font-size: 11px;
   font-weight: 800;
-  color: rgba(58, 55, 48, 0.72);
+  color: #fff;
 }
 .kk-equip-go::after {
   content: " ▸";
@@ -1155,7 +1160,7 @@
 }
 .kk-fab-sword {
   display: block;
-  width: 16px;
+  width: 19px;
 }
 .kk-fab-label {
   font-size: 9.5px;
@@ -1199,9 +1204,11 @@
   display: flex;
   flex-direction: column;
   width: min(100%, 440px);
-  max-height: min(80vh, 640px);
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  max-height: min(80vh, 660px);
+  /* 下に余白を残さないと、最下段の進捗バーが画面のふちで切れて見える */
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
   border-radius: 26px 26px 0 0;
+  overflow: hidden;
   background: var(--ui);
   color: var(--ui-text);
   box-shadow: 0 -12px 40px rgba(5, 7, 26, 0.6);
@@ -1209,23 +1216,35 @@
   transform: translateX(-50%);
   animation: kk-drawer-up 0.38s var(--spring) both;
 }
-.kk-drawer-grip {
-  display: block;
-  width: 42px;
-  height: 5px;
-  margin: 9px auto 0;
-  border-radius: 999px;
-  background: rgba(58, 55, 48, 0.2);
-}
+/* 見出しは「赤い樽」の帯。ここに色を置くだけでパネル全体の印象が変わる */
 .kk-drawer-head {
+  position: relative;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px 8px 16px;
+  padding: 16px 10px 9px 16px;
+  border-radius: 26px 26px 0 0;
+  background: linear-gradient(180deg, var(--kk-red-top), var(--kk-red-face));
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 3px 0 var(--kk-red-deep);
+}
+.kk-drawer-grip {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 42px;
+  height: 5px;
+  margin-left: -21px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
 }
 .kk-drawer-title {
   font-size: 1.02rem;
   font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1.5px 0 rgba(140, 40, 26, 0.65);
 }
 .kk-drawer-x {
   width: 42px;
@@ -1234,8 +1253,8 @@
   place-items: center;
   border: 0;
   border-radius: 999px;
-  background: rgba(58, 55, 48, 0.09);
-  color: rgba(58, 55, 48, 0.75);
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
   font-family: var(--font-game);
   font-size: 15px;
   font-weight: 800;
@@ -1250,20 +1269,39 @@
 .kk-drawer-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 2px 14px 8px;
+  gap: 11px;
+  padding: 11px 14px 8px;
   min-height: 0; /* flex列の中でスクロールさせるため */
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+/* 見出しは色つきのラベル。3つとも灰色だと棚の区別がつかない */
 .kk-sec-label {
-  display: block;
-  margin-bottom: 7px;
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 3px 10px 4px;
+  border-radius: 999px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.06em;
-  color: rgba(58, 55, 48, 0.5);
+  background: rgba(58, 55, 48, 0.1);
+  color: rgba(58, 55, 48, 0.62);
+}
+.kk-label-color {
+  background: linear-gradient(180deg, #ffd84a, #f0b800);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  color: #5c4405;
+}
+.kk-label-skin {
+  background: linear-gradient(180deg, var(--kk-blue-top), var(--kk-blue-face));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+.kk-label-charm {
+  background: linear-gradient(180deg, var(--kk-red-top), var(--kk-red-face));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: #fff;
 }
 
 /* ── しあげ(スキン)の陳列棚 ─────────────────────────── */
@@ -1278,8 +1316,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 8px 2px 7px;
+  gap: 2px;
+  padding: 7px 2px 6px;
   border: 0;
   border-radius: 14px;
   background: var(--kk-panel);
@@ -1307,7 +1345,7 @@
 .kk-skin-stage {
   position: relative;
   display: block;
-  width: 21px;
+  width: 24px;
 }
 /* 台に立っているように、足元へ小さな影 */
 .kk-skin-stage::after {
@@ -1350,50 +1388,64 @@
 .kk-skin.sel .kk-skin-sub {
   color: #a97a09;
 }
-/* 未解放: 灰色にしずんで、鍵がかかっている */
+/* 未解放:「まだ自分のものではない棚」として夜の色に沈める。
+   灰色にして剣をつぶすと、クリスタルとにじいろが同じ灰色の塊になり、
+   何が手に入るのか分からない = 欲しくならない。色みは残す。 */
 .kk-skin.lock {
-  background: linear-gradient(180deg, #efece0, #dcd7c5);
+  background: var(--kk-navy);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.08),
+    inset 0 2px 0 rgba(255, 255, 255, 0.16),
+    0 2px 0 rgba(18, 24, 46, 0.6);
 }
-/* 未解放でも「どんな剣か」は見せる(欲しくなってもらう) */
 .kk-skin.lock .kk-skin-stage {
-  filter: grayscale(0.55) brightness(0.98) opacity(0.62);
+  filter: brightness(0.86) opacity(0.72);
+}
+.kk-skin.lock .kk-skin-stage::after {
+  background: rgba(0, 0, 0, 0.35);
 }
 .kk-skin.lock .kk-skin-name {
-  color: rgba(58, 55, 48, 0.5);
+  color: rgba(255, 254, 242, 0.75);
 }
-/* 鍵は剣より広い範囲に置いて、細い剣の上でも埋もれないようにする */
+.kk-skin.lock .kk-skin-sub {
+  color: var(--accent);
+}
+/* 鍵は14pxのバッジにしてカードの右上へ。剣の上に重ねない */
 .kk-skin-lock {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -11px;
-  right: -11px;
-  display: grid;
-  place-items: center;
-  /* 白い丸は背景で描く(疑似要素だと鍵の前に出てしまう) */
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(255, 254, 242, 0.92) 0 13px,
-    rgba(255, 254, 242, 0) 13.5px
-  );
-  font-size: 16px;
-  line-height: 1;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  top: 4px;
+  right: 4px;
+  width: 15px;
+  height: 15px;
+  padding: 1.5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #4a3a05;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+/* 説明文の中に置く小さな鍵 */
+.kk-hint-lock {
+  width: 11px;
+  height: 11px;
+  margin-right: 3px;
+  vertical-align: -1px;
+  color: rgba(58, 55, 48, 0.6);
 }
 .kk-skins-foot {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
-  padding: 7px 10px;
+  margin-top: 7px;
+  padding: 6px 10px;
   border-radius: 11px;
   background: rgba(58, 55, 48, 0.07);
 }
 .kk-skins-hint {
   flex: 1 1 auto;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
   text-align: center;
   color: rgba(58, 55, 48, 0.7);
 }
@@ -1404,12 +1456,15 @@
 /* とばした回数は勲章あつかい(金) */
 .kk-wins {
   flex: none;
-  padding: 4px 9px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: linear-gradient(180deg, #ffe27a, #f6bf3d);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 2px 0 rgba(150, 115, 0, 0.35);
+    0 2px 0 rgba(150, 115, 0, 0.4);
   font-size: 10px;
   font-weight: 800;
   color: #5c4405;
@@ -1420,46 +1475,14 @@
 }
 
 /* ── チャーム ───────────────────────────────────────── */
+.kk-charm-svg {
+  display: block;
+  filter: drop-shadow(0 1.5px 1.5px rgba(5, 7, 26, 0.35));
+}
 .kk-disc {
-  position: relative;
+  display: block;
   width: var(--kk-charm-d);
   height: var(--kk-charm-d);
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background-color: var(--kk-charm-c);
-  background-image:
-    radial-gradient(
-      circle at 34% 26%,
-      rgba(255, 255, 255, 0.92),
-      rgba(255, 255, 255, 0) 46%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.26));
-  box-shadow:
-    inset 0 -2px 3px rgba(0, 0, 0, 0.22),
-    inset 0 2px 2px rgba(255, 255, 255, 0.6),
-    0 2px 3px rgba(5, 7, 26, 0.3);
-}
-/* 剣にぶら下げるための金具 */
-.kk-disc::before {
-  content: "";
-  position: absolute;
-  top: calc(var(--kk-charm-d) * -0.12);
-  left: 50%;
-  width: calc(var(--kk-charm-d) * 0.26);
-  height: calc(var(--kk-charm-d) * 0.26);
-  margin-left: calc(var(--kk-charm-d) * -0.13);
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(58, 55, 48, 0.28);
-}
-.kk-disc-face {
-  font-size: calc(var(--kk-charm-d) * 0.48);
-  line-height: 1;
-}
-.kk-disc.ghost {
-  opacity: 0.4;
-  filter: grayscale(0.6);
 }
 
 .kk-charms-head {
@@ -1479,72 +1502,82 @@
   font-size: 15px;
   color: var(--ui-text);
 }
-/* 受け皿の並んだトレイ(コレクションの台紙) */
+/* 受け皿の並んだトレイ。実物の箱の「青い台」。
+   青の上ならフルカラーのチャームが確実に前へ出る(クリーム地では沈む) */
 .kk-charms-grid {
   list-style: none;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 7px 6px;
-  margin-top: 7px;
-  padding: 11px 9px 9px;
+  gap: 6px 5px;
+  margin-top: 6px;
+  padding: 9px 8px 7px;
   border-radius: 16px;
-  background: linear-gradient(180deg, var(--kk-tray-top), var(--kk-tray-face));
+  background: linear-gradient(180deg, var(--kk-blue-top), var(--kk-blue-face));
   box-shadow:
-    inset 0 3px 5px rgba(60, 50, 20, 0.25),
-    inset 0 -2px 0 rgba(255, 255, 255, 0.4),
-    0 2px 0 var(--kk-tray-deep);
+    inset 0 3px 5px rgba(10, 20, 60, 0.35),
+    inset 0 -2px 0 rgba(255, 255, 255, 0.3),
+    0 2px 0 var(--kk-blue-deep);
 }
 .kk-charm-slot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
 }
-/* まだ手に入れていない受け皿は、くぼんだ穴に見せる */
-.kk-charm-empty {
+/* 受け皿。持っていないものは、くぼみに沈んだ影だけが見える */
+.kk-charm-cell {
   width: 30px;
   height: 30px;
   display: grid;
   place-items: center;
   border-radius: 50%;
+}
+.kk-charm-slot:not(.got) .kk-charm-cell {
   background: radial-gradient(
-    circle at 50% 35%,
-    rgba(60, 50, 20, 0.32),
-    rgba(60, 50, 20, 0.15)
+    circle at 50% 34%,
+    rgba(10, 20, 60, 0.42),
+    rgba(10, 20, 60, 0.2)
   );
   box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.35),
-    0 1px 0 rgba(255, 255, 255, 0.45);
-  font-size: 13px;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.62);
+    inset 0 2px 4px rgba(5, 10, 40, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.28);
+}
+.kk-charm-slot:not(.got) .kk-charm-svg {
+  filter: none;
 }
 .kk-charm-need {
   font-size: 8.5px;
   font-weight: 800;
-  color: rgba(58, 55, 48, 0.62);
+  color: rgba(255, 255, 255, 0.72);
 }
 .kk-charm-slot.got .kk-charm-need {
-  color: rgba(58, 55, 48, 0.35);
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(10, 20, 60, 0.5);
 }
 /* つぎに手に入るものだけ、金のふちで期待させる */
-.kk-charm-slot.next .kk-charm-empty {
+.kk-charm-slot.next .kk-charm-cell {
   box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(5, 10, 40, 0.5),
     0 0 0 2px var(--accent),
-    0 0 10px rgba(255, 217, 61, 0.6);
+    0 0 10px rgba(255, 217, 61, 0.55);
 }
 .kk-charm-slot.next .kk-charm-need {
-  color: #a97a09;
+  color: var(--accent);
 }
 .kk-charms-next {
-  margin-top: 9px;
+  margin-top: 8px;
 }
 .kk-charms-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11.5px;
   font-weight: 700;
   line-height: 1.5;
   color: rgba(58, 55, 48, 0.8);
+}
+.kk-charms-line-ico {
+  flex: none;
 }
 .kk-charms-line b {
   font-weight: 800;
@@ -1721,7 +1754,7 @@
 }
 .kk-unlock-sword {
   display: block;
-  width: 30px;
+  width: 34px;
   filter: drop-shadow(0 4px 6px rgba(5, 7, 26, 0.3));
   animation: kk-unlock-sword 0.8s var(--spring) 1.95s both;
 }
@@ -1840,11 +1873,12 @@
 /* せまい/低い画面ではラックを一段小さくする(シートが画面を占めすぎない) */
 @media (max-height: 700px) {
   .kk-rack {
-    height: 92px;
+    height: 90px;
+    margin-bottom: 12px;
   }
   .kk-slot-sword {
-    width: 25px;
-    margin-left: -12.5px;
+    width: 30px;
+    margin-left: -15px;
   }
   .kk-equip {
     min-height: 42px;

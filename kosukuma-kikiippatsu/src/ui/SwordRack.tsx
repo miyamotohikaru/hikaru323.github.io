@@ -21,6 +21,30 @@ import { useGameStore, unlockedSkins } from "@/game/store";
 import SwordArt from "./SwordArt";
 import { CharmDisc } from "./CharmShelf";
 
+/**
+ * 南京錠のバッジ。絵文字の🔒は12〜14pxだと潰れて泥になるので、形は自前で描く。
+ * 剣の上に大きく重ねると「何が手に入るのか」が見えなくなるので、カードの角に置く。
+ */
+function LockMark({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 12 12"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M4.1 5.4 V4 a1.9 1.9 0 0 1 3.8 0 V5.4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.35"
+        strokeLinecap="round"
+      />
+      <rect x="2.5" y="5.2" width="7" height="5.3" rx="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** 8色の剣が立っているラック。選んだ1本が持ち上がり、チャームがぶら下がる */
 export function SwordRack() {
   const swordColor = useGameStore((s) => s.swordColor);
@@ -96,13 +120,11 @@ export function SkinRack() {
               // 未解放でも押させる: store がトーストで理由を教えてくれる
               onClick={() => setSwordSkin(i)}
             >
+              {/* 未解放でも剣は等倍のまま見せる(何が手に入るか分からないと欲しくならない)。
+                  鍵は右上の小さなバッジにして、剣の視認をじゃましない */}
+              {!open && <LockMark className="kk-skin-lock" />}
               <span className="kk-skin-stage">
                 <SwordArt color={swordColor} skin={i} />
-                {!open && (
-                  <span className="kk-skin-lock" aria-hidden="true">
-                    🔒
-                  </span>
-                )}
               </span>
               <span className="kk-skin-name">{s.name}</span>
               <span className="kk-skin-sub">
@@ -116,13 +138,14 @@ export function SkinRack() {
       <div className="kk-skins-foot">
         {myWins > 0 && (
           <span className="kk-wins">
-            🏆 とばした <b>{myWins}</b>かい
+            とばした <b>{myWins}</b>かい
           </span>
         )}
         <span className="kk-skins-hint">
           {hasLocked ? (
             <>
-              🔒 こすくまくんを <b>とばすと</b> つかえるよ
+              <LockMark className="kk-hint-lock" />
+              こすくまくんを <b>とばすと</b> つかえるよ
             </>
           ) : (
             <>ぜんぶ つかえる！ さいこう！</>
