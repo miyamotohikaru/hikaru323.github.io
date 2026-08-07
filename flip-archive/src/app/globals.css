@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #eae7e0;
+  --color-paper: #f3f1ec;
+  --color-ink: #121110;
+  --color-sub: #3f3b35;
+  --color-mute: #6d685f;
+  --color-faint: #928d84;
+  --color-line: #cdc7bd;
+  --color-accent: #c7452a;
+
+  --font-sans: var(--font-inter), var(--font-noto-sans-jp), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --text-10: 0.625rem;
+  --text-11: 0.6875rem;
+  --text-12: 0.75rem;
+  --text-13: 0.8125rem;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "palt" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+/* 索引ビューなど、通常スクロールを許すページだけに付与する */
+body.scrollable {
+  overflow: auto;
+}
+
+/* WebGLビューでは body 自体をスクロールさせない */
+body.locked {
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--color-ink);
+  color: var(--color-bg);
+}
+
+/* --- モノスペースの小ラベル。図鑑全体の共通言語 --- */
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--text-10);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--color-mute);
+  font-weight: 400;
+}
+
+.rule {
+  border-top: 1px solid var(--color-line);
+}
+
+/* --- 縦書きの通し番号など --- */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- スクロールバーを消す（WebGLビュー） --- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
