@@ -131,13 +131,15 @@ export const FLIPS: Flip[] = [
     pad: 0.1,
     nearDark: false,
     stops: {
-      [-3]: S({ x: -2.5, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
-      [-2]: S({ x: -1.7, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
+      // 間隔は等しく。ここが不揃いだと、同じだけ指を動かしても
+      // 束のどこにいるかで送りの速さが変わってしまう
+      [-3]: S({ x: -2.58, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
+      [-2]: S({ x: -1.72, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
       [-1]: S({ x: -0.86, scale: 0.93, blur: 2, veil: 0.28 }),
       [0]: FOCUS,
       [1]: S({ x: 0.86, scale: 0.93, blur: 2, veil: 0.28 }),
-      [2]: S({ x: 1.7, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
-      [3]: S({ x: 2.5, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
+      [2]: S({ x: 1.72, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
+      [3]: S({ x: 2.58, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
     },
   },
   {
@@ -288,7 +290,6 @@ export default function DeckView({
   const targetRef = useRef(0);
   const rafRef = useRef(0);
   const springRef = useRef(0);
-  const sideRef = useRef(-1); // めくったカードが抜けていく向き
   const samples = useRef<{ x: number; t: number }[]>([]);
   const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
   /** ドラッグを始めたときの位置。追従中に基準が動くと位置が暴走するので固定して持つ */
@@ -327,21 +328,19 @@ export default function DeckView({
     const a = anchorRef.current;
     const w = widthRef.current;
     const h = w * RATIO;
-    const side = sideRef.current;
 
     nodes.current.forEach((el, k) => {
       if (!el) return;
       const rel = a + k - pos;
       const s = sample(f, rel);
-      // めくったカードは指を動かした向きへ抜けていく
-      const sx = rel < 0 ? Math.abs(s.x) * side : s.x;
-      const rz = rel < 0 ? Math.abs(s.rot) * side : s.rot;
+      // 位置はピント面からの距離だけで決める。指を動かした向きで左右を入れ替えると、
+      // 逆向きに引いた瞬間に「前のカード」が反対側へ飛び、送り方が左右で変わってしまう
       const depth = -Math.abs(rel) * 12;
       el.style.transform =
-        `translate3d(${(sx * w).toFixed(2)}px, ${(s.y * h).toFixed(2)}px, ${depth.toFixed(1)}px) ` +
+        `translate3d(${(s.x * w).toFixed(2)}px, ${(s.y * h).toFixed(2)}px, ${depth.toFixed(1)}px) ` +
         `rotateX(${(Math.min(Math.abs(rel), 3) * -1.6).toFixed(2)}deg) ` +
         `rotateY(${s.rotY.toFixed(2)}deg) ` +
-        `rotate(${rz.toFixed(2)}deg) scale(${s.scale.toFixed(4)})`;
+        `rotate(${s.rot.toFixed(2)}deg) scale(${s.scale.toFixed(4)})`;
       el.style.opacity = s.opacity.toFixed(3);
       el.style.setProperty("--veil", s.veil.toFixed(3));
       el.style.zIndex = String(
@@ -442,7 +441,6 @@ export default function DeckView({
     (n: number, seed = 0) => {
       const t = Math.min(Math.max(n, 0), total - 1);
       if (t !== Math.round(posRef.current)) navigator.vibrate?.([0, 14]);
-      sideRef.current = t > posRef.current ? -1 : 1;
       targetRef.current = t;
       if (reducedRef.current) {
         posRef.current = t;
@@ -623,7 +621,6 @@ export default function DeckView({
           samples.current.push({ x: e.clientX, t: performance.now() });
           if (samples.current.length > 6) samples.current.shift();
 
-          sideRef.current = dx < 0 ? -1 : 1;
           const travel = travelRef.current;
           const raw = baseRef.current - dx / travel;
           // 端では重くする
