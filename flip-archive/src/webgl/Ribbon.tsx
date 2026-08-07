@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
+
+// 版の色をCSSのトークンとそのまま一致させる（線形化させない）
+THREE.ColorManagement.enabled = false;
 import gsap from "gsap";
 import { cases } from "@/data/cases";
 import {
@@ -426,9 +429,12 @@ export default function Ribbon({
         su.uAppear.value = u.uAppear.value;
         tile.hit.visible = wrapFade > 0.6 && tile.fade.v > 0.5;
 
-        // 画面の中心にいちばん近い版を「いま読まれている版」とする
+        // 名乗る版は「画面に全部入っていて、いちばん手前にある版」。
+        // 手前にあれば他の版に隠されないので、名乗りと絵が食い違わない。
         proj.set(x, 0, z).project(camera);
-        const d = Math.abs(proj.x) + Math.abs(proj.y) * 0.45 + (1 - wrapFade) * 4;
+        const inside =
+          Math.abs(proj.x) < 0.74 && Math.abs(proj.y) < 0.66 && wrapFade > 0.9;
+        const d = inside ? -z : 1000 + Math.abs(proj.x);
         if (d < bestDist) {
           bestDist = d;
           bestIdx = tile.index;

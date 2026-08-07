@@ -13,6 +13,14 @@ export default function CaseHero({ c }: { c: Case }) {
 
   return (
     <div className="select-none">
+      <div className="mb-2.5 flex items-baseline justify-between gap-3">
+        <p className="label">
+          <span className={on ? "" : "!text-ink"}>変容前</span>
+          <span className="mx-1.5 opacity-50">／</span>
+          <span className={on ? "!text-ink" : ""}>実行後</span>
+        </p>
+        <p className="label opacity-70">HOVER</p>
+      </div>
       <button
         type="button"
         onMouseEnter={() => setOn(true)}
@@ -25,15 +33,7 @@ export default function CaseHero({ c }: { c: Case }) {
       >
         <Plate c={c} active={on} className="block aspect-[1/1.38] w-full" />
       </button>
-      <div className="mt-3 flex items-baseline justify-between gap-3">
-        <p className="label">
-          <span className={on ? "" : "!text-ink"}>変容前</span>
-          <span className="mx-1.5 opacity-50">／</span>
-          <span className={on ? "!text-ink" : ""}>実行後</span>
-        </p>
-        <p className="label opacity-70">HOVER</p>
-      </div>
-      <p className="label mt-2 leading-[1.9] opacity-70">
+      <p className="label mt-2.5 leading-[1.9] opacity-70">
         本図鑑が生成した配置図。実物の写真ではない。
       </p>
     </div>

@@ -41,7 +41,11 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
         <nav className="pointer-events-auto flex items-baseline gap-4 sm:gap-6">
           {NAV.map((n) => {
             const active =
-              n.href === "/" ? isHome : pathname.startsWith(n.href);
+              n.href === "/"
+                ? isHome
+                : n.href === "/cases"
+                  ? pathname.startsWith("/cases") || pathname.startsWith("/case/")
+                  : pathname.startsWith(n.href);
             return (
               <Link
                 key={n.href}

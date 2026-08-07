@@ -94,6 +94,7 @@ export const plateFragmentShader = /* glsl */ `
 
     // 展示室に整列した作品
     for (int i = 0; i < 12; i++) {
+      if (i == 11) continue;   // 置き直す先として一区画を空けておく
       float fi = float(i);
       float col = mod(fi, 4.0), row = floor(fi / 4.0);
       vec2 c = rc + vec2((col - 1.5) * 0.098, (1.0 - row) * 0.140 - 0.035);
@@ -103,7 +104,7 @@ export const plateFragmentShader = /* glsl */ `
 
     // 量産品。枠の外から、枠の内側へ。
     vec2 from = vec2(0.215, -0.300);
-    vec2 to = rc + vec2(0.112, -0.178);
+    vec2 to = rc + vec2(1.5 * 0.098, -0.175);
     vec2 c = mix(from, to, t);
 
     // 便器の断面に見えるよう、上が広く下がすぼまる形にする
@@ -126,7 +127,7 @@ export const plateFragmentShader = /* glsl */ `
   // ======================================================================
   void plateTactile(vec2 p, float t) {
     // 舗装。均質な面として、まず地を敷く。
-    INK += box(p, AREA_C, AREA_H) * 0.09;
+    INK += box(p, AREA_C, AREA_H) * 0.12;
     LIN += frame(p, AREA_C, AREA_H, 0.0012);
     for (int i = 0; i < 9; i++) {
       float y = -0.34 + float(i) * 0.085;
@@ -136,6 +137,12 @@ export const plateFragmentShader = /* glsl */ `
       float x = -0.24 + float(i) * 0.12;
       LIN += seg(p, vec2(x, -0.36), vec2(x, 0.36), 0.0007) * 0.35;
     }
+
+    // 歩く人と、向かう先。経路は誰のためのものかを示す。
+    INK += box(p, vec2(-0.150, -0.318), vec2(0.017, 0.017));
+    LIN += ring(p, vec2(-0.150, -0.318), 0.033, 0.0011);
+    LIN += frame(p, vec2(0.146, 0.170), vec2(0.048, 0.052), 0.0014);
+    LIN += seg(p, vec2(0.098, 0.118), vec2(0.194, 0.118), 0.0014);
 
     // 経路。下から上へ伸び、途中で直角に折れる。
     float head = t * 1.06;
@@ -169,11 +176,13 @@ export const plateFragmentShader = /* glsl */ `
 
     // 車路の縁石。実行後には消える。
     float w = 0.088;
-    LIN += seg(p, vec2(-w, -0.355), vec2(-w, 0.355), 0.0018) * (1.0 - t);
-    LIN += seg(p, vec2(w, -0.355), vec2(w, 0.355), 0.0018) * (1.0 - t);
+    LIN += seg(p, vec2(-w, -0.355), vec2(-w, 0.355), 0.0018) * (1.0 - t * 0.62);
+    LIN += seg(p, vec2(w, -0.355), vec2(w, 0.355), 0.0018) * (1.0 - t * 0.62);
+    // 実行後の路面。歩行者が使える面として灰で敷く。
+    INK += box(p, vec2(0.0, 0.0), vec2(0.245, 0.355)) * t * 0.10;
     // 縁石の外側＝歩行者が押し込まれていた細い帯
-    LIN += seg(p, vec2(-0.245, -0.355), vec2(-0.245, 0.355), 0.0010) * (1.0 - t);
-    LIN += seg(p, vec2(0.245, -0.355), vec2(0.245, 0.355), 0.0010) * (1.0 - t);
+    LIN += seg(p, vec2(-0.245, -0.355), vec2(-0.245, 0.355), 0.0012);
+    LIN += seg(p, vec2(0.245, -0.355), vec2(0.245, 0.355), 0.0012);
 
     // 車。多数がまっすぐ並んでいたものが、数を減らして蛇行する。
     for (int i = 0; i < 8; i++) {
@@ -449,9 +458,6 @@ export const plateFragmentShader = /* glsl */ `
   void plateShred(vec2 p, float t) {
     vec2 fc = vec2(0.0, 0.030);
     vec2 fh = vec2(0.205, 0.230);
-    LIN += frame(p, fc, fh, 0.0026);
-    LIN += frame(p, fc, fh - 0.014, 0.0010);
-
     float cut = fc.y + 0.010;
 
     // 上半分は残る
@@ -477,6 +483,10 @@ export const plateFragmentShader = /* glsl */ `
     LIN += seg(p, vec2(fc.x - 0.176, fc.y - fh.y + 0.020),
                   vec2(fc.x + 0.176, fc.y - fh.y + 0.020), 0.0013) * t;
 
+    // 額。短冊より手前に描く。
+    LIN += frame(p, fc, fh, 0.0026);
+    LIN += frame(p, fc, fh - 0.014, 0.0010);
+
     // 落札の記録
     LIN += seg(p, vec2(-0.24, -0.320), vec2(0.24, -0.320), 0.0009);
     INK += box(p, vec2(-0.180, -0.300), vec2(0.038, 0.008));
@@ -495,27 +505,28 @@ export const plateFragmentShader = /* glsl */ `
       float v = 0.10 + 0.85 * hash11(fi * 7.7 + uSeed);
       float y = 0.290 - fi * 0.086;
 
-      // 残高の大きい順に並べ替える
+      // 残高の大きい順。同値は元の並び順で解く。
       float rank = 0.0;
       for (int j = 0; j < 8; j++) {
-        float vj = 0.10 + 0.85 * hash11(float(j) * 7.7 + uSeed);
-        rank += step(v, vj);
+        float fj = float(j);
+        float vj = 0.10 + 0.85 * hash11(fj * 7.7 + uSeed);
+        float bigger = step(v, vj);
+        float tie = step(abs(vj - v), 1e-5);
+        rank += mix(bigger, step(fj, fi - 0.5), tie);
       }
-      rank -= 1.0;
       float cy = mix(y, 0.290 - rank * 0.086, t);
 
-      // 閉じた箱。中身は外から見えない。
-      LIN += frame(p, vec2(-0.238, cy), vec2(0.034, 0.034), 0.0016);
-      INK += box(p, vec2(-0.238, cy), vec2(0.020, 0.020)) * (1.0 - t);
+      // 口座。番号は残り、中身の見え方だけが変わる。
+      LIN += frame(p, vec2(-0.242, cy), vec2(0.030, 0.030), 0.0016);
+      INK += box(p, vec2(-0.242, cy), vec2(0.017, 0.017)) * mix(1.0, 0.30, t);
 
-      // 抜き出された数値
-      float len = (0.020 + 0.400 * v) * t;
-      float bar = box(p, vec2(-0.186 + len, cy), vec2(len, 0.022));
+      // 抜き出された残高
+      float w = (0.010 + 0.222 * v) * t;
+      float bar = box(p, vec2(-0.190 + w, cy), vec2(w, 0.022));
       INK += bar;
       if (i == 0) ACC += bar;
-      LIN += seg(p, vec2(-0.186, cy - 0.036), vec2(-0.186, cy + 0.036), 0.0011) * t;
     }
-    LIN += seg(p, vec2(-0.186, -0.372), vec2(-0.186, 0.330), 0.0013) * t;
+    LIN += seg(p, vec2(-0.190, -0.372), vec2(-0.190, 0.330), 0.0013) * t;
     ACC += seg(p, vec2(-0.268, 0.352), vec2(0.268, 0.352), 0.0018) * t;
   }
 
@@ -558,7 +569,8 @@ export const plateFragmentShader = /* glsl */ `
     // 版番号を刻む。図版ごとに本数が変わる。
     for (int k = 0; k < 10; k++) {
       float on = step(float(k), uPlate);
-      head += box(pa, vec2(-hx + 0.068 + float(k) * 0.0125, hy - 0.020),
+      float gap = step(5.0, float(k)) * 0.010;
+      head += box(pa, vec2(-hx + 0.068 + float(k) * 0.0125 + gap, hy - 0.020),
                   vec2(0.0042, 0.0072)) * on;
     }
     float headRule = seg(pa, vec2(-hx, hy - 0.048), vec2(hx, hy - 0.048), 0.0008);

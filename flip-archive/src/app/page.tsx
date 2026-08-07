@@ -24,11 +24,9 @@ export default function Home() {
         <p className="max-w-[17rem] text-11 leading-[2] text-mute opacity-0 [animation:fadeIn_1.4s_1.8s_forwards]">
           見えていたのに、見ていなかったものを、
           <br />
-          別の輪郭で見直す状況をつくった
-          <br />
-          企画・作品・介入・事件のアーカイブ。
+          別の輪郭で見直す状況をつくった記録。
         </p>
-        <p className="label mt-4 opacity-0 [animation:fadeIn_1.4s_2.1s_forwards]">
+        <p className="label mt-3 hidden opacity-0 [animation:fadeIn_1.4s_2.1s_forwards] lg:block">
           KOSU.KUMA / INTERNAL WORKING DRAFT
         </p>
       </div>

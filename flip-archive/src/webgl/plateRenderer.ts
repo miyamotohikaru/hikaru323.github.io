@@ -1,4 +1,7 @@
 import * as THREE from "three";
+
+// 版の色をCSSのトークンとそのまま一致させる（線形化させない）
+THREE.ColorManagement.enabled = false;
 import { plateFragmentShader, plateVertexShader } from "./shaders";
 
 /**

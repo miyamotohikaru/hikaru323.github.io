@@ -93,14 +93,14 @@ export default function AboutPage() {
           何を載せ、何を載せないか ／ v0.2
         </p>
 
-        <p className="mt-8 max-w-[44rem] text-[0.9375rem] leading-[2.05]">
+        <p className="mt-8 max-w-[50rem] text-[0.9375rem] leading-[2.05]">
           世界中の「常識をひっくり返した企画・作品・介入・事件」を、分野の境界を越えて記録する。
           現代アート、広告、社会実験、商品、都市介入、制度、悪ふざけを一つの形式で並べ、
           何が当たり前で、何をどう配置し直したのかを比較できるようにする。
           奇抜なものを集めるだけのバズ事例集にはしない。作者や団体を格付けするランキングにもしない。
         </p>
 
-        <div className="mt-6 max-w-[44rem] border-l border-line py-1 pl-5 text-[0.9375rem] leading-[2.05] text-mute">
+        <div className="mt-6 max-w-[50rem] border-l border-line py-1 pl-5 text-[0.9375rem] leading-[2.05] text-mute">
           ここに収録された制作者が、自らの活動をFLIPと呼んでいるわけではありません。
           本図鑑は、こす.くまが世界の企画・作品・介入をFLIPという体験設計の視点から
           読み直したアーカイブです。
@@ -127,7 +127,7 @@ export default function AboutPage() {
         {/* 第一段階の問い */}
         <div className="mt-16">
           <H2 ja="第一段階｜何が前景化されるか" latin="STAGE 01" />
-          <p className="mb-6 max-w-[44rem] text-[0.9375rem] leading-[2.05]">
+          <p className="mb-6 max-w-[50rem] text-[0.9375rem] leading-[2.05]">
             その企画は、すでにそこにあったにもかかわらず、背景・用途・数字・分類・制度の中に
             埋もれていた存在・関係・前提を、現実の配置変更によって前景へ戻しているか。
             点数化せず、次の問いに文章で答える。
@@ -268,7 +268,7 @@ export default function AboutPage() {
         {/* 図版について */}
         <div className="mt-16">
           <H2 ja="図版について" latin="ON THE PLATES" />
-          <p className="max-w-[44rem] text-[0.9375rem] leading-[2.05]">
+          <p className="max-w-[50rem] text-[0.9375rem] leading-[2.05]">
             本図鑑に実物の写真は掲載していない。各CASEに添えた図版は、
             そのCASEの配置操作をもとに図鑑側が生成した配置図であり、記録写真ではない。
             静止時は変容前の配置を、操作すると配置操作そのものを描く。
