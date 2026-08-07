@@ -36,11 +36,15 @@ const _child = new THREE.Matrix4();
 const _box = new THREE.Box3();
 const _sub = new THREE.Box3();
 
+/** 8隅の投影に使う作業用ベクトル */
+const _corner = new THREE.Vector3();
+
 interface Dims {
   /** モデルローカルの頭のてっぺんの高さ */
   topY: number;
-  /** モデルローカルの半分の横はば */
-  halfX: number;
+  /** モデルローカルのバウンディングボックス(8隅を毎フレーム投影して実寸を出す) */
+  min: THREE.Vector3;
+  max: THREE.Vector3;
 }
 
 /**
@@ -67,12 +71,13 @@ function measureLocal(scene: THREE.Object3D): Dims {
   _child.identity();
   for (const c of scene.children) walk(c, _child);
   if (_box.isEmpty() || !Number.isFinite(_box.max.y) || _box.max.y <= 0) {
-    return { topY: FALLBACK_TOP, halfX: FALLBACK_HALF };
+    return {
+      topY: FALLBACK_TOP,
+      min: new THREE.Vector3(-FALLBACK_HALF, 0, -FALLBACK_HALF),
+      max: new THREE.Vector3(FALLBACK_HALF, FALLBACK_TOP, FALLBACK_HALF),
+    };
   }
-  return {
-    topY: _box.max.y,
-    halfX: Math.max(Math.abs(_box.min.x), Math.abs(_box.max.x), 0.05),
-  };
+  return { topY: _box.max.y, min: _box.min.clone(), max: _box.max.clone() };
 }
 
 export default function SpeechAnchor() {
@@ -113,21 +118,46 @@ export default function SpeechAnchor() {
     const dist = cam.position.distanceTo(_crown);
 
     _crown.project(cam);
-    _foot.project(cam);
 
     // カメラの後ろの点は project で符号が反転する。z が [-1,1] の外なら前にいない
     const inFront = _crown.z > -1 && _crown.z < 1;
     const { width, height } = state.size;
     const cx = (_crown.x * 0.5 + 0.5) * width;
     const cy = (-_crown.y * 0.5 + 0.5) * height;
-    const fy = (-_foot.y * 0.5 + 0.5) * height;
 
     speechAnchor.x = cx;
     speechAnchor.y = cy;
-    // 画面上の背丈と横はば。吹き出しを「よこ」に出すとき、体をよけるのに使う
-    const bodyH = Math.min(2000, Math.abs(fy - cy));
-    speechAnchor.bodyH = bodyH;
-    speechAnchor.bodyW = (bodyH * dims.halfX * 2) / dims.topY;
+
+    // 画面上の見た目の大きさ。バウンディングボックスの8隅をそのまま投影して
+    // 実測する(ローカル比からの換算だと、寄りカメラで耳が張り出したぶんを
+    // 取りこぼして、吹き出しが体にくっついてしまう)
+    if (inFront) {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (let i = 0; i < 8; i++) {
+        _corner
+          .set(
+            i & 1 ? dims.max.x : dims.min.x,
+            i & 2 ? dims.max.y : dims.min.y,
+            i & 4 ? dims.max.z : dims.min.z
+          )
+          .applyMatrix4(_mat)
+          .project(cam);
+        const px = (_corner.x * 0.5 + 0.5) * width;
+        const py = (-_corner.y * 0.5 + 0.5) * height;
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+      }
+      // 頭のてっぺんを中心に見た、左右それぞれの張り出しのうち大きいほう
+      const half = Math.max(cx - minX, maxX - cx, 0);
+      speechAnchor.bodyW = Math.min(width * 2, half * 2);
+      speechAnchor.bodyH = Math.min(height * 2, Math.max(maxY - minY, 0));
+    }
+
     speechAnchor.visible =
       !gone &&
       inFront &&

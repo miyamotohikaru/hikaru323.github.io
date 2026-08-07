@@ -76,7 +76,9 @@ export const SWORD_SKINS: readonly SwordSkin[] = [
     hex: "#ffd93d",
     metalness: 0.04,
     roughness: 0.34,
-    emissive: 0.09,
+    // 実測: 実物パーツの明度は74%。0.09 だとレンダー後の剣が47%で
+    // 月面(47%)と同値になり、色相でしか分離しなくなる
+    emissive: 0.2,
     opacity: 1,
     iridescent: false,
     emoji: "🗡",

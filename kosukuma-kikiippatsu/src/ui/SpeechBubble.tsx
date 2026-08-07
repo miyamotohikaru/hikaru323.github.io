@@ -32,8 +32,16 @@ const SIDE_BIAS = 0.22;
 const GAP_Y = 24;
 /** ねむいときの尻尾はまるい玉なので、少し長めに取る */
 const GAP_Y_SLEEPY = 32;
-/** 「よこ」に出すとき、体のシルエットからさらに空ける距離 */
-const SIDE_GAP = 16;
+/**
+ * 「よこ」に出すとき、体のシルエットからさらに空ける距離。
+ * よこ配置ではこの値がそのまま尻尾の長さになるので、短すぎると
+ * 尻尾が見えず、ただのラベルに見えてしまう
+ */
+const SIDE_GAP = 30;
+/** 尻尾が本体のふちから最低これだけは外に出る(どのモードでも必ず見える) */
+const MIN_TAIL = 12;
+/** 尻尾SVGを四方に広げる量(speech.css の .sb-tail と合わせること) */
+const TAIL_PAD = 160;
 /** 「上」へ戻るときに求める余分な余裕(境目でパタパタさせない) */
 const MODE_HYST = 16;
 /** 画面のふちに残す余白 */
@@ -259,16 +267,23 @@ export default function SpeechBubble() {
     // 尻尾の先。上に出したときは頭のてっぺん(=アンカー)。
     // よこに出したときは、体をまたいで中心まで伸ばすと長いヒゲになるので、
     // こちら側の「ほっぺた」を指す(短くて太い尻尾になり、しっかり付いて見える)
-    const tipX = -bx + (beside ? (side * a.bodyW * 0.5) / s : 0);
-    const tipY = -by + (beside ? (a.bodyH * 0.1) / s : 0);
-    const tailLo = TAIL_W + TAIL_EDGE;
+    let tipX = -bx + (beside ? (side * a.bodyW * 0.5) / s : 0);
+    let tipY = -by + (beside ? (a.bodyH * 0.1) / s : 0);
+    // 尻尾を出すふち(と、その外向き法線)
     const nx = beside ? (side > 0 ? -1 : 1) : 0;
     const ny = beside ? 0 : 1;
-    const ax = beside ? (side > 0 ? 0 : w) : clampTail(tipX, w, tailLo);
-    const ay = beside ? clampTail(tipY, h, tailLo) : h;
-    // 頭が本体の中に入ってしまう配置(3のとき)では尻尾を描かない
-    const tipInside =
-      tipX > -3 && tipX < w + 3 && tipY > -3 && tipY < h + 3;
+    const edgeX = beside ? (side > 0 ? 0 : w) : 0;
+    const edgeY = beside ? 0 : h;
+    // ③の押し込み配置では頭が本体の中に入ることがある。そのままだと尻尾が
+    // 本体に埋まって消えるので、ふちから最低限だけ外へ出しておく
+    const outward = (tipX - edgeX) * nx + (tipY - edgeY) * ny;
+    if (outward < MIN_TAIL) {
+      tipX += nx * (MIN_TAIL - outward);
+      tipY += ny * (MIN_TAIL - outward);
+    }
+    const tailLo = TAIL_W + TAIL_EDGE;
+    const ax = beside ? edgeX : clampTail(tipX, w, tailLo);
+    const ay = beside ? clampTail(tipY, h, tailLo) : edgeY;
 
     root.style.transform = `translate3d(${f(a.x)}px, ${f(a.y)}px, 0) scale(${s.toFixed(3)})`;
 
@@ -285,10 +300,7 @@ export default function SpeechBubble() {
       Math.abs(tipX - last.tipX) > 0.5 ||
       Math.abs(tipY - last.tipY) > 0.5
     ) {
-      tail.setAttribute(
-        "d",
-        tipInside ? "" : tailPath(sp.tone, ax, ay, nx, ny, tipX, tipY)
-      );
+      tail.setAttribute("d", tailPath(sp.tone, ax, ay, nx, ny, tipX, tipY));
       // ぽんっと出るときの基点も尻尾の付け根に合わせる(頭から生えて見える)
       body.style.transformOrigin = `${f(ax)}px ${f(ay)}px`;
       last.ax = ax;
@@ -378,9 +390,15 @@ export default function SpeechBubble() {
               {/* 尻尾+地色をひとまとめにして、影は「シルエット全体」に落とす。
                   別々に影をつけると、尻尾が本体の影で暗く沈んでしまう */}
               <span className="sb-shape" aria-hidden="true">
-                {/* 尻尾は地色より先に描く(付け根の線を .sb-fill が隠す) */}
-                <svg className="sb-tail" width="1" height="1">
-                  <path ref={tailRef} d="" />
+                {/* 尻尾は地色より先に描く(付け根の線を .sb-fill が隠す)。
+                    SVGは四方に TAIL_PAD ぶん広げてあるので、パスは
+                    本体ローカル座標のまま書いて translate でずらす */}
+                <svg className="sb-tail">
+                  <path
+                    ref={tailRef}
+                    d=""
+                    transform={`translate(${TAIL_PAD},${TAIL_PAD})`}
+                  />
                 </svg>
                 <span className="sb-fill" />
               </span>

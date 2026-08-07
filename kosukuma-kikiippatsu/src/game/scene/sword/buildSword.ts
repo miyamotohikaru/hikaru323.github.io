@@ -2,11 +2,11 @@
 // 月に刺さっている剣(Swords.tsx / InstancedMesh)も、自分のヒーロー剣
 // (StabSword.tsx)も、降ってくる剣の演出も、ぜんぶここから作る。
 //
-// TOMY公式パーツ写真の実測にもとづく、実物の剣の特徴:
+// TOMY公式パーツ写真の実測(回転補正後)にもとづく、実物の剣の特徴:
 //   ・刃も鍔も柄も柄頭も「ぜんぶ同じ色の1色成型プラスチック」(刃だけ銀にしない)
-//   ・幅の広い木の葉のような刃。先端は尖点ではなく丸い鼻(安全基準で丸められている)
-//   ・鍔は細長いバーの両端に丸いボス
-//   ・握りは細い円柱ではなく、刃とほぼ同幅の平たい板に「はしご状の溝」
+//   ・細長い「先の丸い弾丸型」の刃。剣先から鍔まで単調に太くなり鍔ぎわが最大
+//   ・鍔は細長いバーの両端に丸いボス。刃の最大幅の2.1倍
+//   ・握りは細い円柱ではなく、ほぼ正方形の平たい板に「はしご状の溝」が5本
 //   ・柄頭は球ではなく、平たく開いた三つ葉の板
 //   ・つやのある、少し安っぽくてかわいいプラスチックの照り
 //
@@ -29,9 +29,6 @@ import { hashString, mulberry32, randRange } from "@/lib/prng";
 import { makeCharmGeometry } from "./charmGeometry";
 
 // ── 寸法 ────────────────────────────────────────────
-// TOMYの公式パーツ写真をピクセル計測した実測比率(剣の見えている全体=100%):
-//   刃の長さ 44% / 刃の幅 : 刃の長さ = 0.55 / 鍔の幅 = 刃の幅の1.6倍
-//
 // いちばん大事なのは「実物は刃も握りも柄頭も同じ厚みの平たい1枚の板」だという
 // こと。だから安く成型できるし、あの独特のシルエットになる。これを
 // 「細い板 + 細い円柱 + 上に乗った球」で作ると、剣ではなく待ち針に見える。
@@ -41,47 +38,50 @@ import { makeCharmGeometry } from "./charmGeometry";
  */
 const EXPOSED_H = 0.7181;
 
-// ── ここから下は、すべて「月面から見えている剣」を基準に導出する ──────
-// 実測比率は "剣が全部見えている写真" の比率なので、刃が月に埋まるこの
-// ゲームでは、埋まったぶんを含めた全長に当てはめてはいけない。
-// (それをやると、見えている刃が縦より横に長い「へら」になってしまう)
+// ── 実測は「回転補正後」の値を使うこと ────────────────────────
+// 公式写真の剣は4本とも24〜29°傾いて置かれている。軸に平行なバウンディング
+// ボックスで測ると、傾いたぶん幅が水増しされ長さが圧縮されるので、
+// 「刃の幅 : 長さ = 0.55」のような、実物より44%太い値が出てしまう。
 
-/** 見えている刃の長さ = 見えている剣の44%(実測) */
-const BLADE_TOP = EXPOSED_H * 0.44;
-/** 柄まわり(鍔+握り+柄頭)の高さ = 見えている剣の56%(実測) */
+/** 見えている刃の長さ = 見えている剣の50%(実物の刃は剣全体の53%) */
+const BLADE_TOP = EXPOSED_H * 0.5;
+/** 柄まわり(鍔+握り+柄頭)の高さ */
 const HILT_H = EXPOSED_H - BLADE_TOP;
 
-/** 刃の半幅。実測「刃の幅 : 刃の長さ = 0.55」を"見えている刃"に当てる */
-const BLADE_HALF_W = (BLADE_TOP * 0.55) / 2;
-const BLADE_THICK = 0.04;
 /** 刃は月の中へも少し伸ばす(刺す・降ってくる演出で使う) */
-const BLADE_BURY = BLADE_TOP * 0.3;
+const BLADE_BURY = BLADE_TOP * 0.145;
 const BLADE_LEN = BLADE_TOP + BLADE_BURY;
+/** 刃の半幅。回転補正した実測「刃の幅 : 刃の長さ = 0.38」を刃の全長に当てる */
+const BLADE_HALF_W = (BLADE_LEN * 0.385) / 2;
+const BLADE_THICK = 0.04;
 
-// 柄の内訳(実測: 鍔17.5% / 握り59% / 柄頭23.5%)
 const POMMEL_SINK = 0.008; // 握りへ少しめり込ませて、浮いて見せない
 
-// 鍔: 細長いバーの両端に丸いボス。実測「鍔の幅 = 刃の幅の1.6倍」を保つため
-// 刃幅から導出する(刃の太さを変えても鍔が鍔に見えなくならない)
-const GUARD_HALF_L = BLADE_HALF_W * 1.6;
-const GUARD_HALF_H = (HILT_H * 0.175) / 2;
+// 鍔: 細長いバーの両端に丸いボス。回転補正した実測「鍔の長さ = 刃の最大幅の
+// 2.1倍」を保つため刃幅から導出する(刃の太さを変えても鍔が鍔に見えなくならない)
+const GUARD_HALF_L = BLADE_HALF_W * 2.1;
+const GUARD_HALF_H = (HILT_H * 0.185) / 2;
 const GUARD_BOSS_R = GUARD_HALF_H; // いちばん高いのは端のボス
 const GUARD_BAR_HALF_H = GUARD_BOSS_R * 0.7; // 中央のバーはボスより細い
 const GUARD_THICK = 0.062; // 鍔だけ少し厚くして、部品として立たせる
 
+// 握り: 円柱ではなく平たい板。はしご状の溝が入る。
+// 幅は実測の見た目どおり刃よりわずかに広い程度にとどめる。ここを
+// 「縦横比1.04」から逆算すると、刃の1.27倍もある巨大な板になってしまう
+const GRIP_HALF_W = BLADE_HALF_W * 1.1;
+const GRIP_THICK = 0.046;
+const GRIP_RIB_THICK = 0.06; // はしごの桟はひと回り厚い
+const GRIP_NOTCH = GRIP_HALF_W * 0.28; // 溝で細くなる量(輪郭にもはしごを出す)
+
 // 柄頭: 球ではなく、平たく開いた三つ葉の板(球はRPGの短剣の記号で、玩具ではない)
-const POMMEL_H = HILT_H * 0.235;
-const POMMEL_HALF_W = BLADE_HALF_W; // 実測「刃と同じ幅」
+const POMMEL_H = HILT_H * 0.3;
+const POMMEL_HALF_W = GRIP_HALF_W * 1.18; // 実測「柄頭の張り出し / 握り幅 = 1.18」
 const POMMEL_LOBE_R = POMMEL_HALF_W * 0.37; // 三つ葉ひと粒の半径
 const POMMEL_THICK = 0.046;
 
-// 握り: 円柱ではなく、刃とほぼ同じ幅の平たい板。はしご状の溝が入る。
+// 柄の内訳(回転補正した実測: 鍔18.5% / 握り51% / 柄頭30.5%)。
 // 残りの高さを握りに割り当てるので、鍔+握り+柄頭 = HILT_H が常に成り立つ
 const GRIP_LEN = HILT_H - GUARD_HALF_H * 2 - POMMEL_H + POMMEL_SINK;
-const GRIP_HALF_W = BLADE_HALF_W * 0.95;
-const GRIP_THICK = 0.046;
-const GRIP_RIB_THICK = 0.06; // はしごの桟はひと回り厚い
-const GRIP_NOTCH = GRIP_HALF_W * 0.17; // 溝で細くなる量(輪郭にもはしごを出す)
 
 const GUARD_Y = BLADE_TOP + GUARD_HALF_H; // 鍔の中心の高さ
 const GRIP_Y = GUARD_Y + GUARD_HALF_H; // 握りのはじまり
@@ -147,24 +147,27 @@ function extrudePlate(
 }
 
 /**
- * 刃の輪郭。先端からの位置 u(0=剣先, 1=鍔ぎわ)と、いちばん広いところを1と
- * した半幅 h。実測の「幅 : 長さ = 0.55」を、細い板ではなく木の葉にする表。
+ * 刃の輪郭。先端からの位置 u(0=剣先, 1=鍔ぎわ)と、鍔ぎわを1とした半幅 h。
+ *
+ * 実物は「先の丸い長い弾丸型」= 剣先から鍔まで単調に太くなり、鍔ぎわが最大。
+ * 途中に最大幅の山を作る(西洋短剣の木の葉型)と、月から出ている部分が
+ * 「先端が無く真ん中がいちばん太い樽」になって、洗濯ばさみにしか見えない。
  * 先端は幅0の尖点にしない — 実物は安全基準のために丸い鼻へ変えられている。
  */
 const BLADE_PROFILE: number[][] = [
-  [0.0, 0.13], // 丸い鼻
-  [0.015, 0.31],
-  [0.035, 0.45],
-  [0.065, 0.575],
-  [0.105, 0.69],
-  [0.155, 0.79],
-  [0.225, 0.88],
-  [0.32, 0.955],
-  [0.43, 0.995],
-  [0.55, 1.0], // いちばん広いところ
-  [0.68, 0.975],
-  [0.83, 0.91],
-  [1.0, 0.76], // 鍔ぎわ
+  [0.0, 0.16], // 丸い鼻
+  [0.015, 0.3],
+  [0.04, 0.44],
+  [0.075, 0.555],
+  [0.12, 0.65],
+  [0.175, 0.725],
+  [0.245, 0.79],
+  [0.33, 0.85],
+  [0.43, 0.9],
+  [0.54, 0.94],
+  [0.67, 0.97],
+  [0.82, 0.99],
+  [1.0, 1.0], // 鍔ぎわがいちばん太い
 ];
 
 /** 刃の面取り。ExtrudeGeometry の面取りは輪郭より外へ膨らむので後で差し引く */
@@ -222,9 +225,13 @@ function makeGuard(q: SwordQuality): THREE.BufferGeometry {
   return geo;
 }
 
-/** はしごの桟の割りつけ(輪郭の溝と、盛り上げる桟で同じ数値を使う) */
-function gripLadder(q: SwordQuality) {
-  const n = q === "hero" ? 5 : 3; // 溝の数(実物は5〜6本)
+/**
+ * はしごの桟の割りつけ(輪郭の溝と、盛り上げる桟で同じ数値を使う)。
+ * 溝の数は field でも実物どおり5本にする。実物でいちばん目立つ形なので、
+ * 遠景で本数を減らすと剣ではなくただの棒に見えてしまう。
+ */
+function gripLadder() {
+  const n = 5;
   const rib = GRIP_LEN / (n + 1 + n * 0.42); // 桟の高さ
   return { n, rib, gap: rib * 0.42 };
 }
@@ -235,7 +242,7 @@ function gripLadder(q: SwordQuality) {
  * (ここが無いと、実物でいちばん目立つ溝が消えてただの棒になる)。
  */
 function makeGrip(q: SwordQuality): THREE.BufferGeometry {
-  const { n, rib, gap } = gripLadder(q);
+  const { n, rib, gap } = gripLadder();
   const w = GRIP_HALF_W;
   const wn = w - GRIP_NOTCH;
   const right: number[][] = [];
@@ -261,7 +268,7 @@ function makeGrip(q: SwordQuality): THREE.BufferGeometry {
 /** はしごの桟を板の表裏へ盛り上げる(近くで見る剣だけ) */
 function makeGripRibs(q: SwordQuality): THREE.BufferGeometry | null {
   if (q !== "hero") return null;
-  const { n, rib, gap } = gripLadder(q);
+  const { n, rib, gap } = gripLadder();
   const w = GRIP_HALF_W - 0.012;
   const shapes: THREE.Shape[] = [];
   let y = GRIP_Y;
