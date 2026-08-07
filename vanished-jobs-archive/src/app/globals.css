@@ -34,6 +34,10 @@ body {
   font-family: var(--font-playfair), serif;
 }
 
+.font-futura {
+  font-family: var(--font-jost), "Futura", "Century Gothic", sans-serif;
+}
+
 .font-mono-label {
   font-family: var(--font-plex-mono), monospace;
 }
@@ -51,4 +55,13 @@ body {
 }
 .vja-rise {
   animation: vja-rise 0.45s ease both;
+}
+
+/* 携帯のみ横スクロールを防止（PCは詳細カードのstickyを保つため対象外） */
+@media (max-width: 767px) {
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
 }

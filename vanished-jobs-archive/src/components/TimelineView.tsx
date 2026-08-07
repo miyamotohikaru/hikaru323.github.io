@@ -63,12 +63,28 @@ export default function TimelineView() {
           TIMELINE
         </p>
         <h1 className="mt-4 text-3xl font-bold tracking-[0.15em] md:text-4xl">
-          {en ? "In the order they vanished." : "仕事が消えた順に、ならべる。"}
+          {en ? (
+            "In the order they vanished."
+          ) : (
+            <>
+              仕事が消えた順に、
+              <br className="md:hidden" />
+              ならべる。
+            </>
+          )}
         </h1>
-        <p className="mt-4 text-xs leading-relaxed tracking-wider text-vja-ink-soft">
-          {en
-            ? "From antiquity to today. The center band marks events of machines, technology, and institutions — many jobs took their last breath beside them."
-            : "古代から現在まで。中央の帯は「機械・技術・制度」のできごと——多くの職業は、この隣で息を止めた。"}
+        <p className="mx-auto mt-4 max-w-md text-xs leading-relaxed tracking-wider text-vja-ink-soft">
+          {en ? (
+            "From antiquity to today. The center band marks events of machines, technology, and institutions — many jobs took their last breath beside them."
+          ) : (
+            <>
+              古代から現在まで。
+              <br className="md:hidden" />
+              中央の帯は「機械・技術・制度」のできごと——
+              <br className="md:hidden" />
+              多くの職業は、この隣で息を止めた。
+            </>
+          )}
         </p>
       </header>
 

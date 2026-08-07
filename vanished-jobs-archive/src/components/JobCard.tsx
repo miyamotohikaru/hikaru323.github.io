@@ -5,6 +5,7 @@ import { Job, statusMeta } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
 import { dict } from "@/lib/dict";
 import { enDetails } from "@/data/en";
+import { yearSpans, fmtYear, lifespan } from "@/data/years";
 
 /** 収録外用のプレースホルダー：線画のこすくまくん */
 function BearPlaceholder() {
@@ -60,6 +61,22 @@ export default function JobCard({ job }: { job: Job }) {
   // 名前は必ず1行に収める: カード内幅86cqwに対し収まるサイズへ縮小（上限8.8cqw）
   const nameSize = Math.min(8.8, 84 / effLen(name));
 
+  const span = yearSpans[job.no];
+  if (span) {
+    return (
+      <NewCard
+        job={job}
+        en={en}
+        name={name}
+        subName={subName}
+        quote={quote}
+        oversized={oversized}
+        reading={span.reading}
+        span={span}
+      />
+    );
+  }
+
   return (
     <div className="@container block h-full w-full">
       <div
@@ -106,6 +123,145 @@ export default function JobCard({ job }: { job: Job }) {
           <p className="mt-[3.4cqw] text-[3.5cqw] leading-snug opacity-90">
             「{quote}」
           </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 年代付きの新デザインカード（yearSpans に登録されたカードのみ） */
+function NewCard({
+  job,
+  en,
+  name,
+  subName,
+  quote,
+  oversized,
+  reading,
+  span,
+}: {
+  job: Job;
+  en: boolean;
+  name: string;
+  subName: string;
+  quote: string;
+  oversized: boolean;
+  reading: string;
+  span: { start: number; end: number };
+}) {
+  const statusLabel = en ? dict.status[job.status] : statusMeta[job.status].label;
+  const nameSize = Math.min(11, 90 / effLen(name));
+  const years = lifespan(span.start, span.end);
+
+  // 上段の年代表記は桁数に応じて縮小（B.C.3000等の長い年号対応）
+  const yearChars = fmtYear(span.start).length + fmtYear(span.end).length;
+  const bigSize = Math.min(6.2, 84 / (yearChars + 2));
+  const subSize = bigSize * 0.6;
+  const tildeSize = bigSize * 0.72;
+
+  // ステータス別の締め文言
+  const closing = en
+    ? {
+        extinct: `vanished after ~${years} yrs`,
+        transformed: `changed after ~${years} yrs`,
+        ongoing: `~${years} yrs, still ongoing`,
+      }[job.status]
+    : {
+        extinct: `およそ${years}年続いて消えた`,
+        transformed: `およそ${years}年続いて姿を変えた`,
+        ongoing: `およそ${years}年、いまも進行中`,
+      }[job.status];
+
+  return (
+    <div className="@container block h-full w-full">
+      <div
+        className="relative flex aspect-[34/47] w-full flex-col overflow-hidden rounded-[6cqw] px-[7cqw] pb-[6cqw] pt-[6cqw] shadow-[0_2px_10px_rgba(58,46,34,0.18)]"
+        style={{ background: job.color, color: job.textColor }}
+      >
+        {/* 上段: NO. と ステータスピル */}
+        <div className="flex items-center justify-between">
+          <span className="font-futura text-[7.5cqw] font-semibold tracking-[0.08em]">
+            NO.{job.no}
+          </span>
+          <span
+            className="ml-[3cqw] shrink-0 whitespace-nowrap rounded-full px-[5.5cqw] py-[2cqw] text-[6cqw] font-bold tracking-[0.15em]"
+            style={{ background: job.textColor, color: job.color }}
+          >
+            {statusLabel}
+          </span>
+        </div>
+
+        {/* 細い下線（全幅） */}
+        <div
+          className="-mt-[5px] -ml-[7cqw] w-[60cqw] border-b"
+          style={{ borderColor: job.textColor }}
+        />
+
+        {/* 年代 */}
+        <p className="mt-[2px] whitespace-nowrap font-bold leading-none">
+          {en ? (
+            <span style={{ fontSize: `${bigSize}cqw` }}>
+              {fmtYear(span.start)} – {fmtYear(span.end)}
+            </span>
+          ) : (
+            <>
+              <span style={{ fontSize: `${bigSize}cqw` }}>
+                {fmtYear(span.start)}
+              </span>
+              <span style={{ fontSize: `${subSize}cqw` }}>年</span>
+              <span style={{ fontSize: `${tildeSize}cqw` }}>〜</span>
+              <span style={{ fontSize: `${bigSize}cqw` }}>
+                {fmtYear(span.end)}
+              </span>
+              <span style={{ fontSize: `${subSize}cqw` }}>年</span>
+            </>
+          )}
+        </p>
+
+        {/* ひとこと */}
+        <p className="mt-[2.8cqw] translate-y-[5px] text-center text-[4.8cqw] leading-snug opacity-90">
+          「{quote}」
+        </p>
+
+        {/* イラスト */}
+        <div className="flex min-h-0 flex-1 items-center justify-center py-[1cqw]">
+          {job.image ? (
+            <Image
+              src={`/${job.image}`}
+              alt={job.name}
+              width={400}
+              height={400}
+              className="h-full w-auto scale-[1.15] object-contain"
+            />
+          ) : (
+            <BearPlaceholder />
+          )}
+        </div>
+
+        {/* 読み・名前・英名 */}
+        <div className="text-center">
+          {!en && (
+            <p className="text-[3.4cqw] font-semibold tracking-[0.5em] opacity-80">
+              {reading}
+            </p>
+          )}
+          <p
+            className="mt-[1cqw] whitespace-nowrap font-bold leading-none"
+            style={{ fontSize: `${nameSize}cqw` }}
+          >
+            {name}
+          </p>
+          <p className="font-mono-label mt-[1.8cqw] text-[3.1cqw] uppercase tracking-[0.35em] opacity-80">
+            {subName}
+          </p>
+        </div>
+
+        {/* 締めパネル */}
+        <div
+          className="mt-[3.4cqw] rounded-full px-[5cqw] py-[2.8cqw] text-center"
+          style={{ background: job.textColor, color: job.color }}
+        >
+          <p className="text-[3.8cqw] font-bold tracking-[0.06em]">{closing}</p>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Shippori_Mincho, IBM_Plex_Mono } from "next/font/google";
+import { Playfair_Display, Shippori_Mincho, IBM_Plex_Mono, Jost } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import TabBar from "@/components/TabBar";
@@ -25,6 +25,12 @@ const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
 });
 
+const jost = Jost({
+  weight: ["500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-jost",
+});
+
 export const metadata: Metadata = {
   title: "消滅職業図鑑 | Vanished Jobs Archive.",
   description:
@@ -40,12 +46,14 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body
-        className={`${playfair.variable} ${shippori.variable} ${plexMono.variable} antialiased`}
+        className={`${playfair.variable} ${shippori.variable} ${plexMono.variable} ${jost.variable} antialiased`}
       >
         <LangProvider>
           <ScrollRestorer />
           <Header />
-          <main className="pb-20 md:pb-0">{children}</main>
+          <main className="overflow-x-hidden pb-20 md:overflow-x-visible md:pb-0">
+            {children}
+          </main>
           <Footer />
           <TabBar />
         </LangProvider>

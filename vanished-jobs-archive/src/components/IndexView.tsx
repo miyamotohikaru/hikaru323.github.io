@@ -56,44 +56,43 @@ function Group({
   );
 }
 
+/** 複数選択トグル用のヘルパー */
+function toggle<T>(arr: T[], v: T): T[] {
+  return arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+}
+
 export default function IndexView() {
   const { lang } = useLang();
   const en = lang === "en";
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<JobStatus | "all">("all");
-  const [category, setCategory] = useState("all");
-  const [region, setRegion] = useState("all");
-  const [cause, setCause] = useState("all");
+  const [status, setStatus] = useState<JobStatus[]>([]);
+  const [category, setCategory] = useState<string[]>([]);
+  const [region, setRegion] = useState<string[]>([]);
+  const [cause, setCause] = useState<number[]>([]);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
 
   const filtered = useMemo(() => {
     let list = jobs.filter(
       (j) =>
-        (status === "all" || j.status === status) &&
-        (category === "all" || j.category === category) &&
-        (region === "all" || regionTags(j).includes(region)) &&
-        (cause === "all" || j.causeAll.includes(Number(cause)))
+        (status.length === 0 || status.includes(j.status)) &&
+        (category.length === 0 || category.includes(j.category)) &&
+        (region.length === 0 ||
+          regionTags(j).some((r) => region.includes(r))) &&
+        (cause.length === 0 || j.causeAll.some((c) => cause.includes(c)))
     );
     if (order === "desc") list = [...list].reverse();
     return list;
   }, [status, category, region, cause, order]);
 
   const activeCount =
-    (status !== "all" ? 1 : 0) +
-    (category !== "all" ? 1 : 0) +
-    (region !== "all" ? 1 : 0) +
-    (cause !== "all" ? 1 : 0);
+    status.length + category.length + region.length + cause.length;
 
   const reset = () => {
-    setStatus("all");
-    setCategory("all");
-    setRegion("all");
-    setCause("all");
+    setStatus([]);
+    setCategory([]);
+    setRegion([]);
+    setCause([]);
     setOrder("asc");
-  };
-
-  const pick = <T,>(setter: (v: T) => void) => (v: T) => {
-    setter(v);
   };
 
   const ALL = en ? "All" : "すべて";
@@ -136,14 +135,14 @@ export default function IndexView() {
                 </Chip>
               </Group>
               <Group label={en ? "Status" : "ステータス"}>
-                <Chip active={status === "all"} onClick={() => pick(setStatus)("all")}>
+                <Chip active={status.length === 0} onClick={() => setStatus([])}>
                   {ALL}
                 </Chip>
                 {(Object.keys(statusMeta) as JobStatus[]).map((s) => (
                   <Chip
                     key={s}
-                    active={status === s}
-                    onClick={() => pick(setStatus)(s)}
+                    active={status.includes(s)}
+                    onClick={() => setStatus((v) => toggle(v, s))}
                   >
                     {statusMeta[s].mark}
                     {en ? dict.status[s] : statusMeta[s].label} {stats[s]}
@@ -151,42 +150,42 @@ export default function IndexView() {
                 ))}
               </Group>
               <Group label={en ? "Era (chapter)" : "年代(章)"}>
-                <Chip active={category === "all"} onClick={() => pick(setCategory)("all")}>
+                <Chip active={category.length === 0} onClick={() => setCategory([])}>
                   {ALL}
                 </Chip>
                 {categories.map((c) => (
                   <Chip
                     key={c}
-                    active={category === c}
-                    onClick={() => pick(setCategory)(c)}
+                    active={category.includes(c)}
+                    onClick={() => setCategory((v) => toggle(v, c))}
                   >
                     {en ? dict.category[c] : c}
                   </Chip>
                 ))}
               </Group>
               <Group label={en ? "Region" : "発祥地域"}>
-                <Chip active={region === "all"} onClick={() => pick(setRegion)("all")}>
+                <Chip active={region.length === 0} onClick={() => setRegion([])}>
                   {ALL}
                 </Chip>
                 {regionTagList.map((r) => (
                   <Chip
                     key={r}
-                    active={region === r}
-                    onClick={() => pick(setRegion)(r)}
+                    active={region.includes(r)}
+                    onClick={() => setRegion((v) => toggle(v, r))}
                   >
                     {en ? dict.region[r] : r}
                   </Chip>
                 ))}
               </Group>
               <Group label={en ? "Cause of death" : "死因"}>
-                <Chip active={cause === "all"} onClick={() => pick(setCause)("all")}>
+                <Chip active={cause.length === 0} onClick={() => setCause([])}>
                   {ALL}
                 </Chip>
                 {Object.entries(causeLabels).map(([n, label]) => (
                   <Chip
                     key={n}
-                    active={cause === n}
-                    onClick={() => pick(setCause)(n)}
+                    active={cause.includes(Number(n))}
+                    onClick={() => setCause((v) => toggle(v, Number(n)))}
                   >
                     {en ? dict.cause[Number(n)] : label}
                   </Chip>
@@ -228,7 +227,7 @@ export default function IndexView() {
                 key={j.no}
                 href={`/jobs/${j.no}`}
                 onClick={() => saveReturn()}
-                className="vja-rise transition-transform hover:-translate-y-1"
+                className="vja-rise"
               >
                 <JobCard job={j} />
               </Link>
