@@ -194,13 +194,14 @@ function NewCard({
         </div>
 
         {/* 細い下線（全幅） */}
+        {/* 位置合わせは px ではなく cqw（カード幅比例）で。px だと索引の小さいカードで効きすぎてNO.に被る */}
         <div
-          className="-mt-[5px] -ml-[7cqw] w-[60cqw] border-b"
+          className="-mt-[1.5cqw] -ml-[7cqw] w-[60cqw] border-b"
           style={{ borderColor: job.textColor }}
         />
 
         {/* 年代 */}
-        <p className="mt-[2px] whitespace-nowrap font-bold leading-none">
+        <p className="mt-[0.6cqw] whitespace-nowrap font-bold leading-none">
           {en ? (
             <span style={{ fontSize: `${bigSize}cqw` }}>
               {fmtYear(span.start)} – {fmtYear(span.end)}
@@ -221,7 +222,7 @@ function NewCard({
         </p>
 
         {/* ひとこと */}
-        <p className="mt-[2.8cqw] translate-y-[5px] text-center text-[4.8cqw] leading-snug opacity-90">
+        <p className="mt-[2.8cqw] translate-y-[1.5cqw] text-center text-[4.8cqw] leading-snug opacity-90">
           「{quote}」
         </p>
 
