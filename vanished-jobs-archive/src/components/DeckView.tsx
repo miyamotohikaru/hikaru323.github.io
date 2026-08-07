@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import JobCard from "@/components/JobCard";
 import TiltCard from "@/components/TiltCard";
@@ -15,21 +15,16 @@ import { saveReturn } from "@/lib/returnNav";
  * そのまま持てるので、指の動きと束の見え方が最後まで地続きになる。
  * カードは pos との差(rel)だけで見え方が決まり、次のカードが「瞬間で入れ替わる」ことがない。
  *
+ * めくり方(FLIPS)は、この rel → 見え方 の対応表を差し替えるだけで切り替わる。
  * 索引グリッドは残したまま表示方法だけを切り替える。カード面(JobCard)には一切触れない。
  */
 
-const AHEAD = 1; // ピント面より手前に見せる枚数（めくり終わって沈んでいく側）
-/** 本物のカードを描くスロット。これ以外はぼかしきると色の板と同じなので板で描く */
-const REAL_SLOTS = new Set([0, 1, 2]);
 const RATIO = 47 / 34; // カードの縦横比
 
-const COMMIT_PX = 96; // ここまで動かせば確実にめくる
-const COMMIT_V = 0.6; // px/ms。勢いだけでもめくる
 const V_WINDOW = 70; // 速度をとる時間窓(ms)
-const AXIS_LOCK = 8; // 横に動かす意思が見えるまで掴まない
+const AXIS_LOCK = 5; // 横に動かす意思が見えたら掴む(px)
 const TAP_SLOP = 10;
 const TAP_MS = 400;
-const RUBBER = 56; // 端で引っぱれる限界
 const SPRING_K = 210;
 const SPRING_C = 24;
 
@@ -38,7 +33,10 @@ type Stop = {
   x: number;
   /** カード高さに対する縦ずれ */
   y: number;
+  /** 画面内での回転 */
   rot: number;
+  /** 縦軸まわりの回転（ページをめくる動き） */
+  rotY: number;
   scale: number;
   blur: number;
   sat: number;
@@ -49,28 +47,179 @@ type Stop = {
   tone: number;
 };
 
-/**
- * rel（ピント面からの距離）ごとの見え方。あいだは補間する。
- * 正 = 奥、負 = 手前（近すぎてぼける側）。
- * 横ずれは1枚ごとに左右を入れ替え、縦より速く広げる（重なりは横方向で読ませる）。
- *
- * 透明にして強くぼかすと「霧」になり、四角形が消えて汚れに見える。
- * 不透明のまま紙色で明るくし、ぼかしは控えめにすると「奥にあるカード」に見える。
- */
-const STOPS: Record<number, Stop> = {
-  [-2]: { x: -0.66, y: 0.26, rot: -15, scale: 1.09, blur: 16, sat: 0.55, opacity: 0, veil: 0.6, tone: 1 },
-  // 手前の1枚だけは透かさない。透かすと背景の明るさが必ず混ざって沈みきらず、
-  // 「近すぎてぼけている側」が消えてしまう（＝奥へ引くだけの絵になる）
-  [-1]: { x: -0.34, y: 0.13, rot: -8.5, scale: 1.045, blur: 11, sat: 0.55, opacity: 1, veil: 0.6, tone: 1 },
-  [0]: { x: 0, y: 0, rot: 0, scale: 1, blur: 0, sat: 1, opacity: 1, veil: 0, tone: 0 },
-  [1]: { x: 0.095, y: -0.042, rot: 3.2, scale: 0.962, blur: 2, sat: 0.55, opacity: 0.78, veil: 0.5, tone: 1 },
-  [2]: { x: -0.135, y: -0.078, rot: -5.2, scale: 0.922, blur: 4.5, sat: 0.55, opacity: 0.62, veil: 0.62, tone: 1 },
-  [3]: { x: 0.195, y: -0.112, rot: 8, scale: 0.878, blur: 7, sat: 0.55, opacity: 0.48, veil: 0.72, tone: 1 },
-  [4]: { x: -0.255, y: -0.145, rot: -10.5, scale: 0.83, blur: 9, sat: 0.55, opacity: 0.36, veil: 0.82, tone: 1 },
-  [5]: { x: 0.3, y: -0.175, rot: 13, scale: 0.79, blur: 11, sat: 0.55, opacity: 0, veil: 0.86, tone: 1 },
+const base: Stop = {
+  x: 0,
+  y: 0,
+  rot: 0,
+  rotY: 0,
+  scale: 1,
+  blur: 0,
+  sat: 0.55,
+  opacity: 1,
+  veil: 0,
+  tone: 1,
 };
-const REL_MIN = -2;
-const REL_MAX = 5;
+const S = (o: Partial<Stop>): Stop => ({ ...base, ...o });
+/** ピント面。ここだけは色も彩度も素のまま */
+const FOCUS = S({ sat: 1, tone: 0 });
+
+export type FlipId = "stack" | "rail" | "toss" | "fan" | "turn";
+
+type Flip = {
+  id: FlipId;
+  ja: string;
+  en: string;
+  /** rel ごとの見え方。あいだは補間する */
+  stops: Record<number, Stop>;
+  min: number;
+  max: number;
+  /** 手前側／奥側に何枚出すか */
+  ahead: number;
+  behind: number;
+  /** 本物のカードを描くスロット（手前から順に。携帯では先頭2つだけ使う） */
+  real: number[];
+  origin: string;
+  perspective: number;
+  /** カード1枚ぶん送るのに要る指の移動距離（カード幅に対する比） */
+  travel: number;
+  /** 束の上下に要る余白（カード幅に対する比） */
+  pad: number;
+  /** 手前に外れた板を地の色より沈ませるか */
+  nearDark: boolean;
+};
+
+export const FLIPS: Flip[] = [
+  {
+    // 奥へ重なっていく束。手前に一枚外れることで被写界深度になる
+    id: "stack",
+    ja: "束",
+    en: "STACK",
+    min: -2,
+    max: 5,
+    ahead: 1,
+    behind: 4,
+    real: [0, 1, 2],
+    origin: "50% 92%",
+    perspective: 1500,
+    travel: 0.34,
+    pad: 0.14,
+    nearDark: true,
+    stops: {
+      [-2]: S({ x: -0.66, y: 0.26, rot: -15, scale: 1.09, blur: 16, opacity: 0, veil: 0.6 }),
+      [-1]: S({ x: -0.34, y: 0.13, rot: -8.5, scale: 1.045, blur: 11, veil: 0.6 }),
+      [0]: FOCUS,
+      [1]: S({ x: 0.095, y: -0.042, rot: 3.2, scale: 0.962, blur: 2, opacity: 0.78, veil: 0.5 }),
+      [2]: S({ x: -0.135, y: -0.078, rot: -5.2, scale: 0.922, blur: 4.5, opacity: 0.62, veil: 0.62 }),
+      [3]: S({ x: 0.195, y: -0.112, rot: 8, scale: 0.878, blur: 7, opacity: 0.48, veil: 0.72 }),
+      [4]: S({ x: -0.255, y: -0.145, rot: -10.5, scale: 0.83, blur: 9, opacity: 0.36, veil: 0.82 }),
+      [5]: S({ x: 0.3, y: -0.175, rot: 13, scale: 0.79, blur: 11, opacity: 0, veil: 0.86 }),
+    },
+  },
+  {
+    // 横一列。前後のカードが両脇から覗くので、いま何番めかが分かりやすい
+    id: "rail",
+    ja: "横ながし",
+    en: "RAIL",
+    min: -3,
+    max: 3,
+    ahead: 3,
+    behind: 3,
+    real: [0, 1, -1],
+    origin: "50% 50%",
+    perspective: 1400,
+    travel: 0.5,
+    pad: 0.1,
+    nearDark: false,
+    stops: {
+      [-3]: S({ x: -2.5, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
+      [-2]: S({ x: -1.7, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
+      [-1]: S({ x: -0.86, scale: 0.93, blur: 2, veil: 0.28 }),
+      [0]: FOCUS,
+      [1]: S({ x: 0.86, scale: 0.93, blur: 2, veil: 0.28 }),
+      [2]: S({ x: 1.7, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
+      [3]: S({ x: 2.5, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
+    },
+  },
+  {
+    // 手札から一枚ずつ放る。抜けていくカードは色を保ったまま大きく回る
+    id: "toss",
+    ja: "投げ",
+    en: "TOSS",
+    min: -2,
+    max: 4,
+    ahead: 1,
+    behind: 3,
+    real: [0, 1],
+    origin: "50% 50%",
+    perspective: 1200,
+    travel: 0.34,
+    pad: 0.12,
+    nearDark: false,
+    stops: {
+      // 放ったカードは画面の外へ消える。止まっているあいだ横に幽霊を残さない
+      [-2]: S({ x: -2.1, y: 0.3, rot: -40, opacity: 0, tone: 0, sat: 1 }),
+      [-1]: S({ x: -1.15, y: 0.12, rot: -20, opacity: 0, tone: 0, sat: 1 }),
+      [0]: FOCUS,
+      // 縮小ぶんに埋もれないよう、上端がきちんと覗く量だけ持ち上げる
+      [1]: S({ y: -0.052, scale: 0.955, veil: 0.18, sat: 0.7 }),
+      [2]: S({ y: -0.09, scale: 0.915, veil: 0.32, sat: 0.6 }),
+      [3]: S({ y: -0.122, scale: 0.88, veil: 0.44 }),
+      [4]: S({ y: -0.148, scale: 0.85, opacity: 0, veil: 0.54 }),
+    },
+  },
+  {
+    // 遠い支点を中心に開く扇。紙の束を手で広げたときの並び
+    id: "fan",
+    ja: "扇",
+    en: "FAN",
+    min: -2,
+    max: 5,
+    ahead: 2,
+    behind: 4,
+    // 扇は左右どちらにも開くので、手前側にも本物のカードを1枚置く
+    real: [0, 1, -1, 2],
+    origin: "50% 260%",
+    perspective: 1600,
+    travel: 0.34,
+    pad: 0.22,
+    nearDark: false,
+    stops: {
+      [-2]: S({ rot: -16, y: 0.04, scale: 1.02, blur: 6, opacity: 0, veil: 0.56 }),
+      [-1]: S({ rot: -8, y: 0.015, scale: 1.01, blur: 2, opacity: 0.8, veil: 0.42 }),
+      [0]: FOCUS,
+      [1]: S({ rot: 8, y: 0.015, scale: 0.99, blur: 1.5, opacity: 0.8, veil: 0.42 }),
+      [2]: S({ rot: 16, y: 0.04, scale: 0.975, blur: 3.5, opacity: 0.66, veil: 0.56 }),
+      [3]: S({ rot: 24, y: 0.075, scale: 0.955, blur: 6, opacity: 0.5, veil: 0.68 }),
+      [4]: S({ rot: 32, y: 0.12, scale: 0.93, blur: 8, opacity: 0.34, veil: 0.78 }),
+      [5]: S({ rot: 40, y: 0.17, scale: 0.9, blur: 10, opacity: 0, veil: 0.84 }),
+    },
+  },
+  {
+    // 本のページのように左端を軸にして裏返る
+    id: "turn",
+    ja: "ページ",
+    en: "TURN",
+    min: -2,
+    max: 4,
+    ahead: 1,
+    behind: 3,
+    real: [0, 1],
+    origin: "0% 50%",
+    perspective: 1100,
+    travel: 0.4,
+    pad: 0.12,
+    nearDark: false,
+    stops: {
+      [-2]: S({ rotY: -150, x: 0.1, opacity: 0, tone: 0, sat: 1 }),
+      [-1]: S({ rotY: -100, x: 0.04, opacity: 0.35, tone: 0, sat: 1 }),
+      [0]: FOCUS,
+      [1]: S({ y: -0.012, scale: 0.985, veil: 0.12, sat: 0.7 }),
+      [2]: S({ y: -0.024, scale: 0.97, veil: 0.24 }),
+      [3]: S({ y: -0.034, scale: 0.956, veil: 0.36 }),
+      [4]: S({ y: -0.042, scale: 0.944, opacity: 0, veil: 0.46 }),
+    },
+  },
+];
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -88,17 +237,18 @@ function plateColor(hex: string) {
   return `color-mix(in oklab, #cfc6ae ${Math.round(t * 100)}%, var(--vja-paper))`;
 }
 
-function sample(rel: number): Stop {
-  const r = Math.min(Math.max(rel, REL_MIN), REL_MAX);
+function sample(flip: Flip, rel: number): Stop {
+  const r = Math.min(Math.max(rel, flip.min), flip.max);
   const lo = Math.floor(r);
-  const hi = Math.min(lo + 1, REL_MAX);
+  const hi = Math.min(lo + 1, flip.max);
   const t = r - lo;
-  const a = STOPS[lo];
-  const b = STOPS[hi];
+  const a = flip.stops[lo] ?? FOCUS;
+  const b = flip.stops[hi] ?? a;
   return {
     x: lerp(a.x, b.x, t),
     y: lerp(a.y, b.y, t),
     rot: lerp(a.rot, b.rot, t),
+    rotY: lerp(a.rotY, b.rotY, t),
     scale: lerp(a.scale, b.scale, t),
     blur: lerp(a.blur, b.blur, t),
     sat: lerp(a.sat, b.sat, t),
@@ -109,21 +259,28 @@ function sample(rel: number): Stop {
 }
 
 /** 端でのゴムのような抵抗（引くほど重くなり、一定以上は動かない） */
-const rubber = (d: number) =>
-  Math.sign(d) * RUBBER * (1 - 1 / (Math.abs(d) / RUBBER + 1));
+const rubber = (d: number, max: number) =>
+  Math.sign(d) * max * (1 - 1 / (Math.abs(d) / max + 1));
 
-export default function DeckView({ jobs }: { jobs: Job[] }) {
+export default function DeckView({
+  jobs,
+  flip: flipId = "stack",
+}: {
+  jobs: Job[];
+  flip?: FlipId;
+}) {
   const router = useRouter();
   const { lang } = useLang();
   const en = lang === "en";
   const total = jobs.length;
-  const behind = 4;
+
+  const flip = useMemo(() => FLIPS.find((f) => f.id === flipId) ?? FLIPS[0], [flipId]);
 
   /** 描画に使う整数の基準。pos の四捨五入 */
   const [anchor, setAnchor] = useState(0);
   const [dragging, setDragging] = useState(false);
-  /** 表示用のカード番号（頻繁には変えない） */
-  const [shown, setShown] = useState(0);
+  /** 指で操作している端末か。触る端末では傾き効果を止め、実カードの枚数も減らす */
+  const [touch, setTouch] = useState(false);
 
   const posRef = useRef(0);
   const anchorRef = useRef(0);
@@ -141,12 +298,17 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
   const suppress = useRef(false);
   const reducedRef = useRef(false);
   const widthRef = useRef(300);
+  /** カード1枚ぶんの指の移動距離(px)。画面の大きさに比例させる */
+  const travelRef = useRef(96);
+  const flipRef = useRef(flip);
+  flipRef.current = flip;
 
   const stage = useRef<HTMLDivElement>(null);
   const nodes = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const shadow = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setTouch(matchMedia("(hover: none)").matches);
     const m = matchMedia("(prefers-reduced-motion: reduce)");
     const set = () => (reducedRef.current = m.matches);
     set();
@@ -154,8 +316,13 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
     return () => m.removeEventListener("change", set);
   }, []);
 
-  /** 束の見え方をすべて posRef から描く。React を通さず直接 style を書く */
-  const paint = useCallback(() => {
+  /**
+   * 束の見え方をすべて posRef から描く。React を通さず直接 style を書く。
+   * withFilter=false のときは ぼかし/セピア を触らない。
+   * ぼかしは値が変わるたびに描き直しが起きるので、指で追従している最中は固定する。
+   */
+  const paint = useCallback((withFilter = true) => {
+    const f = flipRef.current;
     const pos = posRef.current;
     const a = anchorRef.current;
     const w = widthRef.current;
@@ -165,16 +332,24 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
     nodes.current.forEach((el, k) => {
       if (!el) return;
       const rel = a + k - pos;
-      const s = sample(rel);
+      const s = sample(f, rel);
       // めくったカードは指を動かした向きへ抜けていく
       const sx = rel < 0 ? Math.abs(s.x) * side : s.x;
+      const rz = rel < 0 ? Math.abs(s.rot) * side : s.rot;
       const depth = -Math.abs(rel) * 12;
       el.style.transform =
         `translate3d(${(sx * w).toFixed(2)}px, ${(s.y * h).toFixed(2)}px, ${depth.toFixed(1)}px) ` +
         `rotateX(${(Math.min(Math.abs(rel), 3) * -1.6).toFixed(2)}deg) ` +
-        `rotate(${s.rot.toFixed(2)}deg) scale(${s.scale.toFixed(4)})`;
+        `rotateY(${s.rotY.toFixed(2)}deg) ` +
+        `rotate(${rz.toFixed(2)}deg) scale(${s.scale.toFixed(4)})`;
       el.style.opacity = s.opacity.toFixed(3);
       el.style.setProperty("--veil", s.veil.toFixed(3));
+      el.style.zIndex = String(
+        rel >= 0 ? Math.round(100 - rel * 10) : Math.round(96 + rel * 4)
+      );
+      el.style.pointerEvents = Math.abs(rel) < 0.5 ? "auto" : "none";
+
+      if (!withFilter) return;
       // ぼかしとセピアはカードの絵柄だけに掛ける。
       // 地の色をかぶせる膜(::after)まで一緒にセピアにすると、束全体が黄色く濁る。
       // sepia は「どんな色相でも必ず R>G>B の暖色軸に畳む」唯一の操作で、
@@ -186,10 +361,6 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
             ? "none"
             : `blur(${s.blur.toFixed(2)}px) sepia(${s.tone.toFixed(3)}) saturate(${s.sat.toFixed(2)})`;
       }
-      el.style.zIndex = String(
-        rel >= 0 ? Math.round(100 - rel * 10) : Math.round(96 + rel * 4)
-      );
-      el.style.pointerEvents = Math.abs(rel) < 0.5 ? "auto" : "none";
     });
 
     // 影も束の動きに連れて動く
@@ -202,19 +373,23 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
     }
   }, []);
 
-  /** 幅を測っておく（毎フレーム測らない） */
+  /** 幅を測っておく（毎フレーム測らない）。送りに要る距離も画面の大きさに比例させる */
   useLayoutEffect(() => {
     const measure = () => {
       const el = nodes.current.get(0);
       if (el) widthRef.current = el.clientWidth || 300;
+      travelRef.current = Math.min(
+        Math.max(widthRef.current * flipRef.current.travel, 56),
+        150
+      );
       paint();
     };
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [paint]);
+  }, [paint, flip]);
 
-  // 描画のたび（anchor が動いたときなど）に位置を描き直す
+  // 描画のたび（anchor やめくり方が変わったときなど）に位置を描き直す
   useLayoutEffect(() => {
     anchorRef.current = anchor;
     paint();
@@ -231,16 +406,17 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
   /** バネで target まで運ぶ。離した瞬間の勢いをそのまま引き継ぐ */
   const spring = useCallback(
     (seedPxPerMs: number) => {
+      const travel = travelRef.current;
       velRef.current = seedPxPerMs * 1000;
       let last = performance.now();
       const tick = (now: number) => {
         const dt = Math.min((now - last) / 1000, 1 / 30);
         last = now;
-        const px = posRef.current * COMMIT_PX;
-        const tx = targetRef.current * COMMIT_PX;
+        const px = posRef.current * travel;
+        const tx = targetRef.current * travel;
         const acc = -SPRING_K * (px - tx) - SPRING_C * velRef.current;
         velRef.current += acc * dt;
-        posRef.current = (px + velRef.current * dt) / COMMIT_PX;
+        posRef.current = (px + velRef.current * dt) / travel;
         paint();
         syncAnchor();
         if (
@@ -251,7 +427,6 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
           velRef.current = 0;
           paint();
           syncAnchor();
-          setShown(Math.round(posRef.current));
           springRef.current = 0;
           return;
         }
@@ -274,7 +449,6 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
         velRef.current = 0;
         paint();
         syncAnchor();
-        setShown(t);
         return;
       }
       spring(seed);
@@ -303,6 +477,19 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
     return dt > 4 ? (s[s.length - 1].x - old.x) / dt : 0;
   }, []);
 
+  /** 指を離した／取り上げられたときの後始末。行き先を決めてバネに渡す */
+  const settle = useCallback(() => {
+    const from = Math.round(baseRef.current);
+    const moved = posRef.current - from;
+    const vx = releaseV(); // px/ms（指の動き。右へ動かすと正）
+    const flick =
+      Math.abs(vx) > 0.6 && (moved === 0 || Math.sign(-vx) === Math.sign(moved));
+    let target = from;
+    if (Math.abs(moved) > 0.5) target = from + (moved < 0 ? -1 : 1);
+    else if (flick && Math.abs(moved) > 0.06) target = from + (vx < 0 ? 1 : -1);
+    goTo(target, -vx);
+  }, [releaseV, goTo]);
+
   // キーボード。入力欄や他の場所にいるときは奪わない
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -312,7 +499,6 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
         if (a.isContentEditable) return;
         const t = a.tagName;
         if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT") return;
-        // 束の中か、束の操作ボタンにいるときだけ効かせる
         if (!stage.current?.contains(a) && !a.closest(".vja-deck-nav")) return;
       }
       e.preventDefault();
@@ -359,10 +545,10 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
 
   // 前後は先読み
   useEffect(() => {
-    for (const n of [shown + 1, shown - 1]) {
+    for (const n of [anchor + 1, anchor - 1]) {
       if (n >= 0 && n < total) router.prefetch(`/jobs/${jobs[n].no}`);
     }
-  }, [shown, jobs, total, router]);
+  }, [anchor, jobs, total, router]);
 
   // タブを離れると requestAnimationFrame が止まるので、中途半端な位置で
   // 固まらないよう、隠れた時点で目的の位置へ寄せておく
@@ -375,7 +561,6 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
       velRef.current = 0;
       paint();
       syncAnchor();
-      setShown(Math.round(posRef.current));
     };
     document.addEventListener("visibilitychange", onHide);
     return () => document.removeEventListener("visibilitychange", onHide);
@@ -389,18 +574,26 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
     []
   );
 
-  const current = jobs[Math.min(Math.max(shown, 0), total - 1)];
-  const progress = (shown / Math.max(total - 1, 1)) * 100;
+  const current = jobs[Math.min(Math.max(anchor, 0), total - 1)];
+  const progress = (anchor / Math.max(total - 1, 1)) * 100;
 
   /** 束に出す枚数ぶんのスロット。key は位置なので中身が変わっても DOM は作り直さない */
   const slots: number[] = [];
-  for (let k = -AHEAD; k <= behind; k++) slots.push(k);
+  for (let k = -flip.ahead; k <= flip.behind; k++) slots.push(k);
+  // 触る端末では本物のカードを2枚までにして、ぼかしと画像の負担を減らす
+  const realSlots = new Set(touch ? flip.real.slice(0, 2) : flip.real);
 
   return (
     <div className="select-none">
       <div
         ref={stage}
-        className="vja-deck relative mx-auto flex touch-pan-y items-center justify-center"
+        className="vja-deck relative mx-auto flex items-center justify-center"
+        style={{
+          ["--deck-origin" as string]: flip.origin,
+          ["--deck-persp" as string]: `${flip.perspective}px`,
+          // 画面の高さからカード幅を決めるときは、めくり方ごとの余白ぶんも見込む
+          ["--deck-fit" as string]: (1.382 + flip.pad).toFixed(3),
+        }}
         onPointerDown={(e) => {
           if (reducedRef.current) return;
           cancelAnimationFrame(springRef.current);
@@ -416,8 +609,9 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
           const dx = e.clientX - s.x;
           const dy = e.clientY - s.y;
           if (!engaged.current) {
-            // 横に動かす意思がはっきりするまでは掴まない（縦スクロールを邪魔しない）
-            if (Math.abs(dx) < AXIS_LOCK || Math.abs(dx) <= Math.abs(dy)) return;
+            // 横に動かす意思が出たら掴む。縦に流れているうちは触らず、
+            // ページのスクロールをそのまま通す
+            if (Math.abs(dx) < AXIS_LOCK || Math.abs(dx) < Math.abs(dy) * 0.9) return;
             engaged.current = true;
             setDragging(true);
             try {
@@ -430,18 +624,21 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
           if (samples.current.length > 6) samples.current.shift();
 
           sideRef.current = dx < 0 ? -1 : 1;
-          const raw = baseRef.current - dx / COMMIT_PX;
+          const travel = travelRef.current;
+          const raw = baseRef.current - dx / travel;
           // 端では重くする
           let next = raw;
-          if (raw < 0) next = rubber(raw * COMMIT_PX) / COMMIT_PX;
+          if (raw < 0) next = rubber(raw * travel, travel * 0.6) / travel;
           else if (raw > total - 1)
-            next = total - 1 + rubber((raw - (total - 1)) * COMMIT_PX) / COMMIT_PX;
+            next =
+              total - 1 + rubber((raw - (total - 1)) * travel, travel * 0.6) / travel;
           posRef.current = next;
 
           if (!rafRef.current) {
             rafRef.current = requestAnimationFrame(() => {
               rafRef.current = 0;
-              paint();
+              // 追従中はぼかしを触らない（値が変わるたび描き直しが起きて重くなる）
+              paint(false);
               syncAnchor();
             });
           }
@@ -471,29 +668,15 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
           } catch {
             /* すでに離れている場合は何もしなくてよい */
           }
-
-          const vx = releaseV(); // px/ms（指の動き。右へ動かすと正）
-          const from = Math.round(baseRef.current);
-          const moved = posRef.current - from;
-          // 大きく動かしたか、勢いよく払ったらめくる。
-          // 勢いの向きと動かした向きが揃っているときだけ拾う（引き戻しでの誤爆を防ぐ）
-          const flick =
-            Math.abs(vx) > COMMIT_V &&
-            Math.abs(dx) > 24 &&
-            (moved === 0 || Math.sign(-vx) === Math.sign(moved));
-          let target = from;
-          if (Math.abs(moved) > 0.5) target = from + (moved < 0 ? -1 : 1);
-          else if (flick) target = from + (vx < 0 ? 1 : -1);
-          // 離した瞬間の勢いをそのままバネへ（pos の向きに合わせて符号を反転）
-          goTo(target, -vx);
+          settle();
         }}
         onPointerCancel={() => {
-          if (engaged.current) {
-            engaged.current = false;
-            setDragging(false);
-            goTo(anchorRef.current, 0);
-          }
           startRef.current = null;
+          if (!engaged.current) return;
+          engaged.current = false;
+          setDragging(false);
+          // 取り上げられた場合も、いちばん近いカードへ寄せる（元に戻すと操作が消える）
+          settle();
         }}
       >
         <div ref={shadow} className="vja-deck-shadow" aria-hidden />
@@ -503,13 +686,24 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
           // 飾りの位置は端でも束が絶えないよう巡回させる
           const idx =
             n >= 0 && n < total ? n : total > 6 ? ((n % total) + total) % total : -1;
-          if (idx < 0) return <div key={k} ref={(el) => void nodes.current.set(k, el)} />;
+          if (idx < 0)
+            return (
+              <div
+                key={k}
+                ref={(el) => void nodes.current.set(k, el)}
+                className="vja-deck-card"
+              >
+                <div className="vja-deck-face" />
+              </div>
+            );
           const job = jobs[idx];
           return (
             <div
               key={k}
               ref={(el) => void nodes.current.set(k, el)}
-              className={`vja-deck-card ${k === 0 ? "is-front" : ""} ${k < 0 ? "is-near" : ""}`}
+              className={`vja-deck-card ${k === 0 ? "is-front" : ""} ${
+                k < 0 && flip.nearDark ? "is-near" : ""
+              }`}
               aria-hidden={k !== 0}
             >
               {/* 絵柄はこの中。ぼかしとセピアはここにだけ掛け、膜(::after)は素のまま残す */}
@@ -530,11 +724,12 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
                       saveReturn();
                     }}
                   >
-                    <TiltCard variant="hero" enabled={!dragging}>
+                    {/* 指で触る端末では傾き効果を止める（ドラッグと取り合いになる） */}
+                    <TiltCard variant="hero" enabled={!dragging && !touch}>
                       <JobCard job={job} />
                     </TiltCard>
                   </a>
-                ) : REAL_SLOTS.has(k) ? (
+                ) : realSlots.has(k) ? (
                   <JobCard job={job} />
                 ) : (
                   // ぼかしきったカードは色の板と見分けがつかないので板で描く
@@ -551,11 +746,11 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
       </div>
 
       {/* 位置と操作の案内 */}
-      <div className="mt-9 flex flex-col items-center">
+      <div className="mt-6 flex flex-col items-center md:mt-9">
         <div className="flex items-center gap-7">
           <button
             onClick={() => step(-1)}
-            disabled={shown === 0}
+            disabled={anchor === 0}
             aria-label={en ? "previous card" : "前のカード"}
             className="vja-deck-nav"
           >
@@ -570,7 +765,7 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
           </p>
           <button
             onClick={() => step(1)}
-            disabled={shown === total - 1}
+            disabled={anchor === total - 1}
             aria-label={en ? "next card" : "次のカード"}
             className="vja-deck-nav"
           >
@@ -584,7 +779,7 @@ export default function DeckView({ jobs }: { jobs: Job[] }) {
           <span style={{ left: `${progress}%` }} />
         </div>
 
-        <p className="mt-5 font-mono-label text-[9.5px] tracking-[0.3em] text-vja-ink-soft opacity-50">
+        <p className="mt-4 font-mono-label text-[9.5px] tracking-[0.3em] text-vja-ink-soft opacity-50">
           {en ? "DRAG TO FLIP · TAP TO OPEN" : "ドラッグでめくる ・ タップでひらく"}
         </p>
       </div>

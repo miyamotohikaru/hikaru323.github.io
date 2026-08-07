@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import JobCard from "@/components/JobCard";
 import TiltCard from "@/components/TiltCard";
-import DeckView from "@/components/DeckView";
+import DeckView, { FLIPS, FlipId } from "@/components/DeckView";
 import {
   jobs,
   stats,
@@ -75,13 +75,21 @@ export default function IndexView() {
   /** 一覧(グリッド) か 束(デッキ) か。選んだ表示は次回も引き継ぐ */
   const [mode, setMode] = useState<"grid" | "deck">("grid");
 
+  /** 束のときのめくり方 */
+  const [flip, setFlip] = useState<FlipId>("stack");
+
   useEffect(() => {
     const saved = localStorage.getItem("vja-view");
     if (saved === "deck" || saved === "grid") setMode(saved);
+    const f = localStorage.getItem("vja-flip");
+    if (f && FLIPS.some((x) => x.id === f)) setFlip(f as FlipId);
   }, []);
   useEffect(() => {
     localStorage.setItem("vja-view", mode);
   }, [mode]);
+  useEffect(() => {
+    localStorage.setItem("vja-flip", flip);
+  }, [flip]);
 
   const filtered = useMemo(() => {
     let list = jobs.filter(
@@ -153,6 +161,31 @@ export default function IndexView() {
             </span>
           </div>
         </div>
+
+        {/* めくり方の選択（束のときだけ） */}
+        {mode === "deck" && (
+          <div className="flex items-center gap-3 border-b border-vja-line py-2.5">
+            <span className="font-mono-label shrink-0 text-[10px] tracking-[0.3em] text-vja-ink-soft">
+              {en ? "FLIP" : "めくり方"}
+            </span>
+            <div
+              className="vja-flips"
+              role="group"
+              aria-label={en ? "flip style" : "めくり方"}
+            >
+              {FLIPS.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setFlip(f.id)}
+                  aria-pressed={flip === f.id}
+                  className={flip === f.id ? "is-on" : ""}
+                >
+                  {en ? f.en : f.ja}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {open && (
           <div className="rounded-b-lg border border-t-0 border-vja-line bg-vja-paper/60 p-6 md:p-8">
@@ -252,7 +285,11 @@ export default function IndexView() {
               : "この条件のカードは、見つかりませんでした。"}
           </p>
         ) : mode === "deck" ? (
-          <DeckView key={filtered.map((j) => j.no).join(",")} jobs={filtered} />
+          <DeckView
+            key={filtered.map((j) => j.no).join(",")}
+            jobs={filtered}
+            flip={flip}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5">
             {filtered.map((j, i) => (

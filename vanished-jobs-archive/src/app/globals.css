@@ -146,18 +146,24 @@ body {
    デッキ表示（カードの束）
    ============================================================ */
 .vja-deck {
-  /* カードは 34:47。
-     iOS Safari の vh はツールバーを畳んだ高さ(lvh)で固定されるので、
-     高さの制限は必ず svh で書く。そうしないと携帯で操作ボタンが画面外に落ちる。
-     300px = ヘッダ59 + タブバー41 + カード下の操作系119 + 余白81 */
-  --deck-w: min(72vw, calc((100svh - 300px) / 1.382), 330px);
+  /* 携帯では「カード＋下の操作系」が一画面に収まることを最優先にする。
+     iOS Safari の vh はツールバーを畳んだ高さ(lvh)で固定されるので、必ず svh で書く。
+     そうしないと高さの制限が効かず、操作ボタンが画面外に落ちる。
+     310px = ヘッダ59 + タブバー41 + カード下の操作系123 + 余白87 */
+  --deck-origin: 50% 92%;
+  --deck-persp: 1500px;
+  /* カード高さ(1.382)＋めくり方ごとの余白。JS が差し替える */
+  --deck-fit: 1.522;
+  --deck-w: min(72vw, calc((100svh - 310px) / var(--deck-fit)), 330px);
   /* カード面の角丸と必ず一致させる。6cqw はここでは自分自身がコンテナになってしまい
      ビューポート基準に化けるので使わない */
   --card-r: calc(var(--deck-w) * 0.06);
   width: 100%;
-  height: calc(var(--deck-w) * 1.382 + 96px);
+  height: calc(var(--deck-w) * var(--deck-fit));
+  /* 縦はページに渡し、横は束が受け取る */
+  touch-action: pan-y;
   cursor: grab;
-  perspective: 1500px;
+  perspective: var(--deck-persp);
   /* 束のまわりだけ明るく持ち上げ、外周をわずかに落として、光の当たった一角に置く */
   background: radial-gradient(
       66% 54% at 50% 42%,
@@ -175,17 +181,27 @@ body {
   cursor: grabbing;
 }
 @media (min-width: 768px) {
-  /* 300px はスマホのツールバーぶんの見込み。PCではそこまで要らないので取り戻す */
+  /* 310px はスマホのツールバーぶんの見込み。PCではそこまで要らないので取り戻す */
   .vja-deck {
-    --deck-w: min(30vw, calc((100svh - 190px) / 1.382), 440px);
+    --deck-w: min(30vw, calc((100svh - 190px) / var(--deck-fit)), 440px);
   }
 }
 
 .vja-deck-card {
   position: absolute;
   width: var(--deck-w);
-  /* 手で持った下端を支点に扇状へ開く */
-  transform-origin: 50% 92%;
+  /* 支点はめくり方ごとに変える（束は持った下端、ページは左端、扇は遠い下方） */
+  transform-origin: var(--deck-origin);
+  touch-action: pan-y;
+  /* ページめくりで裏返ったカードの鏡像を見せない。
+     回転しているのはこの要素なので、裏面の指定もこの要素に置く */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+/* 画像やリンクを長押ししたときの iOS の割り込みを止める */
+.vja-deck-hit {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
 }
 /* 動かすのは前面カードだけ。全枚数を常時レイヤー化しない */
 .vja-deck-card.is-front {
@@ -201,6 +217,30 @@ body {
 /* 絵柄の入れ物。ぼかしとセピアはここにだけ掛かる（膜には掛けない） */
 .vja-deck-face {
   width: 100%;
+}
+/* めくり方の選択 */
+.vja-flips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.vja-flips button {
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 0.2rem 0.7rem;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--vja-ink-soft);
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.vja-flips button:hover {
+  color: var(--vja-ink);
+}
+.vja-flips button.is-on {
+  border-color: var(--vja-accent);
+  background: color-mix(in oklab, var(--vja-accent) 10%, transparent);
+  color: var(--vja-accent);
+  font-weight: 600;
 }
 /* 奥のカードの代役（ぼかしきると色の板と同じなので、板で描いて描画を節約する） */
 .vja-deck-proxy {
