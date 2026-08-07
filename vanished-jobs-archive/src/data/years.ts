@@ -164,7 +164,7 @@ export const yearSpans: Record<string, YearSpan> = {
   "148": { reading: "ていけいほんやくしゃ", start: 1900, end: 2026 },
   "149": { reading: "たくしー・とらっくうんてんしゅ", start: 1910, end: 2026 },
   "150": { reading: "けいりじむ", start: 1494, end: 2026 },
-  "151": { reading: "すとっくいらすとれーたー", start: 2000, end: 2026 },
+  "151": { reading: "はんこや", start: 1873, end: 2026 },
 };
 
 /** 西暦を表示用文字列に（負=B.C.） */
