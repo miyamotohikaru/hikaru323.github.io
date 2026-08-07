@@ -5,6 +5,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { getSql } from "@/lib/db";
 import ShareCompare from "./ShareCompare";
+import SharePanorama from "./SharePanorama";
 
 // DBアクセスがあるため毎リクエスト動的に評価する
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ interface Share {
   image_url: string;
   creature_url: string | null;
   human_url: string | null;
+  photo_aspect: number | null;
   original_url: string | null;
   created_at: string;
   view_count: number;
@@ -110,16 +112,26 @@ export default async function SharePage({
           marginBottom: 16,
         }}
       >
-        🐾 自分の写真でも{creature.name}の目を試す
+        🐾 自分の写真でも<br />{creature.name}の目を試す
       </Link>
 
-      <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 20 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 20, textAlign: "center" }}>
         {creature.name}の目で見た世界
       </h1>
 
       <div style={{ marginBottom: 20 }}>
-        {share.creature_url && share.human_url ? (
-          // 長押し切り替え（メイン画面と同じ操作）
+        {share.photo_aspect && share.creature_url && share.human_url ? (
+          // パノラマ共有（本編と同じスクロール＋押している間だけ人間の目）
+          <SharePanorama
+            creatureUrl={share.creature_url}
+            humanUrl={share.human_url}
+            creatureId={creature.id}
+            creatureName={creature.name}
+            photoAspect={share.photo_aspect}
+            accent={CATEGORY_COLORS[creature.cat]?.accent ?? creature.color}
+          />
+        ) : share.creature_url && share.human_url ? (
+          // 長押し切り替え（旧・静止画）
           <ShareCompare
             creatureUrl={share.creature_url}
             humanUrl={share.human_url}

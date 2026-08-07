@@ -24,6 +24,9 @@ export async function POST(req: Request) {
     const creatureFile = formData.get("creatureImage") as File | null;
     const humanFile = formData.get("humanImage") as File | null;
     const creatureId = formData.get("creatureId") as string | null;
+    // パノラマ共有: creature/human はフィルター済み/元色のマスター画像。photoAspect=覗き窓の比率。
+    const isPanorama = formData.get("panorama") === "1";
+    const photoAspect = isPanorama ? Number(formData.get("photoAspect") || 0) || null : null;
 
     if (!imageFile || !creatureId) {
       return Response.json({ error: "Missing data" }, { status: 400 });
@@ -33,33 +36,35 @@ export async function POST(req: Request) {
     const sql = getSql();
 
     // Vercel Blob に並列アップロード
+    const ext = (f: File) => (f.type === "image/jpeg" ? "jpg" : "png");
     const [composite, creatureBlob, humanBlob] = await Promise.all([
       put(`shares/${shareId}.png`, imageFile, {
         access: "public",
-        contentType: "image/png",
+        contentType: imageFile.type || "image/png",
       }),
       creatureFile
-        ? put(`shares/${shareId}-creature.png`, creatureFile, {
+        ? put(`shares/${shareId}-creature.${ext(creatureFile)}`, creatureFile, {
             access: "public",
-            contentType: "image/png",
+            contentType: creatureFile.type || "image/png",
           })
         : Promise.resolve(null),
       humanFile
-        ? put(`shares/${shareId}-human.png`, humanFile, {
+        ? put(`shares/${shareId}-human.${ext(humanFile)}`, humanFile, {
             access: "public",
-            contentType: "image/png",
+            contentType: humanFile.type || "image/png",
           })
         : Promise.resolve(null),
     ]);
 
-    // 長押し切り替え用カラムを後付けマイグレーション（既存テーブルでも安全）
+    // 後付けマイグレーション（既存テーブルでも安全）
     await sql`ALTER TABLE shares ADD COLUMN IF NOT EXISTS creature_url TEXT`;
     await sql`ALTER TABLE shares ADD COLUMN IF NOT EXISTS human_url TEXT`;
+    await sql`ALTER TABLE shares ADD COLUMN IF NOT EXISTS photo_aspect REAL`;
 
     // Neon DB にメタデータ保存
     await sql`
-      INSERT INTO shares (id, creature_id, image_url, creature_url, human_url)
-      VALUES (${shareId}, ${creatureId}, ${composite.url}, ${creatureBlob?.url ?? null}, ${humanBlob?.url ?? null})
+      INSERT INTO shares (id, creature_id, image_url, creature_url, human_url, photo_aspect)
+      VALUES (${shareId}, ${creatureId}, ${composite.url}, ${creatureBlob?.url ?? null}, ${humanBlob?.url ?? null}, ${photoAspect})
     `;
 
     const shareUrl = `${resolveBaseUrl(req)}/share/${shareId}`;

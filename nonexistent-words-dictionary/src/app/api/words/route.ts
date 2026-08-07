@@ -191,11 +191,24 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true, id: docRef.id });
       } catch (fbError) {
-        console.error("Firebase error, falling back to in-memory:", fbError);
+        // Firebaseが構成済み（＝本番）なのに書き込み失敗＝無料枠超過や一時障害。
+        // ここでインメモリに落とすと「成功したのに保存されず消える」誤解を生むため、
+        // 正直に混雑エラーを返す（クライアントは error.busy を表示）。
+        console.error("Firebase write error:", fbError);
+        return NextResponse.json(
+          {
+            error:
+              language === "en"
+                ? "We're experiencing heavy traffic. Please try again in a moment."
+                : "いま混み合っています。少し待ってからもう一度お試しください。",
+            busy: true,
+          },
+          { status: 503 }
+        );
       }
     }
 
-    // インメモリモード
+    // インメモリモード（Firebase未構成のローカル開発用）
     // 1人(端末=authorToken)あたり5単語まで
     if (authorToken && listWordsByAuthor(authorToken).length >= REGISTER_LIMIT) {
       return NextResponse.json(
@@ -326,11 +339,18 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ words }, { headers: cacheHeaders(sort) });
       } catch (fbError) {
-        console.error("Firebase error, falling back to in-memory:", fbError);
+        // Firebaseが構成済み（＝本番）なのに読み取り失敗＝無料枠超過や一時障害。
+        // 空配列をインメモリから返すと「本棚が空」がエッジに60秒キャッシュされ全員に波及するため、
+        // 混雑エラー(503)をキャッシュ無しで返す（クライアントは error.busy を表示）。
+        console.error("Firebase read error:", fbError);
+        return NextResponse.json(
+          { error: "busy", busy: true },
+          { status: 503, headers: { "Cache-Control": "no-store" } }
+        );
       }
     }
 
-    // インメモリモード
+    // インメモリモード（Firebase未構成のローカル開発用）
     if (sort === "recommend") {
       // kana/letter 指定時はそれを尊重して母集団を絞る（Firebase版と契約を揃える）
       const pool = listWords({ kana, letter, sort: "newest", limit: 150 });

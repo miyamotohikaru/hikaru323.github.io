@@ -2609,6 +2609,56 @@ select:focus-visible,
 .tategaki-search-button:hover:not(:disabled) { background-color: var(--accentDim); }
 .tategaki-search-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* 未入力のうちは「引く」を控えめ色にして視線を奪わない。入力されると赤く"押せる"状態に。 */
+.tategaki-search-button.is-empty { background-color: var(--textMute); }
+
+/* 未入力のとき、入力欄（「ことばを登録する」）の枠だけを赤で点滅させて視線を誘導する。
+   枠は入力部分 .tategaki-search-field に inset box-shadow で描くため、
+   「引く」ボタンは点滅に含まれない（レイアウトも動かさない）。 */
+@keyframes searchInviteBlink {
+  0%, 45% { box-shadow: inset 0 0 0 2px var(--accent); }
+  55%, 100% { box-shadow: inset 0 0 0 2px rgba(179, 57, 42, 0); }
+}
+.tategaki-search-input-wrap.is-inviting .tategaki-search-field {
+  animation: searchInviteBlink 1.3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tategaki-search-input-wrap.is-inviting .tategaki-search-field {
+    animation: none;
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+}
+
+/* トップ: 本棚（ほかの言葉）への導線。ぱっと見で分かる横書きのピルリンク。
+   PCは横並びレイアウト（row-reverse）を崩さないよう、注記類と同じく絶対配置で
+   下部中央に置く。モバイルは下の@mediaで通常フロー（検索の直下）に戻す。 */
+.home-browse-link {
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.5rem 1.1rem;
+  writing-mode: horizontal-tb;
+  text-orientation: initial;
+  font-size: 0.9375rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  border: 1px solid var(--textSoft);
+  border-radius: 999px;
+  text-decoration: none;
+  white-space: nowrap;
+  z-index: 2;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+.home-browse-link:hover {
+  color: #fff;
+  border-color: var(--accent);
+  background-color: var(--accent);
+}
+
 .tategaki-search-note {
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -3748,6 +3798,34 @@ textarea.tategaki-search-input {
     letter-spacing: 0.1em;
   }
 
+  /* 導線はモバイルでは画面最下部に、控えめなテキストリンクで置く（目立たせない） */
+  .home-browse-link {
+    position: absolute;
+    left: 50%;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    border-radius: 0;
+    color: var(--textMute);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .home-browse-link:hover,
+  .home-browse-link:active {
+    color: var(--textSoft);
+    background: none;
+    border: none;
+  }
+  /* 入力中はキーボードで下部が狭まり被るため、携帯では入力があるとき導線を隠す */
+  .home-browse-link.is-typing {
+    display: none;
+  }
+
   /* ===== 3. 検索結果（モバイル：フル画面横スクロール） ===== */
   .h-scroll {
     direction: rtl;
@@ -3804,6 +3882,17 @@ textarea.tategaki-search-input {
   .result-headword { font-size: 1.125rem; margin-left: 8px; }
   .result-pos-label { font-size: 0.75rem; margin-left: 6px; padding: 3px 6px; }
   .result-definition { margin-left: 6px; font-size: 0.8125rem; line-height: 1.8; }
+
+  /* 編集モード：モバイルでは .h-scroll が overflow-y:hidden で縦スクロールできず、
+     フィールドが縦に長いと用例欄が画面下で切れて触れなくなる。編集フォーム自体を
+     縦スクロール可能なボックスにして、すべてのフィールド（用例含む）に届くようにする。 */
+  .result-edit-fields {
+    max-height: calc(100dvh - 96px - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 12px 28px;
+  }
+  .result-edit-textarea { min-height: 92px; }
 
   .result-register-col {
     padding: 16px 12px;

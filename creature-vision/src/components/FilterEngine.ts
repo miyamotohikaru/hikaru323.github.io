@@ -602,35 +602,28 @@ function filterElectro(
 }
 
 // 18. Polarization
+// 18. Polarization（タコ）: タコは色を見分けられない＝ほぼモノクロ。
+// その代わり「偏光」を感じ取れるので、色ではなく“偏光の向き”に応じた微妙な陰影と
+// コントラスト強調で表現する（虹色にはしない）。
 function filterPolarized(
   data: Uint8ClampedArray,
   width: number,
   height: number,
   fp: Record<string, unknown>
 ): void {
-  const rShift = (fp.rShift as number) ?? 0.08;
-  const bShift = (fp.bShift as number) ?? -0.08;
+  const strength = (fp.strength as number) ?? 0.2; // 偏光の見えの強さ（控えめ）
 
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i], g = data[i + 1], b = data[i + 2];
-
+    // 色盲＝輝度のみ（モノクロ）。偏光はコントラストを上げて見せる。
+    let lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    lum = clamp((lum - 128) * 1.2 + 128);
+    // 疑似的な偏光角。向きに応じてごく僅かな寒色の揺らぎを足す（虹色にはしない）。
     const angle = Math.atan2(b - g, r - g);
-    const hue = ((angle / (2 * Math.PI)) + 0.5) % 1;
-
-    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-    const dr = lum + (r - lum) * 0.6;
-    const dg = lum + (g - lum) * 0.6;
-    const db = lum + (b - lum) * 0.6;
-
-    let [h, s, l] = rgbToHsl(r, g, b);
-    h = (h + rShift + bShift) % 1;
-    if (h < 0) h += 1;
-
-    const [rr, rg, rb] = hslToRgb(hue, 1, 0.5);
-
-    data[i]     = clamp(dr * 0.6 + rr * 0.4);
-    data[i + 1] = clamp(dg * 0.6 + rg * 0.4);
-    data[i + 2] = clamp(db * 0.6 + rb * 0.4);
+    const shimmer = Math.sin(angle * 2) * 0.5 + 0.5; // 0..1
+    data[i]     = clamp(lum * (1 - strength * shimmer * 0.45));
+    data[i + 1] = clamp(lum * (1 - strength * shimmer * 0.12));
+    data[i + 2] = clamp(lum * (1 + strength * (1 - shimmer) * 0.35) + strength * 16);
   }
 }
 
@@ -975,10 +968,10 @@ const filterNightvision: CtxFilter = (ctx, w, h, fp) => {
   }
   ctx.globalAlpha = 1;
 
-  // Green vignette overlay
+  // Vignette overlay（tintに追従。グレーtintなら中立の暗いビネットになる）
   const vg = ctx.createRadialGradient(cx, cy, maxR * 0.5, cx, cy, maxR * 1.2);
   vg.addColorStop(0, "rgba(0,0,0,0)");
-  vg.addColorStop(1, `rgba(0,${Math.floor(tint[1] * 0.15)},0,0.4)`);
+  vg.addColorStop(1, `rgba(${Math.floor(tint[0] * 0.14)},${Math.floor(tint[1] * 0.14)},${Math.floor(tint[2] * 0.14)},0.42)`);
   ctx.fillStyle = vg;
   ctx.fillRect(0, 0, w, h);
 };

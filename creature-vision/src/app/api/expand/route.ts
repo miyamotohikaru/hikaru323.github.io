@@ -5,17 +5,17 @@ export const maxDuration = 60;
 // マスター拡張画像のプロンプト。写真1枚につき1回だけ生成し、全生き物で使い回す。
 // 元写真を中心に固定し、左右に360°ぶんのシーンを「色を変えずに」広げるだけ。
 // 色・質感の加工は後段の applyFilter（Canvas）が全部やる（AIに色を触らせない）。
-const MASTER_PROMPT = `Extend this photo horizontally to BOTH the left and right sides, creating a wide 360-degree panoramic field of view.
+const MASTER_PROMPT = `Extend this photo FAR to BOTH the left and right, turning it into an ultra-wide panorama that is at least three times wider than the original.
 
-CRITICAL RULES:
-- The original photo MUST stay EXACTLY in the CENTER, completely unchanged and unmodified.
-- Generate new scenery ONLY on the left and right sides of the original.
-- The new content must naturally continue the existing scene (same environment, same perspective, same objects logically extended).
+STRICT RULES:
+- Keep the ORIGINAL photo completely unchanged in the CENTER. It must occupy only the middle third of the result.
+- Generate a LARGE amount of NEW scenery filling the entire left third and the entire right third. Do not just add thin borders — genuinely widen the world.
+- The new scenery must be a PERFECT, continuous extension of the original: the horizon line, ground level, walls, roads, water line and objects must line up exactly and continue naturally across the seams. No mismatched horizon, no discontinuity, no doubling, no repeated copies.
 - Do NOT change colors, brightness, contrast, saturation, or style. Match the original photo EXACTLY in tone.
-- This is a pure field-of-view extension — as if the camera simply captured a much wider angle of the same moment.
-- Seamless, photorealistic, no visible seams, no black areas. Fill the entire canvas with real scenery.
+- This is a pure field-of-view extension — as if the camera had a much wider lens capturing the same moment.
+- Photorealistic and seamless: no visible seams, no borders, no frames, no black areas. Fill the entire wide canvas edge to edge with continuous real scenery.
 
-The original stays centered and pristine; only the surroundings to the left and right are newly generated.`;
+The original stays centered and pristine; only the surroundings to the left and right are newly generated and perfectly connected to it.`;
 
 // 縦方向（ヨツメウオ等の上下拡張）が必要な場合のフォールバック
 const MASTER_PROMPT_VERTICAL = `Extend this photo vertically, adding more scene ABOVE and BELOW the original. The original photo MUST stay EXACTLY in the CENTER, unchanged. Do NOT change colors, brightness, contrast, saturation, or style — match the original tone EXACTLY. Pure field-of-view extension. Seamless, photorealistic, no seams, no black areas — fill the entire canvas with real scenery.`;
