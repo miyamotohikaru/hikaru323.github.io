@@ -120,11 +120,17 @@ export function SkinRack() {
               // 未解放でも押させる: store がトーストで理由を教えてくれる
               onClick={() => setSwordSkin(i)}
             >
-              {/* 未解放でも剣は等倍のまま見せる(何が手に入るか分からないと欲しくならない)。
+              {/* 未解放でも剣は等倍・フルカラーのまま見せる。
+                  何が手に入るのか見えないと欲しくならないし、暗く落とすと
+                  クリスタルがオリーブ色・にじいろが灰青の塊になってしまう。
                   鍵は右上の小さなバッジにして、剣の視認をじゃましない */}
               {!open && <LockMark className="kk-skin-lock" />}
+              {/* stage = くぼんだ陳列スロット。ぎん/きんがクリーム地で消える
+                  問題をここで断つ(地色を落として 7:1 以上を確保する) */}
               <span className="kk-skin-stage">
-                <SwordArt color={swordColor} skin={i} />
+                <span className="kk-skin-sword">
+                  <SwordArt color={swordColor} skin={i} />
+                </span>
               </span>
               <span className="kk-skin-name">{s.name}</span>
               <span className="kk-skin-sub">

@@ -244,11 +244,13 @@ export function CharmIcon({ index, size = 28, ghost, className }: CharmIconProps
       focusable="false"
     >
       {ghost ? (
-        /* 未獲得は「形だけ」。青い台のくぼみに彫られた影として、形は読めるままにする */
+        /* 未獲得は「形だけ」。台のくぼみに彫られた影として、形は読めるままにする。
+           台を青から暗い樹脂に変えたので、塗りも中立の黒に、ふちは 3.1:1 を
+           確保できる明るさ(白40%)に上げてある */
         <path
           d={d}
-          fill="rgba(9,17,48,.5)"
-          stroke="rgba(255,255,255,.3)"
+          fill="rgba(0,0,0,.5)"
+          stroke="rgba(255,255,255,.4)"
           strokeWidth="1"
           strokeLinejoin="round"
         />
@@ -312,7 +314,7 @@ export function CharmShelf() {
               }
             >
               <span className="kk-charm-cell">
-                <CharmIcon index={i} size={got ? 28 : 22} ghost={!got} />
+                <CharmIcon index={i} size={got ? 26 : 21} ghost={!got} />
               </span>
               <span className="kk-charm-need">{c.need}</span>
             </li>

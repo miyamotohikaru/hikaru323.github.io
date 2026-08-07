@@ -75,7 +75,9 @@ const GRIP_NOTCH = GRIP_HALF_W * 0.28; // 溝で細くなる量(輪郭にもは�
 
 // 柄頭: 球ではなく、平たく開いた三つ葉の板(球はRPGの短剣の記号で、玩具ではない)
 const POMMEL_H = HILT_H * 0.3;
-const POMMEL_HALF_W = GRIP_HALF_W * 1.18; // 実測「柄頭の張り出し / 握り幅 = 1.18」
+// 実測「柄頭の張り出し / 握り幅」。1.18 は写真のサンプル格子が柄頭のいちばん
+// 広い行を外していた値で、測り直すと 1.25〜1.28。UIの剣(SwordArt)も1.25。
+const POMMEL_HALF_W = GRIP_HALF_W * 1.25;
 const POMMEL_LOBE_R = POMMEL_HALF_W * 0.37; // 三つ葉ひと粒の半径
 const POMMEL_THICK = 0.046;
 

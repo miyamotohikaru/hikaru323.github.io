@@ -372,18 +372,30 @@
 /* セーフ！スタンプ。
    枠+半透明の箱+ネオンの光は「配信オーバーレイの字幕」の文法なので使わない。
    下の .banner-big と同じ「箱なし・太い暗色フチ」に揃えて、3Dの中に置かれた
-   ステッカーとして立たせる。 */
+   ステッカーとして立たせる。
+
+   塗りを緑(--safe)からクリームへ。理由は2つ:
+   ・緑はこのゲームのどこにも無い色だった(パレットは紺/月/クリーム/金/珊瑚)
+   ・緑 #7ce38b はレンダー後の月面と 1.72:1 しかなく、塗りが実質消えていた。
+     読ませているのが暗フチだけになるので、月の暗い部分ではフチごと溶ける。
+   いちばん明るいクリームなら、明るい月面は暗フチ(7.3:1)が、暗い宇宙は
+   塗り(19.7:1)が受け持つので、どこに重なっても片方が必ず立つ。
+   ネオン(緑の text-shadow)は削除。厚みは硬いベタ影で出す。 */
 .stamp {
   font-size: clamp(3rem, 16vw, 5rem);
   font-weight: 800;
   line-height: 1.1;
-  color: var(--safe);
-  letter-spacing: 0.04em;
+  color: var(--ui);
+  letter-spacing: 0;
   -webkit-text-stroke: 10px var(--space-deep);
   paint-order: stroke fill;
-  text-shadow: 0 0 28px rgba(124, 227, 139, 0.5);
+  text-shadow: 0 5px 0 rgba(5, 7, 26, 0.5);
   transform: rotate(-8deg);
   animation: stamp-in 0.45s var(--spring) both;
+}
+/* 全角「！」は左に半角ぶんの余白を持っていて「セーフ  ！」に見えるので詰める */
+.stamp-bang {
+  margin-left: -0.26em;
 }
 
 /* 発射バナー */
@@ -869,15 +881,23 @@
   --kk-panel: linear-gradient(180deg, #f8f4e4, #e8e2cc);
   --kk-panel-edge: rgba(58, 55, 48, 0.1);
   --kk-panel-drop: rgba(58, 55, 48, 0.18);
-  /* 実物の箱は「赤い樽 + 原色の剣 + 青い台」。クリーム一色だと画面ぜんぶが
-     無効状態に見えてしまうので、樽の赤と台の青を成型樹脂として持ちこむ */
-  --kk-blue-top: #5f8ee8;
-  --kk-blue-face: #3f66c4;
-  --kk-blue-deep: #2a4693;
-  --kk-navy: linear-gradient(180deg, #33406e, #232c52);
+  /* アクセントは「樽の赤 = コーラル」1本に絞る。
+     以前はコーラル(見出し)/ブルー(しあげ・したく)/イエロー(選択)/濃紺(棚)の
+     4色が同じパネルの中で競っていて、どれが「いま選んでいる」なのか読めなかった。
+     色が意味するのは「いま選んでいる・つぎに手に入る」だけにする。 */
   --kk-red-top: #ff8272;
   --kk-red-face: #e8503f;
   --kk-red-deep: #b4382a;
+  /* 明るいコーラルは「白ヌキ文字で3.5:1・クリーム地の細線で2.8:1」しか出ない。
+     文字と細い枠には同じ色相の濃いほうを使う(クリーム地 5.3:1 / 白ヌキ 5.9:1) */
+  --kk-coral-ink: #bd2f1b;
+  /* 札・ピル・座金に使う面。白ヌキ文字で 4.6:1 */
+  --kk-coral-pill: linear-gradient(180deg, #e2553f, #c22f1e);
+  /* 剣を立てる「くぼんだ陳列スロット」。ぎん #e8eefc・きん #ffd06a は
+     クリーム地だと 1.4:1 前後しか出ず実質見えないので、金属も透明もここに
+     置いて必ず地色から分離させる(ぎん 8.7:1 / きん 7.0:1) */
+  --kk-well-top: #3b3529;
+  --kk-well-bot: #554d3d;
 }
 
 /* SwordArt の svg は箱の幅にあわせて伸びる(高さは viewBox 比で決まる) */
@@ -979,38 +999,51 @@
     transform 0.22s var(--spring),
     filter 0.2s ease;
 }
-/* えらんだ1本のうしろに金のあかり。となりの剣と混ざらないための「間」 */
+/* えらんだ1本の目印は「スロットの色が変わる」。
+   前は剣のうしろに 54×92px の金のあかりを敷いていて、そのハローのせいで
+   選択中の剣だけ1.4倍に大きくなって棚から浮き出て見えていた(事故に見える)。
+   剣の大きさは8本ぜんぶ同じに保ち、色つきの座金・持ち上げ・穴のふちで示す。 */
 .kk-slot.sel::before {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 10px;
-  width: 54px;
-  height: 92px;
-  margin-left: -27px;
-  border-radius: 50%;
-  background: radial-gradient(
-    ellipse at 50% 52%,
-    rgba(255, 217, 61, 0.55),
-    rgba(255, 217, 61, 0) 68%
-  );
+  /* 台の見えている上面(前板17px〜土台27px)をこのスロットだけ塗りつぶす */
+  bottom: 12px;
+  width: 36px;
+  max-width: 100%;
+  height: 15px;
+  margin-left: -18px;
+  border-radius: 8px;
+  background: var(--kk-coral-pill);
+  /* あかの剣をえらんだときに座金と剣が同じ色で溶けないよう、
+     クリームの細いふちを必ず1本入れる(コーラル地に対して 4.6:1) */
+  box-shadow:
+    inset 0 0 0 1.6px rgba(255, 254, 242, 0.92),
+    inset 0 3px 0 rgba(255, 255, 255, 0.28),
+    0 1px 0 #96220f;
 }
-/* えらんだ1本は、ラックからスッと持ち上がって前に出る */
+.kk-slot.sel .kk-slot-hole {
+  box-shadow:
+    0 0 0 1.5px rgba(255, 254, 242, 0.85),
+    0 1px 0 rgba(255, 254, 242, 0.5);
+}
+/* えらんだ1本は、ラックからスッと持ち上がって前に出る。
+   落ち影は「黒い染み」にならないところまで薄く・小さくする */
 .kk-slot.sel .kk-slot-sword {
-  transform: translateY(-11px);
-  filter: drop-shadow(0 7px 7px rgba(5, 7, 26, 0.35));
+  transform: translateY(-7px);
+  filter: drop-shadow(0 2px 2px rgba(5, 7, 26, 0.28));
   animation: kk-sword-bob 2.8s ease-in-out 0.35s infinite;
 }
 .kk-slot.sel .kk-slot-shadow {
-  transform: scale(0.72);
-  opacity: 0.5;
+  transform: scale(0.55);
+  opacity: 0.28;
 }
 .kk-slot:active .kk-slot-sword {
   transform: translateY(3px) scale(0.96);
 }
 .kk-slot.sel:active .kk-slot-sword {
   animation: none;
-  transform: translateY(-6px) scale(0.97);
+  transform: translateY(-3px) scale(0.97);
 }
 @media (hover: hover) {
   .kk-slot:hover .kk-slot-sword {
@@ -1105,13 +1138,15 @@
   flex: none;
   padding: 6px 10px;
   border-radius: 999px;
-  background: linear-gradient(180deg, var(--kk-blue-top), var(--kk-blue-face));
+  /* 見出しと同じコーラル。ここだけ青だと「別の機能」に見えていた */
+  background: var(--kk-coral-pill);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 2px 0 var(--kk-blue-deep);
+    0 2px 0 #96220f;
   font-size: 11px;
   font-weight: 800;
   color: #fff;
+  text-shadow: 0 1px 0 rgba(120, 30, 20, 0.5);
 }
 .kk-equip-go::after {
   content: " ▸";
@@ -1204,9 +1239,19 @@
   display: flex;
   flex-direction: column;
   width: min(100%, 440px);
-  max-height: min(80vh, 660px);
-  /* 下に余白を残さないと、最下段の進捗バーが画面のふちで切れて見える */
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  /* 高さの決めかた:
+     ・vh はモバイルのアドレスバーぶんを含むので、実機だと下が切れる。
+       svh(いちばん縮んだときの高さ)を使い、対応していない環境には vh を残す。
+     ・下端の余白は .kk-drawer 側ではなくスクロール領域(.kk-drawer-body)側に
+       持たせる。ここに置くと、スクロールしたとき最後の1行が
+       クリップのふちに貼りついて「切れている」ように見えてしまう。
+     実測(440px幅/375px幅とも): 中身の総高 523px。
+     1512×796 の表示領域(672px)なら 86svh = 578px なのでスクロールなしで収まる。
+     それより低い画面では下の @media(max-height:700px)でさらに約20px詰め、
+     それでも足りなければ本文がスクロールする(下余白は本文側にあるので
+     最後の1行がふちに貼りつくことはない)。 */
+  max-height: min(86vh, 620px);
+  max-height: min(86svh, 620px);
   border-radius: 26px 26px 0 0;
   overflow: hidden;
   background: var(--ui);
@@ -1223,7 +1268,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 10px 9px 16px;
+  /* ✕は絶対配置にして、44pxのタップ領域が見出しの高さを押し広げないようにする
+     (これだけで帯が22px縮む = 進捗バーが切れなくなる) */
+  padding: 14px 58px 9px 16px;
   border-radius: 26px 26px 0 0;
   background: linear-gradient(180deg, var(--kk-red-top), var(--kk-red-face));
   box-shadow:
@@ -1247,8 +1294,12 @@
   text-shadow: 0 1.5px 0 rgba(140, 40, 26, 0.65);
 }
 .kk-drawer-x {
-  width: 42px;
-  height: 42px;
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  margin-top: -22px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 0;
@@ -1269,39 +1320,40 @@
 .kk-drawer-body {
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  padding: 11px 14px 8px;
+  gap: 9px;
+  /* 下の余白はここ(スクロールする側)に置く。こうしておけば、画面が低くて
+     スクロールになったときも最後の進捗バーがふちに貼りつかない */
+  padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
   min-height: 0; /* flex列の中でスクロールさせるため */
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
-/* 見出しは色つきのラベル。3つとも灰色だと棚の区別がつかない */
+/* 引き出しの中のラックは一段小さく。確認シートより縦の余裕がない */
+.kk-drawer .kk-rack {
+  height: 84px;
+  margin-bottom: 6px;
+}
+.kk-drawer .kk-slot-sword {
+  width: 31px;
+  margin-left: -15.5px;
+}
+/* 棚の見出し。以前は「いろ=黄 / しあげ=青 / チャーム=赤」と色分けしていたが、
+   ラベルの色は棚の中身と何の関係もないのに、選択色や解放バッジと同じ強さで
+   competing していた。3つとも同じコーラルの札にして、区別は文字にまかせる。
+   (kk-label-* は残してあるが色は付けない。DOM側の意味づけとしてのみ使う) */
 .kk-sec-label {
   display: inline-block;
-  margin-bottom: 6px;
-  padding: 3px 10px 4px;
+  margin-bottom: 5px;
+  padding: 3px 9px 4px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.06em;
-  background: rgba(58, 55, 48, 0.1);
-  color: rgba(58, 55, 48, 0.62);
-}
-.kk-label-color {
-  background: linear-gradient(180deg, #ffd84a, #f0b800);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  color: #5c4405;
-}
-.kk-label-skin {
-  background: linear-gradient(180deg, var(--kk-blue-top), var(--kk-blue-face));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  background: var(--kk-coral-pill);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
   color: #fff;
-}
-.kk-label-charm {
-  background: linear-gradient(180deg, var(--kk-red-top), var(--kk-red-face));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  color: #fff;
+  text-shadow: 0 1px 0 rgba(110, 25, 15, 0.5);
 }
 
 /* ── しあげ(スキン)の陳列棚 ─────────────────────────── */
@@ -1316,8 +1368,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 7px 2px 6px;
+  gap: 3px;
+  padding: 6px 3px 6px;
   border: 0;
   border-radius: 14px;
   background: var(--kk-panel);
@@ -1342,26 +1394,31 @@
     inset 0 0 0 2px var(--kk-panel-edge),
     inset 0 2px 0 rgba(255, 255, 255, 0.8);
 }
+/* 剣を立てる「くぼんだ陳列スロット」。
+   クリーム地に直接置くと ぎん(#e8eefc)は 1.42:1、きん(#ffd06a)は 1.47:1 しか
+   出ず、図形の下限 3:1 を大きく割って実質見えなかった。暗い樹脂のくぼみに
+   入れて、金属も透明もここで必ず地色から分離させる。 */
 .kk-skin-stage {
   position: relative;
-  display: block;
-  width: 24px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  max-width: 100%;
+  height: 48px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, var(--kk-well-top), var(--kk-well-bot));
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.16),
+    0 1px 0 rgba(255, 255, 255, 0.55);
 }
-/* 台に立っているように、足元へ小さな影 */
-.kk-skin-stage::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -3px;
-  width: 20px;
-  height: 6px;
-  margin-left: -10px;
-  border-radius: 50%;
-  background: rgba(60, 50, 20, 0.22);
-  filter: blur(2px);
+.kk-skin-sword {
+  display: block;
+  width: 19px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
 }
 .kk-skin-name {
-  min-height: 22px;
+  min-height: 12px;
   font-size: 9.5px;
   font-weight: 800;
   line-height: 1.15;
@@ -1376,52 +1433,42 @@
   text-align: center;
   color: rgba(58, 55, 48, 0.55);
 }
-/* えらんでいるものは金のふちで持ち上がる(誇らしく見せる) */
+/* えらんでいるものはコーラルのふちで持ち上がる。
+   金のふち + 金の地だと、金のカード(きん)と選択状態が同じ色になってしまう */
 .kk-skin.sel {
-  background: linear-gradient(180deg, #fff9dc, #ffe9a2);
+  background: linear-gradient(180deg, #fff4ef, #ffe0d8);
   box-shadow:
-    inset 0 0 0 2.5px var(--accent),
+    inset 0 0 0 2.5px var(--kk-coral-ink),
     inset 0 2px 0 rgba(255, 255, 255, 0.85),
-    0 3px 0 rgba(150, 115, 0, 0.35);
+    0 3px 0 rgba(150, 50, 35, 0.3);
   transform: translateY(-2px);
 }
 .kk-skin.sel .kk-skin-sub {
-  color: #a97a09;
+  color: var(--kk-coral-ink);
 }
-/* 未解放:「まだ自分のものではない棚」として夜の色に沈める。
-   灰色にして剣をつぶすと、クリスタルとにじいろが同じ灰色の塊になり、
-   何が手に入るのか分からない = 欲しくならない。色みは残す。 */
+/* 未解放。剣そのものは1ミリも暗くしない。
+   前は濃紺のカードに brightness(.86)/opacity(.72) を重ねていたので、
+   クリスタルがオリーブ色・にじいろが薄い灰青になり「欲しくならない見本」に
+   なっていた。カードの地をひと段沈めるだけにして、中身は商品として見せる。 */
 .kk-skin.lock {
-  background: var(--kk-navy);
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 255, 255, 0.08),
-    inset 0 2px 0 rgba(255, 255, 255, 0.16),
-    0 2px 0 rgba(18, 24, 46, 0.6);
-}
-.kk-skin.lock .kk-skin-stage {
-  filter: brightness(0.86) opacity(0.72);
-}
-.kk-skin.lock .kk-skin-stage::after {
-  background: rgba(0, 0, 0, 0.35);
-}
-.kk-skin.lock .kk-skin-name {
-  color: rgba(255, 254, 242, 0.75);
+  background: linear-gradient(180deg, #f1ead4, #ded5b8);
 }
 .kk-skin.lock .kk-skin-sub {
-  color: var(--accent);
+  color: var(--kk-coral-ink);
 }
-/* 鍵は14pxのバッジにしてカードの右上へ。剣の上に重ねない */
+/* 鍵は15pxのバッジにしてカードの右上へ。剣の上に重ねない */
 .kk-skin-lock {
   position: absolute;
   top: 4px;
   right: 4px;
+  z-index: 1;
   width: 15px;
   height: 15px;
   padding: 1.5px;
   border-radius: 999px;
-  background: var(--accent);
-  color: #4a3a05;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  background: var(--kk-coral-ink);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 /* 説明文の中に置く小さな鍵 */
 .kk-hint-lock {
@@ -1435,8 +1482,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 7px;
-  padding: 6px 10px;
+  margin-top: 6px;
+  padding: 5px 9px;
   border-radius: 11px;
   background: rgba(58, 55, 48, 0.07);
 }
@@ -1502,21 +1549,24 @@
   font-size: 15px;
   color: var(--ui-text);
 }
-/* 受け皿の並んだトレイ。実物の箱の「青い台」。
-   青の上ならフルカラーのチャームが確実に前へ出る(クリーム地では沈む) */
+/* 受け皿の並んだトレイ。
+   もとは実物の箱の「青い台」だったが、青は画面で4つめのアクセントになるうえ、
+   しずく/ほうせき/おさかな のような青いチャームが台に埋もれてしまう。
+   しあげの陳列スロットと同じ暗い樹脂にすると、色は1つ減り、12色ぜんぶが
+   等しく前に出る(「獲得=フルカラー / 未獲得=沈んだシルエット」の反転は維持)。 */
 .kk-charms-grid {
   list-style: none;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 6px 5px;
-  margin-top: 6px;
-  padding: 9px 8px 7px;
+  gap: 5px 4px;
+  margin-top: 5px;
+  padding: 8px 7px 6px;
   border-radius: 16px;
-  background: linear-gradient(180deg, var(--kk-blue-top), var(--kk-blue-face));
+  background: linear-gradient(180deg, var(--kk-well-top), var(--kk-well-bot));
   box-shadow:
-    inset 0 3px 5px rgba(10, 20, 60, 0.35),
-    inset 0 -2px 0 rgba(255, 255, 255, 0.3),
-    0 2px 0 var(--kk-blue-deep);
+    inset 0 3px 5px rgba(0, 0, 0, 0.4),
+    inset 0 -2px 0 rgba(255, 255, 255, 0.16),
+    0 2px 0 rgba(40, 35, 26, 0.75);
 }
 .kk-charm-slot {
   display: flex;
@@ -1526,8 +1576,8 @@
 }
 /* 受け皿。持っていないものは、くぼみに沈んだ影だけが見える */
 .kk-charm-cell {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -1535,12 +1585,12 @@
 .kk-charm-slot:not(.got) .kk-charm-cell {
   background: radial-gradient(
     circle at 50% 34%,
-    rgba(10, 20, 60, 0.42),
-    rgba(10, 20, 60, 0.2)
+    rgba(0, 0, 0, 0.45),
+    rgba(0, 0, 0, 0.22)
   );
   box-shadow:
-    inset 0 2px 4px rgba(5, 10, 40, 0.55),
-    0 1px 0 rgba(255, 255, 255, 0.28);
+    inset 0 2px 4px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.2);
 }
 .kk-charm-slot:not(.got) .kk-charm-svg {
   filter: none;
@@ -1552,20 +1602,22 @@
 }
 .kk-charm-slot.got .kk-charm-need {
   color: #fff;
-  text-shadow: 0 1px 0 rgba(10, 20, 60, 0.5);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
 }
-/* つぎに手に入るものだけ、金のふちで期待させる */
+/* つぎに手に入るものだけ、コーラルのふちで期待させる(選択色と同じ意味) */
 .kk-charm-slot.next .kk-charm-cell {
   box-shadow:
-    inset 0 2px 4px rgba(5, 10, 40, 0.5),
-    0 0 0 2px var(--accent),
-    0 0 10px rgba(255, 217, 61, 0.55);
+    inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    0 0 0 2px #ff8272,
+    0 0 10px rgba(255, 130, 114, 0.55);
 }
+/* 暗いトレイの上なので、8.5pxの数字は濃いコーラルだと 4.2:1 まで落ちる。
+   ここだけ明るいコーラルにして 5.8:1 を確保する */
 .kk-charm-slot.next .kk-charm-need {
-  color: var(--accent);
+  color: #ffb0a2;
 }
 .kk-charms-next {
-  margin-top: 8px;
+  margin-top: 7px;
 }
 .kk-charms-line {
   display: flex;
@@ -1586,15 +1638,15 @@
 .kk-charms-line em {
   font-style: normal;
   font-weight: 800;
-  color: #c4820c;
+  color: var(--kk-coral-ink);
 }
 .kk-charms-done {
-  color: #c4820c;
+  color: var(--kk-coral-ink);
   font-weight: 800;
 }
 .kk-charms-bar {
-  height: 9px;
-  margin-top: 5px;
+  height: 8px;
+  margin-top: 4px;
   border-radius: 999px;
   background: rgba(58, 55, 48, 0.14);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -1604,8 +1656,9 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(180deg, #ffe680, #f2b23c);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  /* 「あと何本」を示すバーは、つぎに手に入るチャームのふちと同じコーラル */
+  background: linear-gradient(180deg, #ff9382, var(--kk-red-face));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
   transition: width 0.45s ease;
 }
 
@@ -1752,9 +1805,18 @@
   gap: 16px;
   margin-top: 6px;
 }
+/* ここに出るのは ぎん/きん/クリスタル/にじいろ。クリームの祝いカードに
+   じかに置くと ぎん が 1.4:1 で消えるので、しあげの棚と同じくぼみに立てる
+   (パディングで中身を細らせるだけなのでDOMは増やさない) */
 .kk-unlock-sword {
   display: block;
-  width: 34px;
+  width: 48px;
+  padding: 7px 9px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--kk-well-top), var(--kk-well-bot));
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.16);
   filter: drop-shadow(0 4px 6px rgba(5, 7, 26, 0.3));
   animation: kk-unlock-sword 0.8s var(--spring) 1.95s both;
 }
@@ -1778,14 +1840,14 @@
 }
 
 /* ── 剣まわりのキーフレーム ──────────────────────────── */
-/* えらんだ剣がゆっくり息をする(選択位置 -11px を保つ) */
+/* えらんだ剣がゆっくり息をする(選択位置 -7px を保つ) */
 @keyframes kk-sword-bob {
   0%,
   100% {
-    transform: translateY(-11px);
+    transform: translateY(-7px);
   }
   50% {
-    transform: translateY(-14px);
+    transform: translateY(-9.5px);
   }
 }
 @keyframes kk-drawer-up {
@@ -1883,6 +1945,25 @@
   .kk-equip {
     min-height: 42px;
     margin-bottom: 8px;
+  }
+  /* 引き出しは棚が3段あるぶん、もう一段詰める(実測 523px → 約503px) */
+  .kk-drawer .kk-rack {
+    height: 76px;
+    margin-bottom: 4px;
+  }
+  .kk-drawer .kk-slot-sword {
+    width: 28px;
+    margin-left: -14px;
+  }
+  .kk-skin-stage {
+    height: 42px;
+  }
+  .kk-skin-sword {
+    width: 17px;
+  }
+  .kk-charm-cell {
+    width: 26px;
+    height: 26px;
   }
 }
 

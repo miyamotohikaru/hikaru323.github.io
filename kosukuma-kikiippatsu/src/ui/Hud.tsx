@@ -218,7 +218,10 @@ export default function Hud() {
       {/* ── セーフ！スタンプ ── */}
       {phase === "safe" && (
         <div className="center-stage">
-          <div className="stamp">セーフ！</div>
+          {/* 全角「！」の左の余白を詰めるために、そこだけ span で分ける */}
+          <div className="stamp">
+            セーフ<span className="stamp-bang">！</span>
+          </div>
         </div>
       )}
 

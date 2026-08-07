@@ -3,23 +3,32 @@
 // 黒ひげ危機一発の「1色成型のプラスチック剣」をインラインSVGで描く共通部品。
 // 画像アセットを増やせない制約があるので、剣もチャームのビーズも全部ベクタで作る。
 //
-// ── 形は実物のパーツ写真(tomy_2.png)をピクセル計測して決めている ──────
-// 剣1本のマスクを主成分軸へ射影して、先端からの位置ごとの幅を測った結果:
+// ── 形の正は 3D(src/game/scene/sword/buildSword.ts)。ここはその2D版 ──
+// UIの剣と3Dの剣が別物だと「ネジを選んだのに短剣が刺さる」不一致になる。
+// なので座標を手で置くのをやめ、3Dが公式パーツ写真(**回転補正ずみ**)から
+// 出した比率をそのまま組み立てて形を作る。写真の剣は24〜29°傾いて置かれて
+// いるので、軸平行のバウンディングボックスで測ると幅が水増しされる。
+// ここの数値は補正後の値なので、写真を測り直して上書きしないこと。
 //
-//   先端から   0%    8%   16%   24%   32%   40%   48%  |52-60%| 64%  72%  88%  96%
-//   実物の幅  7.9  13.8  16.9  18.6  19.6  19.9  20.0 | 44.0 | 29.0 22.2 21.1 26.1
-//   このSVG   8.6  15.4  17.8  19.5  20.1  20.4  20.7 | 44.7 | 22.8 22.8 23.1 31.7
-//                                                     ↑鍔    ↑はしご握り  ↑柄頭
-//   (数値はすべて全長Lに対する%)
+//   刃の幅 / 刃の長さ       0.385  (3D: BLADE_HALF_W = BLADE_LEN * 0.385 / 2)
+//   鍔の長さ / 刃の最大幅   2.10   (3D: GUARD_HALF_L = BLADE_HALF_W * 2.1)
+//   刃 / 剣全体             0.534  (3D: BLADE_LEN / (BLADE_LEN + HILT_H))
+//   握り幅 / 刃の最大幅     1.10   (3D: GRIP_HALF_W = BLADE_HALF_W * 1.1)
+//   柄頭幅 / 握り幅         1.25
+//   握り板 縦÷横           1.30   (3Dの1.108より縦長。実物はこの比)
+//   刃の最大幅の位置        鍔ぎわ(単調増加。途中に山を作らない)
 //
-// 要点:
-//   ・刃は「先端から8%で一気に開き、あとはほぼ一定幅」の長いオジーブ。細長くすると
-//     8色が横に並んだとき墓標の列に見えてしまうので、この太さ(最大 20% L)は必須。
-//   ・剣先は尖らせない(丸い鼻)。
-//   ・鍔は刃の 2.2倍(44% L)まで張り出す。両はしは中央がくぼんだ丸いコブ。
-//   ・握りは横に張り出すリブ5本のはしご。柄頭は平たく開いた三つ葉板(球ではない)。
-//   ・刃を縦断する樋(血抜き溝)は実剣のディテールなので描かない。実物にあるのは
-//     鍔の上のU字の浮き彫りだけ。
+// ── 9倍に拡大したとき「冠ナット付きのネジ」に見えていた4つの原因と対処 ──
+//  1. 桟5本 + 溝4本 = 25単位の握りに等間隔9本の横縞 → ねじ山。
+//     溝はシルエットの切り欠き(3Dの makeGrip と同じ5か所)へ戻し、
+//     塗りだけの溝(旧 GROOVE_Y)は廃止。塗りは切り欠きの中を弱く沈めるだけ。
+//  2. 柄頭が「離れた小さな粒3つ + 丸棒」= 王冠/城の狭間。
+//     3Dどおり握りの下でいったんくびれ(握り幅の0.8倍)、そこから開く。
+//     粒は半径を柄頭半幅の0.37倍まで大きくして互いに重ねる(峰が繋がる)。
+//  3. 鍔のバーが細く両端の丸しか出ない = ネジの耳。
+//     バーは握りの1.80倍の長さにして、丸いボスはその端の膨らみにする。
+//  4. 鍔の下の刃が1/3ほど平行 = 口紅のケース。
+//     3Dの BLADE_PROFILE をそのまま写して、剣先から鍔まで単調に太らせる。
 //
 // 向きは「ラックに挿さっている姿」= 柄頭が上・剣先が下。
 // 陰影は「白と黒の半透明を重ねる」だけなので、どの hex が来ても破綻しない
@@ -33,24 +42,229 @@ import {
   SWORD_SKINS,
 } from "@/lib/config";
 
-/** 剣の座標系。全長 96(y=4〜100)、鍔の幅 42.4 が箱いっぱいに入る */
+// ── 寸法(全部いちど比率から組み立てる) ────────────────────────
+/** 剣の座標系。鍔の張り出し 41.4 が入る幅 */
 const VB_W = 44;
-const VB_H = 104;
+const VB_H = 102;
+const CX = VB_W / 2;
 
-/** 刃(下向き)。先端 y=100、上は握りのうしろへ隠れる */
-const D_BLADE =
-  "M22 100 C25.6 99.9 27.1 97.6 28.6 92.3 C29.6 89 30.1 84.6 30.6 80 C31.1 75 31.4 69.3 31.5 62 C31.55 56 31.55 46 31.55 38 L12.45 38 C12.45 46 12.45 56 12.5 62 C12.6 69.3 12.9 75 13.4 80 C13.9 84.6 14.4 89 15.4 92.3 C16.9 97.6 18.4 99.9 22 100 Z";
-/** 鍔のすぐ下のU字の浮き彫り(実物にあるのはこれ。樋ではない) */
-const D_EMBOSS = "M17.3 49.6 L17.3 55.3 A4.7 4.7 0 0 1 26.7 55.3 L26.7 49.6";
-/** 刃の左肩に入るツヤ */
-const D_GLOSS =
-  "M17.2 92.6 C15.6 88.6 14.9 83.4 14.7 77.5 C14.5 71 14.6 63 14.9 54 L17.9 54 C17.6 63 17.5 71 17.7 77.5 C17.9 83.2 18.5 88.2 19.7 92.6 Z";
+/** 剣の全長(柄頭のてっぺん〜剣先) */
+const TOTAL = 96;
+const TOP_Y = 3;
 
-/** はしご状の握り: 横へ張り出すリブ5本と、そのあいだに彫る溝4本 */
-const RUNG_Y = [14.3, 19.5, 24.7, 29.9, 35.1];
-const RUNG_H = 3.3;
-const GROOVE_Y = [17.6, 22.8, 28, 33.2];
+/**
+ * 輪郭(stroke)はパスの外へ半分はみ出す。比率を測られるのは「塗り上がりの
+ * シルエット」なので、パスの寸法からこのぶんを先に差し引いておく。
+ * 引かないと9倍に拡大して測ったとき刃が4〜8%太って出る。
+ * 3D側も同じ考えで、面取りのぶんを輪郭から引いている(BLADE_BEVEL)。
+ */
+const EDGE_NOMINAL = 1.1;
 
+const BLADE_LEN = TOTAL * 0.534; // 51.264
+const HILT_H = TOTAL - BLADE_LEN; // 44.736
+
+/** ここが「実測される」寸法(輪郭を塗ったあとの幅) */
+const BLADE_W_ART = BLADE_LEN * 0.385; // 19.737 = 刃の最大幅(鍔ぎわ)
+const GUARD_L_ART = BLADE_W_ART * 2.1; // 41.447
+const GRIP_W_ART = BLADE_W_ART * 1.1; // 21.710
+const POMMEL_W_ART = GRIP_W_ART * 1.25; // 27.138
+
+/** パスに与える寸法 = 実測される寸法 − 輪郭 */
+const BLADE_HW = (BLADE_W_ART - EDGE_NOMINAL) / 2;
+const GUARD_HL = (GUARD_L_ART - EDGE_NOMINAL) / 2;
+const GRIP_HW = (GRIP_W_ART - EDGE_NOMINAL) / 2;
+const POMMEL_HW = (POMMEL_W_ART - EDGE_NOMINAL) / 2;
+
+/** 柄の内訳。3Dと同じく鍔は柄の18.5%。残りを握り(縦横比1.30)と柄頭で分ける。
+ *  握りは上下を柄頭と鍔に食われるので、そのぶん(輪郭の半分×2)を足しておく */
+const GRIP_H = GRIP_W_ART * 1.3 + EDGE_NOMINAL * 0.55; // 28.83
+const GUARD_H = HILT_H * 0.185; // 8.276
+const POMMEL_H = HILT_H - GUARD_H - GRIP_H; // 7.63
+
+/** 上から: 柄頭 → 握り → 鍔 → 刃 */
+const GRIP_TOP = TOP_Y + POMMEL_H; // 11.24 = 柄頭のくびれ
+const GUARD_TOP = GRIP_TOP + GRIP_H; // 39.46
+const GUARD_BOT = GUARD_TOP + GUARD_H; // 47.74 = 刃のはじまり
+const TIP_Y = GUARD_BOT + BLADE_LEN; // 99.00 = 剣先
+const GUARD_CY = GUARD_TOP + GUARD_H / 2;
+
+/** 鍔: 細長いバーの両端に丸いボス(3D makeGuard と同じ組み立て) */
+const BOSS_R = GUARD_H / 2;
+const BAR_HH = BOSS_R * 0.7; // 中央のバーはボスより細い
+const BOSS_DX = GUARD_HL - BOSS_R;
+const BAR_HL = BOSS_DX + Math.sqrt(BOSS_R * BOSS_R - BAR_HH * BAR_HH); // 19.54
+
+/** 柄頭: くびれ(握りの0.8倍)から開く三つ葉。粒は重なる大きさにする */
+const LOBE_R = POMMEL_HW * 0.37; // 5.02(粒どうしが1.49ぶん重なる)
+const LOBE_DX = POMMEL_HW - LOBE_R;
+const WAIST_HW = GRIP_HW * 0.8;
+
+/** はしごの割りつけ(3D gripLadder と同じ式)。桟6・切り欠き5 */
+const LADDER_N = 5;
+const RIB = GRIP_H / (LADDER_N + 1 + LADDER_N * 0.42);
+const GAP = RIB * 0.42;
+const NOTCH = GRIP_HW * 0.28; // 切り欠きの深さ(輪郭にはしごを出す)
+
+/** 部品どうしの継ぎ目が線に見えないよう、うしろへ差し込む量 */
+const BLADE_TUCK = 3.4;
+const GRIP_TUCK = 1.4;
+
+/**
+ * 刃の輪郭。3D buildSword.ts の BLADE_PROFILE をそのまま写したもの。
+ * u = 0 が剣先 / 1 が鍔ぎわ。h = 鍔ぎわを1とした半幅。
+ * 途中に最大幅の山を作ると「先端の無い樽」= 洗濯ばさみに見えるので単調増加。
+ * 先端は幅0の尖点にしない(実物は安全基準で丸い鼻になっている)。
+ */
+const BLADE_PROFILE: [number, number][] = [
+  [0.0, 0.16],
+  [0.015, 0.3],
+  [0.04, 0.44],
+  [0.075, 0.555],
+  [0.12, 0.65],
+  [0.175, 0.725],
+  [0.245, 0.79],
+  [0.33, 0.85],
+  [0.43, 0.9],
+  [0.54, 0.94],
+  [0.67, 0.97],
+  [0.82, 0.99],
+  [1.0, 1.0],
+];
+
+const n2 = (v: number) => Number(v.toFixed(2));
+const pt = (x: number, y: number) => `${n2(CX + x)} ${n2(y)}`;
+const poly = (pts: number[][]) =>
+  "M" + pts.map(([x, y]) => pt(x, y)).join("L") + "Z";
+
+/** 剣先からの割合 u での刃の半幅(輪郭表の線形補間。3Dも折れ線なので同じ形) */
+function bladeHalf(u: number): number {
+  const t = Math.max(0, Math.min(1, u));
+  for (let i = 1; i < BLADE_PROFILE.length; i++) {
+    const [u1, h1] = BLADE_PROFILE[i];
+    if (t <= u1) {
+      const [u0, h0] = BLADE_PROFILE[i - 1];
+      const k = u1 === u0 ? 0 : (t - u0) / (u1 - u0);
+      return (h0 + (h1 - h0) * k) * BLADE_HW;
+    }
+  }
+  return BLADE_HW;
+}
+const bladeY = (u: number) => TIP_Y - BLADE_LEN * u;
+
+/** 刃。上端は鍔のバーのうしろへ差し込むので、見えている長さは BLADE_LEN */
+const D_BLADE = (() => {
+  const right: number[][] = [];
+  const left: number[][] = [];
+  for (const [u, h] of BLADE_PROFILE) {
+    right.push([BLADE_HW * h, bladeY(u)]);
+    left.push([-BLADE_HW * h, bladeY(u)]);
+  }
+  const tuck = GUARD_BOT - BLADE_TUCK;
+  return poly([
+    ...right,
+    [BLADE_HW, tuck],
+    [-BLADE_HW, tuck],
+    ...left.reverse(),
+  ]);
+})();
+
+/** 握り。左右の輪郭を段々に刻んで、シルエットに「はしご」を出す */
+const GRIP_BUILD = (() => {
+  const right: number[][] = [[GRIP_HW, GUARD_TOP + GRIP_TUCK]];
+  const notches: number[][] = []; // 切り欠きの帯 [top, bottom]
+  let y = GUARD_TOP;
+  for (let i = 0; i < LADDER_N; i++) {
+    y -= RIB;
+    right.push([GRIP_HW, y], [GRIP_HW - NOTCH, y], [GRIP_HW - NOTCH, y - GAP]);
+    notches.push([y - GAP, y]);
+    y -= GAP;
+    right.push([GRIP_HW, y]);
+  }
+  right.push([GRIP_HW, GRIP_TOP]);
+  const left = right.map(([x, yy]) => [-x, yy]).reverse();
+  return { d: poly([...right, ...left]), notches };
+})();
+const D_GRIP = GRIP_BUILD.d;
+const GRIP_NOTCHES = GRIP_BUILD.notches;
+
+/**
+ * 柄頭。握りの下でいったんくびれてから、平たい三つ葉板へ開く。
+ * 3つの円の上側の包絡線を走査するので、粒どうしが重なって峰が繋がる
+ * (離すと城の狭間 = 王冠に見える)。
+ */
+const D_POMMEL = (() => {
+  const cy = TOP_Y + LOBE_R;
+  const cxs = [-LOBE_DX, 0, LOBE_DX];
+  const pts: number[][] = [
+    [-WAIST_HW, GRIP_TOP],
+    [-POMMEL_HW, cy],
+  ];
+  const N = 26;
+  for (let i = 1; i < N; i++) {
+    const x = -POMMEL_HW + (POMMEL_HW * 2 * i) / N;
+    let top = cy;
+    for (const c of cxs) {
+      const d = Math.abs(x - c);
+      if (d < LOBE_R) top = Math.min(top, cy - Math.sqrt(LOBE_R * LOBE_R - d * d));
+    }
+    pts.push([x, top]);
+  }
+  pts.push([POMMEL_HW, cy], [WAIST_HW, GRIP_TOP]);
+  return poly(pts);
+})();
+
+/** 鍔のすぐ下のU字の浮き彫り(実物にあるのはこれ。刃を縦断する樋ではない) */
+const EMB_HW = 4.8;
+const EMB_TOP = GUARD_BOT + 0.9;
+const EMB_BOT = EMB_TOP + 7.4;
+const D_EMBOSS =
+  `M${pt(-EMB_HW, EMB_TOP)}L${pt(-EMB_HW, EMB_BOT - EMB_HW)}` +
+  `A${EMB_HW} ${EMB_HW} 0 0 0 ${pt(EMB_HW, EMB_BOT - EMB_HW)}` +
+  `L${pt(EMB_HW, EMB_TOP)}`;
+
+/**
+ * 握りの中央を縦に走る稲妻の浮き彫り。実物のパーツに彫られている飾りで、
+ * 「横縞しかない筒」= ねじ を断ち切ってくれる縦の要素でもある。
+ */
+const D_BOLT = (() => {
+  const top = GRIP_TOP + GRIP_H * 0.13;
+  const bot = GRIP_TOP + GRIP_H * 0.89;
+  const d = bot - top;
+  return poly([
+    [0, top],
+    [1.7, top + d * 0.3],
+    [0.55, top + d * 0.46],
+    [1.5, top + d * 0.55],
+    [0, bot],
+    [-1.5, top + d * 0.55],
+    [-0.55, top + d * 0.46],
+    [-1.7, top + d * 0.3],
+  ]);
+})();
+
+/** 刃の左肩に入るツヤ。輪郭に沿わせて、剣先へ向かって細くする */
+const D_GLOSS = (() => {
+  const us = [0.16, 0.3, 0.45, 0.6, 0.74, 0.85];
+  const outer = us.map((u) => [-bladeHalf(u) + 1.8, bladeY(u)]);
+  const inner = us
+    .map((u) => [-bladeHalf(u) + 1.8 + (1.0 + 1.9 * u), bladeY(u)])
+    .reverse();
+  return poly([...outer, ...inner]);
+})();
+
+/** クリスタルの「光の芯」(透明樹脂の中を通る明るい線) */
+const D_CORE = (() => {
+  const us = [0.22, 0.45, 0.68, 0.86];
+  const outer = us.map((u) => [-0.4 - 1.5 * u, bladeY(u)]);
+  const inner = us.map((u) => [1.1 + 1.4 * u, bladeY(u)]).reverse();
+  return poly([...outer, ...inner]);
+})();
+
+/** チャームをぶら下げる点(鍔の右のボスの下)。刃には重ならない位置 */
+const CHARM_X = BOSS_DX;
+const CHARM_TOP = GUARD_CY + BOSS_R * 0.6;
+
+// ── 仕上げ ────────────────────────────────────────────
 /** 仕上げの見た目は4種類に集約する(3Dのマテリアル値からUI表現へ翻訳) */
 type Finish = "plastic" | "metal" | "crystal" | "iri";
 
@@ -83,13 +297,13 @@ const SHADE: Record<Finish, [number, string][]> = {
     [0.87, "rgba(0,0,0,.05)"],
     [1, "rgba(0,0,0,.44)"],
   ],
-  // 透明樹脂は「ふちが明るく中が抜ける」
+  // 透明樹脂は「ふちが明るく中が抜ける」。下地じたいも氷色に寄せてある
   crystal: [
-    [0, "rgba(255,255,255,.85)"],
-    [0.22, "rgba(255,255,255,.08)"],
-    [0.5, "rgba(255,255,255,.6)"],
-    [0.76, "rgba(255,255,255,.04)"],
-    [1, "rgba(255,255,255,.78)"],
+    [0, "rgba(255,255,255,.9)"],
+    [0.2, "rgba(255,255,255,.06)"],
+    [0.46, "rgba(255,255,255,.42)"],
+    [0.74, "rgba(0,0,0,.07)"],
+    [1, "rgba(255,255,255,.8)"],
   ],
   iri: [
     [0, "rgba(255,255,255,.4)"],
@@ -101,19 +315,44 @@ const SHADE: Record<Finish, [number, string][]> = {
 };
 
 /**
- * にじいろの下地。UIでも3D同様に「見る場所で色が動く」感じを出す。
- * しあげの棚では幅24pxまで縮むので、パステルすぎると銀と見分けがつかない。
- * にじだと一目で分かる彩度にしてある。
+ * ふちの色と太さ。ぎん(#e8eefc)・きん(#ffd06a)はクリーム地のカードに置くと
+ * 塗りだけでは 1.4:1 前後しか出ず、実質見えない。金属だけふちを濃く太くして、
+ * どの地色でもシルエットが 4:1 以上で読めるようにする。
+ */
+const EDGE: Record<Finish, [string, number]> = {
+  plastic: ["rgba(26,22,10,.34)", 1.1],
+  metal: ["rgba(38,32,18,.62)", 1.55],
+  crystal: ["rgba(26,48,86,.45)", 1.25],
+  iri: ["rgba(26,22,10,.4)", 1.25],
+};
+
+/**
+ * にじいろの下地。3D同様に「見る場所で色が動く」感じを出す。
+ * 横方向のグラデにすると、幅24pxまで縮んだとき刃が gradient の中央付近しか
+ * 拾わず「緑〜黄の一色」になってしまう。剣の長さ方向へ斜めに流して、
+ * 柄頭〜剣先のあいだで必ず一周させる(userSpaceOnUse なので部品をまたぐ)。
  */
 const IRI_STOPS: [number, string][] = [
-  [0, "#ff9fd8"],
-  [0.18, "#a58cff"],
-  [0.36, "#5cc8ff"],
-  [0.54, "#7ff0b8"],
-  [0.72, "#ffdb6b"],
-  [0.88, "#ff8fb0"],
-  [1, "#b79bff"],
+  [0, "#ff8fcf"],
+  [0.16, "#b98cff"],
+  [0.34, "#57c7ff"],
+  [0.52, "#67efb9"],
+  [0.68, "#ffe066"],
+  [0.84, "#ff9f7a"],
+  [1, "#f58fd0"],
 ];
+
+/** クリスタルが寄っていく氷の色(config の hex #bfe9ff に合わせた冷たい白) */
+const ICE = [223, 244, 255];
+
+/** hex を氷色へ寄せる。t=1 で完全に氷色 */
+function toIce(hex: string, t: number): string {
+  const h = hex.replace("#", "");
+  const s = h.length === 3 ? h.replace(/./g, (c) => c + c) : h;
+  const v = [0, 2, 4].map((i) => parseInt(s.slice(i, i + 2), 16) || 0);
+  const m = v.map((c, i) => Math.round(c + (ICE[i] - c) * t));
+  return `rgb(${m[0]},${m[1]},${m[2]})`;
+}
 
 /**
  * バッジなど「1色だけ欲しい」場所むけ。tinted なスキンは選んだ色、
@@ -132,7 +371,7 @@ export function visibleCharms(charms: number) {
   return CHARMS.slice(Math.max(0, n - CHARM_VISIBLE_MAX), n);
 }
 
-/** きらめきの4方向スター(金属・クリスタルの見せ場) */
+/** きらめきの4方向スター(金属・クリスタル・にじいろの見せ場) */
 function sparkle(x: number, y: number, s: number): string {
   const q = s * 0.26;
   return [
@@ -168,10 +407,17 @@ export default function SwordArt({
   const base = effectiveHex(color, skin);
   const beads = visibleCharms(charms);
 
-  const body = fin === "iri" ? `url(#ki${uid})` : base;
+  const body =
+    fin === "iri"
+      ? `url(#ki${uid})`
+      : fin === "crystal"
+        ? `url(#kc${uid})`
+        : base;
   const shade = `url(#ks${uid})`;
-  const bodyOpacity = fin === "crystal" ? 0.86 : 1;
-  const edge = fin === "crystal" ? "rgba(20,40,70,.3)" : "rgba(0,0,0,.28)";
+  // 透けは「ほんの少し」でよい。0.86 まで落とすとカードの地色と混ざって
+  // にごる(濃紺のカードの上で、きいろのクリスタルがオリーブ色になっていた)
+  const bodyOpacity = fin === "crystal" ? 0.95 : 1;
+  const [edge, edgeW] = EDGE[fin];
 
   /** 成型パーツ1つぶん = 下地 + 同じ形の陰影。パーツごとに丸く見える */
   const part = (el: (fill: string, outline: boolean) => React.ReactNode) => (
@@ -195,39 +441,59 @@ export default function SwordArt({
           ))}
         </linearGradient>
         {fin === "iri" && (
-          <linearGradient id={`ki${uid}`} x1="0" y1="0" x2="1" y2="0.25">
+          <linearGradient
+            id={`ki${uid}`}
+            gradientUnits="userSpaceOnUse"
+            x1={CX - 9}
+            y1={TOP_Y}
+            x2={CX + 11}
+            y2={TIP_Y}
+          >
             {IRI_STOPS.map(([o, c]) => (
               <stop key={o} offset={o} stopColor={c} />
             ))}
           </linearGradient>
         )}
+        {fin === "crystal" && (
+          // 透明樹脂は「ふちが白く、芯にだけ色が溜まる」。均一に塗ると
+          // ただの不透明なプラスチックになってしまう
+          <linearGradient id={`kc${uid}`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor={toIce(base, 0.82)} />
+            <stop offset="0.34" stopColor={toIce(base, 0.24)} />
+            <stop offset="0.62" stopColor={toIce(base, 0.58)} />
+            <stop offset="1" stopColor={toIce(base, 0.4)} />
+          </linearGradient>
+        )}
       </defs>
 
-      {/* ── チャーム: 鍔の右のコブから、刃の横へ垂らす ── */}
+      {/* ── チャーム: 鍔の右のボスから、刃の横へ垂らす ── */}
       {beads.length > 0 && (
         <g>
           <path
-            d={`M38.9 49.8 C39.7 51 39.6 52 39.5 ${52.4 + beads.length * 0.2}`}
+            d={`M${pt(CHARM_X, CHARM_TOP)} C${pt(CHARM_X + 1, CHARM_TOP + 1.4)} ${pt(
+              CHARM_X + 0.9,
+              CHARM_TOP + 2.4
+            )} ${pt(CHARM_X + 0.8, CHARM_TOP + 2.8 + beads.length * 0.2)}`}
             fill="none"
             stroke="rgba(0,0,0,.32)"
             strokeWidth="1.1"
             strokeLinecap="round"
           />
           {beads.map((c, i) => {
-            const cy = 54.6 + i * 7;
+            const cy = CHARM_TOP + 5.6 + i * 7;
             return (
               <g key={c.name}>
                 <circle
-                  cx="39.5"
-                  cy={cy}
+                  cx={n2(CX + CHARM_X + 0.8)}
+                  cy={n2(cy)}
                   r="2.9"
                   fill={c.hex}
                   stroke="rgba(0,0,0,.34)"
                   strokeWidth="0.9"
                 />
                 <circle
-                  cx="38.6"
-                  cy={cy - 1}
+                  cx={n2(CX + CHARM_X - 0.1)}
+                  cy={n2(cy - 1)}
                   r="1.05"
                   fill="rgba(255,255,255,.85)"
                 />
@@ -238,100 +504,61 @@ export default function SwordArt({
       )}
 
       <g opacity={bodyOpacity}>
-        {/* ── 柄頭(平たく開いた三つ葉板) ── */}
-        {[
-          [11.6, 8.6, 3.1, 2.5],
-          [32.4, 8.6, 3.1, 2.5],
-          [22, 8, 3.5, 2.8],
-        ].map(([cx, cy, rx, ry]) => (
-          <g key={cx}>
-            <ellipse
-              cx={cx}
-              cy={cy}
-              rx={rx}
-              ry={ry}
-              fill={body}
-              stroke={edge}
-              strokeWidth="1"
-            />
-            <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={shade} />
-          </g>
-        ))}
+        {/* ── 柄頭(くびれてから開く三つ葉板) ── */}
         {part((f, o) => (
-          <rect
+          <path
             key={o ? "b" : "s"}
-            x="9.2"
-            y="8.6"
-            width="25.6"
-            height="4.8"
-            rx="2.1"
+            d={D_POMMEL}
             fill={f}
             stroke={o ? edge : "none"}
-            strokeWidth="1"
+            strokeWidth={edgeW}
+            strokeLinejoin="round"
           />
         ))}
 
-        {/* ── はしご状の握り(細い胴 + 横へ張り出すリブ) ── */}
+        {/* ── はしご状の握り(切り欠きは輪郭そのものに入っている) ── */}
         {part((f, o) => (
-          <rect
+          <path
             key={o ? "b" : "s"}
-            x="13"
-            y="13"
-            width="18"
-            height="25"
-            rx="2.2"
+            d={D_GRIP}
             fill={f}
             stroke={o ? edge : "none"}
-            strokeWidth="1"
+            strokeWidth={edgeW}
+            strokeLinejoin="round"
           />
         ))}
-        {RUNG_Y.map((y) => (
-          <g key={y}>
-            <rect
-              x="11.4"
-              y={y}
-              width="21.2"
-              height={RUNG_H}
-              rx="1.1"
-              fill={body}
-              stroke={edge}
-              strokeWidth="0.9"
-            />
-            <rect
-              x="11.4"
-              y={y}
-              width="21.2"
-              height={RUNG_H}
-              rx="1.1"
-              fill={shade}
-            />
-          </g>
+        {/* 切り欠きの中だけ弱く沈める。ここを濃くすると横縞が9本に見えて
+            ねじ山になるので、桟側にはハイライトを足さない(暗い線5本だけ) */}
+        {GRIP_NOTCHES.map(([y0, y1]) => (
+          <rect
+            key={y0}
+            x={n2(CX - (GRIP_HW - NOTCH))}
+            y={n2(y0)}
+            width={n2((GRIP_HW - NOTCH) * 2)}
+            height={n2(y1 - y0)}
+            fill="rgba(0,0,0,.15)"
+          />
         ))}
-        {/* 溝は「彫った跡」。ここを暗くしないとリブがバネのように見える */}
-        {GROOVE_Y.map((y) => (
-          <g key={y}>
-            <rect
-              x="13.4"
-              y={y}
-              width="17.2"
-              height="1.9"
-              rx="0.9"
-              fill="rgba(0,0,0,.24)"
-            />
-            <rect
-              x="13.4"
-              y={y + 1.4}
-              width="17.2"
-              height="0.6"
-              rx="0.3"
-              fill="rgba(255,255,255,.26)"
-            />
-          </g>
-        ))}
+        {/* 稲妻の浮き彫り。暗い形の上に明るい形をずらして「盛り上がり」に見せる */}
+        <path d={D_BOLT} fill="rgba(0,0,0,.16)" />
+        <path
+          d={D_BOLT}
+          fill="rgba(255,255,255,.3)"
+          transform="translate(-0.55 -0.55)"
+        />
 
-        {/* ── 刃(下向き。上端は握りのうしろに隠れる) ── */}
-        <path d={D_BLADE} fill={body} stroke={edge} strokeWidth="1" />
+        {/* ── 刃(下向き。上端は鍔のうしろに隠れる) ── */}
+        <path
+          d={D_BLADE}
+          fill={body}
+          stroke={edge}
+          strokeWidth={edgeW}
+          strokeLinejoin="round"
+        />
         <path d={D_BLADE} fill={shade} />
+        {fin === "crystal" && (
+          <path d={D_CORE} fill="rgba(255,255,255,.55)" />
+        )}
         <path d={D_GLOSS} fill="rgba(255,255,255,.34)" />
         {/* U字の浮き彫り: 明るい線をずらして「盛り上がり」に見せる */}
         <path
@@ -350,36 +577,36 @@ export default function SwordArt({
           transform="translate(-0.7 -0.7)"
         />
 
-        {/* ── 鍔(横棒 + 両はしの丸いコブ)。刃幅の2.2倍まで張り出させる ── */}
+        {/* ── 鍔(握りの1.80倍の長いバー + 両はしの丸いボス) ── */}
         {part((f, o) => (
           <rect
             key={o ? "b" : "s"}
-            x="5.4"
-            y="42.4"
-            width="33.2"
-            height="7.7"
-            rx="2.7"
+            x={n2(CX - BAR_HL)}
+            y={n2(GUARD_CY - BAR_HH)}
+            width={n2(BAR_HL * 2)}
+            height={n2(BAR_HH * 2)}
+            rx={n2(BAR_HH)}
             fill={f}
             stroke={o ? edge : "none"}
-            strokeWidth="1"
+            strokeWidth={edgeW}
           />
         ))}
-        {[5.4, 38.6].map((cx) => (
-          <g key={cx}>
+        {[-BOSS_DX, BOSS_DX].map((dx) => (
+          <g key={dx}>
             <circle
-              cx={cx}
-              cy="46.2"
-              r="4.6"
+              cx={n2(CX + dx)}
+              cy={n2(GUARD_CY)}
+              r={n2(BOSS_R)}
               fill={body}
               stroke={edge}
-              strokeWidth="1"
+              strokeWidth={edgeW}
             />
-            <circle cx={cx} cy="46.2" r="4.6" fill={shade} />
-            {/* コブの真ん中のくぼみ(実物のドーナツ状のディテール) */}
+            <circle cx={n2(CX + dx)} cy={n2(GUARD_CY)} r={n2(BOSS_R)} fill={shade} />
+            {/* ボスの真ん中のくぼみ(実物のドーナツ状のディテール) */}
             <circle
-              cx={cx}
-              cy="46.2"
-              r="1.7"
+              cx={n2(CX + dx)}
+              cy={n2(GUARD_CY)}
+              r={n2(BOSS_R * 0.41)}
               fill="rgba(0,0,0,.22)"
               stroke="rgba(255,255,255,.25)"
               strokeWidth="0.7"
@@ -387,11 +614,11 @@ export default function SwordArt({
           </g>
         ))}
         <rect
-          x="8.6"
-          y="43.6"
-          width="26.8"
-          height="1.9"
-          rx="0.95"
+          x={n2(CX - BAR_HL + 2.6)}
+          y={n2(GUARD_CY - BAR_HH + 0.9)}
+          width={n2((BAR_HL - 2.6) * 2)}
+          height="1.7"
+          rx="0.85"
           fill="rgba(255,255,255,.34)"
         />
       </g>
@@ -399,12 +626,15 @@ export default function SwordArt({
       {/* ── 仕上げのきらめき ── */}
       {(fin === "metal" || fin === "crystal") && (
         <>
-          <path d={sparkle(26.6, 80, 4.2)} fill="rgba(255,255,255,.92)" />
-          <path d={sparkle(18.4, 66, 2.6)} fill="rgba(255,255,255,.7)" />
+          <path d={sparkle(CX + 3.8, 79, 4)} fill="rgba(255,255,255,.92)" />
+          <path d={sparkle(CX - 3.6, 65, 2.6)} fill="rgba(255,255,255,.7)" />
         </>
       )}
       {fin === "iri" && (
-        <path d={sparkle(26.2, 76, 3.7)} fill="rgba(255,255,255,.85)" />
+        <>
+          <path d={sparkle(CX + 4.2, 75, 3.7)} fill="rgba(255,255,255,.85)" />
+          <path d={sparkle(CX - 3.4, 58, 2.4)} fill="rgba(255,255,255,.7)" />
+        </>
       )}
     </svg>
   );
