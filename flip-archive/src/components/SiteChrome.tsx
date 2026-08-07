@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 const NAV = [
-  { href: "/", label: "CASES", ja: "図版" },
-  { href: "/index", label: "INDEX", ja: "索引" },
+  { href: "/", label: "OVERVIEW", ja: "図版" },
+  { href: "/cases", label: "INDEX", ja: "索引" },
   { href: "/about", label: "ABOUT", ja: "方針" },
 ];
 

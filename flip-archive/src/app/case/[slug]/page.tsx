@@ -100,7 +100,7 @@ export default async function CasePage({
     <main className="px-4 pb-4 pt-20 sm:px-6 sm:pt-24">
       <div className="mx-auto max-w-[68rem]">
         <Link
-          href="/index"
+          href="/cases"
           className="label inline-flex items-center gap-2 transition-colors hover:!text-ink"
         >
           ← 索引にもどる
