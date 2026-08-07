@@ -151,6 +151,8 @@ function NewCard({
 }) {
   const statusLabel = en ? dict.status[job.status] : statusMeta[job.status].label;
   const nameSize = Math.min(11, 90 / effLen(name));
+  // 読みも必ず1行に（字送り0.5emぶんを見込んで1文字=1.5倍幅で計算）
+  const readingSize = Math.min(3.4, 56 / Math.max(1, effLen(reading)));
   const years = lifespan(span.start, span.end);
 
   // 上段の年代表記は桁数に応じて縮小（B.C.3000等の長い年号対応）
@@ -241,7 +243,10 @@ function NewCard({
         {/* 読み・名前・英名 */}
         <div className="text-center">
           {!en && (
-            <p className="text-[3.4cqw] font-semibold tracking-[0.5em] opacity-80">
+            <p
+              className="whitespace-nowrap font-semibold tracking-[0.5em] opacity-80"
+              style={{ fontSize: `${readingSize}cqw` }}
+            >
               {reading}
             </p>
           )}
