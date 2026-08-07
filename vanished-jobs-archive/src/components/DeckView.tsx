@@ -66,7 +66,7 @@ const S = (o: Partial<Stop>): Stop => ({ ...base, ...o });
 /** ピント面。ここだけは色も彩度も素のまま */
 const FOCUS = S({ sat: 1, tone: 0 });
 
-export type FlipId = "stack" | "rail" | "toss" | "fan" | "turn";
+export type FlipId = "stack" | "rail" | "arc" | "toss" | "fan" | "turn";
 
 type Flip = {
   id: FlipId;
@@ -99,35 +99,35 @@ type Flip = {
   nearDark: boolean;
 };
 
-/** 横ながしは円筒に貼った回転台。位置は10個で一周する */
-const RAIL_FACES = 10;
+/** 円弧は円筒に貼った回転台。位置は10個で一周する */
+const ARC_FACES = 10;
 /** 円筒の半径（カード幅に対する比）。大きいほどカード同士の隙間が開く */
-const RAIL_R = 1.85;
-/** 横ながしの遠近の強さ（カード幅に対する比） */
-const RAIL_PERSP = 3.2;
+const ARC_R = 1.85;
+/** 円弧の遠近の強さ（カード幅に対する比） */
+const ARC_PERSP = 3.2;
 /** 90度を越えた位置のカードは裏を向く。そこは背面として描く */
-const railIsBack = (n: number) => Math.abs(((360 / RAIL_FACES) * n) % 360) > 90;
+const arcIsBack = (n: number) => Math.abs(((360 / ARC_FACES) * n) % 360) > 90;
 
 /**
- * 横ながしの並びを、円筒に貼った回転台としてつくる。
+ * 円弧の並びを、円筒に貼った回転台としてつくる。
  *
  * 奥へ一列に退かせる並べ方だと、横幅をいくらでも食うので携帯に収まらない。
  * 円筒なら、正面の数枚のほかは向こう側へ回り込むだけなので幅を食わず、
  * カード同士の隙間から裏を向いたカードの背面が覗いて「一周ぶんある」と分かる。
  */
-function railStops(): Record<number, Stop> {
+function arcStops(): Record<number, Stop> {
   const out: Record<number, Stop> = { 0: FOCUS };
   // 背面は暗さを残す。地の色で薄めすぎると、灰色の壁が一枚あるように見えてしまう
   const veil = [0, 0.18, 0.35, 0.26, 0.34, 0.4, 0.4];
   const blur = [0, 0, 2, 0, 0, 0, 0];
   for (let n = -5; n <= 6; n++) {
     if (n === 0) continue;
-    const deg = (360 / RAIL_FACES) * n;
+    const deg = (360 / ARC_FACES) * n;
     const th = (deg * Math.PI) / 180;
     const a = Math.min(Math.abs(n), 6);
     out[n] = S({
-      x: RAIL_R * Math.sin(th),
-      z: RAIL_R * (Math.cos(th) - 1),
+      x: ARC_R * Math.sin(th),
+      z: ARC_R * (Math.cos(th) - 1),
       rotY: deg, // 円筒の接線に沿わせる
       veil: veil[a],
       blur: blur[a],
@@ -165,10 +165,38 @@ export const FLIPS: Flip[] = [
     },
   },
   {
-    // 円筒に貼った回転台。隙間から裏を向いたカードが覗き、一周ぶんの厚みが見える
+    // 平らな一列。前後のカードが両脇から覗くので、いま何番めかが分かりやすい
     id: "rail",
     ja: "横ながし",
     en: "RAIL",
+    min: -3,
+    max: 3,
+    ahead: 3,
+    behind: 3,
+    real: [0, 1, -1],
+    realTouch: [0, 1, -1],
+    origin: "50% 50%",
+    perspectiveW: 3.2,
+    travel: 0.5,
+    pad: 0.1,
+    nearDark: false,
+    stops: {
+      // 間隔は等しく。ここが不揃いだと、同じだけ指を動かしても
+      // 束のどこにいるかで送りの速さが変わってしまう
+      [-3]: S({ x: -2.58, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
+      [-2]: S({ x: -1.72, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
+      [-1]: S({ x: -0.86, scale: 0.93, blur: 2, veil: 0.28 }),
+      [0]: FOCUS,
+      [1]: S({ x: 0.86, scale: 0.93, blur: 2, veil: 0.28 }),
+      [2]: S({ x: 1.72, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
+      [3]: S({ x: 2.58, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
+    },
+  },
+  {
+    // 円筒に貼った回転台。隙間から裏を向いたカードが覗き、一周ぶんの厚みが見える
+    id: "arc",
+    ja: "円弧",
+    en: "ARC",
     min: -5,
     max: 6,
     ahead: 4,
@@ -176,13 +204,13 @@ export const FLIPS: Flip[] = [
     real: [0, 1, -1, 2, -2],
     realTouch: [0, 1, -1],
     origin: "50% 50%",
-    perspectiveW: RAIL_PERSP,
+    perspectiveW: ARC_PERSP,
     travel: 0.5,
     pad: 0.1,
     // 回転台は横に場所が要るので、携帯ではカードを一回り小さくして並ぶ余地をつくる
     narrowVW: 55,
     nearDark: false,
-    stops: railStops(),
+    stops: arcStops(),
   },
   {
     // 手札から一枚ずつ放る。抜けていくカードは色を保ったまま大きく回る
@@ -743,7 +771,7 @@ export default function DeckView({
             );
           const job = jobs[idx];
           // 円筒の向こう側に回り込んだ位置は、カードの裏面として描く
-          const back = flip.id === "rail" && railIsBack(k);
+          const back = flip.id === "arc" && arcIsBack(k);
           return (
             <div
               key={k}
