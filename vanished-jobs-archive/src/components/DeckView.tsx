@@ -118,11 +118,14 @@ function railStops(): Record<number, Stop> {
   for (let n = 1; n <= RAIL_N + 1; n++) {
     const z = -0.3 * n; // 一定の割合で奥へ退く
     const k = RAIL_PERSP / (RAIL_PERSP - z); // 遠近で縮む率
-    // 外側の縁の行き先。奥へ行くほど間隔が詰まりながらも必ず外へ広がる
-    // 手前の1枚はしっかり見せ、そこから先は詰めながら必ず外へ広げる
-    const edge = 1.1 + 0.42 * (1 - Math.exp(-0.34 * n));
-    const x = edge / k - 0.5;
     const rotY = Math.min(12 * n, 44); // 外側の辺が奥へ向くように回す
+    // 外側の縁の行き先。手前の1枚はしっかり見せ、そこから先は等比で詰めながら
+    // 必ず外へ広げる。間隔が最後まで数ピクセル残るので、奥まで一枚ずつ数えられる
+    const edge = 1.2 + 0.425 * (1 - Math.pow(0.8, n - 1));
+    // 回転すると見かけの幅が cos ぶん縮む。ここを入れないと縁が内側に寄り、
+    // 奥のカードが手前の裏に潰れて5〜6枚しか読めなくなる
+    const half = 0.5 * Math.cos((rotY * Math.PI) / 180);
+    const x = edge / k - half;
     const opacity = n <= RAIL_N - 1 ? 1 : n === RAIL_N ? 0.8 : 0;
     for (const side of [1, -1]) {
       out[n * side] = S({
