@@ -58,35 +58,37 @@
   --sb-radius: 20px;
 }
 
-/* 尻尾+地色のかたまり。影はここに落とす(尻尾だけ暗くならないように) */
+/* 尻尾+地色のかたまり。影はここに落とす(尻尾だけ暗くならないように)。
+   本体より四方に 160px 大きく取ってあるのが要点。尻尾は本体の外へ出るので、
+   この箱が小さいと filter がつくる合成グループのはんいから外れて、
+   尻尾が(とくに左右むきのときに)まるごと消える。
+   広げた値は SpeechBubble.tsx の TAIL_PAD と合わせること */
 .sb-shape {
   position: absolute;
-  inset: 0;
+  inset: -160px;
   filter: drop-shadow(0 5px 11px rgba(5, 7, 26, 0.55));
 }
 
-/* まるい地色。尻尾の付け根をこれで隠すので、必ず不透明にすること */
+/* まるい地色。尻尾の付け根をこれで隠すので、必ず不透明にすること。
+   .sb-shape を広げたぶん、ここで本体のサイズへ戻す */
 .sb-fill {
   position: absolute;
-  inset: 0;
+  inset: 160px;
   border: 3px solid var(--sb-line);
   border-radius: var(--sb-radius);
   background: var(--sb-fill);
   box-shadow: inset 0 -4px 0 rgba(16, 22, 58, 0.05);
 }
 
-/* 尻尾。
-   本体の外へはみ出して描くので、SVG のビューポートを四方に広げておく。
-   1x1 + overflow:visible だと、親(.sb-shape)の filter がつくるグループの
-   はんいから外れて、左/上むき(=マイナス座標)の尻尾が消えてしまう。
-   path 側を translate(160,160) しているので、座標は本体ローカルのまま書ける。
-   広げた値は SpeechBubble.tsx の TAIL_PAD と合わせること */
+/* 尻尾。広げた .sb-shape いっぱいに置くので、1x1+overflow に頼らずに描ける。
+   path 側を translate(160,160) してあるぶん、座標は本体ローカルのまま書ける
+   (0,0 = 本体の左上)。overflow:visible は 160px を超える長い尻尾の保険 */
 .sb-tail {
   position: absolute;
-  left: -160px;
-  top: -160px;
-  width: calc(100% + 320px);
-  height: calc(100% + 320px);
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
   overflow: visible;
 }
 .sb-tail path {
@@ -278,6 +280,11 @@
     opacity: 0;
     transform: scale(0.2) rotate(-10deg);
   }
+  /* 文字はすぐ読めるようにしたいので、透明度だけ先に上げきる(約0.09秒)。
+     バネの動きはそのまま最後まで続ける */
+  22% {
+    opacity: 1;
+  }
   55% {
     opacity: 1;
     transform: scale(1.1) rotate(2.5deg);
@@ -295,6 +302,9 @@
   0% {
     opacity: 0;
     transform: scale(0.15) rotate(-14deg);
+  }
+  20% {
+    opacity: 1;
   }
   50% {
     opacity: 1;
