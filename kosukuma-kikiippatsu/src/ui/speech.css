@@ -99,7 +99,10 @@
   stroke-linecap: round;
 }
 
-/* セリフ。position:relative で .sb-fill より前面に置く */
+/* セリフ。position:relative で .sb-fill より前面に置く。
+   改行は wrapJa.ts が決めて \n で渡してくる(日本語の禁則と文節を見て折る)。
+   pre-wrap はその \n を守るための指定。それでも入りきらないときだけ、
+   CSSの折り返しが保険として働く(text-wrap:balance はJSに任せたので使わない) */
 .sb-text {
   position: relative;
   color: var(--sb-ink);
@@ -108,7 +111,7 @@
   line-height: 1.5;
   letter-spacing: 0.01em;
   text-align: center;
-  text-wrap: balance;
+  white-space: pre-wrap;
 }
 
 /* ── tone: happy(うれしい) ──────────────────────────── */

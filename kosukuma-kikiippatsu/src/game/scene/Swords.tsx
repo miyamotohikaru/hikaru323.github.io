@@ -55,7 +55,20 @@ function beadScaleMatrix(count: number, out: THREE.Matrix4): THREE.Matrix4 {
 
 /** SWORD_COLORS / CHARMS を THREE.Color に変換したキャッシュ */
 const SWORD_TINTS = SWORD_COLORS.map((c) => new THREE.Color(c.hex));
-const CHARM_TINTS = CHARMS.map((c) => new THREE.Color(c.hex));
+/**
+ * ビーズの色 = そのチャームの地の色。ただしエイトボールのような真っ黒は、
+ * 1000本ぶんの小さなビーズにすると宇宙に溶けて「何も付いていない剣」に
+ * 見えてしまう。**遠景のビーズだけ**明るさに下限を入れる
+ * (近くで見る自分の剣のチャームは、黒いままつやのある黒で描かれる)。
+ */
+const BEAD_MIN_L = 0.34;
+const CHARM_TINTS = CHARMS.map((c) => {
+  const col = new THREE.Color(c.hex);
+  const hsl = { h: 0, s: 0, l: 0 };
+  col.getHSL(hsl);
+  if (hsl.l < BEAD_MIN_L) col.setHSL(hsl.h, hsl.s, BEAD_MIN_L);
+  return col;
+});
 
 /** 自分の剣の上でふんわり光るハロ(1個分) */
 function MyGlow({ holeId, colorHex }: { holeId: number; colorHex: string }) {

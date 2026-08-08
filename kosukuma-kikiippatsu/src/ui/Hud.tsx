@@ -13,14 +13,13 @@ import {
   SWORD_COLORS,
   SWORD_SKINS,
 } from "@/lib/config";
-import { charmIndicesFrom } from "@/lib/style";
 import { useGameStore } from "@/game/store";
 import { onGameEvent } from "@/game/events";
 import Feed from "./Feed";
 import CooldownPill from "./CooldownPill";
 import HelpModal from "./HelpModal";
 import SwordArt, { effectiveHex } from "./SwordArt";
-import { SkinUnlockCard, SwordRack } from "./SwordRack";
+import { SkinUnlockCard, SwordRack, useEquippedCharms } from "./SwordRack";
 import { CharmGet } from "./CharmShelf";
 import GearDrawer from "./GearDrawer";
 import "./ui.css";
@@ -40,7 +39,8 @@ export default function Hud() {
   const swordSkin = useGameStore((s) => s.swordSkin);
   const myStabs = useGameStore((s) => s.myStabs);
   const myTotal = useGameStore((s) => s.myTotal);
-  const hasEarthCharm = useGameStore((s) => s.hasEarthCharm);
+  // 剣にぶら下がるのは「持っている」ではなく「つけている」ぶん
+  const hung = useEquippedCharms();
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [gearOpen, setGearOpen] = useState(false);
@@ -93,8 +93,8 @@ export default function Hud() {
     ? `${skin.name}の ${colorName}`
     : `${skin.name}の けん`;
   const charmCount = charmLevelOf(myTotal);
-  // 実際に剣にぶら下がる数(隠しチャームを持っていれば1個多い)
-  const hungCount = charmIndicesFrom(charmCount, hasEarthCharm).length;
+  // 実際に剣にぶら下がる数(= いまつけているぶん)
+  const hungCount = hung.length;
   // CHARMS[charmCount] をそのまま使うと、12個そろった人の装備バーに
   // 隠しチャームの存在が「つぎまで あと…」としてもれてしまう
   const nextCharm =
@@ -104,7 +104,7 @@ export default function Hud() {
         1,
         nextCharm.need - myTotal
       )}本`
-    : `チャーム ${hungCount}こ ぜんぶ そろった！`;
+    : `チャーム ${hungCount}こ ・ ぜんぶ あつめた！`;
 
   return (
     <div className="hud">
@@ -199,8 +199,7 @@ export default function Hud() {
               <SwordArt
                 color={swordColor}
                 skin={swordSkin}
-                charms={charmCount}
-                earthCharm={hasEarthCharm}
+                charmIndices={hung}
               />
             </span>
             <span className="kk-equip-txt">

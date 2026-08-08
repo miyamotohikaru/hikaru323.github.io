@@ -31,11 +31,13 @@ import {
   LAUNCH_ME,
   LAUNCH_OTHER,
   NEW_ROUND,
+  RANDOM,
   REMOTE,
   SAFE,
   SKIN,
   STABBING,
   SUSPENSE,
+  TRIVIA_EARTH,
   pick,
   type Line,
 } from "./lines";
@@ -146,6 +148,19 @@ export default function SpeechDirector() {
       idleTimer = setTimeout(tickIdle, rand(min, max));
     };
 
+    /**
+     * ひとりごとの引き出しを選ぶ。ふだんの話が7割で、たまに地球の豆知識、
+     * たまにまったく関係ない話。「急に何の話?」が可愛いので、混ぜる比率は
+     * 低めにして、出たときに効くようにしている。
+     */
+    const idlePool = (few: boolean): Line[] => {
+      if (few) return FEW_LEFT;
+      const r = Math.random();
+      if (r < 0.16) return TRIVIA_EARTH; // 地球の豆知識
+      if (r < 0.31) return RANDOM; // まったく関係ない話
+      return IDLE;
+    };
+
     const tickIdle = () => {
       const s = useGameStore.getState();
       // 月をながめていられるときだけ。裏タブでは黙っている
@@ -153,7 +168,7 @@ export default function SpeechDirector() {
         // 残りが少なくなってきたら、そわそわしたセリフを混ぜる
         const few =
           s.stabCount > FEW_LEFT_AT && Math.random() < FEW_LEFT_CHANCE;
-        if (speak(few ? FEW_LEFT : IDLE, P.IDLE, T_SPEECH, QUIET_GAP)) return;
+        if (speak(idlePool(few), P.IDLE, T_SPEECH + 900, QUIET_GAP)) return;
       }
       armIdle(IDLE_MIN, IDLE_MAX);
     };

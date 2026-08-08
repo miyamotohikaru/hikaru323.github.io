@@ -11,17 +11,31 @@
 // 剣の絵は SwordArt(インラインSVG)。ラックの木/樹脂の厚み・スロットの穴・
 // 落ち影は CSS で作っていて、剣先はラックの前板に隠れる = 挿さって見える。
 
-import { useEffect, useState, type CSSProperties } from "react";
-import {
-  CHARMS,
-  charmLevelOf,
-  SWORD_COLORS,
-  SWORD_SKINS,
-} from "@/lib/config";
-import { charmIndicesFrom } from "@/lib/style";
-import { useGameStore, unlockedSkins } from "@/game/store";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { CHARMS, SWORD_COLORS, SWORD_SKINS } from "@/lib/config";
+import { ownedCharms, useGameStore, unlockedSkins } from "@/game/store";
 import SwordArt, { effectiveHex } from "./SwordArt";
 import { CharmDisc, CharmIcon } from "./CharmShelf";
+
+/**
+ * いま剣についているチャーム(CHARMS の index、古い順)。
+ * **持っている ≠ つけている。** 端末に残った設定に、いまは持っていないものが
+ * 混じっていることがあるので、必ず「持っている」と交差させてから使う。
+ * したく引き出しでチャームを押した瞬間にここが変わり、
+ * プレビューも剣ラックも同じフレームで描き変わる = つけ外しの手ごたえになる。
+ */
+export function useEquippedCharms(): number[] {
+  const myTotal = useGameStore((s) => s.myTotal);
+  const hasEarth = useGameStore((s) => s.hasEarthCharm);
+  const equipped = useGameStore((s) => s.equippedCharms);
+  return useMemo(() => {
+    const has = new Set(ownedCharms(myTotal, hasEarth));
+    return equipped.filter((i) => has.has(i)).sort((a, b) => a - b);
+  }, [equipped, myTotal, hasEarth]);
+}
+
+/** 選んでいない剣にはチャームを付けない。毎回 [] を作ると無駄に描き直すので固定 */
+const EMPTY: number[] = [];
 
 /**
  * 南京錠のバッジ。絵文字の🔒は12〜14pxだと潰れて泥になるので、形は自前で描く。
@@ -67,8 +81,8 @@ export function SwordPreview() {
   const swordSkin = useGameStore((s) => s.swordSkin);
   const myTotal = useGameStore((s) => s.myTotal);
   const hasEarth = useGameStore((s) => s.hasEarthCharm);
-  const charms = charmLevelOf(myTotal);
-  const hung = charmIndicesFrom(charms, hasEarth);
+  const hung = useEquippedCharms();
+  const owned = ownedCharms(myTotal, hasEarth).length;
 
   const skin = SWORD_SKINS[swordSkin] ?? SWORD_SKINS[0];
   const colorName = SWORD_COLORS[swordColor]?.name ?? SWORD_COLORS[0].name;
@@ -86,8 +100,7 @@ export function SwordPreview() {
           <SwordArt
             color={swordColor}
             skin={swordSkin}
-            charms={charms}
-            earthCharm={hasEarth}
+            charmIndices={hung}
             charmShapes
             cropY={77}
           />
@@ -115,6 +128,12 @@ export function SwordPreview() {
               チャーム <b>{hung.length}</b>こ ついてる
             </span>
           </>
+        ) : owned > 0 ? (
+          /* 持ってはいるのに全部はずしている状態。「まだ1個も無い」と
+             同じ文言にすると、はずしたことが伝わらない */
+          <span className="kk-preview-sub">
+            チャームは <b>ぜんぶ</b> はずしてるよ
+          </span>
         ) : (
           <span className="kk-preview-sub">
             10本 刺すと チャームが ぶら下がるよ
@@ -130,9 +149,7 @@ export function SwordRack() {
   const swordColor = useGameStore((s) => s.swordColor);
   const setSwordColor = useGameStore((s) => s.setSwordColor);
   const swordSkin = useGameStore((s) => s.swordSkin);
-  const myTotal = useGameStore((s) => s.myTotal);
-  const hasEarth = useGameStore((s) => s.hasEarthCharm);
-  const charms = charmLevelOf(myTotal);
+  const hung = useEquippedCharms();
 
   return (
     <div className="kk-rack">
@@ -154,14 +171,13 @@ export function SwordRack() {
               <span className="kk-slot-hole" aria-hidden="true" />
               <span className="kk-slot-shadow" aria-hidden="true" />
               <span className="kk-slot-sword">
-                {/* チャームは「いま持っているぶん全部」。35px幅では1粒が3px
+                {/* チャームは「いまつけているぶん」。35px幅では1粒が3px
                     しかないので形では描かず、色つきの丸ビーズの房で見せる
                     (形を見たいときは上のプレビューが引き受ける) */}
                 <SwordArt
                   color={i}
                   skin={swordSkin}
-                  charms={sel ? charms : 0}
-                  earthCharm={sel && hasEarth}
+                  charmIndices={sel ? hung : EMPTY}
                 />
               </span>
             </button>

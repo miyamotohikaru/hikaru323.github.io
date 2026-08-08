@@ -1,11 +1,18 @@
 // チャーム(剣にぶら下げる小さなかざり)の形。
-// 画像アセットを足さない方針なので、12種すべての輪郭を点列/数式で作り、
-// ExtrudeGeometry で厚みと面取りをつけて「つやのある小さな樹脂パーツ」にする。
-// 隠しチャーム「ちきゅう」だけは平たい板ではなく小さな球で、
-// これだけ makeEarthCharmParts() で別に作る(下のセクション)。
+// 狙いは **Y2Kのキーチャーム**。クロムの金具が主役で、そこへ つやのある樹脂の
+// モチーフが混ざり、長さのちがうものが束になって ちょっとごちゃっとしている。
+// 画像アセットを足さない方針なので、13種すべてを数式・回転体・丸めた箱で組む。
 //
-// 座標の約束: 原点 = ぶら下げ点(= 形の上端の中央)。チャームは原点から下(-Y)へ垂れる。
-// そうしておくと、呼び出し側はひもの先に置くだけで正しくぶら下がる。
+// いちばん大事なのは「ぺたっとした板にしない」こと。輪郭を押し出しただけの形は
+// 小さくすると ただの色の点になってしまう。ふくらませた枕(inflate)・球・
+// 丸めた箱で **立体** として作り、面取りのハイライトに素材をしゃべらせる。
+//
+// 座標の約束:
+//   原点 = ぶら下げ点(= てっぺんのカンの上端)。チャームは原点から下(-Y)へ
+//   垂れ、正面は +Z。呼び出し側はチェーンの先へ置くだけで正しくぶら下がる。
+//
+// 色は付けない。ここが返すのは「どの塗り分けに属する形か」までで、
+// 実際の質感(クロム/樹脂/ガラス/つや消し/布)は buildSword.ts が決める。
 
 import * as THREE from "three";
 import {
@@ -14,18 +21,141 @@ import {
 } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { CharmShape } from "@/lib/config";
 
-/** 輪郭はいったん「半径1くらいの円に収まる」正規化空間で作り、最後に size へ縮める */
-const NORM = 1;
+// ── 部品の塗り分け ────────────────────────────────────
 
-// ── 輪郭づくりの小道具 ────────────────────────────────
+/**
+ * 部品をどの色で塗るか。
+ * - `body`   … チャームの地の色(config の hex)
+ * - `accent` … 差し色(config の accentHex。水玉・くちばし・大陸など)
+ * - `dark`   … 共通のほぼ黒(目・鼻・彫った文字・8の数字・ひび)
+ * - `chrome` … 共通のクロム(カン・口金・石突きなどの金具)
+ */
+export type CharmPaint = "body" | "accent" | "dark" | "chrome";
 
-/** 閉じた点列から Shape を作る */
-function shapeFromPoints(pts: THREE.Vector2[]): THREE.Shape {
+export interface CharmPart {
+  geo: THREE.BufferGeometry;
+  paint: CharmPaint;
+}
+
+export interface CharmBuild {
+  /** 塗り分けごとに1本にまとめた部品(呼び出し側でそのまま Mesh にできる) */
+  parts: CharmPart[];
+  /** 原点から下へどれだけ垂れるか。月にぶつけないための見積もりに使う */
+  height: number;
+  /**
+   * true = ゆっくり自転させる(ちきゅうだけ)。
+   * **回すのは `chrome` 以外の部品だけ**。カンまで一緒に回すと、
+   * チェーンにつながっている輪がくるくる回って見えてしまう。
+   */
+  spin: boolean;
+}
+
+/** 組み立て中の部品置き場 */
+type Bag = { geo: THREE.BufferGeometry; paint: CharmPaint }[];
+
+function put(
+  bag: Bag,
+  geo: THREE.BufferGeometry,
+  paint: CharmPaint = "body"
+): THREE.BufferGeometry {
+  bag.push({ geo, paint });
+  return geo;
+}
+
+// ── 形づくりの小道具 ──────────────────────────────────
+
+const _obj = new THREE.Object3D();
+const _up = new THREE.Vector3(0, 1, 0);
+const _quat = new THREE.Quaternion();
+
+/** ジオメトリを置く。回転はラジアン、s は倍率(数値ひとつなら等倍) */
+function xf(
+  geo: THREE.BufferGeometry,
+  p?: [number, number, number],
+  r?: [number, number, number],
+  s?: [number, number, number] | number
+): THREE.BufferGeometry {
+  _obj.position.set(p?.[0] ?? 0, p?.[1] ?? 0, p?.[2] ?? 0);
+  _obj.rotation.set(r?.[0] ?? 0, r?.[1] ?? 0, r?.[2] ?? 0);
+  if (typeof s === "number") _obj.scale.setScalar(s);
+  else _obj.scale.set(s?.[0] ?? 1, s?.[1] ?? 1, s?.[2] ?? 1);
+  _obj.updateMatrix();
+  geo.applyMatrix4(_obj.matrix);
+  return geo;
+}
+
+/** 球の表面 dir の位置へ、+Y を法線に合わせて貼りつける(水玉・目・鼻) */
+function onSphere(
+  geo: THREE.BufferGeometry,
+  dir: THREE.Vector3,
+  radius: number
+): THREE.BufferGeometry {
+  const d = dir.clone().normalize();
+  _quat.setFromUnitVectors(_up, d);
+  _obj.position.copy(d).multiplyScalar(radius);
+  _obj.quaternion.copy(_quat);
+  _obj.scale.setScalar(1);
+  _obj.updateMatrix();
+  geo.applyMatrix4(_obj.matrix);
+  return geo;
+}
+
+/** マージできる形にそろえる(uvは使わないので捨てる。無いと結合が失敗する) */
+function prep(geo: THREE.BufferGeometry): THREE.BufferGeometry {
+  geo.deleteAttribute("uv");
+  geo.deleteAttribute("uv1");
+  geo.deleteAttribute("uv2");
+  if (geo.index) return geo;
+  const indexed = mergeVertices(geo, 1e-6);
+  if (indexed !== geo) geo.dispose();
+  return indexed;
+}
+
+/** 球。小さい部品なので分割は控えめ */
+function ball(r: number, seg = 14): THREE.BufferGeometry {
+  return new THREE.SphereGeometry(r, seg, Math.max(4, Math.round(seg * 0.7)));
+}
+
+/** 平たい水玉(球を潰したもの)。乗せる面の法線が +Y になる向きで返す */
+function stud(r: number, flat = 0.4): THREE.BufferGeometry {
+  const g = new THREE.SphereGeometry(r, 10, 6);
+  g.scale(1, flat, 1);
+  return g;
+}
+
+/** 角の丸い箱。サイコロ・南京錠の本体・ネームプレートの土台に使う */
+function roundedBox(
+  w: number,
+  h: number,
+  d: number,
+  r: number,
+  seg = 2
+): THREE.BufferGeometry {
   const s = new THREE.Shape();
-  s.moveTo(pts[0].x, pts[0].y);
-  for (let i = 1; i < pts.length; i++) s.lineTo(pts[i].x, pts[i].y);
+  const x = w / 2 - r;
+  const y = h / 2 - r;
+  s.moveTo(-x, -h / 2);
+  s.lineTo(x, -h / 2);
+  s.absarc(x, -y, r, -Math.PI / 2, 0, false);
+  s.lineTo(w / 2, y);
+  s.absarc(x, y, r, 0, Math.PI / 2, false);
+  s.lineTo(-x, h / 2);
+  s.absarc(-x, y, r, Math.PI / 2, Math.PI, false);
+  s.lineTo(-w / 2, -y);
+  s.absarc(-x, -y, r, Math.PI, Math.PI * 1.5, false);
   s.closePath();
-  return s;
+  const bt = Math.min(r * 0.9, d * 0.34);
+  const depth = d - bt * 2;
+  const geo = new THREE.ExtrudeGeometry(s, {
+    depth,
+    bevelEnabled: true,
+    bevelThickness: bt,
+    bevelSize: bt,
+    bevelSegments: seg,
+    curveSegments: 4,
+  });
+  geo.translate(0, 0, -depth / 2);
+  return geo;
 }
 
 /** 数値の組から点列へ(見た目の座標をそのまま書けるように) */
@@ -33,271 +163,496 @@ function v2(xy: number[][]): THREE.Vector2[] {
   return xy.map(([x, y]) => new THREE.Vector2(x, y));
 }
 
-/** 点列をまとめて回す(星や三日月の「向き」をそろえる用) */
-function rotate(pts: THREE.Vector2[], angle: number): THREE.Vector2[] {
-  const c = Math.cos(angle);
-  const s = Math.sin(angle);
-  return pts.map((p) => new THREE.Vector2(p.x * c - p.y * s, p.x * s + p.y * c));
-}
-
-/** 極座標 r(θ) をサンプリングした輪郭。花びら系はこれがいちばん素直 */
-function polar(n: number, radius: (angle: number) => number): THREE.Vector2[] {
-  const pts: THREE.Vector2[] = [];
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2;
-    const r = radius(a);
-    pts.push(new THREE.Vector2(Math.cos(a) * r, Math.sin(a) * r));
+/** 閉じた点列の符号つき面積。向き(左回り/右回り)をそろえるのに使う */
+function signedArea(pts: THREE.Vector2[]): number {
+  let a = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i];
+    const q = pts[(i + 1) % pts.length];
+    a += p.x * q.y - q.x * p.y;
   }
-  return pts;
+  return a / 2;
 }
 
-// ── 12種の輪郭 ──────────────────────────────────────
+/** 閉じた点列を、周の長さで n 等分に取りなおす(ふくらませる前の下ごしらえ) */
+function resample(pts: THREE.Vector2[], n: number): THREE.Vector2[] {
+  const N = pts.length;
+  const segs: number[] = [];
+  let total = 0;
+  for (let i = 0; i < N; i++) {
+    const d = pts[i].distanceTo(pts[(i + 1) % N]);
+    segs.push(d);
+    total += d;
+  }
+  const out: THREE.Vector2[] = [];
+  let seg = 0;
+  let acc = 0;
+  for (let i = 0; i < n; i++) {
+    const target = (i / n) * total;
+    while (seg < N - 1 && acc + segs[seg] < target) {
+      acc += segs[seg];
+      seg++;
+    }
+    const t = segs[seg] > 1e-9 ? (target - acc) / segs[seg] : 0;
+    out.push(new THREE.Vector2().lerpVectors(pts[seg], pts[(seg + 1) % N], t));
+  }
+  return out;
+}
+
+/**
+ * 閉じた2D輪郭を「空気を入れた枕」にする。**このゲームのチャームの背骨**。
+ *
+ * 輪郭をだんだん重心へ縮めながら持ち上げていくので、押し出した板とちがって
+ * まんなかが山になり、ふちが丸くなる。ぷっくりハート・ぷっくり星・
+ * いなずま・つばさの羽根は、ぜんぶこれ1本で作る。
+ *
+ * @param halfThick 片側のふくらみ(輪郭の座標系での高さ)
+ * @param rings ふくらみの分割。3で十分まるい
+ * @param power 小さいほど「ふちまでパンパン」、大きいほど「なで肩」
+ */
+function inflate(
+  src: THREE.Vector2[],
+  halfThick: number,
+  rings = 3,
+  power = 0.55
+): THREE.BufferGeometry {
+  const pts = signedArea(src) < 0 ? [...src].reverse() : src;
+  const N = pts.length;
+  let cx = 0;
+  let cy = 0;
+  for (const p of pts) {
+    cx += p.x;
+    cy += p.y;
+  }
+  cx /= N;
+  cy /= N;
+
+  const pos: number[] = [];
+  const index: number[] = [];
+  const push = (x: number, y: number, z: number) => {
+    pos.push(x, y, z);
+    return pos.length / 3 - 1;
+  };
+
+  const edge: number[] = pts.map((p) => push(p.x, p.y, 0));
+  for (const side of [1, -1]) {
+    let prev = edge;
+    for (let r = 1; r < rings; r++) {
+      const a = (r / rings) * Math.PI * 0.5;
+      const k = Math.pow(Math.cos(a), power);
+      const z = side * halfThick * Math.sin(a);
+      const cur = pts.map((p) =>
+        push(cx + (p.x - cx) * k, cy + (p.y - cy) * k, z)
+      );
+      for (let i = 0; i < N; i++) {
+        const j = (i + 1) % N;
+        // 左回りの輪郭なので、+Z側は (外, 外の次, 内の次) が表向きになる
+        if (side > 0) {
+          index.push(prev[i], prev[j], cur[j], prev[i], cur[j], cur[i]);
+        } else {
+          index.push(prev[i], cur[j], prev[j], prev[i], cur[i], cur[j]);
+        }
+      }
+      prev = cur;
+    }
+    const pole = push(cx, cy, side * halfThick);
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N;
+      if (side > 0) index.push(prev[i], prev[j], pole);
+      else index.push(prev[j], prev[i], pole);
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// ── 輪郭 ────────────────────────────────────────────
 
 /** ほし: 5角星。頂点をひとつ真上に向ける */
 function starPoints(): THREE.Vector2[] {
   const pts: THREE.Vector2[] = [];
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2 + Math.PI / 2;
-    const r = i % 2 === 0 ? NORM : NORM * 0.47;
+    const r = i % 2 === 0 ? 0.5 : 0.5 * 0.47;
     pts.push(new THREE.Vector2(Math.cos(a) * r, Math.sin(a) * r));
   }
   return pts;
 }
 
-/**
- * みかづき: 大きい円から、ずらした小さい円を削った形。
- * 2円の交点を計算して、外側の弧 → 内側の弧 の順につなぐと三日月になる。
- * (面取りで潰れないよう、先が尖りすぎない太めの三日月にしてある)
- */
-function moonPoints(): THREE.Vector2[] {
-  const R = NORM;
-  const r = NORM * 0.82;
-  const d = NORM * 0.42;
-  const x = (d * d + R * R - r * r) / (2 * d);
-  const y = Math.sqrt(Math.max(0, R * R - x * x));
-  const a0 = Math.atan2(y, x); // 外円上の交点
-  const b0 = Math.atan2(y, x - d); // 内円上の交点
-  const N = 16;
+/** ハート: おなじみのハート曲線。上の谷が真上に来る */
+function heartPoints(n = 40): THREE.Vector2[] {
   const pts: THREE.Vector2[] = [];
-  for (let i = 0; i <= N; i++) {
-    // 外側: a0 → 2π-a0 を左回り(遠い側をぐるっと)
-    const a = a0 + ((Math.PI * 2 - a0 * 2) * i) / N;
-    pts.push(new THREE.Vector2(Math.cos(a) * R, Math.sin(a) * R));
-  }
-  for (let i = 0; i <= N; i++) {
-    // 内側: -b0 → b0 を右回りで戻る(削られる側の縁)
-    const a = -b0 - ((Math.PI * 2 - b0 * 2) * i) / N;
-    pts.push(new THREE.Vector2(d + Math.cos(a) * r, Math.sin(a) * r));
-  }
-  return rotate(pts, Math.PI * 0.62); // 開きを右上に向ける
-}
-
-/** しずく: 下がまるく、上がすっと尖るしずく曲線 */
-function dropPoints(): THREE.Vector2[] {
-  const N = 26;
-  const m = 1.7;
-  const pts: THREE.Vector2[] = [];
-  for (let i = 0; i < N; i++) {
-    const t = (i / N) * Math.PI * 2;
-    const x = Math.cos(t);
-    const y = Math.sin(t) * Math.pow(Math.abs(Math.sin(t / 2)), m) * 1.75;
-    pts.push(new THREE.Vector2(-y, x)); // 90°回して先端を上へ
-  }
-  return pts;
-}
-
-/** ハート: おなじみのハート曲線 */
-function heartPoints(): THREE.Vector2[] {
-  const N = 30;
-  const pts: THREE.Vector2[] = [];
-  for (let i = 0; i < N; i++) {
-    const t = (i / N) * Math.PI * 2;
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * Math.PI * 2;
     const x = 16 * Math.pow(Math.sin(t), 3);
     const y =
       13 * Math.cos(t) -
       5 * Math.cos(2 * t) -
       2 * Math.cos(3 * t) -
       Math.cos(4 * t);
-    pts.push(new THREE.Vector2(x / 16, y / 16));
+    pts.push(new THREE.Vector2((x / 16) * 0.5, (y / 16) * 0.5));
   }
   return pts;
 }
 
-/** よつば: 4つのまるい葉 */
-function cloverPoints(): THREE.Vector2[] {
-  return polar(
-    48,
-    (a) => NORM * (0.38 + 0.62 * Math.pow(Math.abs(Math.cos(2 * a)), 0.5))
-  );
-}
-
-/** ほうせき: 上が平らで下が尖った、カットされた宝石のシルエット */
-function gemPoints(): THREE.Vector2[] {
+/** いなずま: 上の角から一度左へ折れ、段をつけて下の先へ落ちる */
+function boltPoints(): THREE.Vector2[] {
   return v2([
-    [-0.46, 0.88],
-    [0.46, 0.88],
-    [0.95, 0.28],
-    [0, -1],
-    [-0.95, 0.28],
+    [0.15, 0.5],
+    [-0.17, 0.05],
+    [0.01, 0.05],
+    [-0.12, -0.5],
+    [0.19, -0.01],
+    [0.01, -0.01],
   ]);
 }
 
-/** すず: つまみ付きのベル。小さくても「鈴」と分かる裾広がりのシルエット */
-function bellShape(): THREE.Shape {
-  const s = new THREE.Shape();
-  s.moveTo(-0.15, 0.7);
-  s.quadraticCurveTo(-0.15, 0.98, 0, 0.98); // 上のつまみ
-  s.quadraticCurveTo(0.15, 0.98, 0.15, 0.7);
-  s.bezierCurveTo(0.7, 0.5, 0.86, 0.05, 0.86, -0.5); // 右の裾
-  s.lineTo(1, -0.7);
-  s.lineTo(-1, -0.7);
-  s.lineTo(-0.86, -0.5);
-  s.bezierCurveTo(-0.86, 0.05, -0.7, 0.5, -0.15, 0.7);
-  s.closePath();
-  return s;
+/** つばさの羽根1枚。付け根がまるく、先がすっと細くなる木の葉 */
+function featherPoints(len: number, wide: number, n = 14): THREE.Vector2[] {
+  const top: THREE.Vector2[] = [];
+  const bottom: THREE.Vector2[] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const w = wide * Math.pow(Math.sin(Math.PI * Math.pow(t, 0.62)), 0.85);
+    top.push(new THREE.Vector2(t * len, w));
+    bottom.push(new THREE.Vector2(t * len, -w * 0.62));
+  }
+  return [...top, ...bottom.reverse()];
 }
 
-/** おはな: 5枚の花びら */
-function flowerPoints(): THREE.Vector2[] {
-  return polar(
-    50,
-    (a) => NORM * (0.52 + 0.48 * Math.pow(Math.abs(Math.cos(2.5 * a)), 0.6))
-  );
+/** 角の丸い長方形の輪郭(ネームプレート用) */
+function roundedRectPoints(
+  w: number,
+  h: number,
+  r: number,
+  per = 4
+): THREE.Vector2[] {
+  const x = w / 2 - r;
+  const y = h / 2 - r;
+  const pts: THREE.Vector2[] = [];
+  const corners: [number, number, number][] = [
+    [x, y, 0],
+    [-x, y, Math.PI / 2],
+    [-x, -y, Math.PI],
+    [x, -y, Math.PI * 1.5],
+  ];
+  for (const [cx, cy, a0] of corners) {
+    for (let i = 0; i <= per; i++) {
+      const a = a0 + (i / per) * (Math.PI / 2);
+      pts.push(new THREE.Vector2(cx + Math.cos(a) * r, cy + Math.sin(a) * r));
+    }
+  }
+  return pts;
 }
 
-/** おさかな: ふっくらした体と二又の尾びれ */
-function fishPoints(): THREE.Vector2[] {
-  return v2([
-    [1, 0],
-    [0.62, 0.4],
-    [0.1, 0.46],
-    [-0.42, 0.18],
-    [-1, 0.58],
-    [-0.72, 0],
-    [-1, -0.58],
-    [-0.42, -0.18],
-    [0.1, -0.46],
-    [0.62, -0.4],
-  ]);
+// ── 13種の組み立て ───────────────────────────────────
+// どれも「単位空間」(いちばん長い辺 ≒ 1)で作り、finish() で size 倍する。
+
+/** サイコロ: 白い樹脂の丸い角のキューブに、黒い目がぷつぷつ乗っている */
+function buildDice(bag: Bag): void {
+  const S = 0.86;
+  const half = S / 2;
+  put(bag, roundedBox(S, S, S, S * 0.17), "body");
+
+  // 目。正面(+Z)に5・右(+X)に3・上(+Y)に1。3面見えるように後で傾ける
+  const pip = (x: number, y: number, z: number, axis: "x" | "y" | "z") => {
+    const g = stud(S * 0.105, 0.42);
+    if (axis === "z") xf(g, [x, y, z], [Math.PI / 2, 0, 0]);
+    else if (axis === "x") xf(g, [x, y, z], [0, 0, -Math.PI / 2]);
+    else xf(g, [x, y, z]);
+    put(bag, g, "accent");
+  };
+  const d = half * 0.98;
+  const o = S * 0.26;
+  // 5(正面)
+  for (const [px, py] of [
+    [-o, o],
+    [o, o],
+    [0, 0],
+    [-o, -o],
+    [o, -o],
+  ])
+    pip(px, py, d, "z");
+  // 3(右)
+  for (const [py, pz] of [
+    [o, -o],
+    [0, 0],
+    [-o, o],
+  ])
+    pip(d, py, pz, "x");
+  // 1(上)
+  pip(0, d, 0, "y");
+
+  // わざと斜めに吊る(まっすぐだと積み木に見える)
+  for (const it of bag) xf(it.geo, undefined, [0.3, -0.42, 0.16]);
 }
 
-/** かんむり: 3つの山とくぼみ */
-function crownPoints(): THREE.Vector2[] {
-  return v2([
-    [-1, -0.62],
-    [1, -0.62],
-    [1, 0.12],
-    [0.66, 0.96],
-    [0.33, 0.22],
-    [0, 1.06],
-    [-0.33, 0.22],
-    [-0.66, 0.96],
-    [-1, 0.12],
-  ]);
+/** ほし: ぷっくりふくらんだクロムの星。参考写真の銀の星と同じ肉づき */
+function buildStar(bag: Bag): void {
+  const pts = resample(starPoints(), 45);
+  put(bag, inflate(pts, 0.19, 3, 0.5), "body");
 }
 
-/** ほのお: 左右非対称にゆらいだ炎 */
-function flameShape(): THREE.Shape {
-  const s = new THREE.Shape();
-  s.moveTo(0.06, 1.1);
-  s.bezierCurveTo(0.62, 0.55, 0.78, 0, 0.6, -0.4);
-  s.quadraticCurveTo(0.42, -0.86, -0.06, -0.86);
-  s.quadraticCurveTo(-0.56, -0.86, -0.66, -0.34);
-  s.bezierCurveTo(-0.76, 0.12, -0.34, 0.28, -0.28, 0.62);
-  s.quadraticCurveTo(-0.24, 0.9, 0.06, 1.1);
-  s.closePath();
-  return s;
+/** ハート: 鏡になるくらい磨いた、ぷっくりのクロムハート(このセットの主役) */
+function buildHeart(bag: Bag): void {
+  const pts = resample(heartPoints(), 44);
+  put(bag, inflate(pts, 0.235, 4, 0.5), "body");
 }
 
-/** にじ: 半円の帯 */
-function rainbowShape(): THREE.Shape {
-  const s = new THREE.Shape();
-  const cy = -0.25;
-  s.absarc(0, cy, 1, 0, Math.PI, false); // 外側の弧
-  s.lineTo(-0.55, cy);
-  s.absarc(0, cy, 0.55, Math.PI, 0, true); // 内側の弧を戻る
-  s.closePath();
-  return s;
-}
-
-/** CharmShape から2D輪郭を作る(UI側で線として使いたくなったとき用に公開) */
-export function makeCharmShape(shape: CharmShape): THREE.Shape {
-  switch (shape) {
-    case "star":
-      return shapeFromPoints(starPoints());
-    case "moon":
-      return shapeFromPoints(moonPoints());
-    case "drop":
-      return shapeFromPoints(dropPoints());
-    case "heart":
-      return shapeFromPoints(heartPoints());
-    case "clover":
-      return shapeFromPoints(cloverPoints());
-    case "gem":
-      return shapeFromPoints(gemPoints());
-    case "bell":
-      return bellShape();
-    case "flower":
-      return shapeFromPoints(flowerPoints());
-    case "fish":
-      return shapeFromPoints(fishPoints());
-    case "crown":
-      return shapeFromPoints(crownPoints());
-    case "flame":
-      return flameShape();
-    case "rainbow":
-      return rainbowShape();
-    default:
-      return shapeFromPoints(starPoints());
+/** きのこ: 赤いかさに白い水玉、白い軸。Y2Kの定番 */
+function buildMushroom(bag: Bag): void {
+  const R = 0.46;
+  // かさ(半球を少し潰す)
+  const cap = new THREE.SphereGeometry(R, 18, 9, 0, Math.PI * 2, 0, Math.PI / 2);
+  cap.scale(1, 0.82, 1);
+  put(bag, cap, "body");
+  // かさの裏(開けっぱなしだと中が見えるのでフタをする)
+  const under = new THREE.CircleGeometry(R, 18);
+  put(bag, xf(under, [0, 0, 0], [Math.PI / 2, 0, 0]), "accent");
+  // 軸
+  const stem = new THREE.CylinderGeometry(R * 0.42, R * 0.52, R * 0.95, 12);
+  put(bag, xf(stem, [0, -R * 0.44, 0]), "accent");
+  // 水玉
+  const dots: [number, number, number, number][] = [
+    [0.1, 0.9, 0.42, 0.115],
+    [-0.62, 0.62, 0.48, 0.095],
+    [0.6, 0.5, -0.62, 0.085],
+    [-0.2, 0.42, -0.88, 0.08],
+    [0.88, 0.34, 0.34, 0.075],
+  ];
+  for (const [dx, dy, dz, r] of dots) {
+    const g = stud(R * r * 2.2, 0.34);
+    onSphere(g, new THREE.Vector3(dx, dy * 1.22, dz), R * 0.99);
+    g.scale(1, 0.82, 1); // かさを潰したぶんに合わせる
+    put(bag, g, "accent");
   }
 }
 
+/** エイトボール: つやのある黒い球に、白い丸と黒い「8」 */
+function buildEightBall(bag: Bag): void {
+  const R = 0.46;
+  put(bag, ball(R, 18), "body");
+  // 白い丸(球にちょっと めり込ませた平たいドーム)
+  const disc = stud(R * 0.44, 0.55);
+  onSphere(disc, new THREE.Vector3(0, 0, 1), R * 0.9);
+  put(bag, disc, "accent");
+  // 「8」は輪をふたつ重ねるだけで読める。白い丸へ半分うずめて「印刷」に見せる
+  for (const [y, r] of [
+    [0.052, 0.072],
+    [-0.055, 0.086],
+  ]) {
+    const ring = new THREE.TorusGeometry(r, 0.024, 4, 12);
+    put(bag, xf(ring, [0, y, 0.505]), "dark");
+  }
+}
+
+/** 南京錠: つるんとしたクロムの本体 + 太いつる + 鍵穴 */
+function buildPadlock(bag: Bag): void {
+  const W = 0.62;
+  const H = 0.54;
+  const D = 0.3;
+  put(bag, roundedBox(W, H, D, 0.1), "body");
+  // つる(半分のトーラス)。両足を本体へ差し込む
+  const shR = W * 0.31;
+  const tube = 0.048;
+  const arc = new THREE.TorusGeometry(shR, tube, 6, 14, Math.PI);
+  put(bag, xf(arc, [0, H * 0.42, 0]), "body");
+  for (const s of [-1, 1]) {
+    const leg = new THREE.CylinderGeometry(tube, tube, H * 0.42, 7);
+    put(bag, xf(leg, [s * shR, H * 0.25, 0]), "body");
+  }
+  // 鍵穴(丸 + 下へ広がるスリット)
+  const hole = new THREE.CylinderGeometry(0.062, 0.062, 0.05, 10);
+  put(bag, xf(hole, [0, 0.03, D * 0.47], [Math.PI / 2, 0, 0]), "dark");
+  const slit = new THREE.BoxGeometry(0.055, 0.13, 0.05);
+  put(bag, xf(slit, [0, -0.06, D * 0.47]), "dark");
+}
+
+/** アヒル: おふろの黄色いアヒル。丸をつなぐだけで、あの形になる */
+function buildDuck(bag: Bag): void {
+  const body = ball(0.36, 14);
+  put(bag, xf(body, [0, -0.06, -0.02], undefined, [1, 0.84, 1.12]), "body");
+  const head = ball(0.24, 14);
+  put(bag, xf(head, [0, 0.32, 0.09]), "body");
+  // しっぽ(ぴんと立てる)
+  const tail = new THREE.ConeGeometry(0.15, 0.3, 8);
+  put(bag, xf(tail, [0, 0.06, -0.38], [1.1, 0, 0]), "body");
+  // くちばし。おふろのアヒルの目印なので、大きめにはっきり出す
+  const bill = new THREE.ConeGeometry(0.135, 0.26, 7);
+  put(bag, xf(bill, [0, 0.27, 0.28], [Math.PI / 2 + 0.3, 0, 0], [1.5, 1, 0.62]), "accent");
+  // 目(あたまの球の表面へ半分うずめる)
+  for (const s of [-1, 1]) {
+    const eye = ball(0.033, 8);
+    put(bag, xf(eye, [s * 0.104, 0.402, 0.269]), "dark");
+  }
+}
+
+/** いなずま: 面取りの効いた金属のいなずま。ふくらみは控えめで角を立てる */
+function buildBolt(bag: Bag): void {
+  const pts = resample(boltPoints(), 34);
+  put(bag, inflate(pts, 0.085, 2, 0.8), "body");
+}
+
+/** つばさ: 羽根を5枚あおいで重ねる。1枚板の翼にしないのがコツ */
+function buildWing(bag: Bag): void {
+  const specs: [number, number, number, number][] = [
+    // 長さ, 幅, 角度(rad), 前後のずらし
+    [0.86, 0.115, -0.16, 0.0],
+    [0.8, 0.11, -0.42, -0.016],
+    [0.7, 0.1, -0.72, -0.03],
+    [0.58, 0.092, -1.02, -0.042],
+    [0.44, 0.082, -1.34, -0.052],
+  ];
+  for (const [len, wide, ang, dz] of specs) {
+    const g = inflate(resample(featherPoints(len, wide), 26), 0.032, 2, 0.7);
+    put(bag, xf(g, [0, 0, dz], [0, 0, ang]), "body");
+  }
+  // 付け根の玉(羽根の根元をまとめて、カンを付ける場所にする)
+  put(bag, xf(ball(0.1, 12), [0.02, 0.02, 0], undefined, [1, 1, 0.72]), "body");
+}
+
+/** ネームプレートの文字。太い棒(始点→終点)の組み合わせだけで書く */
+const LETTER_STROKES: Record<string, number[][]> = {
+  L: [
+    [-0.26, 0.5, -0.26, -0.5],
+    [-0.3, -0.46, 0.3, -0.46],
+  ],
+  U: [
+    [-0.3, 0.5, -0.3, -0.2],
+    [-0.3, -0.24, -0.08, -0.47],
+    [-0.1, -0.47, 0.1, -0.47],
+    [0.08, -0.47, 0.3, -0.24],
+    [0.3, -0.2, 0.3, 0.5],
+  ],
+  C: [
+    [0.3, 0.3, 0.06, 0.5],
+    [0.1, 0.5, -0.26, 0.28],
+    [-0.26, 0.32, -0.26, -0.32],
+    [-0.26, -0.28, 0.1, -0.5],
+    [0.06, -0.5, 0.3, -0.3],
+  ],
+  K: [
+    [-0.28, 0.5, -0.28, -0.5],
+    [-0.3, 0.0, 0.28, 0.5],
+    [-0.3, 0.0, 0.3, -0.5],
+  ],
+  Y: [
+    [-0.3, 0.5, 0.0, 0.02],
+    [0.3, 0.5, 0.0, 0.02],
+    [0.0, 0.06, 0.0, -0.5],
+  ],
+};
+
 /**
- * CharmShape から厚み付きのジオメトリを作る。
- * @param shape かたち
- * @param size いちばん長い辺の長さ(three.js units)
- * @returns 原点 = ぶら下げ点(上端の中央)、下へ垂れるジオメトリ
+ * ネームプレート: 銀の板に文字を彫ったやつ。参考写真の "Lucky" と同じ
+ * 「横に寝かせた文字が縦に並ぶ」置き方にする(危機一髪 = lucky のしゃれ)。
  */
-export function makeCharmGeometry(
-  shape: CharmShape,
-  size = 0.085
-): THREE.BufferGeometry {
-  const geo = new THREE.ExtrudeGeometry(makeCharmShape(shape), {
-    // 面取りを強めにして、小さくても縁がハイライトを拾う「つやつやの粒」にする
-    depth: 0.28,
-    bevelEnabled: true,
-    bevelThickness: 0.09,
-    bevelSize: 0.06,
-    bevelSegments: 2,
-    curveSegments: 8,
+function buildPlate(bag: Bag): void {
+  const W = 0.42;
+  const H = 1.3;
+  const half = 0.062;
+  put(bag, inflate(roundedRectPoints(W, H, 0.16, 4), half, 2, 0.7), "body");
+
+  const word = "LUCKY";
+  const cell = 0.235; // 板の縦方向に1文字が使う幅
+  const tall = 0.3; // 板の横方向(= 文字の背の高さ)
+  const stroke = 0.062;
+  const top = ((word.length - 1) / 2) * cell;
+  word.split("").forEach((ch, i) => {
+    const strokes = LETTER_STROKES[ch];
+    if (!strokes) return;
+    for (const [x0, y0, x1, y1] of strokes) {
+      const dx = x1 - x0;
+      const dy = y1 - y0;
+      const len = Math.hypot(dx, dy);
+      const bar = new THREE.BoxGeometry(len + stroke, stroke, 1);
+      // 文字ローカル → 板の上(90°寝かせる)→ 縦に並べる
+      xf(bar, [(x0 + x1) / 2, (y0 + y1) / 2, 0], [0, 0, Math.atan2(dy, dx)]);
+      xf(
+        bar,
+        [0, top - i * cell, half * 0.72],
+        [0, 0, -Math.PI / 2],
+        [cell * 0.92, tall, 0.05]
+      );
+      put(bag, bar, "accent"); // 彫った溝に入れた黒(config の accentHex)
+    }
   });
-  geo.computeBoundingBox();
-  const bb = geo.boundingBox;
-  if (!bb) return geo;
-  // boundingBox は translate/scale のたびに作り直されるので、先に数値で控える
-  const { min, max } = bb;
-  const midX = (min.x + max.x) / 2;
-  const midZ = (min.z + max.z) / 2;
-  const topY = max.y;
-  const k = size / Math.max(max.x - min.x, max.y - min.y);
-  // 前後左右を中央へ寄せてから、まとめて縮める
-  geo.translate(-midX, 0, -midZ);
-  geo.scale(k, k, k);
-  // 上端を原点にそろえる = 原点から下にぶら下がる
-  geo.translate(0, -topY * k, 0);
-  return geo;
+}
+
+/** タッセル: 靴ひものふさ。口金とひもの先の金具がクロムで、束だけが布 */
+function buildTassel(bag: Bag): void {
+  // 口金(上でひもを締めている筒)
+  const crimp = new THREE.CylinderGeometry(0.14, 0.16, 0.24, 10);
+  put(bag, xf(crimp, [0, -0.12, 0]), "chrome");
+  const band = new THREE.TorusGeometry(0.15, 0.022, 4, 10);
+  put(bag, xf(band, [0, -0.19, 0], [Math.PI / 2, 0, 0]), "chrome");
+
+  const cords: [number, number, number, CharmPaint][] = [
+    // 角度, 開き, 長さ, 塗り。長さをそろえないのがふさの可愛さ
+    [0.4, 0.2, 1.42, "body"],
+    [2.0, 0.26, 1.18, "accent"],
+    [3.4, 0.17, 1.58, "body"],
+    [4.6, 0.3, 1.02, "body"],
+    [5.6, 0.22, 1.3, "accent"],
+  ];
+  for (const [a, spread, len, paint] of cords) {
+    const dx = Math.cos(a) * spread;
+    const dz = Math.sin(a) * spread;
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, -0.2, 0),
+      new THREE.Vector3(dx * 0.45, -0.2 - len * 0.34, dz * 0.45),
+      new THREE.Vector3(dx * 0.92, -0.2 - len * 0.72, dz * 0.92),
+      new THREE.Vector3(dx, -0.2 - len, dz),
+    ]);
+    put(bag, new THREE.TubeGeometry(curve, 9, 0.036, 5, false), paint);
+    // ひもの先の金具(参考写真の靴ひもと同じ)
+    const tip = new THREE.CylinderGeometry(0.045, 0.042, 0.11, 7);
+    const t = curve.getTangentAt(1);
+    _quat.setFromUnitVectors(_up, t);
+    _obj.position.copy(curve.getPointAt(1)).addScaledVector(t, 0.03);
+    _obj.quaternion.copy(_quat);
+    _obj.scale.setScalar(1);
+    _obj.updateMatrix();
+    tip.applyMatrix4(_obj.matrix);
+    put(bag, tip, "chrome");
+  }
+}
+
+/** こすくまヘッド: このゲームだけの1個。クリーム色の樹脂のあたま */
+function buildBear(bag: Bag): void {
+  const R = 0.44;
+  const head = ball(R, 16);
+  put(bag, xf(head, undefined, undefined, [1, 0.95, 0.92]), "body");
+  for (const s of [-1, 1]) {
+    const ear = ball(R * 0.42, 10);
+    put(bag, xf(ear, [s * R * 0.78, R * 0.72, -R * 0.06], undefined, [1, 1, 0.72]), "body");
+  }
+  // 鼻さき(ちょっと前に出す)
+  const snout = ball(R * 0.44, 12);
+  put(bag, xf(snout, [0, -R * 0.24, R * 0.78], undefined, [1.15, 0.9, 0.7]), "body");
+  // 目・鼻(config の accentHex。つやのある樹脂の黒でぷつっと)
+  for (const s of [-1, 1]) {
+    const eye = stud(R * 0.13, 0.5);
+    onSphere(eye, new THREE.Vector3(s * 0.42, 0.24, 0.87), R * 0.94);
+    put(bag, eye, "accent");
+  }
+  const nose = ball(R * 0.13, 8);
+  put(bag, xf(nose, [0, -R * 0.2, R * 1.06], undefined, [1.25, 0.85, 1]), "accent");
 }
 
 // ── 隠しチャーム「ちきゅう」────────────────────────────────
 // 地球を1000回つついて こわした人だけが手に入れる。
-// ただの青い宝石だと「ほうせき」と見分けがつかないので、**小さな地球そのもの**
-// にして、「こわした証」を3つの記号で見せる:
+// ただの青い玉だと何だか分からないので、**小さな地球そのもの** にして、
+// 「こわした証」を3つの記号で見せる:
 //   1. ギザギザのひびが正面を走っている
 //   2. かけらがふたつ、ちょこんと浮いている(戻せなくなった感じ)
 //   3. ゆっくり自転する(呼び出し側が回す。生きてはいる)
 // 割れて中身が見えたりはしない。こわれたけど元気、がこのゲームのトーン。
-//
-// 座標の約束はほかのチャームと同じ: 原点 = 上端の中央、下へ垂れる。
+// 質感だけ新しくして、すりガラスの惑星として金具の束になじませる。
 
 /** 大陸/ひびを球の表面から浮かせる量(1 = 海の半径)。Zファイトを避ける */
 const EARTH_LAND_LIFT = 1.035;
@@ -434,28 +789,10 @@ function crackGeometry(radius: number): THREE.BufferGeometry {
   return geo;
 }
 
-/** ちきゅうチャームの部品。色を分けたいので3つに分かれている */
-export interface EarthCharmParts {
-  /** 海(球本体)+ 飛び散ったかけら */
-  globe: THREE.BufferGeometry;
-  /** 大陸 */
-  land: THREE.BufferGeometry;
-  /** ひび */
-  crack: THREE.BufferGeometry;
-}
-
-/**
- * 隠しチャーム「ちきゅう」の部品を作る。
- * @param size 見かけの大きさ(ほかのチャームの「いちばん長い辺」とそろう)
- * @returns 原点 = ぶら下げ点(球の上端)、下へ垂れる3つのジオメトリ
- */
-export function makeEarthCharmParts(size = 0.085): EarthCharmParts {
-  const r = size * 0.46;
-
-  // ── 海(球) + かけら ──
-  const sphere = new THREE.SphereGeometry(r, 20, 14);
-  // かけらは「ひびの外側」に置く。上のほうに置くとチェーンとけんかするので下寄り
-  const chips: THREE.BufferGeometry[] = [sphere];
+/** ちきゅう: ひびの入った小さな地球 + 飛び散ったかけら */
+function buildEarth(bag: Bag): void {
+  const r = 0.46;
+  const chips: THREE.BufferGeometry[] = [new THREE.SphereGeometry(r, 20, 14)];
   const chipAt = (th: number, ph: number, k: number, spin: number) => {
     const g = new THREE.OctahedronGeometry(r * k, 0);
     g.scale(1, 0.6, 0.8); // 平たくして「かけら」に見せる
@@ -467,29 +804,131 @@ export function makeEarthCharmParts(size = 0.085): EarthCharmParts {
       Math.cos(th) * lift,
       Math.sin(th) * Math.cos(ph) * lift
     );
-    // 多面体は非インデックスなので、球と混ぜる前にインデックス化する
-    // (mergeGeometries は index の有無がそろっていないと null を返す)
-    const indexed = mergeVertices(g, 1e-6);
-    if (indexed !== g) g.dispose();
-    return indexed;
+    return g;
   };
   chips.push(chipAt(1.75, 0.95, 0.17, 0.6));
   chips.push(chipAt(2.25, -0.42, 0.12, -0.9));
-  const globe = mergeGeometries(chips) ?? sphere;
-  if (globe !== sphere) chips.forEach((g) => g.dispose());
+  for (const g of chips) put(bag, g, "body");
 
-  // ── 大陸(3つ。並べる位置は「地球っぽく見える」だけを狙った手置き) ──
-  const lands = [
-    continentGeometry(new THREE.Vector3(0.42, 0.5, 0.76).normalize(), r * EARTH_LAND_LIFT, 0.62, 0.4),
-    continentGeometry(new THREE.Vector3(-0.72, -0.24, 0.65).normalize(), r * EARTH_LAND_LIFT, 0.5, 2.1),
-    continentGeometry(new THREE.Vector3(-0.1, -0.72, -0.68).normalize(), r * EARTH_LAND_LIFT, 0.44, 3.6),
-  ];
-  const land = mergeGeometries(lands) ?? lands[0];
-  if (land !== lands[0]) lands.forEach((g) => g.dispose());
+  for (const [dir, ang, seed] of [
+    [new THREE.Vector3(0.42, 0.5, 0.76), 0.62, 0.4],
+    [new THREE.Vector3(-0.72, -0.24, 0.65), 0.5, 2.1],
+    [new THREE.Vector3(-0.1, -0.72, -0.68), 0.44, 3.6],
+  ] as [THREE.Vector3, number, number][]) {
+    put(bag, continentGeometry(dir.normalize(), r * EARTH_LAND_LIFT, ang, seed), "accent");
+  }
+  put(bag, crackGeometry(r * EARTH_CRACK_LIFT), "dark");
+}
 
-  const crack = crackGeometry(r * EARTH_CRACK_LIFT);
+// ── 仕上げ ──────────────────────────────────────────
 
-  // 上端を原点にそろえる(ほかのチャームと同じ約束)
-  for (const g of [globe, land, crack]) g.translate(0, -r, 0);
-  return { globe, land, crack };
+/** カン(いちばん上の輪)の大きさ。単位空間での半径 */
+const BAIL_R = 0.115;
+
+/**
+ * 単位空間で組んだ部品を、契約どおりの姿にそろえる。
+ *   1. 指定の x を真下に、上端がカンの下に来るよう動かす
+ *   2. size 倍する
+ *   3. てっぺんにクロムのカンを足す(ここへチェーンの最後の輪が通る)
+ *   4. 塗り分けごとに1本のジオメトリへまとめる
+ */
+function finish(
+  bag: Bag,
+  size: number,
+  opts: { anchorX?: number; spin?: boolean; bail?: number } = {}
+): CharmBuild {
+  const bailR = opts.bail ?? BAIL_R;
+  const box = new THREE.Box3();
+  const tmp = new THREE.Box3();
+  for (const it of bag) {
+    it.geo.computeBoundingBox();
+    if (it.geo.boundingBox) box.union(tmp.copy(it.geo.boundingBox));
+  }
+  const dx = -(opts.anchorX ?? (box.min.x + box.max.x) / 2);
+  const dy = -box.max.y - bailR * 1.55; // カンの下端に本体の上端を少し食い込ませる
+  const dz = -(box.min.z + box.max.z) / 2;
+  for (const it of bag) it.geo.translate(dx, dy, dz);
+  const height = -(box.min.y + dy); // 原点から下端まで(= 垂れ下がる高さ)
+
+  // カン。上端がぴたり原点に来る位置に置く
+  const bail = new THREE.TorusGeometry(bailR, bailR * 0.33, 5, 12);
+  put(bag, xf(bail, [0, -bailR, 0]), "chrome");
+
+  for (const it of bag) it.geo.scale(size, size, size);
+
+  // 塗り分けごとにまとめる(1チャームあたりのドローコールを最大4本に抑える)
+  const parts: CharmPart[] = [];
+  for (const paint of ["body", "accent", "dark", "chrome"] as CharmPaint[]) {
+    const geos = bag.filter((it) => it.paint === paint).map((it) => prep(it.geo));
+    if (geos.length === 0) continue;
+    if (geos.length === 1) {
+      parts.push({ geo: geos[0], paint });
+      continue;
+    }
+    const merged = mergeGeometries(geos);
+    if (merged) {
+      geos.forEach((g) => g.dispose());
+      parts.push({ geo: merged, paint });
+    } else {
+      // 結合できない構成にはしていないが、念のため個別に返す
+      for (const g of geos) parts.push({ geo: g, paint });
+    }
+  }
+  return { parts, height: Math.max(height * size, size * 0.4), spin: opts.spin ?? false };
+}
+
+/**
+ * CharmShape から立体の部品一式を作る。
+ * @param shape かたち
+ * @param size 見かけの大きさ(いちばん長い辺のめやす。three.js units)
+ * @returns 原点 = ぶら下げ点(カンの上端)、下へ垂れる部品と、その高さ
+ */
+export function makeCharmParts(shape: CharmShape, size = 0.085): CharmBuild {
+  const bag: Bag = [];
+  switch (shape) {
+    case "dice":
+      buildDice(bag);
+      return finish(bag, size);
+    case "star":
+      buildStar(bag);
+      return finish(bag, size);
+    case "heart":
+      buildHeart(bag);
+      return finish(bag, size);
+    case "mushroom":
+      buildMushroom(bag);
+      return finish(bag, size);
+    case "eightball":
+      buildEightBall(bag);
+      return finish(bag, size);
+    case "padlock":
+      buildPadlock(bag);
+      return finish(bag, size);
+    case "duck":
+      buildDuck(bag);
+      return finish(bag, size);
+    case "bolt":
+      // いなずまは上の角から吊る(重心の真上ではない = 斜めにぶら下がる)
+      buildBolt(bag);
+      return finish(bag, size, { anchorX: 0.15, bail: 0.09 });
+    case "wing":
+      // 羽根は付け根から扇に広がるので、付け根の真上から吊る
+      buildWing(bag);
+      return finish(bag, size, { anchorX: 0.02, bail: 0.09 });
+    case "plate":
+      buildPlate(bag);
+      return finish(bag, size, { bail: 0.09 });
+    case "tassel":
+      buildTassel(bag);
+      return finish(bag, size, { anchorX: 0, bail: 0.1 });
+    case "bear":
+      buildBear(bag);
+      return finish(bag, size);
+    case "earth":
+      buildEarth(bag);
+      return finish(bag, size * 1.06, { spin: true });
+    default:
+      buildDice(bag);
+      return finish(bag, size);
+  }
 }

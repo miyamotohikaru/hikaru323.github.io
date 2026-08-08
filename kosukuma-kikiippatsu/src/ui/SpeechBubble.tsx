@@ -16,10 +16,21 @@
 //     .sb-text(セリフ)
 //
 // transform を JS と CSSアニメで奪い合わないよう、階層を分けているのが要点。
+//
+// 改行の担当は wrapJa.ts。CSSの折り返しは日本語だと どこでも切ってしまうので、
+// 「1行に何文字入るか」だけ実際のCSSから測って、切る場所はこちらで決めている。
 
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { speechAnchor } from "@/game/scene/sharedRefs";
 import { useGameStore, type SpeechTone } from "@/game/store";
+import { DEFAULT_MAX_UNITS, wrapJaText } from "./wrapJa";
 import "./speech.css";
 
 /**
@@ -54,6 +65,15 @@ const TAIL_EDGE = 20;
 const TAIL_INSET = 6;
 /** 消えるアニメの長さ(speech.css の sb-out と合わせる) */
 const OUT_MS = 220;
+/**
+ * 吹き出しの最大幅。ふだんは getComputedStyle から実測するので使わないが、
+ * min() を計算前のまま返すブラウザ向けの保険として持っておく。
+ * speech.css の .sb-body の max-width と合わせること
+ */
+const MAX_W_VW = 0.58;
+const MAX_W_PX = 250;
+/** 折り返しの幅は、ぎりぎりを狙うとCSS側で1文字だけ折れる。すこし辛めに見る */
+const WRAP_MARGIN = 0.2;
 
 const f = (n: number) => (Math.round(n * 10) / 10).toString();
 
@@ -140,7 +160,19 @@ export default function SpeechBubble() {
   const rootRef = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLParagraphElement>(null);
   const tailRef = useRef<SVGPathElement>(null);
+
+  // 1行に入る全角文字数。字の大きさ(clamp)と最大幅から測るので、画面幅で変わる。
+  // 変わったときだけ setState する(セリフごとの再レンダリングは増やさない)
+  const [wrapMax, setWrapMax] = useState(DEFAULT_MAX_UNITS);
+  const wrapMaxRef = useRef(DEFAULT_MAX_UNITS);
+
+  // 実際に表示する文(改行入り)。セリフか幅が変わったときだけ折り直す
+  const shown = useMemo(
+    () => (speech ? wrapJaText(speech.text, { max: wrapMax }) : ""),
+    [speech, wrapMax]
+  );
 
   // rAFループから読む値はすべて ref(setStateを起こさない)
   const speechRef = useRef(speech);
@@ -179,6 +211,30 @@ export default function SpeechBubble() {
     bottomRef.current = sheet
       ? Math.max(0, viewRef.current.h - sheet.offsetTop + 8)
       : 0;
+
+    // ── 1行に入る全角文字数(折り返しの幅) ──
+    // 字の大きさは clamp、最大幅は min() で書いてあるので、CSSから読むのが確実。
+    // 全角の文字は 1em ちょうどで並ぶので、幅 ÷ 送り幅 が そのまま文字数になる
+    const textEl = textRef.current;
+    if (body && textEl) {
+      const cb = getComputedStyle(body);
+      const ct = getComputedStyle(textEl);
+      const fs = parseFloat(ct.fontSize);
+      const ls = parseFloat(ct.letterSpacing); // "normal" のときは NaN
+      let maxW = parseFloat(cb.maxWidth); // min() は計算後の px で返る
+      if (!(maxW > 0)) maxW = Math.min(viewRef.current.w * MAX_W_VW, MAX_W_PX);
+      if (cb.boxSizing === "border-box") {
+        maxW -= (parseFloat(cb.paddingLeft) || 0) + (parseFloat(cb.paddingRight) || 0);
+      }
+      const adv = fs + (Number.isFinite(ls) ? ls : 0); // 全角1文字ぶんの送り
+      if (adv > 0 && maxW > 0) {
+        const units = Math.max(5, Math.round((maxW / adv - WRAP_MARGIN) * 10) / 10);
+        if (units !== wrapMaxRef.current) {
+          wrapMaxRef.current = units;
+          setWrapMax(units); // 折り直し → 下の useLayoutEffect で測り直す
+        }
+      }
+    }
   }, []);
 
   /** 位置・尻尾の再計算(rAFから毎フレーム。書き込みは変わったものだけ) */
@@ -326,11 +382,12 @@ export default function SpeechBubble() {
   }, [speech, measure, layout]);
 
   // 確認シートが出入りしたら、下に空ける高さを取り直す。
-  // 描画前に直したいので useLayoutEffect(1フレームだけ かぶるのを防ぐ)
+  // 描画前に直したいので useLayoutEffect(1フレームだけ かぶるのを防ぐ)。
+  // 折り返しの幅(wrapMax)が変わったときも、行が変わるので実寸を測り直す
   useLayoutEffect(() => {
     measure();
     layout(true);
-  }, [phase, measure, layout]);
+  }, [phase, wrapMax, measure, layout]);
 
   // フォント読み込み・画面回転で幅が変わる。そのときだけはかり直す
   useEffect(() => {
@@ -402,7 +459,10 @@ export default function SpeechBubble() {
                 </svg>
                 <span className="sb-fill" />
               </span>
-              <p className="sb-text">{speech.text}</p>
+              {/* 改行は wrapJa が入れる。CSSは white-space:pre-wrap でそれを守るだけ */}
+              <p className="sb-text" ref={textRef}>
+                {shown}
+              </p>
 
               {speech.tone === "sleepy" && (
                 <span className="sb-zzz" aria-hidden="true">

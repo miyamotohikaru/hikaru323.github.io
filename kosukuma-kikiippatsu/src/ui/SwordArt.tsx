@@ -37,7 +37,7 @@
 import { useId } from "react";
 import { CHARMS, SWORD_COLORS, SWORD_SKINS } from "@/lib/config";
 import { charmIndicesFrom } from "@/lib/style";
-import { charmPath } from "./CharmShelf";
+import { CharmGlyph } from "./CharmShelf";
 
 // ── 寸法(全部いちど比率から組み立てる) ────────────────────────
 /** 剣の座標系。鍔の張り出し 41.4 が入る幅 */
@@ -445,10 +445,17 @@ export interface SwordArtProps {
   color: number;
   /** SWORD_SKINS の index */
   skin: number;
-  /** 刺して集めたチャームの数(0でなし)。持っているぶんは全部ぶら下がる */
+  /** 刺して集めたチャームの数(0でなし)。他の人の剣はこの「数」しか分からない */
   charms?: number;
   /** 隠しチャーム「ちきゅう」を持っているか。持っていれば房の底に増える */
   earthCharm?: boolean;
+  /**
+   * ぶら下げるチャームを CHARMS の index で名ざしする(古い順)。
+   * **自分の剣はこちらを使うこと。** 持っている ≠ つけている なので、
+   * 「数」では「3個持っていて2個だけつけている」を表せない。
+   * 渡されたときは charms / earthCharm より優先する。
+   */
+  charmIndices?: number[];
   /**
    * true = チャームを丸ビーズではなく「そのチャームの形」で描く。
    * 剣を35px幅で描くと粒は3pxしかなく、形はつぶれてただの汚れになる。
@@ -469,6 +476,7 @@ export default function SwordArt({
   skin,
   charms = 0,
   earthCharm = false,
+  charmIndices,
   charmShapes = false,
   cropY,
   className,
@@ -478,10 +486,11 @@ export default function SwordArt({
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const fin = finishOf(skin);
   const base = effectiveHex(color, skin);
-  // どのチャームがぶら下がるかは 3D と同じ1本の関数で決める(src/lib/style.ts)。
-  // ここで独自に数えると「UIには5個・月の剣には3個」のような食い違いが出る
+  // 名ざしが来ていればそれ(= 自分がいまつけているチャーム)。
+  // 来ていない他人の剣は、3Dと同じ1本の関数で「数」から組み立てる
+  // (ここで独自に数えると「UIには5個・月の剣には3個」のような食い違いが出る)
   const { beads, strands, r: beadR } = layoutCharms(
-    charmIndicesFrom(charms, earthCharm)
+    charmIndices ?? charmIndicesFrom(charms, earthCharm)
   );
 
   const body =
@@ -592,20 +601,17 @@ export default function SwordArt({
                   />
                 )}
                 {charmShapes ? (
-                  // 24×24 の箱に描かれた形を、粒の大きさへ縮めて置く。
-                  // 線の太さは縮尺で戻して、どの大きさでも同じ見た目にする
+                  // 棚とまったく同じ絵(CharmGlyph)を粒の大きさへ縮めて置く。
+                  // 丸カンは描かない: 房は房ぜんぶで1つの輪を持っているので、
+                  // 粒ごとに輪があると金具だらけになる。
+                  // 24の箱のうち本体が使うのは y 5〜23 の19ぶんなので、
+                  // その19が粒の直径になるよう合わせる(でないと粒が痩せて見える)
                   <g
-                    transform={`translate(${n2(cx - beadR)} ${n2(
-                      b.y - beadR
-                    )}) scale(${((beadR * 2) / 24).toFixed(4)})`}
+                    transform={`translate(${n2(cx - 12 * (beadR * 2) / 19)} ${n2(
+                      b.y - 14 * (beadR * 2) / 19
+                    )}) scale(${((beadR * 2) / 19).toFixed(4)})`}
                   >
-                    <path
-                      d={charmPath(c.shape)}
-                      fill={c.hex}
-                      stroke="rgba(26,22,10,.55)"
-                      strokeWidth={((0.6 * 24) / (beadR * 2)).toFixed(2)}
-                      strokeLinejoin="round"
-                    />
+                    <CharmGlyph index={b.i} detail={false} ring={false} />
                   </g>
                 ) : (
                   <>

@@ -149,6 +149,12 @@ interface GameState {
    * こわした人だけが手に入れる。刺し本数では絶対に増えない。
    */
   hasEarthCharm: boolean;
+  /**
+   * いま剣につけているチャーム(CHARMS の index)。**持っている ≠ つけている**。
+   * 既定は「持っているもの全部」。外したぶんは localStorage に残る。
+   * 個数の上限はない(何個でもつけられる)。
+   */
+  equippedCharms: number[];
   /** 爆発した時刻(epoch ms)。null なら地球は無事 */
   earthBoomAt: number | null;
 
@@ -169,6 +175,8 @@ interface GameState {
   setSwordColor: (c: number) => void;
   /** スキンを選ぶ。未解放(needWins > myWins)なら無視される */
   setSwordSkin: (s: number) => void;
+  /** チャームのつけ外し。持っていないものは無視される */
+  toggleCharm: (index: number) => void;
   /** 演出が終わった他人の剣を、通常の剣(Swords)へ引き渡す */
   endRemoteStab: (holeId: number) => void;
   /** チャーム獲得演出をとじる */
@@ -246,6 +254,40 @@ function saveMyStabs(roundNo: number, holes: number[]): void {
   LS.set("kk-my-stabs", JSON.stringify({ r: roundNo, h: holes }));
 }
 
+/**
+ * 持っているチャームの index 一覧(刺して集めたぶん + 隠し)。
+ * 「つけている」ではなく「持っている」。
+ */
+export function ownedCharms(myTotal: number, earth: boolean): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < charmLevelOf(myTotal); i++) out.push(i);
+  if (earth && EARTH_CHARM_INDEX >= 0) out.push(EARTH_CHARM_INDEX);
+  return out;
+}
+
+/**
+ * つけているチャーム。保存が無ければ null を返し、呼び出し側が
+ * 「持っているもの全部」を既定にする(あとから増えたぶんも自動でつく)。
+ */
+function loadEquipped(): number[] {
+  try {
+    const raw = LS.get("kk-charms");
+    if (!raw) return [];
+    const v = JSON.parse(raw) as unknown;
+    if (!Array.isArray(v)) return [];
+    return v
+      .filter((x): x is number => typeof x === "number" && Number.isInteger(x))
+      .filter((x) => x >= 0 && x < CHARMS.length);
+  } catch {
+    return [];
+  }
+}
+
+/** 未保存(=一度もつけ外ししていない)なら、持っているもの全部を既定にする */
+function defaultEquipped(myTotal: number, earth: boolean): number[] {
+  return LS.get("kk-charms") === null ? ownedCharms(myTotal, earth) : [];
+}
+
 /** とばした回数から、いま使えるスキンのindex一覧 */
 export function unlockedSkins(wins: number): number[] {
   const out: number[] = [];
@@ -299,9 +341,12 @@ function applyPreviewParams(set: (p: Partial<GameState>) => void): void {
     // 「刺して集めたぶん」は本数のしきい値から逆算する。隠しぶんは別フラグ
     const normal = Math.min(want, NORMAL_CHARM_COUNT);
     const total = normal === 0 ? 0 : CHARMS[normal - 1].need;
+    const earth = want > NORMAL_CHARM_COUNT;
     set({
       myTotal: total,
-      hasEarthCharm: want > NORMAL_CHARM_COUNT,
+      hasEarthCharm: earth,
+      // 見せるための状態なので、つけ外しの保存は無視して全部つけた姿にする
+      equippedCharms: ownedCharms(total, earth),
     });
   }
 
@@ -364,6 +409,15 @@ export const useGameStore = create<GameState>((set, get) => {
       at += REMOTE_STAGGER;
     }
     return added.length > 0 ? [...alive, ...added] : alive;
+  };
+
+  /** 手に入れたばかりのチャームを、つけた状態にする(既についていれば何もしない) */
+  const equipCharm = (index: number) => {
+    const cur = get().equippedCharms;
+    if (cur.includes(index)) return;
+    const next = [...cur, index].sort((a, b) => a - b);
+    LS.set("kk-charms", JSON.stringify(next));
+    set({ equippedCharms: next });
   };
 
   /** サーバー状態を表示へ反映 */
@@ -573,6 +627,8 @@ export const useGameStore = create<GameState>((set, get) => {
   };
 
   const initialWins = Math.max(0, Number(LS.get("kk-wins") ?? 0) || 0);
+  const initialTotal = Math.max(0, Number(LS.get("kk-my-total") ?? 0) || 0);
+  const initialEarthCharm = LS.get("kk-earth-charm") === "1";
 
   return {
     phase: "boot",
@@ -614,6 +670,11 @@ export const useGameStore = create<GameState>((set, get) => {
     earthClicks: Math.max(0, Number(LS.get("kk-earth-clicks") ?? 0) || 0),
     earthBooms: Math.max(0, Number(LS.get("kk-earth-booms") ?? 0) || 0),
     hasEarthCharm: LS.get("kk-earth-charm") === "1",
+    // 一度もつけ外ししていない人は「持っているもの全部」がついている状態
+    equippedCharms: [
+      ...loadEquipped(),
+      ...defaultEquipped(initialTotal, initialEarthCharm),
+    ],
     earthBoomAt: null,
     speech: null,
 
@@ -694,8 +755,14 @@ export const useGameStore = create<GameState>((set, get) => {
       const holeId = cur.selectedHole;
       // この1本を数えたあとのチャーム数を持たせる(10本目の剣には
       // 「その場で手に入れたチャーム」がもうぶら下がっている)
-      const charmNow = charmLevelOf(cur.myTotal + 1);
-      const styleNow = packStyle(cur.swordSkin, charmNow, cur.hasEarthCharm);
+      // 月に残る剣が持つのは「つけているチャーム」。他の人の画面ではビーズ1個に
+      // なるので、いちばん新しくつけたものの色が出るように数へ丸める
+      const equipped = cur.equippedCharms;
+      const topNormal = equipped.filter((i) => i < NORMAL_CHARM_COUNT);
+      const charmNow = topNormal.length === 0 ? 0 : Math.max(...topNormal) + 1;
+      const earthOn =
+        cur.hasEarthCharm && equipped.includes(EARTH_CHARM_INDEX);
+      const styleNow = packStyle(cur.swordSkin, charmNow, earthOn);
       const body = JSON.stringify({
         holeId,
         roundNo: cur.roundNo,
@@ -703,7 +770,7 @@ export const useGameStore = create<GameState>((set, get) => {
         color: cur.swordColor,
         skin: cur.swordSkin,
         charm: charmNow,
-        earthCharm: cur.hasEarthCharm,
+        earthCharm: earthOn,
       });
 
       // 演出とAPIを並走させる。回線ハングでsuspenseに閉じ込められないよう
@@ -761,6 +828,8 @@ export const useGameStore = create<GameState>((set, get) => {
             charmLevelOf(myTotal) > charmLevelOf(myTotal - 1)
               ? charmLevelOf(myTotal) - 1
               : null;
+          // 手に入れたチャームは、そのままつけた状態にしておく
+          if (gotCharm !== null) equipCharm(gotCharm);
           set({
             mask: base64ToMask(result.holesBase64),
             stabCount: result.stabCount,
@@ -994,6 +1063,19 @@ export const useGameStore = create<GameState>((set, get) => {
       set({ swordSkin: s });
     },
 
+    toggleCharm: (index: number) => {
+      const cur = get();
+      const owned = ownedCharms(cur.myTotal, cur.hasEarthCharm);
+      if (!owned.includes(index)) return; // 持っていないものはつけられない
+      const on = cur.equippedCharms.includes(index);
+      const next = on
+        ? cur.equippedCharms.filter((i) => i !== index)
+        : [...cur.equippedCharms, index].sort((a, b) => a - b);
+      LS.set("kk-charms", JSON.stringify(next));
+      emitGameEvent("ui-tap");
+      set({ equippedCharms: next });
+    },
+
     endRemoteStab: (holeId: number) => {
       const cur = get();
       if (!cur.remoteStabs.some((r) => r.holeId === holeId)) return;
@@ -1023,6 +1105,7 @@ export const useGameStore = create<GameState>((set, get) => {
         emitGameEvent("earth-boom");
         // 隠しチャーム「ちきゅう」の獲得。爆発を見届けてから知らせる
         if (!cur.hasEarthCharm && EARTH_CHARM_INDEX >= 0) {
+          equipCharm(EARTH_CHARM_INDEX);
           setTimeout(() => {
             set({ newCharm: EARTH_CHARM_INDEX });
             emitGameEvent("charm-get");

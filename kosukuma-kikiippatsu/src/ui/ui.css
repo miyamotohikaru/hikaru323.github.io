@@ -1684,20 +1684,58 @@
 
 .kk-charms-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
 }
 .kk-charms-head .kk-sec-label {
   margin-bottom: 0;
 }
 .kk-charms-count {
-  font-size: 11px;
+  min-width: 0;
+  font-size: 10.5px;
   font-weight: 800;
   color: rgba(58, 55, 48, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .kk-charms-count b {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--ui-text);
+}
+/* 一括のショートカット。1つのボタンが「ぜんぶ つける」⇄「ぜんぶ はずす」と
+   入れかわる。2つ並べるとこの幅では札とけんかするし、いま何が起きるのかも
+   ボタンを読むだけで分かるようになる */
+.kk-charms-all {
+  position: relative;
+  flex: none;
+  margin-left: auto;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(58, 55, 48, 0.08);
+  box-shadow: inset 0 0 0 1.6px rgba(58, 55, 48, 0.22);
+  color: var(--ui-text);
+  font-family: var(--font-game);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.14s var(--spring);
+}
+/* 見た目は30pxだが、指のあたりは44px。上下は棚のあいだの余白へ逃がすので、
+   まわりの押せるものと取り合いにならない */
+.kk-charms-all::before {
+  content: "";
+  position: absolute;
+  inset: -8px -6px;
+}
+.kk-charms-all:active {
+  transform: scale(0.92);
 }
 /* 受け皿の並んだトレイ。
    もとは実物の箱の「青い台」だったが、青は画面で4つめのアクセントになるうえ、
@@ -1709,8 +1747,8 @@
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 4px;
-  margin-top: 4px;
-  padding: 6px 7px 5px;
+  margin-top: 3px;
+  padding: 5px 7px 4px;
   border-radius: 16px;
   background: linear-gradient(180deg, var(--kk-well-top), var(--kk-well-bot));
   box-shadow:
@@ -1720,9 +1758,39 @@
 }
 .kk-charm-slot {
   display: flex;
+  min-width: 0;
+}
+/* 枠の中身。持っているものは button(押すとつけ外し)、まだのものは span。
+   どちらも同じ見た目・同じ大きさにして、並びのリズムを崩さない */
+.kk-charm-btn {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-game);
+  color: inherit;
+}
+/* 指のあたりは 44px 以上ほしいが、余白を足すと棚が縦に伸びて引き出しから
+   あふれる。枠のあいだ(4px)の半分ずつへ広げて、レイアウトを一切変えずに
+   45px 角を確保する(となりと重ならないので誤爆もしない) */
+.kk-charm-btn::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+}
+button.kk-charm-btn {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+button.kk-charm-btn:active .kk-charm-cell {
+  transform: scale(0.88);
 }
 /* 13個になったときだけ1行7枠にする。6枠のままだと3行目ができて、
    棚が縦に伸びたぶん下の進捗バーが引き出しからはみ出してしまう */
@@ -1734,14 +1802,24 @@
   width: 24px;
   height: 24px;
 }
-/* 受け皿。持っていないものは、くぼみに沈んだ影だけが見える */
+/* 7枠のときは列のすきまが3pxしかない。左右の広げすぎは となりと取り合いになる */
+.kk-charms-grid.wide .kk-charm-btn::before {
+  inset: -2px -1.5px;
+}
+/* 受け皿。明るさは「ついてる > はずした > 持っていない」の順にきれいに並べる。
+   逆にすると、がんばって集めたものがいちばん目立たない棚になってしまう */
 .kk-charm-cell {
   width: 26px;
   height: 26px;
   display: grid;
   place-items: center;
   border-radius: 50%;
+  transition:
+    transform 0.14s var(--spring),
+    background 0.16s ease,
+    box-shadow 0.16s ease;
 }
+/* まだ持っていない: くぼみに沈んだ影だけが見える */
 .kk-charm-slot:not(.got) .kk-charm-cell {
   background: radial-gradient(
     circle at 50% 34%,
@@ -1755,50 +1833,87 @@
 .kk-charm-slot:not(.got) .kk-charm-svg {
   filter: none;
 }
+/* 持っているけど外している: 同じくぼみだが、ひとつ明るくして色を残す。
+   ここを未獲得と同じ暗さにすると「持っている」ことが消えてしまうし、
+   8ボール(ほぼ黒)がトレイに溶けて見えなくなる */
+.kk-charm-slot.off .kk-charm-cell {
+  background: radial-gradient(
+    circle at 50% 32%,
+    rgba(255, 255, 255, 0.17),
+    rgba(255, 255, 255, 0.04)
+  );
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.42),
+    0 1px 0 rgba(255, 255, 255, 0.16);
+}
+.kk-charm-slot.off .kk-charm-svg {
+  opacity: 0.52;
+  filter: saturate(0.5) drop-shadow(0 1px 1px rgba(5, 7, 26, 0.35));
+}
+/* ついている: 受け皿が明るく灯って、コーラルのふちが付く。
+   コーラル = 「いま選んでいる」の意味は色・しあげの棚と共通 */
+.kk-charm-slot.on .kk-charm-cell {
+  background: radial-gradient(circle at 50% 30%, #fffdf4, #ffe7dd);
+  box-shadow:
+    0 0 0 2px #ff8272,
+    0 2px 0 rgba(150, 60, 48, 0.45),
+    0 0 10px rgba(255, 130, 114, 0.5);
+}
 .kk-charm-need {
   font-size: 8.5px;
+  line-height: 1.5;
   font-weight: 800;
+  white-space: nowrap;
   color: rgba(255, 255, 255, 0.72);
 }
-.kk-charm-slot.got .kk-charm-need {
-  color: #fff;
+.kk-charm-slot.on .kk-charm-need {
+  color: #ffb0a2;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
 }
-/* つぎに手に入るものだけ、コーラルのふちで期待させる(選択色と同じ意味) */
+.kk-charm-slot.off .kk-charm-need {
+  color: rgba(255, 255, 255, 0.45);
+}
+/* つぎに手に入るものは白いふちで期待させる。
+   コーラルは「ついてる」に譲った(同じ画面で2つの意味を持たせない) */
 .kk-charm-slot.next .kk-charm-cell {
   box-shadow:
     inset 0 2px 4px rgba(0, 0, 0, 0.5),
-    0 0 0 2px #ff8272,
-    0 0 10px rgba(255, 130, 114, 0.55);
+    0 0 0 2px rgba(255, 255, 255, 0.62),
+    0 0 9px rgba(255, 255, 255, 0.3);
 }
-/* 暗いトレイの上なので、8.5pxの数字は濃いコーラルだと 4.2:1 まで落ちる。
-   ここだけ明るいコーラルにして 5.8:1 を確保する */
 .kk-charm-slot.next .kk-charm-need {
-  color: #ffb0a2;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
 }
 /* 隠しチャーム。手に入れるまでは DOM ごと存在しない(「?」の空き枠すら
    置かない — 枠があるだけで「あと1個ある」と分かってしまう)。
    手に入れた瞬間に13個目としてぬっと現れ、そのとき1回だけ跳ねる。
-   受け皿だけ白い細いふちと淡い光にして「1個だけ違うものが混ざっている」と
-   読ませる。色は足さない(アクセントはコーラル1本の約束) */
+   つけ外しはできるので、コーラルのふちの外側に白い光をもう一重まとわせて
+   「1個だけ違うものが混ざっている」を残す(色は足さない) */
 .kk-charm-slot.secret .kk-charm-cell {
+  animation: kk-secret-in 0.75s var(--spring) 0.15s both;
+}
+.kk-charm-slot.secret.off .kk-charm-cell {
   background: radial-gradient(
     circle at 50% 30%,
-    rgba(255, 255, 255, 0.26),
-    rgba(255, 255, 255, 0.05)
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.07)
   );
   box-shadow:
     0 0 0 1.6px rgba(255, 255, 255, 0.82),
     0 0 12px rgba(255, 255, 255, 0.45);
-  animation: kk-secret-in 0.75s var(--spring) 0.15s both;
+}
+.kk-charm-slot.secret.on .kk-charm-cell {
+  box-shadow:
+    0 0 0 2px #ff8272,
+    0 0 0 3.6px rgba(255, 255, 255, 0.78),
+    0 0 12px rgba(255, 255, 255, 0.4);
 }
 .kk-charm-slot.secret .kk-charm-need {
-  color: #fff;
   letter-spacing: 0.04em;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
 }
 .kk-charms-next {
-  margin-top: 5px;
+  margin-top: 4px;
 }
 .kk-charms-line {
   display: flex;
@@ -2225,13 +2340,15 @@
   .kk-skin-sword {
     width: 16px;
   }
-  .kk-charm-cell {
-    width: 24px;
-    height: 24px;
-  }
+  /* 受け皿は小さくするが、札とのあいだで1px返して指のあたり44pxは死守する。
+     13個(1行7枠)のときも同じ大きさ: ここを22pxまで落とすと44pxを割る */
+  .kk-charm-cell,
   .kk-charms-grid.wide .kk-charm-cell {
-    width: 22px;
-    height: 22px;
+    width: 25px;
+    height: 25px;
+  }
+  .kk-charm-btn {
+    gap: 3px;
   }
 }
 

@@ -1,204 +1,146 @@
 "use client";
 
-// チャーム(10本刺すごとに手に入る、剣にぶら下げるかざり)の棚と、獲得の瞬間のお祝い。
+// チャーム(刺すほど増える、剣にぶら下げる かざり)の引き出しと、獲得の瞬間のお祝い。
 //
-// 絵柄は絵文字をやめて、12種の「形」そのものを描いている。理由は2つ:
-//  1. 12px前後の絵文字は潰れて泥にしか見えない(ハート/よつば/おはなが区別できない)
-//  2. 3D(src/game/scene/sword/charmGeometry.ts)と同じ式から輪郭を作れば、
-//     剣にぶら下がっている粒とコレクションの絵が食い違わない
-// 見せかたは「獲得済み = フルカラー + 縁取り」「未獲得 = 形のシルエット」。
-// 逆にすると、がんばって集めたものがいちばん目立たない棚になってしまう。
+// ── 絵づくりのねらい: Y2K の「キーチャーム」──────────────────
+// クロム(ニッケル)の金具が主役で、そこへ つやのある樹脂のモチーフ(サイコロ・
+// きのこ・アヒル)、鏡面のぷっくりハート、つや消しの8ボール、ひものタッセルが
+// 長さちがいで束になってぶら下がっている、あの感じ。色数は少なく
+// 「銀 + 黒 + 差し色1〜2色」。ぺたっとした単色の図形にすると一気に安く見えるので、
+// 13種すべてに次の3つを必ず入れてある:
+//   1. 上に小さな銀の丸カン(RingArt)。これがあるだけで「金具に付く部品」に見える
+//   2. 素材ごとの陰影(chrome = 白いハイライト帯 / resin = 白い楕円のツヤ /
+//      matte = 広くやわらかい光 / glass = 半透明 + 明るいふち / fabric = ひも)
+//   3. 差し色 accentHex(サイコロの目・きのこの水玉・8の数字・プレートの文字・
+//      アヒルのくちばし)
+// 絵文字は12px前後で潰れて泥にしか見えないので使わない。全部インラインSVG。
+//
+// ── 引き出しとしての役目 ────────────────────────────────
+// ここは「集めた記録」ではなく「つけ外しできる引き出し」。
+//   **持っている ≠ つけている。** 押すと store.toggleCharm() でつく/外れる。
+// 上のプレビュー(SwordRack.tsx の SwordPreview)も剣ラックも同じ
+// s.equippedCharms を見ているので、押した瞬間に完成形の剣が変わる。
+// 隠しチャーム「ちきゅう」は手に入れるまで DOM ごと存在しない(「?」の空き枠も
+// 出さない。枠があるだけで「あと1個ある」と分かってしまい、隠しでなくなる)。
 
-import { useEffect, useId, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import {
   CHARMS,
   charmLevelOf,
   NORMAL_CHARM_COUNT,
+  type Charm,
+  type CharmMaterial,
   type CharmShape,
 } from "@/lib/config";
-import { useGameStore } from "@/game/store";
+import { ownedCharms, useGameStore } from "@/game/store";
 import { onGameEvent } from "@/game/events";
 
-// ── 輪郭づくり(3Dの charmGeometry.ts と同じ式) ──────────────
-type Pt = [number, number];
-const TAU = Math.PI * 2;
+// ── 色の小道具 ────────────────────────────────────────
+// 素材の陰影は「config の hex を白/黒へ寄せて作る」。こうしておくと、
+// あとで hex を変えても陰影がひとりでに追従する(色を2重管理しない)。
 
-function polar(n: number, r: (a: number) => number): Pt[] {
-  const out: Pt[] = [];
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * TAU;
-    out.push([Math.cos(a) * r(a), Math.sin(a) * r(a)]);
-  }
-  return out;
-}
-function rotate(pts: Pt[], t: number): Pt[] {
-  const c = Math.cos(t);
-  const s = Math.sin(t);
-  return pts.map(([x, y]) => [x * c - y * s, x * s + y * c]);
-}
-function quad(p0: Pt, c: Pt, p1: Pt, n = 8): Pt[] {
-  const out: Pt[] = [];
-  for (let i = 1; i <= n; i++) {
-    const t = i / n;
-    const u = 1 - t;
-    out.push([
-      u * u * p0[0] + 2 * u * t * c[0] + t * t * p1[0],
-      u * u * p0[1] + 2 * u * t * c[1] + t * t * p1[1],
-    ]);
-  }
-  return out;
-}
-function cubic(p0: Pt, c1: Pt, c2: Pt, p1: Pt, n = 10): Pt[] {
-  const out: Pt[] = [];
-  for (let i = 1; i <= n; i++) {
-    const t = i / n;
-    const u = 1 - t;
-    out.push([
-      u ** 3 * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * p1[0],
-      u ** 3 * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * p1[1],
-    ]);
-  }
-  return out;
-}
-function arcPts(cx: number, cy: number, r: number, a0: number, a1: number, n = 18): Pt[] {
-  const out: Pt[] = [];
-  for (let i = 0; i <= n; i++) {
-    const a = a0 + ((a1 - a0) * i) / n;
-    out.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
-  }
-  return out;
-}
+type RGB = [number, number, number];
 
-function starPts(): Pt[] {
-  const out: Pt[] = [];
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * TAU + Math.PI / 2;
-    const r = i % 2 === 0 ? 1 : 0.47;
-    out.push([Math.cos(a) * r, Math.sin(a) * r]);
-  }
-  return out;
+function toRgb(hex: string): RGB {
+  const h = hex.replace("#", "");
+  const s = h.length === 3 ? h.replace(/./g, (c) => c + c) : h;
+  return [0, 2, 4].map((i) => parseInt(s.slice(i, i + 2), 16) || 0) as RGB;
 }
-function moonPts(): Pt[] {
-  const R = 1;
-  const r = 0.82;
-  const d = 0.42;
-  const x = (d * d + R * R - r * r) / (2 * d);
-  const y = Math.sqrt(Math.max(0, R * R - x * x));
-  const a0 = Math.atan2(y, x);
-  const b0 = Math.atan2(y, x - d);
-  const N = 16;
-  const out: Pt[] = [];
-  for (let i = 0; i <= N; i++) {
-    const a = a0 + ((TAU - a0 * 2) * i) / N;
-    out.push([Math.cos(a) * R, Math.sin(a) * R]);
-  }
-  for (let i = 0; i <= N; i++) {
-    const a = -b0 - ((TAU - b0 * 2) * i) / N;
-    out.push([d + Math.cos(a) * r, Math.sin(a) * r]);
-  }
-  return rotate(out, Math.PI * 0.62);
+function mix(hex: string, to: RGB, t: number): string {
+  const v = toRgb(hex);
+  const m = v.map((c, i) => Math.round(c + (to[i] - c) * t));
+  return `rgb(${m[0]},${m[1]},${m[2]})`;
 }
-function dropPts(): Pt[] {
-  const N = 30;
-  const out: Pt[] = [];
-  for (let i = 0; i < N; i++) {
-    const t = (i / N) * TAU;
-    const x = Math.cos(t);
-    const y = Math.sin(t) * Math.abs(Math.sin(t / 2)) ** 1.7 * 1.75;
-    out.push([-y, x]);
-  }
-  return rotate(out, -Math.PI / 2);
+/** 黒は真っ黒ではなく、すこし青い影にする(金属の影は冷たい) */
+const INK: RGB = [12, 15, 26];
+const WHITE: RGB = [255, 255, 255];
+const lite = (hex: string, t: number) => mix(hex, WHITE, t);
+const dim = (hex: string, t: number) => mix(hex, INK, t);
+/** ざっくりの明るさ(0..1)。暗い素材のふちを反転するのに使う */
+function luma(hex: string): number {
+  const [r, g, b] = toRgb(hex);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 }
-function heartPts(): Pt[] {
-  const N = 34;
-  const out: Pt[] = [];
-  for (let i = 0; i < N; i++) {
-    const t = (i / N) * TAU;
-    const x = 16 * Math.sin(t) ** 3;
-    const y =
-      13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-    out.push([x / 16, y / 16]);
-  }
-  return out;
-}
-function bellPts(): Pt[] {
-  let p: Pt[] = [[-0.15, 0.7]];
-  p = p.concat(quad([-0.15, 0.7], [-0.15, 0.98], [0, 0.98], 5));
-  p = p.concat(quad([0, 0.98], [0.15, 0.98], [0.15, 0.7], 5));
-  p = p.concat(cubic([0.15, 0.7], [0.7, 0.5], [0.86, 0.05], [0.86, -0.5], 10));
-  p.push([1, -0.7], [-1, -0.7], [-0.86, -0.5]);
-  p = p.concat(cubic([-0.86, -0.5], [-0.86, 0.05], [-0.7, 0.5], [-0.15, 0.7], 10));
-  return p;
-}
-function flamePts(): Pt[] {
-  let p: Pt[] = [[0.06, 1.1]];
-  p = p.concat(cubic([0.06, 1.1], [0.62, 0.55], [0.78, 0], [0.6, -0.4], 10));
-  p = p.concat(quad([0.6, -0.4], [0.42, -0.86], [-0.06, -0.86], 7));
-  p = p.concat(quad([-0.06, -0.86], [-0.56, -0.86], [-0.66, -0.34], 7));
-  p = p.concat(cubic([-0.66, -0.34], [-0.76, 0.12], [-0.34, 0.28], [-0.28, 0.62], 8));
-  p = p.concat(quad([-0.28, 0.62], [-0.24, 0.9], [0.06, 1.1], 5));
-  return p;
-}
-function rainbowPts(): Pt[] {
-  const cy = -0.25;
-  return [
-    ...arcPts(0, cy, 1, 0, Math.PI, 20),
-    ...arcPts(0, cy, 0.55, Math.PI, 0, 20),
-  ];
-}
-
-const OUTLINE: Record<CharmShape, () => Pt[]> = {
-  star: starPts,
-  moon: moonPts,
-  drop: dropPts,
-  heart: heartPts,
-  clover: () => polar(48, (a) => 0.38 + 0.62 * Math.abs(Math.cos(2 * a)) ** 0.5),
-  gem: () => [
-    [-0.46, 0.88],
-    [0.46, 0.88],
-    [0.95, 0.28],
-    [0, -1],
-    [-0.95, 0.28],
-  ],
-  bell: bellPts,
-  flower: () => polar(50, (a) => 0.52 + 0.48 * Math.abs(Math.cos(2.5 * a)) ** 0.6),
-  fish: () => [
-    [1, 0],
-    [0.62, 0.4],
-    [0.1, 0.46],
-    [-0.42, 0.18],
-    [-1, 0.58],
-    [-0.72, 0],
-    [-1, -0.58],
-    [-0.42, -0.18],
-    [0.1, -0.46],
-    [0.62, -0.4],
-  ],
-  crown: () => [
-    [-1, -0.62],
-    [1, -0.62],
-    [1, 0.12],
-    [0.66, 0.96],
-    [0.33, 0.22],
-    [0, 1.06],
-    [-0.33, 0.22],
-    [-0.66, 0.96],
-    [-1, 0.12],
-  ],
-  flame: flamePts,
-  rainbow: rainbowPts,
-};
 
 /**
- * 24×24 の箱いっぱいに収めた path。SVGはyが下向きなので反転する。
- * 剣にぶら下がる粒(SwordArt)も同じ形を使うので公開している
- * (別々に描くと、棚のチャームと剣のチャームが違う形になってしまう)。
+ * 素材ごとの「上から下への光」。objectBoundingBox なので、どの形に貼っても
+ * その形の高さに合う。クロムだけは stop が多い ——
+ * 「上が明るい(空) → いったん暗い → 白いハイライト帯 → 暗い地平線 → 下で持ち上がる」
+ * という段の重なりが、鏡面をいちばん鏡面らしく見せるため。
  */
-const PATHS: Record<string, string> = {};
-export function charmPath(shape: CharmShape): string {
-  const hit = PATHS[shape];
-  if (hit) return hit;
-  const pts = (OUTLINE[shape] ?? starPts)();
+function matStops(m: CharmMaterial, hex: string): [number, string][] {
+  switch (m) {
+    case "chrome":
+      return [
+        [0, lite(hex, 0.9)],
+        [0.2, dim(hex, 0.26)],
+        [0.36, lite(hex, 1)],
+        [0.47, lite(hex, 0.45)],
+        [0.6, dim(hex, 0.52)],
+        [0.79, lite(hex, 0.4)],
+        [1, dim(hex, 0.66)],
+      ];
+    case "resin":
+      return [
+        [0, lite(hex, 0.5)],
+        [0.28, lite(hex, 0.12)],
+        [0.7, hex],
+        [1, dim(hex, 0.32)],
+      ];
+    case "matte":
+      return [
+        [0, lite(hex, 0.34)],
+        [0.4, lite(hex, 0.1)],
+        [1, dim(hex, 0.3)],
+      ];
+    case "glass":
+      return [
+        [0, lite(hex, 0.66)],
+        [0.38, lite(hex, 0.08)],
+        [0.74, dim(hex, 0.18)],
+        [1, lite(hex, 0.34)],
+      ];
+    case "fabric":
+      return [
+        [0, lite(hex, 0.24)],
+        [0.5, hex],
+        [1, dim(hex, 0.3)],
+      ];
+  }
+}
+
+/**
+ * 輪郭の色。8ボールのような真っ黒い素材に濃い輪郭を引くと、暗いトレイの上で
+ * シルエットごと消えてしまう。明るさで反転させて、どの地色でも縁が立つようにする。
+ */
+function edgeOf(hex: string, m: CharmMaterial): string {
+  if (luma(hex) < 0.3) return "rgba(255,255,255,.46)";
+  return m === "chrome" || m === "glass"
+    ? "rgba(20,26,40,.66)"
+    : "rgba(34,26,16,.56)";
+}
+
+// ── 13種の輪郭(24×24の箱。y は下向き) ────────────────────
+// 座標の約束:
+//   ・上の y=1.3〜6.1 は丸カンの席。本体はそこへ 0.5 ほど食い込ませて、
+//     「輪が通っている」ように見せる(離すと部品がバラバラに浮いて見える)
+//   ・本体は x 1.5〜22.6 / y 5.3〜23.0 に収める
+//   ・縦横比は形ごとにバラバラでよい。**長さの違うものが束になる**のが
+//     キーチャームの可愛さなので、全部を正方形に押し込めない
+// 3D(src/game/scene/sword/charmGeometry.ts)と同じ輪郭を使うこと。
+
+type Pt = [number, number];
+
+/** 点列を、24×24の箱の中の長方形へ写す(y を反転して SVG 座標にする) */
+function fitD(pts: Pt[], x0: number, y0: number, w: number, h: number): string {
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
@@ -209,22 +151,682 @@ export function charmPath(shape: CharmShape): string {
     if (y < minY) minY = y;
     if (y > maxY) maxY = y;
   }
-  const S = 24;
-  const pad = 1.4;
-  const k = (S - pad * 2) / Math.max(maxX - minX, maxY - minY);
-  const cx = (minX + maxX) / 2;
-  const cy = (minY + maxY) / 2;
-  const d =
+  const kx = w / (maxX - minX || 1);
+  const ky = h / (maxY - minY || 1);
+  return (
     "M" +
     pts
       .map(
         ([x, y]) =>
-          `${(S / 2 + (x - cx) * k).toFixed(2)} ${(S / 2 - (y - cy) * k).toFixed(2)}`
+          `${(x0 + (x - minX) * kx).toFixed(2)} ${(y0 + (maxY - y) * ky).toFixed(2)}`
       )
       .join("L") +
-    "Z";
-  PATHS[shape] = d;
-  return d;
+    "Z"
+  );
+}
+
+/** 点を1点まわりに回す(サイコロを斜めに吊るのに使う) */
+function rotAbout([x, y]: Pt, cx: number, cy: number, a: number): Pt {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  const dx = x - cx;
+  const dy = y - cy;
+  return [cx + dx * c - dy * s, cy + dx * s + dy * c];
+}
+
+/** ほし: 5角星。頂点をひとつ真上に向ける(3Dの starPoints と同じ式) */
+function starD(): string {
+  const pts: Pt[] = [];
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const r = i % 2 === 0 ? 1 : 0.47;
+    pts.push([Math.sin(a) * r, Math.cos(a) * r]);
+  }
+  return fitD(pts, 4.1, 5.4, 15.8, 15.0);
+}
+
+/** サイコロの中心と かたむき。3Dも「まっすぐだと積み木に見える」ので傾けている */
+const DICE_CX = 12;
+const DICE_CY = 13.4;
+const DICE_ROT = -0.2;
+const DICE_HALF = 6.7;
+
+/** サイコロ: 角のとれた正方形を、わざと斜めに吊る */
+function diceD(): string {
+  const r = 2.1;
+  const k = DICE_HALF - r;
+  const pts: Pt[] = [];
+  for (const [cx, cy, a0] of [
+    [k, k, 0],
+    [-k, k, Math.PI / 2],
+    [-k, -k, Math.PI],
+    [k, -k, Math.PI * 1.5],
+  ] as [number, number, number][]) {
+    for (let i = 0; i <= 4; i++) {
+      const a = a0 + (i / 4) * (Math.PI / 2);
+      pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+  }
+  return (
+    "M" +
+    pts
+      .map((p) => {
+        const [x, y] = rotAbout(p, 0, 0, DICE_ROT);
+        return `${(DICE_CX + x).toFixed(2)} ${(DICE_CY + y).toFixed(2)}`;
+      })
+      .join("L") +
+    "Z"
+  );
+}
+
+/** サイコロの目(5の面)。本体と同じだけ傾ける */
+const DICE_PIPS: Pt[] = (
+  [
+    [-3.5, -3.5],
+    [3.5, -3.5],
+    [0, 0],
+    [-3.5, 3.5],
+    [3.5, 3.5],
+  ] as Pt[]
+).map((p) => {
+  const [x, y] = rotAbout(p, 0, 0, DICE_ROT);
+  return [DICE_CX + x, DICE_CY + y];
+});
+
+/**
+ * つばさの羽根1枚(3D の featherPoints と同じ式)を、24の箱の座標で描く。
+ * 付け根がまるく、先がすっと細くなる木の葉。上下で太さが違う(下が0.62倍)。
+ */
+function featherD(
+  rootX: number,
+  rootY: number,
+  len: number,
+  wide: number,
+  deg: number
+): string {
+  const a = (deg * Math.PI) / 180;
+  const ca = Math.cos(a);
+  const sa = Math.sin(a);
+  const N = 12;
+  const top: Pt[] = [];
+  const bot: Pt[] = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const w = wide * Math.sin(Math.PI * t ** 0.62) ** 0.85;
+    top.push([t * len, w]);
+    bot.push([t * len, -w * 0.62]);
+  }
+  return (
+    "M" +
+    [...top, ...bot.reverse()]
+      .map(
+        ([x, y]) =>
+          `${(rootX + x * ca - y * sa).toFixed(2)} ${(rootY + x * sa + y * ca).toFixed(2)}`
+      )
+      .join("L") +
+    "Z"
+  );
+}
+
+/**
+ * つばさ: 1枚板の翼にせず、羽根を5枚あおいで重ねる(3D の buildWing と同じ割りつけ)。
+ * 角度も長さも3Dの specs をそのまま写した「右下へ伸びる片翼」。
+ * 左右対称の一対にすると天使のマークになってしまい、キーチャームらしさが消える。
+ *
+ * 2つだけ2D用に変えてある:
+ *  ・羽根を1.25倍ふとらせる。3Dの太さのままだと24pxでは線の束にしか見えない
+ *  ・カンは付け根ではなく前縁の上に来る(3Dの anchorX は付け根だが、
+ *    2Dで同じにすると翼が箱の右半分に寄って小さくなる)
+ */
+function wingD(): string {
+  const rx = 4.6;
+  const ry = 7.2;
+  const K = 19; // 単位空間 → 24の箱
+  const F = 1.25; // 羽根のふとらせ
+  const specs: [number, number, number][] = [
+    // 長さ, 半幅, 角度(度・下向きが+)。3D の [0.86,0.115,-0.16] … を写したもの
+    [0.86 * K, 0.115 * K * F, 9.2],
+    [0.8 * K, 0.11 * K * F, 24.1],
+    [0.7 * K, 0.1 * K * F, 41.3],
+    [0.58 * K, 0.092 * K * F, 58.4],
+    [0.44 * K, 0.082 * K * F, 76.8],
+  ];
+  // 付け根の玉(羽根の根元をまとめる)
+  const ball = "M2.7 7.2a1.9 1.9 0 1 0 3.8 0a1.9 1.9 0 1 0-3.8 0Z";
+  return specs.map(([l, w, d]) => featherD(rx, ry, l, w, d)).join("") + ball;
+}
+
+/**
+ * 輪郭線だけ別の形にしたいときの上書き。
+ * こすくまヘッドの耳は「顔のうしろに丸くはみ出す」形なので、輪郭を塗りと同じ
+ * 形で引くと、顔の上に耳の円が輪っかになって浮き出てしまう。耳は顔と交わる点で
+ * 切った弧(閉じない)にして、外側だけをなぞる。
+ */
+const STROKE: Partial<Record<CharmShape, string>> = {
+  bear:
+    "M4.9 11.02A3.1 3.1 0 1 1 9.02 6.9" +
+    "M19.1 11.02A3.1 3.1 0 1 0 14.98 6.9" +
+    "M4.3 14a7.7 7.7 0 1 0 15.4 0a7.7 7.7 0 1 0-15.4 0",
+};
+
+/** ハート: おなじみのハート曲線。ぷっくりさせたいので横に少し広げてある */
+function heartD(): string {
+  const N = 44;
+  const pts: Pt[] = [];
+  for (let i = 0; i < N; i++) {
+    const t = (i / N) * Math.PI * 2;
+    pts.push([
+      16 * Math.sin(t) ** 3,
+      13 * Math.cos(t) -
+        5 * Math.cos(2 * t) -
+        2 * Math.cos(3 * t) -
+        Math.cos(4 * t),
+    ]);
+  }
+  return fitD(pts, 3.2, 5.4, 17.6, 17.0);
+}
+
+/**
+ * きのこの軸。傘は赤・軸はクリームなので、塗り分けるために別に持っておく。
+ * 3Dの軸は「上より下がすこし太い円柱」なので、こちらも裾を広げてある。
+ */
+const MUSHROOM_STEM =
+  "M14.4 14c.2 2.6.4 5 .6 6.5.1 1.1-1.1 1.9-3 1.9s-3.1-.8-3-1.9" +
+  "c.2-1.5.4-3.9.6-6.5Z";
+
+/** かさの白い水玉(3Dの5つと同じ数・同じばらつき) */
+const MUSHROOM_DOTS: [number, number, number][] = [
+  [8, 10.2, 1.6],
+  [14.4, 9.4, 1.85],
+  [11.4, 12.4, 1.15],
+  [17.6, 12.2, 1.25],
+  [5.9, 12.6, 1],
+];
+
+/** タッセルの口金(上でひもを締めている筒)。3Dではここがクロム */
+const TASSEL_CRIMP =
+  "M9.3 6.6c0-1 1.2-1.3 2.7-1.3s2.7.3 2.7 1.3v1.9c0 .9-1.2 1.2-2.7 1.2" +
+  "s-2.7-.3-2.7-1.2Z";
+
+/**
+ * ひもの束。長さをそろえないのが ふさの可愛さ(3Dの5本と同じ不ぞろい)。
+ * 2つ気をつけること:
+ *  ・ひもは太めに。1単位まで細くすると輪郭の線で埋まって、束が真っ黒になる
+ *  ・裾は広げすぎない。まっすぐな棒が放射状に開くと、ふさではなく三脚に見える。
+ *    ゆるく垂れる曲線にして、口金の幅の1.4倍までに収めてある
+ */
+const TASSEL_CORDS = [
+  "M9.3 9.2C9 13 8.6 16.9 8.3 20.5L10.4 20.7C10.7 17 11 13.2 11.4 9.2Z",
+  "M10.2 9.2C10.1 13.6 10 18.3 9.9 22.6L12 22.6C12.1 18.3 12.2 13.6 12.3 9.2Z",
+  "M11.1 9.2C11.1 12.3 11.2 15.3 11.2 18.3L13.3 18.3C13.3 15.3 13.2 12.3 13.2 9.2Z",
+  "M12 9.2C12.3 13 12.6 17.3 12.8 21.2L14.9 20.9C14.6 17.1 14.3 13 14.1 9.2Z",
+  "M12.7 9.2C13.2 12.5 13.7 16.2 14.2 19.4L16.2 19C15.7 15.8 15.2 12.3 14.8 9.2Z",
+];
+/** そのうち差し色で塗る2本(3D も body 3本 / accent 2本) */
+const TASSEL_DARK = [1, 4];
+/** ひもの先をとめる小さな口金の置き場所(左上の角)。銀にすると三脚の足に見える */
+const TASSEL_TIPS: Pt[] = [
+  [8.5, 19.7],
+  [10.1, 21.8],
+  [11.4, 17.4],
+  [12.9, 20.4],
+  [14.3, 18.6],
+];
+
+const BODY: Record<CharmShape, string> = {
+  // サイコロ: 角のとれた立方体。目は5(いちばん「サイコロ」に見える面)
+  dice: diceD(),
+  // エイトボール: まんまるの玉。白丸と数字はあとから乗せる
+  eightball: "M3.8 14a8.2 8.2 0 1 0 16.4 0a8.2 8.2 0 1 0-16.4 0Z",
+  // きのこ: ドーム状の傘 + 裾の広がった軸。輪郭は1本でつながっている
+  mushroom:
+    "M3.3 14C3.3 9 7.2 5.5 12 5.5s8.7 3.5 8.7 8.5h-6.3" +
+    "c.2 2.6.4 5 .6 6.5.1 1.1-1.1 1.9-3 1.9s-3.1-.8-3-1.9" +
+    "c.2-1.5.4-3.9.6-6.5Z",
+  // 南京錠: つる(帯状のU字)+ 胴。つるの内側の抜きも1本の輪郭で作る
+  padlock:
+    "M6.7 11.4a5.3 5.3 0 0 1 10.6 0h-2.1a3.2 3.2 0 0 0-6.4 0Z" +
+    "M6.6 11.4h10.8a2.6 2.6 0 0 1 2.6 2.6v5.9a2.6 2.6 0 0 1-2.6 2.6H6.6" +
+    "A2.6 2.6 0 0 1 4 19.9V14a2.6 2.6 0 0 1 2.6-2.6Z",
+  heart: heartD(),
+  // いなずま: 3D の boltPoints と同じ折れ。細くて長いので、房の中で縦に効く
+  bolt: fitD(
+    [
+      [0.15, 0.5],
+      [-0.17, 0.05],
+      [0.01, 0.05],
+      [-0.12, -0.5],
+      [0.19, -0.01],
+      [0.01, -0.01],
+    ],
+    7.8,
+    5.4,
+    8.4,
+    17.4
+  ),
+  wing: wingD(),
+  // アヒル: あたま + ずんぐりした体 + くちばし + しっぽ
+  duck:
+    "M8.6 10a3.8 3.8 0 1 0 7.6 0a3.8 3.8 0 1 0-7.6 0Z" +
+    "M3.4 17.6a8 4.8 0 1 0 16 0a8 4.8 0 1 0-16 0Z" +
+    "M15.6 10.4L20.4 11.6L15.6 13Z" +
+    "M5 14.8L1.5 12.6L5.6 18Z",
+  star: starD(),
+  // ネームプレート: たてに長い犬タグ(3Dも W:H = 0.42:1.3 の細長い板)。
+  // 上の穴に丸カンが通る
+  plate:
+    "M11.3 5.3h1.4a2.8 2.8 0 0 1 2.8 2.8v12a2.8 2.8 0 0 1-2.8 2.8h-1.4" +
+    "a2.8 2.8 0 0 1-2.8-2.8v-12a2.8 2.8 0 0 1 2.8-2.8Z",
+  // タッセル: 口金 + 5本のひも
+  tassel: TASSEL_CRIMP + TASSEL_CORDS.join(""),
+  // こすくまヘッド: まるい耳ふたつ + まるい顔
+  bear:
+    "M3.1 8.2a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0-6.2 0Z" +
+    "M14.7 8.2a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0-6.2 0Z" +
+    "M4.3 14a7.7 7.7 0 1 0 15.4 0a7.7 7.7 0 1 0-15.4 0Z",
+  // ちきゅう(隠し): 球 + こわれて飛んだ かけら2つ(3Dの buildEarth と同じ約束)
+  earth:
+    "M3.8 14a8.2 8.2 0 1 0 16.4 0a8.2 8.2 0 1 0-16.4 0Z" +
+    "M20.9 8.3L22.5 9.5L21.3 11.1L19.7 9.9Z" +
+    "M3.3 20.3L4.7 21.3L3.7 22.7L2.3 21.7Z",
+};
+
+/**
+ * 24×24 の箱いっぱいに収めた本体の輪郭(丸カンは含まない)。
+ * 剣にぶら下がる粒(SwordArt)も、まだ持っていないチャームの影も同じ形を使うので
+ * 公開している(別々に描くと、棚のチャームと剣のチャームが違う形になってしまう)。
+ */
+export function charmPath(shape: CharmShape): string {
+  return BODY[shape] ?? BODY.dice;
+}
+
+// ── 部品 ──────────────────────────────────────────────
+
+/** 丸カン。これがあるだけで「キーホルダーの部品」に見える */
+function RingArt({ ghost }: { ghost?: boolean }) {
+  return (
+    <g>
+      <circle
+        cx="12"
+        cy="3.4"
+        r="2.05"
+        fill="none"
+        stroke={ghost ? "rgba(255,255,255,.3)" : "#6d7686"}
+        strokeWidth="1.5"
+      />
+      {!ghost && (
+        /* 左上だけに走る白い弧。丸カンが「磨いた金属の輪」に見える最小の一手 */
+        <path
+          d="M10.14 2.53A2.05 2.05 0 0 1 11.47 1.42"
+          fill="none"
+          stroke="#f4f7fd"
+          strokeWidth="0.75"
+          strokeLinecap="round"
+        />
+      )}
+    </g>
+  );
+}
+
+/** 素材ごとの光。本体の輪郭でクリップしてから重ねる */
+function sheenOf(m: CharmMaterial, d: string): ReactNode {
+  switch (m) {
+    case "chrome":
+      // 鏡面は「空を映した上半分」「地面を映した下半分」「その境目の白い帯」。
+      // 3つそろってはじめてクロムに見える(1つ欠けるとただの灰色になる)
+      return (
+        <>
+          <rect x="0" y="12.2" width="24" height="1.6" fill="rgba(255,255,255,.5)" />
+          <ellipse
+            cx="8.6"
+            cy="9.2"
+            rx="6"
+            ry="3.1"
+            fill="rgba(255,255,255,.5)"
+            transform="rotate(-22 8.6 9.2)"
+          />
+          <ellipse
+            cx="15.6"
+            cy="20"
+            rx="7"
+            ry="3.4"
+            fill="rgba(10,14,26,.26)"
+            transform="rotate(-13 15.6 20)"
+          />
+        </>
+      );
+    case "resin":
+      // つやのある樹脂は、小さくて濃い白の楕円がひとつあれば「ぬれた」感じになる
+      return (
+        <ellipse
+          cx="9"
+          cy="9.4"
+          rx="3.5"
+          ry="2.2"
+          fill="rgba(255,255,255,.8)"
+          transform="rotate(-30 9 9.4)"
+        />
+      );
+    case "matte":
+      // つや消しは広くてぼんやりした光だけ。強い点を置くとゴム感が消える
+      return (
+        <ellipse cx="9.6" cy="10" rx="5.4" ry="3.6" fill="rgba(255,255,255,.13)" />
+      );
+    case "glass":
+      return (
+        <>
+          {/* 透ける樹脂は「ふちが明るく、中が抜ける」。内側から縁を光らせる */}
+          <path
+            d={d}
+            fill="none"
+            stroke="rgba(255,255,255,.5)"
+            strokeWidth="1.8"
+          />
+          <ellipse
+            cx="8.8"
+            cy="9.4"
+            rx="3.4"
+            ry="2.3"
+            fill="rgba(255,255,255,.72)"
+            transform="rotate(-28 8.8 9.4)"
+          />
+        </>
+      );
+    case "fabric":
+      // ひもは金属光沢を持たない。上のほうがすこし明るいだけ
+      return <rect x="0" y="4" width="24" height="5.4" fill="rgba(255,255,255,.2)" />;
+  }
+}
+
+/**
+ * 形ごとの差し色とディテール。
+ * detail=false は「剣にぶら下がる粒」用(9px前後)。そこでは1px未満になる
+ * 数字・目・水玉を落とし、大きな塗り分けだけ残す。
+ */
+function accentsOf(c: Charm, detail: boolean, clip: string): ReactNode {
+  const ac = c.accentHex ?? dim(c.hex, 0.62);
+  switch (c.shape) {
+    case "dice":
+      return detail ? (
+        <g fill={ac}>
+          {DICE_PIPS.map(([x, y]) => (
+            <circle
+              key={`${x}-${y}`}
+              cx={x.toFixed(2)}
+              cy={y.toFixed(2)}
+              r="1.2"
+            />
+          ))}
+        </g>
+      ) : null;
+
+    case "eightball":
+      return (
+        <>
+          <circle cx="12.4" cy="12.6" r="3.5" fill={ac} />
+          {detail && (
+            <text
+              x="12.4"
+              y="14.6"
+              textAnchor="middle"
+              textLength="3.4"
+              lengthAdjust="spacingAndGlyphs"
+              fontSize="5.6"
+              fontWeight="800"
+              fill={c.hex}
+              style={{ fontFamily: "var(--font-game)" }}
+            >
+              8
+            </text>
+          )}
+        </>
+      );
+
+    case "mushroom":
+      return (
+        <>
+          <path d={MUSHROOM_STEM} fill={ac} />
+          {/* 傘の落ち影。軸がのっぺりした白い棒に見えるのを防ぐ */}
+          <path
+            d={MUSHROOM_STEM}
+            fill="none"
+            stroke="rgba(120,40,30,.22)"
+            strokeWidth="1.6"
+            clipPath={`url(#${clip})`}
+          />
+          {detail && (
+            <g fill={ac}>
+              {MUSHROOM_DOTS.map(([x, y, r]) => (
+                <ellipse
+                  key={`${x}-${y}`}
+                  cx={x}
+                  cy={y}
+                  rx={r}
+                  ry={r * 0.88}
+                />
+              ))}
+            </g>
+          )}
+        </>
+      );
+
+    case "padlock":
+      return detail ? (
+        <g fill={dim(c.hex, 0.72)}>
+          <circle cx="12" cy="16.2" r="1.5" />
+          <path d="M11 17.2h2l.6 3.3h-3.2Z" />
+        </g>
+      ) : null;
+
+    case "heart":
+      // 鏡面ハートの見せ場は、まんなかを横切る強い反射。ここだけは粒でも残す
+      return (
+        <path
+          d="M6.2 12.6c2.6 1.5 9 1.5 11.6 0"
+          fill="none"
+          stroke="rgba(255,255,255,.85)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          clipPath={`url(#${clip})`}
+        />
+      );
+
+    case "wing":
+      // 羽根の重なりは輪郭の線そのものが描いてくれる(BODY が5枚の別々の輪郭)。
+      // ここで羽軸まで足すと、24pxでは線だらけになって銀の面が消える
+      return null;
+
+    case "duck":
+      return (
+        <>
+          <path d="M15.6 10.4L20.4 11.6L15.6 13Z" fill={ac} />
+          {detail && (
+            <>
+              <circle cx="13.5" cy="9.4" r="1.05" fill="#2b2620" />
+              <circle cx="13.15" cy="9.05" r="0.34" fill="#fff" />
+              <path
+                d="M8.4 17.4c1.8-1.5 4.4-1.6 6 .2"
+                fill="none"
+                stroke="rgba(150,90,10,.4)"
+                strokeWidth="0.8"
+                strokeLinecap="round"
+              />
+            </>
+          )}
+        </>
+      );
+
+    case "plate":
+      return (
+        <>
+          {detail && (
+            <>
+              <circle cx="12" cy="8.4" r="1.05" fill={dim(c.hex, 0.76)} />
+              {/* 彫られた文字。3Dも同じ "LUCKY" を横に寝かせて縦に並べている
+                  (危機一髪 = lucky のしゃれ)。textLength で幅を固定するので、
+                  フォントが何であってもプレートからはみ出さない */}
+              <text
+                transform="rotate(90 12 16)"
+                x="12"
+                y="17.6"
+                textAnchor="middle"
+                textLength="11.2"
+                lengthAdjust="spacingAndGlyphs"
+                fontSize="4.4"
+                fontWeight="800"
+                fill={ac}
+                style={{ fontFamily: "var(--font-game)" }}
+              >
+                LUCKY
+              </text>
+            </>
+          )}
+        </>
+      );
+
+    case "tassel":
+      return (
+        <>
+          {/* 差し色のひも2本。3Dも body 3本 / accent 2本で、束に濃淡を作る */}
+          <g fill={ac}>
+            {TASSEL_DARK.map((i) => (
+              <path key={i} d={TASSEL_CORDS[i]} />
+            ))}
+          </g>
+          {/* 口金は3Dではクロム。ここだけ銀に塗り替えて金具を1つ足す */}
+          <path d={TASSEL_CRIMP} fill="#b8c0ce" />
+          <path
+            d={TASSEL_CRIMP}
+            fill="none"
+            stroke="rgba(255,255,255,.75)"
+            strokeWidth="0.7"
+            clipPath={`url(#${clip})`}
+          />
+          {detail && (
+            <>
+              {/* 巻きのしま(参考写真の白黒のひもそのもの) */}
+              <g fill={ac} clipPath={`url(#${clip})`} opacity="0.7">
+                <path d="M9 6.8L15 5.9V6.9L9 7.8Z" />
+                <path d="M9 8.6L15 7.7V8.7L9 9.6Z" />
+              </g>
+              {/* ひもの先をとめる小さな口金。銀にすると三脚の足に見えるので、
+                  ひもと同じ濃さの布のとめ具にとどめる */}
+              <g fill={ac} opacity="0.55">
+                {TASSEL_TIPS.map(([x, y]) => (
+                  <rect
+                    key={`${x}-${y}`}
+                    x={x}
+                    y={y}
+                    width="1.9"
+                    height="1.2"
+                    rx="0.4"
+                  />
+                ))}
+              </g>
+            </>
+          )}
+        </>
+      );
+
+    case "bear":
+      return (
+        <>
+          {/* 鼻さき。3Dは同じ色の球を前に出すだけなので、こちらも少し明るくする程度 */}
+          <ellipse cx="12" cy="16.4" rx="3.9" ry="3" fill={lite(c.hex, 0.4)} />
+          {detail && (
+            <g fill={ac}>
+              <ellipse cx="8.9" cy="12.6" rx="1.05" ry="1.2" />
+              <ellipse cx="15.1" cy="12.6" rx="1.05" ry="1.2" />
+              <ellipse cx="12" cy="15.5" rx="1.25" ry="0.95" />
+            </g>
+          )}
+        </>
+      );
+
+    case "earth":
+      return (
+        <>
+          <g fill={ac} clipPath={`url(#${clip})`}>
+            <path d="M8.2 9.6c1.7-1 3.6-.7 4.2.5.6 1.1-.3 2.4-1.8 3-1.6.7-3.3.3-3.8-.8-.4-1 .2-2.1 1.4-2.7Z" />
+            <path d="M13.6 14.4c2-.4 3.5.4 3.5 1.8 0 1.4-1.6 2.6-3.5 2.6-1.6 0-2.8-.9-2.6-2 .1-1.2 1.1-2.1 2.6-2.4Z" />
+            <path d="M6.3 16.3c1.2-.2 2.1.4 2 1.3-.1.9-1.1 1.7-2.2 1.7-.9 0-1.5-.6-1.4-1.4.1-.8.7-1.4 1.6-1.6Z" />
+          </g>
+          {detail && (
+            /* こわした証のひび(3Dの crackGeometry と同じ「正面を走る稲妻」) */
+            <path
+              d="M10.6 6.4L12.6 9.6L10.8 11.8L13.2 15.2L11.8 17.6L13.2 21.3"
+              fill="none"
+              stroke="rgba(10,20,40,.62)"
+              strokeWidth="0.85"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              clipPath={`url(#${clip})`}
+            />
+          )}
+        </>
+      );
+
+    default:
+      return null;
+  }
+}
+
+/**
+ * 24×24 の箱に描いた1個ぶんのチャーム(svg要素の中身だけ)。
+ * 剣にぶら下がる粒(SwordArt)も棚もこれを呼ぶので、両方の絵が絶対にずれない。
+ *
+ * @param detail false = 粒サイズ(9px前後)。1px未満になる細部を落とす
+ * @param ring   false = 丸カンを描かない(剣の房は房ぜんぶで1つの輪を持っている)
+ */
+export function CharmGlyph({
+  index,
+  detail = true,
+  ring = true,
+}: {
+  index: number;
+  detail?: boolean;
+  ring?: boolean;
+}) {
+  // 同じページに何十個も並ぶので、グラデーションのidは実体ごとに固有にする。
+  // useId の ":" は url(#..) 参照で嫌われることがあるので英数字だけに落とす
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const c = CHARMS[index];
+  if (!c) return null;
+  const d = charmPath(c.shape);
+  const gid = `cgm${uid}`;
+  const cid = `ccl${uid}`;
+  return (
+    <g>
+      <defs>
+        {/* 少しだけ斜めに流す。真上から真下だと「印刷の色帯」に見えてしまう */}
+        <linearGradient id={gid} x1="0" y1="0" x2="0.16" y2="1">
+          {matStops(c.material, c.hex).map(([o, col]) => (
+            <stop key={o} offset={o} stopColor={col} />
+          ))}
+        </linearGradient>
+        <clipPath id={cid}>
+          <path d={d} />
+        </clipPath>
+      </defs>
+      {ring && <RingArt />}
+      <path d={d} fill={`url(#${gid})`} fillOpacity={c.material === "glass" ? 0.9 : 1} />
+      <g clipPath={`url(#${cid})`}>{sheenOf(c.material, d)}</g>
+      {accentsOf(c, detail, cid)}
+      {/* 輪郭はいちばん上。差し色やツヤに食われず、小さくても形が読める。
+          布(ひも)だけ細く: 1単位ほどの細いひもに 0.95 の線を引くと、
+          ひもが線で埋まって束ぜんぶが真っ黒になってしまう */}
+      <path
+        d={STROKE[c.shape] ?? d}
+        fill="none"
+        stroke={edgeOf(c.hex, c.material)}
+        strokeWidth={
+          c.material === "chrome" ? 1 : c.material === "fabric" ? 0.7 : 0.95
+        }
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </g>
+  );
 }
 
 // ── 表示部品 ────────────────────────────────────────────
@@ -239,10 +841,8 @@ interface CharmIconProps {
 }
 
 export function CharmIcon({ index, size = 28, ghost, className }: CharmIconProps) {
-  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const c = CHARMS[index];
   if (!c) return null;
-  const d = charmPath(c.shape);
   return (
     <svg
       className={className ? `kk-charm-svg ${className}` : "kk-charm-svg"}
@@ -254,53 +854,86 @@ export function CharmIcon({ index, size = 28, ghost, className }: CharmIconProps
     >
       {ghost ? (
         /* 未獲得は「形だけ」。台のくぼみに彫られた影として、形は読めるままにする。
-           台を青から暗い樹脂に変えたので、塗りも中立の黒に、ふちは 3.1:1 を
-           確保できる明るさ(白40%)に上げてある */
-        <path
-          d={d}
-          fill="rgba(0,0,0,.5)"
-          stroke="rgba(255,255,255,.4)"
-          strokeWidth="1"
-          strokeLinejoin="round"
-        />
-      ) : (
+           塗りは中立の黒、ふちは 3.1:1 を確保できる明るさ(白40%)。
+           丸カンも同じ彫りで置いて、獲得済みと縦の位置がずれないようにする */
         <>
-          <defs>
-            <linearGradient id={`cg${uid}`} x1="0" y1="0" x2="0.25" y2="1">
-              <stop offset="0" stopColor="rgba(255,255,255,.72)" />
-              <stop offset="0.42" stopColor="rgba(255,255,255,.12)" />
-              <stop offset="0.62" stopColor="rgba(0,0,0,0)" />
-              <stop offset="1" stopColor="rgba(0,0,0,.26)" />
-            </linearGradient>
-          </defs>
+          <RingArt ghost />
           <path
-            d={d}
-            fill={c.hex}
-            stroke="rgba(28,22,10,.55)"
-            strokeWidth="1.5"
+            d={charmPath(c.shape)}
+            fill="rgba(0,0,0,.5)"
+            stroke="rgba(255,255,255,.4)"
+            strokeWidth="1"
             strokeLinejoin="round"
           />
-          <path d={d} fill={`url(#cg${uid})`} />
         </>
+      ) : (
+        <CharmGlyph index={index} />
       )}
     </svg>
   );
 }
 
 /**
- * チャームの棚。持っている数と、つぎの1個までの道のりを見せる。
+ * チャームの引き出し。持っているものを押すと つく/外れる。
+ *
+ * ── 見せかたの決めごと ──
+ * ・ついている  : 受け皿が明るく灯り、コーラルのふちが付く(選択色と同じ意味)
+ * ・外している  : くぼみに戻るが、色は残す(「持ってはいる」を消さない)
+ * ・持っていない: くぼみに沈んだ影だけ。押せない
+ * この3段が、明るさの順にきれいに並ぶのが大事。逆にすると、がんばって集めた
+ * ものがいちばん目立たない棚になってしまう。
  *
  * ── 隠しチャームの扱い ──
  * 隠し(secret)のチャームは **手に入れるまで棚に一切出さない**。
  * 「?」の空き枠すら置かない: 枠があるだけで「あと1個ある」と分かってしまい、
- * 隠しではなくなるから。分母も NORMAL_CHARM_COUNT(=12)のままにして、
+ * 隠しではなくなるから。あつめた数の分母も NORMAL_CHARM_COUNT(=12)のままにして、
  * 12個そろった人には「ぜんぶ あつめた！」と言い切る。
- * 手に入れた瞬間だけ、13個目が棚にぬっと増える。
  */
 export function CharmShelf() {
   const myTotal = useGameStore((s) => s.myTotal);
   const hasEarth = useGameStore((s) => s.hasEarthCharm);
+  const equipped = useGameStore((s) => s.equippedCharms);
+  const toggleCharm = useGameStore((s) => s.toggleCharm);
   const level = charmLevelOf(myTotal);
+
+  const owned = useMemo(
+    () => ownedCharms(myTotal, hasEarth),
+    [myTotal, hasEarth]
+  );
+  // store の equippedCharms は端末に残るので、持っていないものが混じることが
+  // ありうる(?charm= で見せた状態のあと、など)。表示は必ず「持っている」と交差させる
+  const on = useMemo(() => {
+    const has = new Set(owned);
+    return new Set(equipped.filter((i) => has.has(i)));
+  }, [equipped, owned]);
+  const allOn = owned.length > 0 && on.size === owned.length;
+
+  // 一括のつけ外し。store に一括アクションが無いので順に押すが、同時に12回
+  // 鳴らすと「バチッ」と割れるので少しずつずらす。見た目も順に灯って気持ちいい
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    const t = timers;
+    return () => {
+      t.current.forEach(clearTimeout);
+      t.current = [];
+    };
+  }, []);
+  const setAll = (want: boolean) => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    // つけるときは古い順(房の上から)、外すときは新しい順(房の下から)
+    const list = want ? [...owned] : [...owned].reverse();
+    list.forEach((i, k) => {
+      const run = () => {
+        const s = useGameStore.getState();
+        // 実行のたびに現在の状態を見るので、連打されても行き先は狂わない
+        if (s.equippedCharms.includes(i) !== want) s.toggleCharm(i);
+      };
+      if (k === 0) run();
+      else timers.current.push(setTimeout(run, k * 26));
+    });
+  };
+
   // 隠しは持っている人にしか存在しない。持っていない人の棚は12枠ちょうど。
   // CHARMS の index はアイコンの参照に要るので、絞り込んでも持ち歩く
   const slots = CHARMS.map((c, i) => ({ c, i })).filter(
@@ -320,31 +953,39 @@ export function CharmShelf() {
     <div className="kk-charms">
       <div className="kk-charms-head">
         <span className="kk-sec-label kk-label-charm">チャーム</span>
+        {/* 分母は「持っている数」。あつめた数は下の進捗の行が言ってくれるので、
+            ここは つけ外しの手ごたえ(いま何個ついているか)に絞る */}
         <span className="kk-charms-count">
-          <b>{level}</b>/{NORMAL_CHARM_COUNT}
+          {owned.length > 0 ? (
+            <>
+              <b>{on.size}</b>/{owned.length} こ ついてる
+            </>
+          ) : (
+            <>
+              <b>0</b>/{NORMAL_CHARM_COUNT} こ
+            </>
+          )}
         </span>
+        {owned.length > 0 && (
+          <button
+            type="button"
+            className="kk-charms-all"
+            onClick={() => setAll(!allOn)}
+          >
+            {allOn ? "ぜんぶ はずす" : "ぜんぶ つける"}
+          </button>
+        )}
       </div>
 
       {/* 13個になったら1行7枠にする。3行目を作ると棚が縦に伸びて、
           引き出しの中で下の進捗バーが押し出されてしまうため */}
       <ul className={`kk-charms-grid${hasEarth ? " wide" : ""}`}>
         {slots.map(({ c, i }) => {
-          const got = c.secret || i < level;
+          const got = owned.includes(i);
+          const isOn = got && on.has(i);
           const isNext = !c.secret && i === level;
-          return (
-            <li
-              key={c.name}
-              className={`kk-charm-slot${got ? " got" : ""}${
-                isNext ? " next" : ""
-              }${c.secret ? " secret" : ""}`}
-              aria-label={
-                c.secret
-                  ? `${c.name} ひみつの チャーム`
-                  : got
-                    ? `${c.name} もってる`
-                    : `${c.name} ${c.need}本で もらえる`
-              }
-            >
+          const cell = (
+            <>
               <span className="kk-charm-cell">
                 <CharmIcon
                   index={i}
@@ -352,8 +993,41 @@ export function CharmShelf() {
                   ghost={!got}
                 />
               </span>
-              {/* 隠しだけは条件を書かない(書いた瞬間に隠しでなくなる) */}
-              <span className="kk-charm-need">{c.secret ? "ひみつ" : c.need}</span>
+              <span className="kk-charm-need">
+                {got ? (isOn ? "ついてる" : "はずした") : c.need}
+              </span>
+            </>
+          );
+          return (
+            <li
+              key={c.name}
+              className={
+                `kk-charm-slot${got ? " got" : ""}` +
+                `${got ? (isOn ? " on" : " off") : ""}` +
+                `${isNext ? " next" : ""}${c.secret ? " secret" : ""}`
+              }
+            >
+              {got ? (
+                <button
+                  type="button"
+                  className="kk-charm-btn"
+                  aria-pressed={isOn}
+                  aria-label={`${c.name} ${isOn ? "ついてる" : "はずしてる"}`}
+                  onClick={() => toggleCharm(i)}
+                >
+                  {cell}
+                </button>
+              ) : (
+                <span
+                  className="kk-charm-btn"
+                  role="img"
+                  /* 隠しだけは条件を書かない(書いた瞬間に隠しでなくなる)が、
+                     そもそも持っていない隠しはこの一覧に来ない */
+                  aria-label={`${c.name} ${c.need}本で もらえる`}
+                >
+                  {cell}
+                </span>
+              )}
             </li>
           );
         })}

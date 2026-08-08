@@ -135,19 +135,32 @@ export const SWORD_SKINS: readonly SwordSkin[] = [
 
 // ── チャーム(刺した本数でたまる、剣にぶら下げる かざり) ──────────
 // index+1 を style バイトの上位5bitに詰める(0=チャームなし)。最大31段。
+// キーホルダーに付ける「チャーム」。狙いはY2Kのキーチャーム
+// (クロムの金具 + つやのある樹脂 + ちょっとダサかわいいモチーフ)。
+// 参考: サイコロ・8ボール・きのこ・南京錠・鏡面ハート・アヒル・タッセル。
+// ぺたっとしたパステルの図形にすると、とたんに"おしゃれ"から遠ざかる。
 export type CharmShape =
-  | "star"
-  | "moon"
-  | "drop"
-  | "heart"
-  | "clover"
-  | "gem"
-  | "bell"
-  | "flower"
-  | "fish"
-  | "crown"
-  | "flame"
-  | "rainbow";
+  | "dice" // サイコロ
+  | "eightball" // ビリヤードの8番
+  | "mushroom" // きのこ(赤に白い水玉)
+  | "padlock" // 南京錠
+  | "heart" // ぷっくりハート(鏡面)
+  | "bolt" // いなずま
+  | "wing" // つばさ
+  | "duck" // アヒル
+  | "star" // ぷっくり星
+  | "plate" // ネームプレート
+  | "tassel" // ひものタッセル
+  | "bear" // こすくまくんの顔
+  | "earth"; // ちきゅう(隠し)
+
+/** チャームの素材。見た目(金属感・透け・つや)を決める */
+export type CharmMaterial =
+  | "chrome" // 磨いたニッケル。まわりを映す
+  | "resin" // つやのある不透明プラスチック
+  | "glass" // 透ける樹脂
+  | "matte" // つや消し(黒いゴムなど)
+  | "fabric"; // ひも・革
 
 export interface Charm {
   /** 獲得に必要な通算の刺し本数。Infinity = 刺しては手に入らない(隠し) */
@@ -156,6 +169,10 @@ export interface Charm {
   emoji: string;
   shape: CharmShape;
   hex: string;
+  /** 見た目の素材。金具のクロムと、樹脂のつやを混ぜるのが今回の肝 */
+  material: CharmMaterial;
+  /** 差し色(水玉・数字・文字など)。無ければ hex だけで作る */
+  accentHex?: string;
   /**
    * true = 手に入れるまで存在を隠す。棚にも「?」ではなく空きとして出し、
    * 何本刺しても出てこない(条件を教えない)。
@@ -165,25 +182,118 @@ export interface Charm {
 
 /** need の昇順で並べること(charmLevelOf が前提にしている) */
 export const CHARMS: readonly Charm[] = [
-  { need: 10, name: "ほし", emoji: "⭐️", shape: "star", hex: "#ffe066" },
-  { need: 20, name: "みかづき", emoji: "🌙", shape: "moon", hex: "#ffd9a0" },
-  { need: 30, name: "しずく", emoji: "💧", shape: "drop", hex: "#8fd8ff" },
-  { need: 40, name: "ハート", emoji: "💗", shape: "heart", hex: "#ff9ec4" },
-  { need: 50, name: "よつば", emoji: "🍀", shape: "clover", hex: "#8ce39a" },
-  { need: 60, name: "ほうせき", emoji: "💎", shape: "gem", hex: "#a5c8ff" },
-  { need: 70, name: "すず", emoji: "🔔", shape: "bell", hex: "#ffd06a" },
-  { need: 80, name: "おはな", emoji: "🌼", shape: "flower", hex: "#fff0a6" },
-  { need: 100, name: "おさかな", emoji: "🐟", shape: "fish", hex: "#7fd7e8" },
-  { need: 150, name: "かんむり", emoji: "👑", shape: "crown", hex: "#ffcf47" },
-  { need: 200, name: "ほのお", emoji: "🔥", shape: "flame", hex: "#ff8a4c" },
-  { need: 300, name: "にじ", emoji: "🌈", shape: "rainbow", hex: "#c9a6ff" },
+  {
+    need: 10,
+    name: "サイコロ",
+    emoji: "🎲",
+    shape: "dice",
+    hex: "#fbf7ef",
+    accentHex: "#2b2620",
+    material: "resin",
+  },
+  {
+    need: 20,
+    name: "ほし",
+    emoji: "⭐️",
+    shape: "star",
+    hex: "#d9dde6",
+    material: "chrome",
+  },
+  {
+    need: 30,
+    name: "きのこ",
+    emoji: "🍄",
+    shape: "mushroom",
+    hex: "#e5372c",
+    accentHex: "#fffaf2",
+    material: "resin",
+  },
+  {
+    need: 40,
+    name: "ハート",
+    emoji: "💗",
+    shape: "heart",
+    hex: "#e9edf5",
+    material: "chrome",
+  },
+  {
+    need: 50,
+    name: "エイトボール",
+    emoji: "🎱",
+    shape: "eightball",
+    hex: "#17161a",
+    accentHex: "#fffdf6",
+    material: "matte",
+  },
+  {
+    need: 60,
+    name: "なんきんじょう",
+    emoji: "🔒",
+    shape: "padlock",
+    hex: "#dbe0e9",
+    material: "chrome",
+  },
+  {
+    need: 70,
+    name: "アヒル",
+    emoji: "🐤",
+    shape: "duck",
+    hex: "#ffc21f",
+    accentHex: "#ff7a2f",
+    material: "resin",
+  },
+  {
+    need: 80,
+    name: "いなずま",
+    emoji: "⚡️",
+    shape: "bolt",
+    hex: "#e3e8f2",
+    material: "chrome",
+  },
+  {
+    need: 100,
+    name: "つばさ",
+    emoji: "🪽",
+    shape: "wing",
+    hex: "#cfd5e0",
+    material: "chrome",
+  },
+  {
+    need: 150,
+    name: "ネームプレート",
+    emoji: "🏷",
+    shape: "plate",
+    hex: "#c9ced9",
+    accentHex: "#15161a",
+    material: "chrome",
+  },
+  {
+    need: 200,
+    name: "タッセル",
+    emoji: "🎗",
+    shape: "tassel",
+    hex: "#f4f2ec",
+    accentHex: "#2f2b26",
+    material: "fabric",
+  },
+  {
+    need: 300,
+    name: "こすくまヘッド",
+    emoji: "🐻",
+    shape: "bear",
+    hex: "#fdf7c1",
+    accentHex: "#2b2620",
+    material: "resin",
+  },
   // ── ここから下は刺して手に入るチャームではない ──
   {
     need: Infinity,
     name: "ちきゅう",
     emoji: "🌏",
-    shape: "gem",
+    shape: "earth",
     hex: "#4fa8e8",
+    accentHex: "#7ed08a",
+    material: "glass",
     secret: true,
   },
 ] as const;
