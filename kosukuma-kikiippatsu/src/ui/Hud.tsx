@@ -9,9 +9,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CHARMS,
   charmLevelOf,
+  NORMAL_CHARM_COUNT,
   SWORD_COLORS,
   SWORD_SKINS,
 } from "@/lib/config";
+import { charmIndicesFrom } from "@/lib/style";
 import { useGameStore } from "@/game/store";
 import { onGameEvent } from "@/game/events";
 import Feed from "./Feed";
@@ -38,6 +40,7 @@ export default function Hud() {
   const swordSkin = useGameStore((s) => s.swordSkin);
   const myStabs = useGameStore((s) => s.myStabs);
   const myTotal = useGameStore((s) => s.myTotal);
+  const hasEarthCharm = useGameStore((s) => s.hasEarthCharm);
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [gearOpen, setGearOpen] = useState(false);
@@ -90,13 +93,18 @@ export default function Hud() {
     ? `${skin.name}の ${colorName}`
     : `${skin.name}の けん`;
   const charmCount = charmLevelOf(myTotal);
-  const nextCharm = CHARMS[charmCount];
+  // 実際に剣にぶら下がる数(隠しチャームを持っていれば1個多い)
+  const hungCount = charmIndicesFrom(charmCount, hasEarthCharm).length;
+  // CHARMS[charmCount] をそのまま使うと、12個そろった人の装備バーに
+  // 隠しチャームの存在が「つぎまで あと…」としてもれてしまう
+  const nextCharm =
+    charmCount < NORMAL_CHARM_COUNT ? CHARMS[charmCount] : undefined;
   const charmSub = nextCharm
-    ? `チャーム ${charmCount}こ ・ つぎまで あと${Math.max(
+    ? `チャーム ${hungCount}こ ・ つぎまで あと${Math.max(
         1,
         nextCharm.need - myTotal
       )}本`
-    : `チャーム ${charmCount}こ ぜんぶ そろった！`;
+    : `チャーム ${hungCount}こ ぜんぶ そろった！`;
 
   return (
     <div className="hud">
@@ -165,9 +173,9 @@ export default function Hud() {
             <SwordArt color={swordColor} skin={swordSkin} />
           </span>
           <span className="kk-fab-label">したく</span>
-          {charmCount > 0 && (
+          {hungCount > 0 && (
             <span className="kk-fab-badge" aria-hidden="true">
-              {charmCount}
+              {hungCount}
             </span>
           )}
         </button>
@@ -188,7 +196,12 @@ export default function Hud() {
             {/* 絵文字の🗡は小さくすると暗い斜線になって画像切れに見えるので、
                 実物の剣をそのまま小さく置く */}
             <span className="kk-equip-icon">
-              <SwordArt color={swordColor} skin={swordSkin} charms={charmCount} />
+              <SwordArt
+                color={swordColor}
+                skin={swordSkin}
+                charms={charmCount}
+                earthCharm={hasEarthCharm}
+              />
             </span>
             <span className="kk-equip-txt">
               <b>{swordLabel}</b>

@@ -10,7 +10,12 @@
 // 逆にすると、がんばって集めたものがいちばん目立たない棚になってしまう。
 
 import { useEffect, useId, useState, type CSSProperties } from "react";
-import { CHARMS, charmLevelOf, type CharmShape } from "@/lib/config";
+import {
+  CHARMS,
+  charmLevelOf,
+  NORMAL_CHARM_COUNT,
+  type CharmShape,
+} from "@/lib/config";
 import { useGameStore } from "@/game/store";
 import { onGameEvent } from "@/game/events";
 
@@ -184,9 +189,13 @@ const OUTLINE: Record<CharmShape, () => Pt[]> = {
   rainbow: rainbowPts,
 };
 
-/** 24×24 の箱いっぱいに収めた path。SVGはyが下向きなので反転する */
+/**
+ * 24×24 の箱いっぱいに収めた path。SVGはyが下向きなので反転する。
+ * 剣にぶら下がる粒(SwordArt)も同じ形を使うので公開している
+ * (別々に描くと、棚のチャームと剣のチャームが違う形になってしまう)。
+ */
 const PATHS: Record<string, string> = {};
-function charmPath(shape: CharmShape): string {
+export function charmPath(shape: CharmShape): string {
   const hit = PATHS[shape];
   if (hit) return hit;
   const pts = (OUTLINE[shape] ?? starPts)();
@@ -278,11 +287,25 @@ export function CharmIcon({ index, size = 28, ghost, className }: CharmIconProps
   );
 }
 
-/** チャームの棚。持っている数と、つぎの1個までの道のりを見せる */
+/**
+ * チャームの棚。持っている数と、つぎの1個までの道のりを見せる。
+ *
+ * ── 隠しチャームの扱い ──
+ * 隠し(secret)のチャームは **手に入れるまで棚に一切出さない**。
+ * 「?」の空き枠すら置かない: 枠があるだけで「あと1個ある」と分かってしまい、
+ * 隠しではなくなるから。分母も NORMAL_CHARM_COUNT(=12)のままにして、
+ * 12個そろった人には「ぜんぶ あつめた！」と言い切る。
+ * 手に入れた瞬間だけ、13個目が棚にぬっと増える。
+ */
 export function CharmShelf() {
   const myTotal = useGameStore((s) => s.myTotal);
+  const hasEarth = useGameStore((s) => s.hasEarthCharm);
   const level = charmLevelOf(myTotal);
-  const next = CHARMS[level];
+  // 隠しは持っている人にしか存在しない。持っていない人の棚は12枠ちょうど
+  const slots = CHARMS.filter((c) => !c.secret || hasEarth);
+  // CHARMS[level] をそのまま使うと、12個そろった人に隠しチャームの名前と
+  // 条件(Infinity本)が「つぎは…」として出てしまう。ここで必ず止める
+  const next = level < NORMAL_CHARM_COUNT ? CHARMS[level] : undefined;
   const prevNeed = level > 0 ? CHARMS[level - 1].need : 0;
   const span = next ? next.need - prevNeed : 1;
   const pct = next
@@ -295,28 +318,39 @@ export function CharmShelf() {
       <div className="kk-charms-head">
         <span className="kk-sec-label kk-label-charm">チャーム</span>
         <span className="kk-charms-count">
-          <b>{level}</b>/{CHARMS.length}
+          <b>{level}</b>/{NORMAL_CHARM_COUNT}
         </span>
       </div>
 
-      <ul className="kk-charms-grid">
-        {CHARMS.map((c, i) => {
-          const got = i < level;
-          const isNext = i === level;
+      {/* 13個になったら1行7枠にする。3行目を作ると棚が縦に伸びて、
+          引き出しの中で下の進捗バーが押し出されてしまうため */}
+      <ul className={`kk-charms-grid${hasEarth ? " wide" : ""}`}>
+        {slots.map((c, i) => {
+          const got = c.secret || i < level;
+          const isNext = !c.secret && i === level;
           return (
             <li
               key={c.name}
               className={`kk-charm-slot${got ? " got" : ""}${
                 isNext ? " next" : ""
-              }`}
+              }${c.secret ? " secret" : ""}`}
               aria-label={
-                got ? `${c.name} もってる` : `${c.name} ${c.need}本で もらえる`
+                c.secret
+                  ? `${c.name} ひみつの チャーム`
+                  : got
+                    ? `${c.name} もってる`
+                    : `${c.name} ${c.need}本で もらえる`
               }
             >
               <span className="kk-charm-cell">
-                <CharmIcon index={i} size={got ? 26 : 21} ghost={!got} />
+                <CharmIcon
+                  index={i}
+                  size={got ? (hasEarth ? 24 : 26) : hasEarth ? 20 : 21}
+                  ghost={!got}
+                />
               </span>
-              <span className="kk-charm-need">{c.need}</span>
+              {/* 隠しだけは条件を書かない(書いた瞬間に隠しでなくなる) */}
+              <span className="kk-charm-need">{c.secret ? "ひみつ" : c.need}</span>
             </li>
           );
         })}
@@ -343,7 +377,13 @@ export function CharmShelf() {
   );
 }
 
-/** チャームを手に入れた瞬間のお祝い。数秒でひとりでに消える */
+/**
+ * チャームを手に入れた瞬間のお祝い。数秒でひとりでに消える。
+ * 隠しチャームのときは、通常の獲得とはっきり別物に見せる:
+ *  ・見出しを「！？」にして、なにが起きたか一瞬わからなくする
+ *  ・光を金から白青へ、輪を二重に、粒をひとまわり大きく
+ *  ・表示時間を長くして、じっくり「なにこれ」と眺めさせる
+ */
 export function CharmGet() {
   const clearNewCharm = useGameStore((s) => s.clearNewCharm);
   const [shown, setShown] = useState<{ id: number; index: number } | null>(null);
@@ -361,27 +401,48 @@ export function CharmGet() {
     []
   );
 
+  const secret = shown !== null && !!CHARMS[shown.index]?.secret;
+
   useEffect(() => {
     if (!shown) return;
-    const timer = setTimeout(() => {
-      setShown(null);
-      clearNewCharm(); // 演出しきったので store を片付ける
-    }, 2900);
+    const timer = setTimeout(
+      () => {
+        setShown(null);
+        clearNewCharm(); // 演出しきったので store を片付ける
+      },
+      secret ? 4400 : 2900
+    );
     return () => clearTimeout(timer);
-  }, [shown, clearNewCharm]);
+  }, [shown, secret, clearNewCharm]);
 
   if (!shown) return null;
   const c = CHARMS[shown.index];
   if (!c) return null;
 
   return (
-    <div className="kk-charmget" role="status" key={shown.id}>
+    <div
+      className={`kk-charmget${secret ? " secret" : ""}`}
+      role="status"
+      key={shown.id}
+    >
       <div className="kk-charmget-in">
         <div className="kk-charmget-rays" aria-hidden="true" />
         <div className="kk-charmget-ring" aria-hidden="true" />
-        <CharmIcon index={shown.index} size={78} className="kk-charmget-disc" />
-        <div className="kk-charmget-title">チャーム ゲット！</div>
-        <div className="kk-charmget-name">{c.name}</div>
+        {secret && <div className="kk-charmget-ring2" aria-hidden="true" />}
+        <CharmIcon
+          index={shown.index}
+          size={secret ? 98 : 78}
+          className="kk-charmget-disc"
+        />
+        <div className="kk-charmget-title">
+          {secret ? "！？" : "チャーム ゲット！"}
+        </div>
+        <div className="kk-charmget-name">
+          {secret ? `ひみつの チャーム 「${c.name}」` : c.name}
+        </div>
+        {secret && (
+          <div className="kk-charmget-note">だれにも ないしょだよ…</div>
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,17 @@
 // チャーム(剣にぶら下げる小さなかざり)の形。
 // 画像アセットを足さない方針なので、12種すべての輪郭を点列/数式で作り、
 // ExtrudeGeometry で厚みと面取りをつけて「つやのある小さな樹脂パーツ」にする。
+// 隠しチャーム「ちきゅう」だけは平たい板ではなく小さな球で、
+// これだけ makeEarthCharmParts() で別に作る(下のセクション)。
 //
 // 座標の約束: 原点 = ぶら下げ点(= 形の上端の中央)。チャームは原点から下(-Y)へ垂れる。
 // そうしておくと、呼び出し側はひもの先に置くだけで正しくぶら下がる。
 
 import * as THREE from "three";
+import {
+  mergeGeometries,
+  mergeVertices,
+} from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { CharmShape } from "@/lib/config";
 
 /** 輪郭はいったん「半径1くらいの円に収まる」正規化空間で作り、最後に size へ縮める */
@@ -280,4 +286,191 @@ export function makeCharmGeometry(
   // 上端を原点にそろえる = 原点から下にぶら下がる
   geo.translate(0, -topY * k, 0);
   return geo;
+}
+
+// ── 隠しチャーム「ちきゅう」────────────────────────────────
+// 地球を1000回つついて こわした人だけが手に入れる。
+// ただの青い宝石だと「ほうせき」と見分けがつかないので、**小さな地球そのもの**
+// にして、「こわした証」を3つの記号で見せる:
+//   1. ギザギザのひびが正面を走っている
+//   2. かけらがふたつ、ちょこんと浮いている(戻せなくなった感じ)
+//   3. ゆっくり自転する(呼び出し側が回す。生きてはいる)
+// 割れて中身が見えたりはしない。こわれたけど元気、がこのゲームのトーン。
+//
+// 座標の約束はほかのチャームと同じ: 原点 = 上端の中央、下へ垂れる。
+
+/** 大陸/ひびを球の表面から浮かせる量(1 = 海の半径)。Zファイトを避ける */
+const EARTH_LAND_LIFT = 1.035;
+const EARTH_CRACK_LIFT = 1.055;
+
+/** 単位ベクトルに直交する2軸(接平面の基底)。(t1, t2, d) が右手系になる */
+function tangentBasis(d: THREE.Vector3): [THREE.Vector3, THREE.Vector3] {
+  const t1 = new THREE.Vector3(0, 1, 0);
+  if (Math.abs(d.y) > 0.9) t1.set(1, 0, 0);
+  t1.cross(d).normalize();
+  const t2 = new THREE.Vector3().crossVectors(d, t1);
+  return [t1, t2];
+}
+
+/** 位置をそのまま法線にする(球にはりつく面は、球と同じ陰影になってほしい) */
+function normalsFromPosition(geo: THREE.BufferGeometry): void {
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  const n = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const l = Math.hypot(x, y, z) || 1;
+    n[i * 3] = x / l;
+    n[i * 3 + 1] = y / l;
+    n[i * 3 + 2] = z / l;
+  }
+  geo.setAttribute("normal", new THREE.BufferAttribute(n, 3));
+}
+
+/**
+ * 球の上にはりつく大陸ひとつ。中心 dir から角半径 ang ぶんの円を、
+ * ふちをゆらして三角形ファンにする(まん丸だと水玉模様に見えてしまう)。
+ */
+function continentGeometry(
+  dir: THREE.Vector3,
+  radius: number,
+  ang: number,
+  seed: number
+): THREE.BufferGeometry {
+  const N = 20;
+  const [t1, t2] = tangentBasis(dir);
+  const p = new THREE.Vector3();
+  const pos: number[] = [dir.x * radius, dir.y * radius, dir.z * radius];
+  const index: number[] = [];
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    const rr = ang * (1 + 0.3 * Math.sin(3 * a + seed) + 0.17 * Math.sin(5 * a + seed * 1.7));
+    p.copy(dir)
+      .multiplyScalar(Math.cos(rr))
+      .addScaledVector(t1, Math.cos(a) * Math.sin(rr))
+      .addScaledVector(t2, Math.sin(a) * Math.sin(rr))
+      .normalize()
+      .multiplyScalar(radius);
+    pos.push(p.x, p.y, p.z);
+    // (中心, i, i+1) は外から見て反時計回り = 表向き
+    index.push(0, 1 + i, 1 + ((i + 1) % N));
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(index);
+  normalsFromPosition(geo);
+  return geo;
+}
+
+/** 三角波 (-1..1)。ひびのジグザグに使う */
+function triWave(x: number): number {
+  return 4 * Math.abs(x - Math.floor(x + 0.5)) - 1;
+}
+
+/**
+ * 球の表面を走るギザギザのひび。極角θを上から下へ流しながら、
+ * 経度φを三角波で折り返して稲妻状にする。両端は細くすぼめる。
+ */
+function crackGeometry(radius: number): THREE.BufferGeometry {
+  const N = 26;
+  const HALF_W = 0.11; // 単位球での半幅
+  const pts: THREE.Vector3[] = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const th = 0.5 + t * 2.0; // 上のほうから下のほうへ
+    // 正面(+Z)まわりで折り返す。折り返しを増やしすぎると角で帯が自分と
+    // 重なってしまうので、回数は少なめ・振れ幅は大きめにする
+    const ph = 0.42 * triWave(t * 1.6);
+    pts.push(
+      new THREE.Vector3(
+        Math.sin(th) * Math.sin(ph),
+        Math.cos(th),
+        Math.sin(th) * Math.cos(ph)
+      )
+    );
+  }
+  const pos: number[] = [];
+  const index: number[] = [];
+  const tan = new THREE.Vector3();
+  const side = new THREE.Vector3();
+  const v = new THREE.Vector3();
+  for (let i = 0; i <= N; i++) {
+    const p = pts[i];
+    tan.copy(pts[Math.min(i + 1, N)]).sub(pts[Math.max(i - 1, 0)]);
+    side.crossVectors(p, tan).normalize(); // 接平面のなかで、進行方向と直角
+    const w = HALF_W * (0.3 + 0.7 * Math.sin(Math.PI * (i / N)));
+    for (const s of [-1, 1]) {
+      v.copy(p).addScaledVector(side, w * s).normalize().multiplyScalar(radius);
+      pos.push(v.x, v.y, v.z);
+    }
+    if (i > 0) {
+      // 帯の表を外向きにする巻き方(逆にすると、暗いひびが裏返って消える)
+      const a = (i - 1) * 2;
+      index.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(index);
+  normalsFromPosition(geo);
+  return geo;
+}
+
+/** ちきゅうチャームの部品。色を分けたいので3つに分かれている */
+export interface EarthCharmParts {
+  /** 海(球本体)+ 飛び散ったかけら */
+  globe: THREE.BufferGeometry;
+  /** 大陸 */
+  land: THREE.BufferGeometry;
+  /** ひび */
+  crack: THREE.BufferGeometry;
+}
+
+/**
+ * 隠しチャーム「ちきゅう」の部品を作る。
+ * @param size 見かけの大きさ(ほかのチャームの「いちばん長い辺」とそろう)
+ * @returns 原点 = ぶら下げ点(球の上端)、下へ垂れる3つのジオメトリ
+ */
+export function makeEarthCharmParts(size = 0.085): EarthCharmParts {
+  const r = size * 0.46;
+
+  // ── 海(球) + かけら ──
+  const sphere = new THREE.SphereGeometry(r, 20, 14);
+  // かけらは「ひびの外側」に置く。上のほうに置くとチェーンとけんかするので下寄り
+  const chips: THREE.BufferGeometry[] = [sphere];
+  const chipAt = (th: number, ph: number, k: number, spin: number) => {
+    const g = new THREE.OctahedronGeometry(r * k, 0);
+    g.scale(1, 0.6, 0.8); // 平たくして「かけら」に見せる
+    g.rotateZ(spin);
+    g.translate(
+      Math.sin(th) * Math.sin(ph) * r * 1.34,
+      Math.cos(th) * r * 1.34,
+      Math.sin(th) * Math.cos(ph) * r * 1.34
+    );
+    // 多面体は非インデックスなので、球と混ぜる前にインデックス化する
+    // (mergeGeometries は index の有無がそろっていないと null を返す)
+    const indexed = mergeVertices(g, 1e-6);
+    if (indexed !== g) g.dispose();
+    return indexed;
+  };
+  chips.push(chipAt(1.75, 0.95, 0.17, 0.6));
+  chips.push(chipAt(2.3, -0.5, 0.12, -0.9));
+  const globe = mergeGeometries(chips) ?? sphere;
+  if (globe !== sphere) chips.forEach((g) => g.dispose());
+
+  // ── 大陸(3つ。並べる位置は「地球っぽく見える」だけを狙った手置き) ──
+  const lands = [
+    continentGeometry(new THREE.Vector3(0.42, 0.5, 0.76).normalize(), r * EARTH_LAND_LIFT, 0.62, 0.4),
+    continentGeometry(new THREE.Vector3(-0.72, -0.24, 0.65).normalize(), r * EARTH_LAND_LIFT, 0.5, 2.1),
+    continentGeometry(new THREE.Vector3(-0.1, -0.72, -0.68).normalize(), r * EARTH_LAND_LIFT, 0.44, 3.6),
+  ];
+  const land = mergeGeometries(lands) ?? lands[0];
+  if (land !== lands[0]) lands.forEach((g) => g.dispose());
+
+  const crack = crackGeometry(r * EARTH_CRACK_LIFT);
+
+  // 上端を原点にそろえる(ほかのチャームと同じ約束)
+  for (const g of [globe, land, crack]) g.translate(0, -r, 0);
+  return { globe, land, crack };
 }

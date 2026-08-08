@@ -21,12 +21,13 @@ import {
 } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import {
   CHARMS,
-  CHARM_VISIBLE_MAX,
+  EARTH_CHARM_INDEX,
   SWORD_COLORS,
   SWORD_SKINS,
 } from "@/lib/config";
+import { charmIndicesFrom } from "@/lib/style";
 import { hashString, mulberry32, randRange } from "@/lib/prng";
-import { makeCharmGeometry } from "./charmGeometry";
+import { makeCharmGeometry, makeEarthCharmParts } from "./charmGeometry";
 
 // ── 寸法 ────────────────────────────────────────────
 // いちばん大事なのは「実物は刃も握りも柄頭も同じ厚みの平たい1枚の板」だという
@@ -498,8 +499,18 @@ export interface ToySwordOptions {
   color: number;
   /** SWORD_SKINS の index */
   skin: number;
-  /** 持っているチャームの数。新しい方から CHARM_VISIBLE_MAX 個をぶら下げる */
+  /**
+   * 刺して集めたチャームの数(後方互換)。`charms` を渡さないときだけ使われ、
+   * 「古い方から charm 個」に読み替えられる。隠しチャームは数では表せないので、
+   * 新しい呼び出し側は `charms` を使うこと。
+   */
   charm: number;
+  /**
+   * ぶら下げるチャームを CHARMS の index で直接指定する(古い順)。
+   * `src/lib/style.ts` の `charmIndicesOf()` / `charmIndicesFrom()` の返り値を
+   * そのまま渡すのが正しい使い方。**上限なし**(何個でもぶら下がる)。
+   */
+  charms?: number[];
   /** 1 = 月に刺さっている剣と同じ大きさ */
   scale?: number;
   /** 形の細かさ(既定 hero: 単体の剣は近くで見られる) */
@@ -509,20 +520,221 @@ export interface ToySwordOptions {
 export interface ToySword {
   /** シーンに置くルート。位置・向き・大きさは呼び出し側が自由に動かしてよい */
   root: THREE.Group;
-  /** opts.scale を持つ内側のグループ。剣ローカルで飾りを足したいとき用 */
+  /**
+   * opts.scale を持つ内側のグループ。剣ローカルで飾りを足したいとき用。
+   * チャームの重さでほんの少し傾いているので、rotation は上書きしないこと
+   */
   body: THREE.Group;
   /** 毎フレーム呼ぶ(チャームの揺れ・にじいろの更新用)。t = 経過秒 */
   update: (t: number) => void;
   dispose: () => void;
 }
 
-// チャームは鍔の端から、キーホルダーのように束ねてぶら下げる。
-// 落差は「輪に通っている」ように見える範囲でだけ変える(離れると浮いて見える)
-const CHARM_SIZE = 0.085; // いちばん長い辺の長さ
-const CHARM_DROP = [0.03, 0.035, 0.032]; // ぶら下げ点から本体の上端まで
-const CHARM_Z = [-0.042, 0, 0.042]; // 前後にずらして重ならないように
-const CHARM_TILT = [0.2, 0.04, 0.32]; // 外へ開く角度(rad)
-const CHARM_SPEED = [2.3, 1.8, 2.7]; // 揺れの速さ
+// ── チャームのぶら下げ方(何個でも下げられる) ──────────────
+// 実物のキーホルダーと同じで、鍔のはしに「輪」を通し、そこから長さのちがう
+// チェーンで垂らす。13個を1本の輪に同じ長さで下げると団子になるので、
+//   1. 落差を1個ずつ深くする(チェーンの節を2つずつ増やす)
+//   2. 輪のまわりに黄金角(137.5°)で散らして、真上から見ても重ならない
+//   3. 深いものほど「刃から離れる向き」へ開く
+// の3つでぶつからないようにしてある。**傾きを輪の半径方向ではなく必ず外向き
+// (刃と反対)にする**のがミソで、こうすると輪の内側から下げたチャームも
+// 下へいくほど刃から逃げるので、どの方位に下げても刃と喧嘩しない。
+// 5個以上になったら鍔の反対のはしにも房を作って左右に振り分ける
+// (片側に13個ぶら下げると、剣より房のほうが大きくなってしまう)。
+
+/** 左右に振り分けはじめる個数 */
+const CHARM_SPLIT_AT = 5;
+/** チャーム1個の大きさ(いちばん長い辺)。数が多いほど少し小ぶりにする */
+const CHARM_SIZE_MAX = 0.085;
+const CHARM_SIZE_MIN = 0.068;
+/** 房の輪。持っている数がふえるほど大きい輪になる(ひと目で「じまんの剣」) */
+const HOOP_TUBE = 0.005;
+const HOOP_SINK = 0.004; // 鍔の下面から沈める量。浮かせない
+const HOOP_R_MIN = 0.018;
+const HOOP_R_STEP = 0.009;
+const HOOP_R_STEPS = 4; // これ以上は太らせない(鍔より目立たせない)
+/** チェーンの節。1個ぶん深くするたびに節を増やして、隣どうしを段違いにする */
+const LINK_R = 0.0075;
+const LINK_TUBE = 0.0026;
+const LINK_PITCH = 0.012;
+const LINK_BASE = 2;
+/**
+ * 1個ぶん深くする節の数。房の数が少ないときほど大きくとる。
+ * 少ないと輪が小さく、方位でばらけないぶん、落差で離すしかないため
+ * (逆に多いときは輪が大きく、深くしすぎると月にとどいてしまう)。
+ */
+const LINK_STEP_MIN = 2;
+const LINK_STEP_MAX = 6;
+function linkStepFor(count: number): number {
+  return THREE.MathUtils.clamp(
+    Math.round(12 / Math.max(count, 1)),
+    LINK_STEP_MIN,
+    LINK_STEP_MAX
+  );
+}
+/** 刃から離れる向きの傾き(rad)。深いものほど開く */
+const CHARM_LEAN = 0.17;
+const CHARM_LEAN_STEP = 0.02;
+/** 黄金角。何個ぶら下げても輪のまわりにきれいに散る */
+const CHARM_AZ_STEP = 2.39996;
+/** ちきゅうチャームの自転(rad/秒)。小さな地球が生きている感じ */
+const EARTH_SPIN = 0.32;
+/** ちきゅうチャームの色。海は config の hex、大陸とひびはここで決める */
+const EARTH_LAND_HEX = "#8fe0a0";
+const EARTH_CRACK_HEX = "#20264a";
+/** 重さの演出: 全部ぶら下げても2.5°まで傾ける */
+const WEIGHT_LEAN_MAX = 0.044;
+/** 房のゆれが剣に返ってくる量(気づかない程度に)。上限つきで暴れさせない */
+const SWAY_GAIN = 0.025;
+const SWAY_MAX = 0.012;
+
+/** チャーム1個ぶんの割りつけ */
+interface CharmSpot {
+  /** CHARMS の index */
+  charmIndex: number;
+  /** +1 = 鍔の右はしの房 / -1 = 左はしの房 */
+  side: number;
+  /** 輪の半径 */
+  hoopR: number;
+  /** 輪のどこから下げるか(rad) */
+  az: number;
+  /** 吊り点からチャーム上端までの落差 */
+  drop: number;
+  /** チェーンの節の数 */
+  links: number;
+  /** 刃から離れる向きの傾き(rad) */
+  lean: number;
+  /** ふりこの速さ・振れ幅・位相 */
+  speed: number;
+  amp: number;
+  phase: number;
+}
+
+/** 数が多いほど少し小ぶりにする(13個でも房が団子にならないように) */
+function charmSizeFor(n: number): number {
+  return THREE.MathUtils.lerp(
+    CHARM_SIZE_MAX,
+    CHARM_SIZE_MIN,
+    THREE.MathUtils.clamp((n - 4) / 9, 0, 1)
+  );
+}
+
+/**
+ * チャームの index 配列(古い順)から、房の割りつけを決める。
+ * 古い順に 右→左→右→… と配るので、**いちばん新しいチャームは必ず
+ * 右の房のいちばん下(いちばん長いチェーン)**に来る。
+ * 隠しチャーム「ちきゅう」は配列の最後に来る約束なので、自然にいちばん目立つ。
+ */
+function layoutCharms(list: number[]): {
+  spots: CharmSpot[];
+  hoops: { side: number; r: number }[];
+} {
+  const sides = list.length >= CHARM_SPLIT_AT ? [1, -1] : [1];
+  // 輪の大きさとチェーンの段差は「その房に何個下がるか」で決まるので、
+  // まず数だけ先に数える
+  const counts = sides.map((_, si) =>
+    list.reduce((a, _c, i) => a + (i % sides.length === si ? 1 : 0), 0)
+  );
+  const hoops = sides.map((side, si) => ({
+    side,
+    r: HOOP_R_MIN + HOOP_R_STEP * Math.min(counts[si] - 1, HOOP_R_STEPS),
+  }));
+
+  const used = sides.map(() => 0);
+  const spots: CharmSpot[] = [];
+  list.forEach((charmIndex, i) => {
+    const si = i % sides.length;
+    const side = sides[si];
+    const k = used[si]++;
+    const links = LINK_BASE + linkStepFor(counts[si]) * k;
+    const drop = links * LINK_PITCH;
+    const shallow = (LINK_BASE * LINK_PITCH) / drop; // 1 = いちばん浅い
+    spots.push({
+      charmIndex,
+      side,
+      hoopR: hoops[si].r,
+      az: k * CHARM_AZ_STEP + (side < 0 ? 1.1 : 0),
+      drop,
+      links,
+      lean: CHARM_LEAN + CHARM_LEAN_STEP * k,
+      // ふりこは長いほど遅い。振れ幅も小さくして、深いチャーム同士が
+      // ぶつからないようにしつつ「重そう」に見せる
+      speed: 2.6 * Math.pow(shallow, 0.4),
+      amp: 0.13 * Math.pow(shallow, 0.25),
+      phase: k * 1.9 + (side < 0 ? 0.7 : 0),
+    });
+  });
+  return { spots, hoops };
+}
+
+/** チャームの樹脂の質感。宇宙の暗がりでも色が分かるよう、自分の色で少し光る */
+function makeCharmMaterial(hex: string, emissive = 0.34): THREE.MeshPhysicalMaterial {
+  return new THREE.MeshPhysicalMaterial({
+    color: hex,
+    metalness: 0.15,
+    roughness: 0.22,
+    clearcoat: 1,
+    clearcoatRoughness: 0.05,
+    emissive: new THREE.Color(hex),
+    emissiveIntensity: emissive,
+  });
+}
+
+/** チェーン1本。節を90°ずつひねって重ねると、輪がつながって見える */
+function makeChainGeometry(links: number): THREE.BufferGeometry {
+  const parts: THREE.BufferGeometry[] = [];
+  for (let i = 0; i < links; i++) {
+    const g = new THREE.TorusGeometry(LINK_R, LINK_TUBE, 4, 7);
+    if (i % 2 === 1) g.rotateY(Math.PI / 2);
+    g.translate(0, -(i + 0.5) * LINK_PITCH, 0);
+    parts.push(g);
+  }
+  const merged = mergeGeometries(parts);
+  if (!merged) return parts[0];
+  parts.forEach((p) => p.dispose());
+  return merged;
+}
+
+/**
+ * チャーム1個ぶんの表示物。ちきゅうだけは平たい板ではなく小さな球で、
+ * 海・大陸・ひびの3色に分かれる(だから Mesh ではなく Group を返す)。
+ */
+function buildCharmObject(
+  charmIndex: number,
+  size: number
+): {
+  obj: THREE.Object3D;
+  geos: THREE.BufferGeometry[];
+  mats: THREE.Material[];
+  /** true = ゆっくり自転させる(ちきゅう) */
+  spins: boolean;
+} {
+  const charm = CHARMS[charmIndex];
+  if (charmIndex === EARTH_CHARM_INDEX && EARTH_CHARM_INDEX >= 0) {
+    // 隠しチャームは「ごほうび」なので、ほかより一回り大きく・よく光らせる
+    const parts = makeEarthCharmParts(size * 1.12);
+    const sea = makeCharmMaterial(charm.hex, 0.42);
+    const land = makeCharmMaterial(EARTH_LAND_HEX, 0.3);
+    const crack = makeCharmMaterial(EARTH_CRACK_HEX, 0.05);
+    // ひびは球にはりついた1枚の帯。折り返しの角で裏返る面が出るので両面で描く
+    crack.side = THREE.DoubleSide;
+    const g = new THREE.Group();
+    g.add(
+      new THREE.Mesh(parts.globe, sea),
+      new THREE.Mesh(parts.land, land),
+      new THREE.Mesh(parts.crack, crack)
+    );
+    return {
+      obj: g,
+      geos: [parts.globe, parts.land, parts.crack],
+      mats: [sea, land, crack],
+      spins: true,
+    };
+  }
+  const geo = makeCharmGeometry(charm.shape, size);
+  const mat = makeCharmMaterial(charm.hex);
+  return { obj: new THREE.Mesh(geo, mat), geos: [geo], mats: [mat], spins: false };
+}
 
 /**
  * 剣1本ぶんの Group を作る。原点=刺さり口、+Y=柄の方向、刃先は -Y に伸びる。
@@ -543,61 +755,114 @@ export function buildToySword(opts: ToySwordOptions): ToySword {
   const root = new THREE.Group();
   root.add(body);
 
-  // ── チャーム(新しい方から最大 CHARM_VISIBLE_MAX 個) ──
+  // ── チャーム(持っているぶん全部。上限なし) ──
+  // 何を下げるかは `src/lib/style.ts` の charmIndicesOf/From が正。
+  // ここで独自に「新しい方から3個」のような間引きはしない
+  const list = opts.charms ?? charmIndicesFrom(opts.charm, false);
+
   const charmGeos: THREE.BufferGeometry[] = [];
   const charmMats: THREE.Material[] = [];
-  const swings: { pivot: THREE.Group; base: number; speed: number; phase: number }[] = [];
-  const shown = Math.min(Math.max(opts.charm, 0), CHARM_VISIBLE_MAX);
-  if (shown > 0) {
-    // 輪(キーホルダーのリング)は3つで共有する
-    const ringGeo = new THREE.TorusGeometry(0.016, 0.005, 4, 10);
-    const ringMat = makeSwordMaterial(1, "#e8eefc"); // ぎんの質感を借りる
-    charmGeos.push(ringGeo);
-    charmMats.push(ringMat);
+  const swings: {
+    pivot: THREE.Group;
+    side: number;
+    lean: number;
+    amp: number;
+    speed: number;
+    phase: number;
+    /** ゆれの反動を剣に返すときの重み(長くぶら下がっているほど効く) */
+    weight: number;
+    /** ちきゅうだけ: 自転させる本体と、その基準の向き */
+    spin: THREE.Object3D | null;
+    facing: number;
+  }[] = [];
 
-    for (let i = 0; i < shown; i++) {
-      const charm = CHARMS[Math.min(opts.charm - 1 - i, CHARMS.length - 1)];
-      if (!charm) continue;
-      const pivot = new THREE.Group();
-      pivot.position.copy(CHARM_ANCHOR);
-      pivot.position.z += CHARM_Z[i];
+  // たくさん下げるほど、剣は房の側へほんの少しおじぎする(重そうに見せる)。
+  // 左右に振り分けても、いちばん新しい房のある右のほうが常に1個ぶん重い
+  const weightLean =
+    WEIGHT_LEAN_MAX * THREE.MathUtils.clamp((list.length - 1) / 12, 0, 1);
 
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.position.y = -0.016;
+  if (list.length > 0) {
+    const size = charmSizeFor(list.length);
+    const { spots, hoops } = layoutCharms(list);
+    // 輪とチェーンは房ぜんぶで共有する(色は「ぎん」の質感を借りる)
+    const linkMat = makeSwordMaterial(1, "#e8eefc");
+    charmMats.push(linkMat);
+    const chainCache = new Map<number, THREE.BufferGeometry>();
 
-      const geo = makeCharmGeometry(charm.shape, CHARM_SIZE);
-      const mat = new THREE.MeshPhysicalMaterial({
-        color: charm.hex,
-        metalness: 0.15,
-        roughness: 0.22,
-        clearcoat: 1,
-        clearcoatRoughness: 0.05,
-        emissive: new THREE.Color(charm.hex),
-        emissiveIntensity: 0.34, // 宇宙の暗がりでも色が分かるように
-      });
+    for (const h of hoops) {
+      const geo = new THREE.TorusGeometry(h.r, HOOP_TUBE, 6, 16);
+      geo.rotateX(Math.PI / 2); // 水平に寝かせる = 円周にチャームをばらけさせる
+      geo.translate(
+        CHARM_ANCHOR.x * h.side,
+        CHARM_ANCHOR.y - HOOP_SINK,
+        CHARM_ANCHOR.z
+      );
       charmGeos.push(geo);
-      charmMats.push(mat);
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.y = -CHARM_DROP[i];
+      body.add(new THREE.Mesh(geo, linkMat));
+    }
 
-      pivot.add(ring, mesh);
-      pivot.rotation.z = CHARM_TILT[i];
+    for (const spot of spots) {
+      if (!CHARMS[spot.charmIndex]) continue;
+      // 支点は「輪の上の1点」。ここから下げるとチェーンが輪から出て見える
+      const pivot = new THREE.Group();
+      pivot.position.set(
+        (CHARM_ANCHOR.x + Math.cos(spot.az) * spot.hoopR) * spot.side,
+        CHARM_ANCHOR.y - HOOP_SINK,
+        CHARM_ANCHOR.z + Math.sin(spot.az) * spot.hoopR
+      );
+
+      let chain = chainCache.get(spot.links);
+      if (!chain) {
+        chain = makeChainGeometry(spot.links);
+        chainCache.set(spot.links, chain);
+        charmGeos.push(chain);
+      }
+      pivot.add(new THREE.Mesh(chain, linkMat));
+
+      const built = buildCharmObject(spot.charmIndex, size);
+      charmGeos.push(...built.geos);
+      charmMats.push(...built.mats);
+      // 板の面を輪の外向きへ。ぐるりと散らばった房が、どの角度から見ても
+      // 何個かは正面を向いている状態になる
+      const facing = spot.side * (Math.PI / 2 - spot.az);
+      built.obj.position.y = -spot.drop;
+      built.obj.rotation.y = facing;
+      pivot.add(built.obj);
+
+      pivot.rotation.z = spot.side * spot.lean;
       body.add(pivot);
       swings.push({
         pivot,
-        base: CHARM_TILT[i],
-        speed: CHARM_SPEED[i],
-        phase: i * 1.9,
+        side: spot.side,
+        lean: spot.lean,
+        amp: spot.amp,
+        speed: spot.speed,
+        phase: spot.phase,
+        weight: spot.drop,
+        spin: built.spins ? built.obj : null,
+        facing,
       });
     }
   }
 
+  if (weightLean > 0) body.rotation.z = -weightLean;
+
   const update = (t: number) => {
     tickSwordMaterial(material, t);
+    let react = 0;
     for (const s of swings) {
-      // ふりこ。前後(x)はゆっくりにして、機械的な往復に見えないようにする
-      s.pivot.rotation.z = s.base + 0.13 * Math.sin(t * s.speed + s.phase);
-      s.pivot.rotation.x = 0.1 * Math.sin(t * s.speed * 0.77 + s.phase * 1.7);
+      // ふりこ。前後(x)はゆっくりにして、機械的な往復に見えないようにする。
+      // 長いチェーンほど遅く小さく揺れるので、13個でも位相がばらけたまま
+      const sw = Math.sin(t * s.speed + s.phase);
+      s.pivot.rotation.z = s.side * (s.lean + s.amp * sw);
+      s.pivot.rotation.x = s.amp * 0.75 * Math.sin(t * s.speed * 0.77 + s.phase * 1.7);
+      react += s.side * sw * s.weight;
+      if (s.spin) s.spin.rotation.y = s.facing + t * EARTH_SPIN; // ちきゅうの自転
+    }
+    if (swings.length > 0) {
+      // 房のゆれの反動で剣もわずかに揺り返す(左右にそろって振れたときだけ効く)
+      body.rotation.z =
+        -weightLean - THREE.MathUtils.clamp(react * SWAY_GAIN, -SWAY_MAX, SWAY_MAX);
     }
   };
 

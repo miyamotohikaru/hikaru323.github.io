@@ -9,11 +9,18 @@
 // ひとりごとより強くして、必ず前に出る。ひとりごと同士は間を空ける。
 
 import { useEffect } from "react";
-import { T_NEW_ROUND, T_SPEECH, T_STAB, T_SUSPENSE } from "@/lib/config";
+import {
+  EARTH_CHARM_INDEX,
+  T_NEW_ROUND,
+  T_SPEECH,
+  T_STAB,
+  T_SUSPENSE,
+} from "@/lib/config";
 import { useGameStore, type Phase } from "@/game/store";
 import { onGameEvent } from "@/game/events";
 import {
   CHARM,
+  CHARM_SECRET,
   CONFIRM,
   COOLDOWN,
   EARTH_BOOM,
@@ -41,29 +48,32 @@ const P = {
   BIG: 3, // セーフ・発射・降臨・爆発・ごほうび
 } as const;
 
+// ── しゃべる頻度(2026-08-08 ユーザー依頼で全体に上げた) ──
+// 「もっと頻繁に喋ってほしい」。うるさくならない範囲で、間を約半分に。
+// セリフ帳(lines.ts)を大幅に増やしたので、頻度を上げても被りにくい。
 /** ひとりごとの間隔(ms) */
-const IDLE_MIN = 12000;
-const IDLE_MAX = 20000;
+const IDLE_MIN = 6000;
+const IDLE_MAX = 10500;
 /** 遊びはじめ/場面が落ち着いた直後の1回目は、すこし早めに */
-const FIRST_MIN = 7000;
-const FIRST_MAX = 11000;
+const FIRST_MIN = 2600;
+const FIRST_MAX = 4500;
 /** ひまなセリフ同士の最低あいだ(ms)。連続でしゃべらせない */
-const QUIET_GAP = 9000;
+const QUIET_GAP = 4200;
 
 /**
  * 穴にふれたときにしゃべる確率と、その最低間隔。
  * ホバーはドラッグ中に何十回も変わるので、確率より間隔のほうが効く。
  * 短くすると「穴さがし中ずっとしゃべっている」状態になるので長めに取る
  */
-const HOVER_CHANCE = 0.18;
-const HOVER_GAP = 14000;
+const HOVER_CHANCE = 0.34;
+const HOVER_GAP = 6000;
 /** 他の人が刺したときにしゃべる確率と、その最低間隔(連発させない) */
-const REMOTE_CHANCE = 0.3;
-const REMOTE_GAP = 15000;
-/** 地球つつきは40回に1回くらい */
-const EARTH_TAP_CHANCE = 1 / 40;
+const REMOTE_CHANCE = 0.55;
+const REMOTE_GAP = 6500;
+/** 地球つつきは15回に1回くらい(つつきは連打されるので控えめに保つ) */
+const EARTH_TAP_CHANCE = 1 / 15;
 /** 刺せなかったときに ぼやく確率 */
-const COOLDOWN_CHANCE = 0.35;
+const COOLDOWN_CHANCE = 0.7;
 /** あなが残りわずか、と感じはじめる本数 */
 const FEW_LEFT_AT = 900;
 const FEW_LEFT_CHANCE = 0.4;
@@ -241,9 +251,13 @@ export default function SpeechDirector() {
         case "remote-stab":
           onRemote();
           break;
-        case "charm-get":
-          speak(CHARM, P.BIG, 2800);
+        case "charm-get": {
+          // 隠しチャーム「ちきゅう」だけは、こすくまくんも驚く
+          const secret =
+            useGameStore.getState().newCharm === EARTH_CHARM_INDEX;
+          speak(secret ? CHARM_SECRET : CHARM, P.BIG, secret ? 3600 : 2800);
           break;
+        }
         case "skin-unlock":
           // イベントが飛んでくる作りになったときは、こちらを優先
           pendingSkin = false;

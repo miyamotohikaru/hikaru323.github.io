@@ -1,14 +1,18 @@
 "use client";
 
-// 「けんの したく」引き出し。剣ラック(いろ)・しあげ・チャームの棚をまとめた、
-// 下からせり上がる小さなパネル。
+// 「けんの したく」引き出し。完成形のプレビュー・剣ラック(いろ)・しあげ・
+// チャームの棚をまとめた、下からせり上がる小さなパネル。
 //
 // なぜ引き出しにしたか: スマホ縦だと確認シートに全部は入らない。
 // 刺す直前に必要なのは「いま選んでいる剣」と色だけなので、それだけをシートに残し、
 // じっくり選ぶ/コレクションを眺めるものは、ここへ隔離した。
+//
+// いちばん上はプレビュー。ここは「選ぶ画面」なのに選んだ結果が見えていなかった。
+// 縦が足りないときは本文がスクロールするが、プレビューだけは sticky で
+// residentにして、どの棚をいじっていても完成形が目に入るようにしている。
 
 import { useEffect } from "react";
-import { SkinRack, SwordRack } from "./SwordRack";
+import { SkinRack, SwordPreview, SwordRack } from "./SwordRack";
 import { CharmShelf } from "./CharmShelf";
 
 interface GearDrawerProps {
@@ -54,6 +58,9 @@ export default function GearDrawer({ open, onClose }: GearDrawerProps) {
         </div>
 
         <div className="kk-drawer-body">
+          <section className="kk-sec kk-preview-sec">
+            <SwordPreview />
+          </section>
           <section className="kk-sec">
             <p className="kk-sec-label kk-label-color">いろ</p>
             <SwordRack />

@@ -8,6 +8,7 @@ import { nanoid } from "nanoid";
 import {
   CHARMS,
   charmLevelOf,
+  EARTH_CHARM_INDEX,
   COOLDOWN_SEC,
   EARTH_BOOM_CLICKS,
   HOLE_COUNT,
@@ -142,6 +143,11 @@ interface GameState {
   earthClicks: number;
   /** 地球を爆発させた回数(この端末) */
   earthBooms: number;
+  /**
+   * 隠しチャーム「ちきゅう」を持っているか。地球を1000回つついて
+   * こわした人だけが手に入れる。刺し本数では絶対に増えない。
+   */
+  hasEarthCharm: boolean;
   /** 爆発した時刻(epoch ms)。null なら地球は無事 */
   earthBoomAt: number | null;
 
@@ -569,6 +575,7 @@ export const useGameStore = create<GameState>((set, get) => {
     newSkins: [],
     earthClicks: Math.max(0, Number(LS.get("kk-earth-clicks") ?? 0) || 0),
     earthBooms: Math.max(0, Number(LS.get("kk-earth-booms") ?? 0) || 0),
+    hasEarthCharm: LS.get("kk-earth-charm") === "1",
     earthBoomAt: null,
     speech: null,
 
@@ -649,7 +656,7 @@ export const useGameStore = create<GameState>((set, get) => {
       // この1本を数えたあとのチャーム数を持たせる(10本目の剣には
       // 「その場で手に入れたチャーム」がもうぶら下がっている)
       const charmNow = charmLevelOf(cur.myTotal + 1);
-      const styleNow = packStyle(cur.swordSkin, charmNow);
+      const styleNow = packStyle(cur.swordSkin, charmNow, cur.hasEarthCharm);
       const body = JSON.stringify({
         holeId,
         roundNo: cur.roundNo,
@@ -657,6 +664,7 @@ export const useGameStore = create<GameState>((set, get) => {
         color: cur.swordColor,
         skin: cur.swordSkin,
         charm: charmNow,
+        earthCharm: cur.hasEarthCharm,
       });
 
       // 演出とAPIを並走させる。回線ハングでsuspenseに閉じ込められないよう
@@ -966,8 +974,21 @@ export const useGameStore = create<GameState>((set, get) => {
         const booms = cur.earthBooms + 1;
         LS.set("kk-earth-clicks", "0");
         LS.set("kk-earth-booms", String(booms));
-        set({ earthClicks: 0, earthBooms: booms, earthBoomAt: Date.now() });
+        LS.set("kk-earth-charm", "1");
+        set({
+          earthClicks: 0,
+          earthBooms: booms,
+          earthBoomAt: Date.now(),
+          hasEarthCharm: true,
+        });
         emitGameEvent("earth-boom");
+        // 隠しチャーム「ちきゅう」の獲得。爆発を見届けてから知らせる
+        if (!cur.hasEarthCharm && EARTH_CHARM_INDEX >= 0) {
+          setTimeout(() => {
+            set({ newCharm: EARTH_CHARM_INDEX });
+            emitGameEvent("charm-get");
+          }, Math.round(T_EARTH_BOOM * 0.78));
+        }
         setTimeout(() => {
           if (get().earthBoomAt !== null) set({ earthBoomAt: null });
         }, T_EARTH_BOOM);

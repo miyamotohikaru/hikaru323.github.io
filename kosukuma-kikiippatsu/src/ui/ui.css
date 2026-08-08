@@ -1245,13 +1245,17 @@
      ・下端の余白は .kk-drawer 側ではなくスクロール領域(.kk-drawer-body)側に
        持たせる。ここに置くと、スクロールしたとき最後の1行が
        クリップのふちに貼りついて「切れている」ように見えてしまう。
-     実測(440px幅/375px幅とも): 中身の総高 523px。
-     1512×796 の表示領域(672px)なら 86svh = 578px なのでスクロールなしで収まる。
-     それより低い画面では下の @media(max-height:700px)でさらに約20px詰め、
-     それでも足りなければ本文がスクロールする(下余白は本文側にあるので
-     最後の1行がふちに貼りつくことはない)。 */
-  max-height: min(86vh, 620px);
-  max-height: min(86svh, 620px);
+     計算(440px幅/375px幅とも):
+       見出し 43 + 本文 581 = 624px
+       内わけ  プレビュー 144.5 / いろ 98 / しあげ 133 / チャーム 152
+               + 段間 7×3 + 下余白 12
+       523px だったころから プレビュー +144.5、他の棚を計 -43 詰めて +101。
+     1512×796 の表示領域(672px)なら 94svh = 631px なのでスクロールなしで収まる。
+     それより低い画面では下の @media(max-height:700px)でさらに約24px詰め、
+     それでも足りなければ本文がスクロールする(プレビューは sticky なので、
+     スクロールしても完成形は出たままになる)。 */
+  max-height: min(94vh, 650px);
+  max-height: min(94svh, 650px);
   border-radius: 26px 26px 0 0;
   overflow: hidden;
   background: var(--ui);
@@ -1269,8 +1273,9 @@
   align-items: center;
   justify-content: space-between;
   /* ✕は絶対配置にして、44pxのタップ領域が見出しの高さを押し広げないようにする
-     (これだけで帯が22px縮む = 進捗バーが切れなくなる) */
-  padding: 14px 58px 9px 16px;
+     (これだけで帯が22px縮む = 進捗バーが切れなくなる)。
+     プレビューを足したぶん、上下を3+2px削って帯を43pxにしてある */
+  padding: 11px 58px 7px 16px;
   border-radius: 26px 26px 0 0;
   background: linear-gradient(180deg, var(--kk-red-top), var(--kk-red-face));
   box-shadow:
@@ -1320,23 +1325,160 @@
 .kk-drawer-body {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 7px;
   /* 下の余白はここ(スクロールする側)に置く。こうしておけば、画面が低くて
-     スクロールになったときも最後の進捗バーがふちに貼りつかない */
-  padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+     スクロールになったときも最後の進捗バーがふちに貼りつかない。
+     上の余白は sticky なプレビュー側が持つ(ここに置くと、スクロールした
+     中身がプレビューの上のすき間に見えてしまう) */
+  padding: 0 14px calc(12px + env(safe-area-inset-bottom));
   min-height: 0; /* flex列の中でスクロールさせるため */
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+/* ── いまの1本のプレビュー(引き出しのいちばん上) ────────────
+   選んだ いろ × しあげ × チャーム を全部のせた「完成形」。
+   ここが無いと、選ぶ道具だけあって結果が見えない画面になる。
+
+   剣の縦横比は 44:102 とかなり縦長なので、そのまま大きく出すと引き出しの
+   高さを食いつぶす。刃の下を切って(SwordArt の cropY)台に挿さっている姿に
+   すると、同じ高さでも剣を1.3倍ほど大きく描ける。
+   横のあいた場所には、ついているチャームを潰れない大きさで並べる
+   (剣にぶら下がる粒は9px前後にしかならないので、細部はこちらが引き受ける)。 */
+.kk-preview-sec {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  /* 本文の上余白はここが持つ。sticky が貼りつく位置に隙間を作らないため */
+  padding: 8px 0 0;
+  /* 下の棚がすき間から透けないよう、地色でふさぐ */
+  background: var(--ui);
+}
+.kk-preview {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 18px;
+  background: var(--kk-panel);
+  box-shadow:
+    inset 0 0 0 2px var(--kk-panel-edge),
+    inset 0 2px 0 rgba(255, 255, 255, 0.8),
+    0 2px 0 var(--kk-panel-drop);
+}
+/* 剣を立てる暗い樹脂のくぼみ。しあげの陳列スロットと同じ地にして、
+   ぎん/きん/クリスタルがクリーム地で消えるのをここでも防ぐ */
+.kk-preview-stage {
+  position: relative;
+  flex: none;
+  width: 70px;
+  border-radius: 13px;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--kk-well-top), var(--kk-well-bot));
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.16),
+    0 1px 0 rgba(255, 255, 255, 0.55);
+}
+/* 台のうしろのあかりは、いま選んでいる色。色を変えた手ごたえを台にも出す */
+.kk-preview-glow {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 108px;
+  height: 108px;
+  margin: -54px 0 0 -54px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--kk-glow), transparent 66%);
+  opacity: 0.32;
+}
+/* 柄頭を支点にして、ゆっくり左右に揺れる(ぶら下がっている物の気配)。
+   振り幅は 1.5° まで。これ以上ふると鍔の端が台のふちに当たって切れる */
+.kk-preview-sword {
+  position: relative;
+  display: block;
+  width: 100%;
+  filter: drop-shadow(0 3px 4px rgba(5, 7, 26, 0.5));
+  transform-origin: 50% 6%;
+  animation: kk-preview-sway 5.4s ease-in-out infinite;
+}
+/* 台の板。切った刃の断面をここで隠して「挿さっている」に見せる */
+.kk-preview-base {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 11px;
+  background: linear-gradient(
+    180deg,
+    var(--kk-tray-top) 0 42%,
+    var(--kk-tray-face) 42% 100%
+  );
+  box-shadow: 0 -3px 7px rgba(0, 0, 0, 0.5);
+}
+.kk-preview-txt {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.kk-preview-cap {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: rgba(58, 55, 48, 0.5);
+}
+.kk-preview-name {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+/* ついているチャームは「潰れない大きさ」で全部ならべる。
+   1行7個の固定グリッドにしてあるので、13個でもきっちり2行で収まる */
+.kk-preview-charms {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(7, 24px);
+  gap: 4px;
+  margin-top: 2px;
+  justify-content: start;
+}
+.kk-preview-charms li {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(58, 55, 48, 0.08);
+}
+/* 隠しチャームだけ受け皿をひと段深く。色は足さない(アクセントはコーラル1本) */
+.kk-preview-charms li.secret {
+  background: rgba(58, 55, 48, 0.17);
+  box-shadow: inset 0 0 0 1.6px rgba(58, 55, 48, 0.42);
+}
+.kk-preview-sub {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(58, 55, 48, 0.62);
+}
+.kk-preview-sub b {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ui-text);
+}
+
 /* 引き出しの中のラックは一段小さく。確認シートより縦の余裕がない */
 .kk-drawer .kk-rack {
-  height: 84px;
-  margin-bottom: 6px;
+  height: 76px;
+  margin-bottom: 4px;
 }
 .kk-drawer .kk-slot-sword {
-  width: 31px;
-  margin-left: -15.5px;
+  width: 29px;
+  margin-left: -14.5px;
 }
 /* 棚の見出し。以前は「いろ=黄 / しあげ=青 / チャーム=赤」と色分けしていたが、
    ラベルの色は棚の中身と何の関係もないのに、選択色や解放バッジと同じ強さで
@@ -1344,7 +1486,7 @@
    (kk-label-* は残してあるが色は付けない。DOM側の意味づけとしてのみ使う) */
 .kk-sec-label {
   display: inline-block;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
   padding: 3px 9px 4px;
   border-radius: 999px;
   font-size: 10.5px;
@@ -1368,8 +1510,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px 3px 6px;
+  gap: 2px;
+  padding: 5px 3px;
   border: 0;
   border-radius: 14px;
   background: var(--kk-panel);
@@ -1404,7 +1546,7 @@
   place-items: center;
   width: 30px;
   max-width: 100%;
-  height: 48px;
+  height: 44px;
   border-radius: 9px;
   background: linear-gradient(180deg, var(--kk-well-top), var(--kk-well-bot));
   box-shadow:
@@ -1414,7 +1556,7 @@
 }
 .kk-skin-sword {
   display: block;
-  width: 19px;
+  width: 18px;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
 }
 .kk-skin-name {
@@ -1482,8 +1624,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 6px;
-  padding: 5px 9px;
+  margin-top: 5px;
+  padding: 4px 9px;
   border-radius: 11px;
   background: rgba(58, 55, 48, 0.07);
 }
@@ -1558,9 +1700,9 @@
   list-style: none;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 5px 4px;
-  margin-top: 5px;
-  padding: 8px 7px 6px;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 6px 7px 5px;
   border-radius: 16px;
   background: linear-gradient(180deg, var(--kk-well-top), var(--kk-well-bot));
   box-shadow:
@@ -1574,10 +1716,20 @@
   align-items: center;
   gap: 2px;
 }
+/* 13個になったときだけ1行7枠にする。6枠のままだと3行目ができて、
+   棚が縦に伸びたぶん下の進捗バーが引き出しからはみ出してしまう */
+.kk-charms-grid.wide {
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px 3px;
+}
+.kk-charms-grid.wide .kk-charm-cell {
+  width: 24px;
+  height: 24px;
+}
 /* 受け皿。持っていないものは、くぼみに沈んだ影だけが見える */
 .kk-charm-cell {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -1616,8 +1768,29 @@
 .kk-charm-slot.next .kk-charm-need {
   color: #ffb0a2;
 }
+/* 隠しチャーム。手に入れるまでは DOM ごと存在しない(「?」の空き枠すら
+   置かない — 枠があるだけで「あと1個ある」と分かってしまう)。
+   手に入れた瞬間に13個目としてぬっと現れ、そのとき1回だけ跳ねる。
+   受け皿だけ白い細いふちと淡い光にして「1個だけ違うものが混ざっている」と
+   読ませる。色は足さない(アクセントはコーラル1本の約束) */
+.kk-charm-slot.secret .kk-charm-cell {
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgba(255, 255, 255, 0.26),
+    rgba(255, 255, 255, 0.05)
+  );
+  box-shadow:
+    0 0 0 1.6px rgba(255, 255, 255, 0.82),
+    0 0 12px rgba(255, 255, 255, 0.45);
+  animation: kk-secret-in 0.75s var(--spring) 0.15s both;
+}
+.kk-charm-slot.secret .kk-charm-need {
+  color: #fff;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
 .kk-charms-next {
-  margin-top: 7px;
+  margin-top: 5px;
 }
 .kk-charms-line {
   display: flex;
@@ -1646,7 +1819,7 @@
 }
 .kk-charms-bar {
   height: 8px;
-  margin-top: 4px;
+  margin-top: 3px;
   border-radius: 999px;
   background: rgba(58, 55, 48, 0.14);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -1745,6 +1918,63 @@
   color: var(--ui);
   -webkit-text-stroke: 5px var(--space-deep);
   paint-order: stroke fill;
+}
+
+/* ── 隠しチャームの獲得だけ、通常のお祝いと別物に見せる ──────────
+   ふつうの「チャーム ゲット！」と同じ見た目で出すと、10本刺すごとの
+   ごほうびと区別がつかない。見出しを「！？」だけにして、何が起きたのか
+   一拍わからなくする。光は金から白へ、輪は二重、粒はひとまわり大きく、
+   表示時間も長くして、じっくり眺めさせる。 */
+.kk-charmget.secret .kk-charmget-in {
+  animation:
+    kk-charmget-in 0.62s var(--spring) both,
+    kk-charmget-out 0.6s ease 3.85s forwards;
+}
+.kk-charmget.secret .kk-charmget-rays {
+  width: 232px;
+  height: 232px;
+  margin: -74px;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.6) 0deg 2.2deg,
+    rgba(255, 255, 255, 0) 2.2deg 15deg
+  );
+  animation: kk-spin 15s linear infinite reverse;
+}
+.kk-charmget.secret .kk-charmget-ring {
+  width: 104px;
+  height: 104px;
+  border-color: rgba(255, 255, 255, 0.9);
+}
+/* 二重目の波紋。遅れて出るので「まだ何かある」と感じさせる */
+.kk-charmget-ring2 {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  width: 104px;
+  height: 104px;
+  border: 3px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  animation: kk-shock 1.25s ease-out 0.5s both;
+}
+.kk-charmget.secret .kk-charmget-title {
+  font-size: clamp(2.4rem, 13vw, 3.6rem);
+  color: #fff;
+  text-shadow: 0 0 28px rgba(255, 255, 255, 0.75);
+}
+.kk-charmget.secret .kk-charmget-name {
+  margin-top: 6px;
+}
+.kk-charmget-note {
+  grid-row: 4;
+  margin-top: 3px;
+  font-size: clamp(0.68rem, 3.4vw, 0.86rem);
+  font-weight: 800;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.88);
+  -webkit-text-stroke: 4px var(--space-deep);
+  paint-order: stroke fill;
+  animation: fade-in 0.5s ease 1.15s both;
 }
 
 /* ── とばした人へのごほうび(trophyフェーズ) ────────────── */
@@ -1858,6 +2088,28 @@
     transform: translate(-50%, 0);
   }
 }
+/* プレビューの剣が柄頭を支点にゆっくり揺れる(ぶら下がっている物の気配) */
+@keyframes kk-preview-sway {
+  0%,
+  100% {
+    transform: rotate(-1.5deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
+}
+/* 隠しチャームが棚に「ぬっと」現れる */
+@keyframes kk-secret-in {
+  0% {
+    transform: scale(0);
+  }
+  58% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 @keyframes kk-spin {
   to {
     transform: rotate(360deg);
@@ -1946,24 +2198,32 @@
     min-height: 42px;
     margin-bottom: 8px;
   }
-  /* 引き出しは棚が3段あるぶん、もう一段詰める(実測 523px → 約503px) */
+  /* 引き出しは棚が4段あるぶん、もう一段詰める(624px → 約600px)。
+     プレビューは「見せる」ためのものなので最後まで削らない */
   .kk-drawer .kk-rack {
-    height: 76px;
-    margin-bottom: 4px;
+    height: 70px;
+    margin-bottom: 3px;
   }
   .kk-drawer .kk-slot-sword {
-    width: 28px;
-    margin-left: -14px;
+    width: 27px;
+    margin-left: -13.5px;
+  }
+  .kk-preview-stage {
+    width: 64px;
   }
   .kk-skin-stage {
-    height: 42px;
+    height: 40px;
   }
   .kk-skin-sword {
-    width: 17px;
+    width: 16px;
   }
   .kk-charm-cell {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
+  }
+  .kk-charms-grid.wide .kk-charm-cell {
+    width: 22px;
+    height: 22px;
   }
 }
 

@@ -3,6 +3,7 @@
 // 剣えらび。おもちゃの箱に付いている「たるの横のカラフルな剣ラック」そのもの。
 // 丸ドットではなく剣が横一列に立っていて、えらんだ1本だけスッと持ち上がる。
 //
+// - SwordPreview  : いま選んでいる1本の完成形(したく引き出しのいちばん上)
 // - SwordRack     : 8色の剣ラック(確認シート/したく引き出しの両方で使う)
 // - SkinRack      : 仕上げ(プラスチック/ぎん/きん/クリスタル/にじいろ)の陳列棚
 // - SkinUnlockCard: とばした人へのスキン解放のお祝い(trophyフェーズ)
@@ -10,16 +11,17 @@
 // 剣の絵は SwordArt(インラインSVG)。ラックの木/樹脂の厚み・スロットの穴・
 // 落ち影は CSS で作っていて、剣先はラックの前板に隠れる = 挿さって見える。
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   CHARMS,
   charmLevelOf,
   SWORD_COLORS,
   SWORD_SKINS,
 } from "@/lib/config";
+import { charmIndicesFrom } from "@/lib/style";
 import { useGameStore, unlockedSkins } from "@/game/store";
-import SwordArt from "./SwordArt";
-import { CharmDisc } from "./CharmShelf";
+import SwordArt, { effectiveHex } from "./SwordArt";
+import { CharmDisc, CharmIcon } from "./CharmShelf";
 
 /**
  * 南京錠のバッジ。絵文字の🔒は12〜14pxだと潰れて泥になるので、形は自前で描く。
@@ -45,12 +47,91 @@ function LockMark({ className }: { className?: string }) {
   );
 }
 
+/**
+ * 「けんの したく」のいちばん上に置く、いま選んでいる1本の完成形。
+ *
+ * なぜ要るか: いろ・しあげ・チャームを別々に選べるのに、それを全部あわせた
+ * 「結果」がどこにも出ていなかった。選んでいる最中に完成形が見えないと、
+ * 何をどう変えたのか手ごたえがない。
+ *
+ * 見せかたの都合:
+ *  ・剣は縦横比が 44:102 とかなり縦長なので、まともな大きさで出すと
+ *    引き出しの高さを食いつぶす。刃の下を切って(cropY)台に挿さっている
+ *    姿にすると、同じ高さでも剣を1.3倍ほど大きく描ける。
+ *  ・剣にぶら下がる粒はどうしても小さい(9px前後)ので、横のあいた場所に
+ *    ついているチャームを大きいまま並べる。「どんな感じか」が両方で分かる。
+ *  ・引き出しをスクロールしても消えないよう、CSS側で sticky にしてある。
+ */
+export function SwordPreview() {
+  const swordColor = useGameStore((s) => s.swordColor);
+  const swordSkin = useGameStore((s) => s.swordSkin);
+  const myTotal = useGameStore((s) => s.myTotal);
+  const hasEarth = useGameStore((s) => s.hasEarthCharm);
+  const charms = charmLevelOf(myTotal);
+  const hung = charmIndicesFrom(charms, hasEarth);
+
+  const skin = SWORD_SKINS[swordSkin] ?? SWORD_SKINS[0];
+  const colorName = SWORD_COLORS[swordColor]?.name ?? SWORD_COLORS[0].name;
+  const label = skin.tinted ? `${skin.name}の ${colorName}` : `${skin.name}の けん`;
+  // 台のうしろのあかりを、いま選んでいる色に合わせる。色を変えた手ごたえになる
+  const stageStyle = {
+    "--kk-glow": effectiveHex(swordColor, swordSkin),
+  } as CSSProperties;
+
+  return (
+    <div className="kk-preview" style={stageStyle}>
+      <div className="kk-preview-stage">
+        <span className="kk-preview-glow" aria-hidden="true" />
+        <span className="kk-preview-sword">
+          <SwordArt
+            color={swordColor}
+            skin={swordSkin}
+            charms={charms}
+            earthCharm={hasEarth}
+            charmShapes
+            cropY={77}
+          />
+        </span>
+        <span className="kk-preview-base" aria-hidden="true" />
+      </div>
+
+      <div className="kk-preview-txt">
+        <span className="kk-preview-cap">いまの きみの けん</span>
+        <b className="kk-preview-name">{label}</b>
+        {hung.length > 0 ? (
+          <>
+            <ul className="kk-preview-charms">
+              {hung.map((i) => (
+                <li
+                  key={i}
+                  className={CHARMS[i]?.secret ? "secret" : undefined}
+                  title={CHARMS[i]?.name}
+                >
+                  <CharmIcon index={i} size={20} />
+                </li>
+              ))}
+            </ul>
+            <span className="kk-preview-sub">
+              チャーム <b>{hung.length}</b>こ ついてる
+            </span>
+          </>
+        ) : (
+          <span className="kk-preview-sub">
+            10本 刺すと チャームが ぶら下がるよ
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** 8色の剣が立っているラック。選んだ1本が持ち上がり、チャームがぶら下がる */
 export function SwordRack() {
   const swordColor = useGameStore((s) => s.swordColor);
   const setSwordColor = useGameStore((s) => s.setSwordColor);
   const swordSkin = useGameStore((s) => s.swordSkin);
   const myTotal = useGameStore((s) => s.myTotal);
+  const hasEarth = useGameStore((s) => s.hasEarthCharm);
   const charms = charmLevelOf(myTotal);
 
   return (
@@ -73,10 +154,14 @@ export function SwordRack() {
               <span className="kk-slot-hole" aria-hidden="true" />
               <span className="kk-slot-shadow" aria-hidden="true" />
               <span className="kk-slot-sword">
+                {/* チャームは「いま持っているぶん全部」。35px幅では1粒が3px
+                    しかないので形では描かず、色つきの丸ビーズの房で見せる
+                    (形を見たいときは上のプレビューが引き受ける) */}
                 <SwordArt
                   color={i}
                   skin={swordSkin}
                   charms={sel ? charms : 0}
+                  earthCharm={sel && hasEarth}
                 />
               </span>
             </button>

@@ -3,7 +3,12 @@
 
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { CHARMS, HOLE_COUNT, SWORD_COLORS, SWORD_SKINS } from "@/lib/config";
+import {
+  HOLE_COUNT,
+  NORMAL_CHARM_COUNT,
+  SWORD_COLORS,
+  SWORD_SKINS,
+} from "@/lib/config";
 import { maskToBase64 } from "@/lib/bitmask";
 import { packStyle } from "@/lib/style";
 import type { StabRequest, StabResult } from "@/lib/types";
@@ -36,8 +41,17 @@ function parseBody(v: unknown): StabRequest | null {
       : undefined;
   const color = inRange(o.color, SWORD_COLORS.length);
   const skin = inRange(o.skin, SWORD_SKINS.length);
-  const charm = inRange(o.charm, CHARMS.length + 1);
-  return { holeId, roundNo, fp: fp.slice(0, 64), color, skin, charm };
+  const charm = inRange(o.charm, NORMAL_CHARM_COUNT + 1);
+  const earthCharm = o.earthCharm === true;
+  return {
+    holeId,
+    roundNo,
+    fp: fp.slice(0, 64),
+    color,
+    skin,
+    charm,
+    earthCharm,
+  };
 }
 
 function json(body: StabResult, status = 200): NextResponse {
@@ -73,8 +87,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       color: body.color ?? null,
       // スキンとチャームは1バイトに詰めて保存する(src/lib/style.ts)
       style:
-        body.skin || body.charm
-          ? packStyle(body.skin ?? 0, body.charm ?? 0)
+        body.skin || body.charm || body.earthCharm
+          ? packStyle(body.skin ?? 0, body.charm ?? 0, body.earthCharm === true)
           : null,
     });
 

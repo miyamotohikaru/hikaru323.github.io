@@ -57,8 +57,10 @@ export interface StabRequest {
   color?: number;
   /** 選んだ剣のスキン(SWORD_SKINSのindex)。省略時は0=プラスチック */
   skin?: number;
-  /** そのとき持っていたチャームの数(0..CHARMS.length)。省略時は0 */
+  /** そのとき持っていた「刺して集めたチャーム」の数。省略時は0 */
   charm?: number;
+  /** 隠しチャーム(地球をこわした人)を持っているか。省略時は false */
+  earthCharm?: boolean;
 }
 
 /** POST /api/stab のレスポンス(discriminated union) */

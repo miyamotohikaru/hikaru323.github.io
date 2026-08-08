@@ -6,6 +6,9 @@
 // インスタンスごとに変えられないので、スキンごとにメッシュを分ける
 // (実際に刺さっているスキンぶんだけ出すので、ふだんは1〜2本)。
 // 色はインスタンスカラー、チャームは鍔の下の小さなビーズ1個に簡略化する。
+// (自分のヒーロー剣は持っているぶん全部ぶら下げるが、1000本×13個は破綻する。
+//  そのかわりビーズの色を「いちばん新しいチャームの色」、大きさを「個数」に
+//  対応させて、遠目にも "たくさん持っている剣" が分かるようにしてある)
 // 向きは法線+prng(holeId)による決定的な傾き(全プレイヤーで同じ見た目)。
 
 import { useEffect, useMemo, useRef } from "react";
@@ -14,7 +17,7 @@ import { useFrame } from "@react-three/fiber";
 import { CHARMS, HOLE_COUNT, SWORD_COLORS, SWORD_SKINS } from "@/lib/config";
 import { getBit } from "@/lib/bitmask";
 import { getHolePoints } from "@/lib/holes";
-import { charmOf, skinOf } from "@/lib/style";
+import { charmIndicesOf, skinOf } from "@/lib/style";
 import { useGameStore } from "@/game/store";
 import { makeCircleTexture } from "@/game/scene/effects/textures";
 import {
@@ -22,6 +25,7 @@ import {
   makeSwordMaterial,
   makeToySwordGeometry,
   orientSword,
+  SWORD_DIMS,
   tickSwordMaterial,
 } from "@/game/scene/sword/buildSword";
 
@@ -29,6 +33,25 @@ const tmpObj = new THREE.Object3D();
 const tmpNormal = new THREE.Vector3();
 const tmpQuat = new THREE.Quaternion();
 const tmpColor = new THREE.Color();
+const tmpBead = new THREE.Matrix4();
+const tmpBeadLocal = new THREE.Matrix4();
+
+/** チャームの数からビーズの大きさ。1個=そのまま、13個で1.45倍まで */
+const BEAD_GROW = 0.04;
+const BEAD_GROW_MAX = 1.45;
+
+/**
+ * ビーズだけを「ぶら下げ点まわり」で拡大する行列。
+ * ビーズのジオメトリには吊り点の位置が焼き込んであるので、ただ scale すると
+ * 剣から離れてしまう。T(anchor)・S(k)・T(-anchor) で位置を留めたまま太らせる。
+ */
+function beadScaleMatrix(count: number, out: THREE.Matrix4): THREE.Matrix4 {
+  const k = Math.min(1 + BEAD_GROW * (count - 1), BEAD_GROW_MAX);
+  const a = SWORD_DIMS.charmAnchor;
+  out.makeScale(k, k, k);
+  out.setPosition(a.x * (1 - k), a.y * (1 - k), a.z * (1 - k));
+  return out;
+}
 
 /** SWORD_COLORS / CHARMS を THREE.Color に変換したキャッシュ */
 const SWORD_TINTS = SWORD_COLORS.map((c) => new THREE.Color(c.hex));
@@ -172,11 +195,17 @@ export default function Swords() {
       }
       counts.set(skin, n + 1);
 
-      // チャームは鍔の下のビーズ1個。剣とおなじ行列をそのまま使える
-      const charm = charmOf(style);
-      if (charm > 0 && bead) {
-        bead.setMatrixAt(beadN, tmpObj.matrix);
-        bead.setColorAt(beadN, CHARM_TINTS[Math.min(charm, CHARM_TINTS.length) - 1]);
+      // チャームは鍔の下のビーズ1個にまとめる。何を持っているかは
+      // charmIndicesOf が正で、色は「いちばん新しいチャーム」= 配列の最後
+      // (地球をこわした人なら、隠しチャームの青いビーズになる)
+      const charms = charmIndicesOf(style);
+      if (charms.length > 0 && bead) {
+        tmpBead.multiplyMatrices(
+          tmpObj.matrix,
+          beadScaleMatrix(charms.length, tmpBeadLocal)
+        );
+        bead.setMatrixAt(beadN, tmpBead);
+        bead.setColorAt(beadN, CHARM_TINTS[charms[charms.length - 1]]);
         beadN++;
       }
     }

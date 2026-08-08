@@ -35,12 +35,9 @@
 // (SWORD_COLORS の彩度を上げても、色計算を持たないぶん勝手に馴染む)。
 
 import { useId } from "react";
-import {
-  CHARMS,
-  CHARM_VISIBLE_MAX,
-  SWORD_COLORS,
-  SWORD_SKINS,
-} from "@/lib/config";
+import { CHARMS, SWORD_COLORS, SWORD_SKINS } from "@/lib/config";
+import { charmIndicesFrom } from "@/lib/style";
+import { charmPath } from "./CharmShelf";
 
 // ── 寸法(全部いちど比率から組み立てる) ────────────────────────
 /** 剣の座標系。鍔の張り出し 41.4 が入る幅 */
@@ -260,9 +257,70 @@ const D_CORE = (() => {
   return poly([...outer, ...inner]);
 })();
 
+// ── チャームの束 ──────────────────────────────────────
+// 「チャームは何個でもつけられる」が仕様なので、**上限は設けない**(最大13個)。
+// ただの縦一列にすると13個で剣の3倍の長さになって viewBox からはみ出すので、
+// キーホルダーの房のように「輪から何本かの糸で束ねる」形にしてある。
+//
+//   ・持つほど列が増え、粒がすこし小さくなる(13個でも房の背丈は変わらない)
+//   ・房の右端は viewBox の内側で止める(切れると「壊れた絵」に見える)
+//   ・房の下端は y≈74 までに収める。したくのプレビューは下を切って
+//     台に挿さって見せるので、そこで房が切れないようにするため
+//   ・粒どうしは軽く重なる。離すと「点が散っている」だけに見えて房にならない
+
 /** チャームをぶら下げる点(鍔の右のボスの下)。刃には重ならない位置 */
 const CHARM_X = BOSS_DX;
 const CHARM_TOP = GUARD_CY + BOSS_R * 0.6;
+/** キーホルダーの輪。ここから糸が分かれて房になる */
+const RING_CY = CHARM_TOP + 2.6;
+const RING_R = 1.5;
+
+/** 個数から房の割りつけを決める。3個までは1列(いままでと同じ見え方) */
+function charmPack(n: number) {
+  if (n <= 3) return { cols: 1, r: 2.95, colGap: 0, rowGap: 6.8 };
+  if (n <= 8) return { cols: 2, r: 2.55, colGap: 5.4, rowGap: 5.3 };
+  return { cols: 3, r: 2.15, colGap: 4.2, rowGap: 4.6 };
+}
+
+interface CharmBead {
+  /** CHARMS の index */
+  i: number;
+  /** CX からの相対x */
+  x: number;
+  y: number;
+}
+
+/** 房の座標を組み立てる。古い順に上から、いちばん新しいものが房の底に来る */
+function layoutCharms(indices: number[]) {
+  const n = indices.length;
+  const { cols, r, colGap, rowGap } = charmPack(n);
+  const rows = Math.ceil(n / cols);
+  // 右へはみ出すと viewBox に切られるので、房の右端で止める。
+  // 1.6 は隠しチャームの光の輪(r+0.9・線0.6)がはみ出さないための余白
+  const limit = VB_W / 2 - 1.6 - r;
+  const right = Math.min(CHARM_X + ((cols - 1) * colGap) / 2, limit);
+  const colX: number[] = [];
+  for (let c = 0; c < cols; c++) colX.push(right - (cols - 1 - c) * colGap);
+  const top = RING_CY + RING_R + r + 1.2;
+  // 端数は1行目に置く。下の行ほど詰まっていると、房が下に向かって広がって見える
+  const head = n - (rows - 1) * cols;
+  const beads: CharmBead[] = [];
+  let k = 0;
+  for (let row = 0; row < rows; row++) {
+    const cnt = row === 0 ? head : cols;
+    const off = Math.round((cols - cnt) / 2);
+    for (let c = 0; c < cnt; c++) {
+      beads.push({ i: indices[k++], x: colX[off + c], y: top + row * rowGap });
+    }
+  }
+  // 糸は「輪 → その列のいちばん下の粒」を1本ずつ。粒のうしろに敷く
+  const strands = colX.map((x) => {
+    let bottom = top;
+    for (const b of beads) if (b.x === x && b.y > bottom) bottom = b.y;
+    return { x, bottom };
+  });
+  return { beads, strands, r };
+}
 
 // ── 仕上げ ────────────────────────────────────────────
 /** 仕上げの見た目は4種類に集約する(3Dのマテリアル値からUI表現へ翻訳) */
@@ -365,12 +423,6 @@ export function effectiveHex(color: number, skin: number): string {
   return sk.tinted ? c.hex : sk.hex;
 }
 
-/** 剣にぶら下げて見せるチャーム(新しく手に入れたものから最大3個) */
-export function visibleCharms(charms: number) {
-  const n = Math.min(Math.max(charms, 0), CHARMS.length);
-  return CHARMS.slice(Math.max(0, n - CHARM_VISIBLE_MAX), n);
-}
-
 /** きらめきの4方向スター(金属・クリスタル・にじいろの見せ場) */
 function sparkle(x: number, y: number, s: number): string {
   const q = s * 0.26;
@@ -389,8 +441,22 @@ export interface SwordArtProps {
   color: number;
   /** SWORD_SKINS の index */
   skin: number;
-  /** ぶら下げるチャームの数(0でなし) */
+  /** 刺して集めたチャームの数(0でなし)。持っているぶんは全部ぶら下がる */
   charms?: number;
+  /** 隠しチャーム「ちきゅう」を持っているか。持っていれば房の底に増える */
+  earthCharm?: boolean;
+  /**
+   * true = チャームを丸ビーズではなく「そのチャームの形」で描く。
+   * 剣を35px幅で描くと粒は3pxしかなく、形はつぶれてただの汚れになる。
+   * したくのプレビューのように大きく見せる場所だけ true にすること。
+   */
+  charmShapes?: boolean;
+  /**
+   * viewBox の下端。既定は剣先まで(102)。小さい値にすると刃の下が切れるので、
+   * 台に挿さっているように見せたいとき(プレビュー)に使う。
+   * 切ると縦横比が変わり、同じ幅でも剣を大きく描ける。
+   */
+  cropY?: number;
   className?: string;
 }
 
@@ -398,6 +464,9 @@ export default function SwordArt({
   color,
   skin,
   charms = 0,
+  earthCharm = false,
+  charmShapes = false,
+  cropY,
   className,
 }: SwordArtProps) {
   // 同じページに何本も並ぶので、グラデーションのidは実体ごとに固有にする。
@@ -405,7 +474,11 @@ export default function SwordArt({
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const fin = finishOf(skin);
   const base = effectiveHex(color, skin);
-  const beads = visibleCharms(charms);
+  // どのチャームがぶら下がるかは 3D と同じ1本の関数で決める(src/lib/style.ts)。
+  // ここで独自に数えると「UIには5個・月の剣には3個」のような食い違いが出る
+  const { beads, strands, r: beadR } = layoutCharms(
+    charmIndicesFrom(charms, earthCharm)
+  );
 
   const body =
     fin === "iri"
@@ -430,7 +503,7 @@ export default function SwordArt({
   return (
     <svg
       className={className ? `kk-svg ${className}` : "kk-svg"}
-      viewBox={`0 0 ${VB_W} ${VB_H}`}
+      viewBox={`0 0 ${VB_W} ${cropY ?? VB_H}`}
       aria-hidden="true"
       focusable="false"
     >
@@ -466,37 +539,88 @@ export default function SwordArt({
         )}
       </defs>
 
-      {/* ── チャーム: 鍔の右のボスから、刃の横へ垂らす ── */}
+      {/* ── チャーム: 鍔の右のボスから、キーホルダーの房のように垂らす ── */}
       {beads.length > 0 && (
-        <g>
+        <g className="kk-svg-charms">
+          {/* 輪までの短いひも */}
           <path
-            d={`M${pt(CHARM_X, CHARM_TOP)} C${pt(CHARM_X + 1, CHARM_TOP + 1.4)} ${pt(
-              CHARM_X + 0.9,
-              CHARM_TOP + 2.4
-            )} ${pt(CHARM_X + 0.8, CHARM_TOP + 2.8 + beads.length * 0.2)}`}
+            d={`M${pt(CHARM_X, CHARM_TOP)}L${pt(CHARM_X, RING_CY - RING_R + 0.3)}`}
             fill="none"
-            stroke="rgba(0,0,0,.32)"
+            stroke="rgba(0,0,0,.34)"
             strokeWidth="1.1"
             strokeLinecap="round"
           />
-          {beads.map((c, i) => {
-            const cy = CHARM_TOP + 5.6 + i * 7;
+          {/* 列ごとの糸。粒のうしろに敷くので、玉が糸に通って見える */}
+          {strands.map((s) => (
+            <path
+              key={s.x}
+              d={`M${pt(CHARM_X, RING_CY)}L${pt(s.x, s.bottom)}`}
+              fill="none"
+              stroke="rgba(0,0,0,.3)"
+              strokeWidth="0.75"
+              strokeLinecap="round"
+            />
+          ))}
+          <circle
+            cx={n2(CX + CHARM_X)}
+            cy={n2(RING_CY)}
+            r={n2(RING_R)}
+            fill="none"
+            stroke="rgba(255,255,255,.7)"
+            strokeWidth="0.85"
+          />
+          {beads.map((b) => {
+            const c = CHARMS[b.i];
+            if (!c) return null;
+            const cx = CX + b.x;
             return (
-              <g key={c.name}>
-                <circle
-                  cx={n2(CX + CHARM_X + 0.8)}
-                  cy={n2(cy)}
-                  r="2.9"
-                  fill={c.hex}
-                  stroke="rgba(0,0,0,.34)"
-                  strokeWidth="0.9"
-                />
-                <circle
-                  cx={n2(CX + CHARM_X - 0.1)}
-                  cy={n2(cy - 1)}
-                  r="1.05"
-                  fill="rgba(255,255,255,.85)"
-                />
+              <g key={b.i}>
+                {/* 隠しチャームだけ、白い薄い光の輪をまとわせる。
+                    房のどこに紛れても「1個だけ違う」と分かるようにするため */}
+                {c.secret && (
+                  <circle
+                    cx={n2(cx)}
+                    cy={n2(b.y)}
+                    r={n2(beadR + 0.9)}
+                    fill="none"
+                    stroke="rgba(255,255,255,.62)"
+                    strokeWidth="0.6"
+                  />
+                )}
+                {charmShapes ? (
+                  // 24×24 の箱に描かれた形を、粒の大きさへ縮めて置く。
+                  // 線の太さは縮尺で戻して、どの大きさでも同じ見た目にする
+                  <g
+                    transform={`translate(${n2(cx - beadR)} ${n2(
+                      b.y - beadR
+                    )}) scale(${((beadR * 2) / 24).toFixed(4)})`}
+                  >
+                    <path
+                      d={charmPath(c.shape)}
+                      fill={c.hex}
+                      stroke="rgba(26,22,10,.55)"
+                      strokeWidth={((0.6 * 24) / (beadR * 2)).toFixed(2)}
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                ) : (
+                  <>
+                    <circle
+                      cx={n2(cx)}
+                      cy={n2(b.y)}
+                      r={n2(beadR)}
+                      fill={c.hex}
+                      stroke="rgba(0,0,0,.34)"
+                      strokeWidth="0.85"
+                    />
+                    <circle
+                      cx={n2(cx - beadR * 0.3)}
+                      cy={n2(b.y - beadR * 0.34)}
+                      r={n2(beadR * 0.34)}
+                      fill="rgba(255,255,255,.85)"
+                    />
+                  </>
+                )}
               </g>
             );
           })}

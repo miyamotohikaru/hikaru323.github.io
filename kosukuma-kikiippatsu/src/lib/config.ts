@@ -150,12 +150,17 @@ export type CharmShape =
   | "rainbow";
 
 export interface Charm {
-  /** 獲得に必要な通算の刺し本数 */
+  /** 獲得に必要な通算の刺し本数。Infinity = 刺しては手に入らない(隠し) */
   need: number;
   name: string;
   emoji: string;
   shape: CharmShape;
   hex: string;
+  /**
+   * true = 手に入れるまで存在を隠す。棚にも「?」ではなく空きとして出し、
+   * 何本刺しても出てこない(条件を教えない)。
+   */
+  secret?: boolean;
 }
 
 /** need の昇順で並べること(charmLevelOf が前提にしている) */
@@ -172,20 +177,33 @@ export const CHARMS: readonly Charm[] = [
   { need: 150, name: "かんむり", emoji: "👑", shape: "crown", hex: "#ffcf47" },
   { need: 200, name: "ほのお", emoji: "🔥", shape: "flame", hex: "#ff8a4c" },
   { need: 300, name: "にじ", emoji: "🌈", shape: "rainbow", hex: "#c9a6ff" },
+  // ── ここから下は刺して手に入るチャームではない ──
+  {
+    need: Infinity,
+    name: "ちきゅう",
+    emoji: "🌏",
+    shape: "gem",
+    hex: "#4fa8e8",
+    secret: true,
+  },
 ] as const;
 
-/** 通算の刺し本数から「持っているチャームの数」(0..CHARMS.length) */
+/** 刺して手に入るチャームの数(= 隠しチャームを除いた本数)。棚の分母にもなる */
+export const NORMAL_CHARM_COUNT = CHARMS.filter((c) => !c.secret).length;
+
+/** 地球を壊した人だけが手に入れる隠しチャーム(CHARMS の index) */
+export const EARTH_CHARM_INDEX = CHARMS.findIndex((c) => c.secret);
+
+/** 通算の刺し本数から「刺して手に入れたチャームの数」(0..NORMAL_CHARM_COUNT) */
 export function charmLevelOf(total: number): number {
   let n = 0;
   for (const c of CHARMS) {
+    if (c.secret) break; // 隠しは刺しでは増えない
     if (total >= c.need) n++;
     else break;
   }
   return n;
 }
-
-/** 剣にぶら下げて見せるチャームの最大数(多すぎるとシルエットが潰れる) */
-export const CHARM_VISIBLE_MAX = 3;
 
 // ── 他の人の刺しを見せる演出 ─────────────────────────
 /** 他の人の剣が降ってきて刺さるまで(ms) */

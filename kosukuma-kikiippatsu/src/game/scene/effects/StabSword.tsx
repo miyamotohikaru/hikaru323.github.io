@@ -5,12 +5,14 @@
 // (idle に戻った瞬間に Swords の刺さり済みインスタンスへ引き継がれる)。
 //
 // 剣そのものは共有ビルダー(sword/buildSword)の黒ひげ剣。ここは
-// 「主役の1本」なので、チャームもちゃんと3つぶら下げて揺らす。
+// 「主役の1本」なので、持っているチャームを**全部**ぶら下げて揺らす
+// (月の1000本はビーズ1個に簡略化しているぶん、自分の剣だけは じまんできる)。
 
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { charmLevelOf, T_STAB } from "@/lib/config";
+import { charmIndicesFrom } from "@/lib/style";
 import { useGameStore } from "@/game/store";
 import { getHoleWorld } from "@/game/scene/sharedRefs";
 import {
@@ -56,12 +58,16 @@ interface SwordRig {
 /** 黒ひげ剣に、構え中のきらめきと「ここに剣がある」ハロを足す */
 function buildRig(): SwordRig {
   const s = useGameStore.getState();
+  // この1本を数えたあとのチャーム数(10本目の剣には、その場で手に入れた
+  // チャームがもうぶら下がっている)。store.confirmStab と同じ計算
+  const charm = charmLevelOf(s.myTotal + 1);
   const sword = buildToySword({
     color: s.swordColor,
     skin: s.swordSkin,
-    // この1本を数えたあとのチャーム数(10本目の剣には、その場で手に入れた
-    // チャームがもうぶら下がっている)。store.confirmStab と同じ計算
-    charm: charmLevelOf(s.myTotal + 1),
+    charm,
+    // 何を下げるかは charmIndicesFrom が正(隠しチャーム「ちきゅう」は
+    // 刺し本数では表せないので、数ではなく index の配列で渡す)
+    charms: charmIndicesFrom(charm, s.hasEarthCharm),
     scale: HERO_SCALE,
   });
 
