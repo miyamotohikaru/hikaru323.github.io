@@ -9,6 +9,7 @@ import {
   CHARMS,
   charmLevelOf,
   EARTH_CHARM_INDEX,
+  NORMAL_CHARM_COUNT,
   COOLDOWN_SEC,
   EARTH_BOOM_CLICKS,
   HOLE_COUNT,
@@ -272,6 +273,43 @@ function newlySetHoles(oldMask: Uint8Array, newMask: Uint8Array): number[] {
     }
   }
   return out;
+}
+
+/**
+ * URLのクエリで「見せたい状態」を作る(社内の確認・スクリーンショット用)。
+ *
+ *   ?charm=13  … チャームを13個つけた状態(13 = 隠しチャームも込み)
+ *   ?wins=3    … こすくまくんを3回とばした状態(剣のスキンがぜんぶ解放される)
+ *
+ * **localStorage には書かない**ので、クエリを外してリロードすれば元に戻る。
+ * `?demo=win`(必ず当たり)や `?earth=999`(地球イースターエッグ)と同じ流儀。
+ */
+function applyPreviewParams(set: (p: Partial<GameState>) => void): void {
+  if (typeof window === "undefined") return;
+  let q: URLSearchParams;
+  try {
+    q = new URLSearchParams(window.location.search);
+  } catch {
+    return;
+  }
+
+  const charmRaw = q.get("charm");
+  if (charmRaw !== null) {
+    const want = Math.min(Math.max(Number(charmRaw) || 0, 0), CHARMS.length);
+    // 「刺して集めたぶん」は本数のしきい値から逆算する。隠しぶんは別フラグ
+    const normal = Math.min(want, NORMAL_CHARM_COUNT);
+    const total = normal === 0 ? 0 : CHARMS[normal - 1].need;
+    set({
+      myTotal: total,
+      hasEarthCharm: want > NORMAL_CHARM_COUNT,
+    });
+  }
+
+  const winsRaw = q.get("wins");
+  if (winsRaw !== null) {
+    const wins = Math.min(Math.max(Number(winsRaw) || 0, 0), 99);
+    set({ myWins: wins });
+  }
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -582,6 +620,7 @@ export const useGameStore = create<GameState>((set, get) => {
     init: () => {
       if (initialized) return;
       initialized = true;
+      applyPreviewParams(set);
       const cd = Number(LS.get("kk-cooldown") || 0);
       if (cd > Date.now()) set({ cooldownUntil: cd });
       // リロードで名前未入力のまま閉じた勝者の救済
