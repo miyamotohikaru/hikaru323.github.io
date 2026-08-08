@@ -301,8 +301,11 @@ export function CharmShelf() {
   const myTotal = useGameStore((s) => s.myTotal);
   const hasEarth = useGameStore((s) => s.hasEarthCharm);
   const level = charmLevelOf(myTotal);
-  // 隠しは持っている人にしか存在しない。持っていない人の棚は12枠ちょうど
-  const slots = CHARMS.filter((c) => !c.secret || hasEarth);
+  // 隠しは持っている人にしか存在しない。持っていない人の棚は12枠ちょうど。
+  // CHARMS の index はアイコンの参照に要るので、絞り込んでも持ち歩く
+  const slots = CHARMS.map((c, i) => ({ c, i })).filter(
+    ({ c }) => !c.secret || hasEarth
+  );
   // CHARMS[level] をそのまま使うと、12個そろった人に隠しチャームの名前と
   // 条件(Infinity本)が「つぎは…」として出てしまう。ここで必ず止める
   const next = level < NORMAL_CHARM_COUNT ? CHARMS[level] : undefined;
@@ -325,7 +328,7 @@ export function CharmShelf() {
       {/* 13個になったら1行7枠にする。3行目を作ると棚が縦に伸びて、
           引き出しの中で下の進捗バーが押し出されてしまうため */}
       <ul className={`kk-charms-grid${hasEarth ? " wide" : ""}`}>
-        {slots.map((c, i) => {
+        {slots.map(({ c, i }) => {
           const got = c.secret || i < level;
           const isNext = !c.secret && i === level;
           return (
@@ -381,7 +384,7 @@ export function CharmShelf() {
  * チャームを手に入れた瞬間のお祝い。数秒でひとりでに消える。
  * 隠しチャームのときは、通常の獲得とはっきり別物に見せる:
  *  ・見出しを「！？」にして、なにが起きたか一瞬わからなくする
- *  ・光を金から白青へ、輪を二重に、粒をひとまわり大きく
+ *  ・光を金から白へ、輪を二重に、粒をひとまわり大きく
  *  ・表示時間を長くして、じっくり「なにこれ」と眺めさせる
  */
 export function CharmGet() {

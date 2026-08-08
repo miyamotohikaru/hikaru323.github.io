@@ -330,7 +330,10 @@ function normalsFromPosition(geo: THREE.BufferGeometry): void {
 
 /**
  * 球の上にはりつく大陸ひとつ。中心 dir から角半径 ang ぶんの円を、
- * ふちをゆらして三角形ファンにする(まん丸だと水玉模様に見えてしまう)。
+ * ふちをゆらして描く(まん丸だと水玉模様に見えてしまう)。
+ *
+ * 中心から縁へ一気に三角形を張ると、三角形は平らなので弦が球の中へもぐり、
+ * 大陸のまんなかから海が突きぬけてしまう。同心の輪に分けて細かく張ること。
  */
 function continentGeometry(
   dir: THREE.Vector3,
@@ -338,23 +341,35 @@ function continentGeometry(
   ang: number,
   seed: number
 ): THREE.BufferGeometry {
-  const N = 20;
+  const N = 20; // 円周の分割
+  const RINGS = 3; // 中心から縁までの分割
   const [t1, t2] = tangentBasis(dir);
   const p = new THREE.Vector3();
   const pos: number[] = [dir.x * radius, dir.y * radius, dir.z * radius];
   const index: number[] = [];
+  for (let r = 1; r <= RINGS; r++) {
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      const edge =
+        ang * (1 + 0.3 * Math.sin(3 * a + seed) + 0.17 * Math.sin(5 * a + seed * 1.7));
+      const rr = (edge * r) / RINGS;
+      p.copy(dir)
+        .multiplyScalar(Math.cos(rr))
+        .addScaledVector(t1, Math.cos(a) * Math.sin(rr))
+        .addScaledVector(t2, Math.sin(a) * Math.sin(rr))
+        .normalize()
+        .multiplyScalar(radius);
+      pos.push(p.x, p.y, p.z);
+    }
+  }
+  const at = (r: number, i: number) => 1 + (r - 1) * N + (i % N);
   for (let i = 0; i < N; i++) {
-    const a = (i / N) * Math.PI * 2;
-    const rr = ang * (1 + 0.3 * Math.sin(3 * a + seed) + 0.17 * Math.sin(5 * a + seed * 1.7));
-    p.copy(dir)
-      .multiplyScalar(Math.cos(rr))
-      .addScaledVector(t1, Math.cos(a) * Math.sin(rr))
-      .addScaledVector(t2, Math.sin(a) * Math.sin(rr))
-      .normalize()
-      .multiplyScalar(radius);
-    pos.push(p.x, p.y, p.z);
-    // (中心, i, i+1) は外から見て反時計回り = 表向き
-    index.push(0, 1 + i, 1 + ((i + 1) % N));
+    // まんなかは扇。外から見て反時計回り = 表向き
+    index.push(0, at(1, i), at(1, i + 1));
+    for (let r = 1; r < RINGS; r++) {
+      index.push(at(r, i), at(r + 1, i), at(r, i + 1));
+      index.push(at(r, i + 1), at(r + 1, i), at(r + 1, i + 1));
+    }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
@@ -374,7 +389,9 @@ function triWave(x: number): number {
  */
 function crackGeometry(radius: number): THREE.BufferGeometry {
   const N = 26;
-  const HALF_W = 0.11; // 単位球での半幅
+  // 単位球での半幅。太いと「ひび」ではなく「模様」になるので、
+  // 遠目に線として読める最小限にとどめる
+  const HALF_W = 0.055;
   const pts: THREE.Vector3[] = [];
   for (let i = 0; i <= N; i++) {
     const t = i / N;
@@ -443,10 +460,12 @@ export function makeEarthCharmParts(size = 0.085): EarthCharmParts {
     const g = new THREE.OctahedronGeometry(r * k, 0);
     g.scale(1, 0.6, 0.8); // 平たくして「かけら」に見せる
     g.rotateZ(spin);
+    // 球からちょっとだけ離す。離しすぎると、ただの点が浮いているだけに見える
+    const lift = r * 1.2;
     g.translate(
-      Math.sin(th) * Math.sin(ph) * r * 1.34,
-      Math.cos(th) * r * 1.34,
-      Math.sin(th) * Math.cos(ph) * r * 1.34
+      Math.sin(th) * Math.sin(ph) * lift,
+      Math.cos(th) * lift,
+      Math.sin(th) * Math.cos(ph) * lift
     );
     // 多面体は非インデックスなので、球と混ぜる前にインデックス化する
     // (mergeGeometries は index の有無がそろっていないと null を返す)
@@ -455,7 +474,7 @@ export function makeEarthCharmParts(size = 0.085): EarthCharmParts {
     return indexed;
   };
   chips.push(chipAt(1.75, 0.95, 0.17, 0.6));
-  chips.push(chipAt(2.3, -0.5, 0.12, -0.9));
+  chips.push(chipAt(2.25, -0.42, 0.12, -0.9));
   const globe = mergeGeometries(chips) ?? sphere;
   if (globe !== sphere) chips.forEach((g) => g.dispose());
 

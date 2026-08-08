@@ -1245,17 +1245,17 @@
      ・下端の余白は .kk-drawer 側ではなくスクロール領域(.kk-drawer-body)側に
        持たせる。ここに置くと、スクロールしたとき最後の1行が
        クリップのふちに貼りついて「切れている」ように見えてしまう。
-     計算(440px幅/375px幅とも):
-       見出し 43 + 本文 581 = 624px
-       内わけ  プレビュー 144.5 / いろ 98 / しあげ 133 / チャーム 152
-               + 段間 7×3 + 下余白 12
-       523px だったころから プレビュー +144.5、他の棚を計 -43 詰めて +101。
-     1512×796 の表示領域(672px)なら 94svh = 631px なのでスクロールなしで収まる。
-     それより低い画面では下の @media(max-height:700px)でさらに約24px詰め、
+     計算(440px幅/375px幅とも): 523px → 616.5px。
+       足したぶん  プレビュー 144.5(上余白8 + カード136.5)
+       詰めたぶん  −51(見出し5・本文の上下12・ラック10・札4・しあげ11・
+                   チャーム12 / 段間は 9×2 → 7×3 で +3)
+     1512×796 の表示領域(672px)なら 93svh = 625px なのでスクロールなしで収まる。
+     それより低い画面では下の @media(max-height:700px)でさらに 25.5px 詰めて
+     591px にし(667pxの端末でも上限620pxに収まる)、
      それでも足りなければ本文がスクロールする(プレビューは sticky なので、
      スクロールしても完成形は出たままになる)。 */
-  max-height: min(94vh, 650px);
-  max-height: min(94svh, 650px);
+  max-height: min(93vh, 645px);
+  max-height: min(93svh, 645px);
   border-radius: 26px 26px 0 0;
   overflow: hidden;
   background: var(--ui);
@@ -1350,10 +1350,15 @@
   position: sticky;
   top: 0;
   z-index: 3;
-  /* 本文の上余白はここが持つ。sticky が貼りつく位置に隙間を作らないため */
-  padding: 8px 0 0;
+  /* 本文の上余白はここが持つ。sticky が貼りつく位置に隙間を作らないため。
+     左右は本文のパディングぶん外へ広げる。剣ラックは -8px はみ出しているので、
+     ここを本文幅どまりにすると、スクロール中に剣の先が横からのぞいてしまう */
+  margin: 0 -14px;
+  padding: 8px 14px 0;
   /* 下の棚がすき間から透けないよう、地色でふさぐ */
   background: var(--ui);
+  /* スクロールしていることが分かる、ごく薄い落ち影 */
+  box-shadow: 0 7px 8px -8px rgba(58, 55, 48, 0.55);
 }
 .kk-preview {
   display: flex;
@@ -1372,7 +1377,9 @@
 .kk-preview-stage {
   position: relative;
   flex: none;
-  width: 70px;
+  /* 剣そのものは 70px。左右の 4px は「揺れしろ」で、ここが無いと
+     いちばん張り出す鍔の端が台のふちに当たって切れる */
+  width: 78px;
   border-radius: 13px;
   overflow: hidden;
   background: linear-gradient(180deg, var(--kk-well-top), var(--kk-well-bot));
@@ -1399,6 +1406,7 @@
   position: relative;
   display: block;
   width: 100%;
+  padding: 0 4px; /* 揺れしろ。剣の実寸は 70px(台78 − 4×2) */
   filter: drop-shadow(0 3px 4px rgba(5, 7, 26, 0.5));
   transform-origin: 50% 6%;
   animation: kk-preview-sway 5.4s ease-in-out infinite;
@@ -1442,13 +1450,13 @@
 .kk-preview-charms {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(7, 24px);
-  gap: 4px;
+  /* 幅320pxの端末でも1行7個が入るよう、枠は縮められるようにしておく */
+  grid-template-columns: repeat(7, minmax(20px, 24px));
+  gap: 3px;
   margin-top: 2px;
   justify-content: start;
 }
 .kk-preview-charms li {
-  width: 24px;
   height: 24px;
   display: grid;
   place-items: center;
@@ -2209,7 +2217,7 @@
     margin-left: -13.5px;
   }
   .kk-preview-stage {
-    width: 64px;
+    width: 72px;
   }
   .kk-skin-stage {
     height: 40px;

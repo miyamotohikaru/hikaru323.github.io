@@ -258,8 +258,12 @@ export function SkinUnlockCard() {
   const newCharm = useGameStore((s) => s.newCharm);
   const swordColor = useGameStore((s) => s.swordColor);
   const clearNewCharm = useGameStore((s) => s.clearNewCharm);
-  // 表示中に store が片付いても消えないよう、マウント時の値を握っておく
-  const [charm] = useState(newCharm);
+  // 表示中に store が片付いても消えないよう、マウント時の値を握っておく。
+  // 隠しチャームだけはここで受け取らない: 授与式のついでに小さく出すと、
+  // せっかくの「なにこれ!?」が普通のごほうびに見えてしまう(CharmGet に任せる)
+  const [charm] = useState(
+    newCharm !== null && CHARMS[newCharm]?.secret ? null : newCharm
+  );
 
   useEffect(() => {
     if (charm !== null) clearNewCharm();
