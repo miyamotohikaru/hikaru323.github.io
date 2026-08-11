@@ -386,14 +386,15 @@ export class PixelGfx {
    * 欧文だけで組むと「ファミコン」ではなく「欧州のレトロ」に見える。
    * 16枚のラベルが欧文だけだったのは、ここに和文を打つ道具が無かったせい。
    *
-   * 戻り値は置いた幅。size は 16 の整数倍のみ（12pxに落とすと漢字が別字に化ける）。
+   * 戻り値は置いた幅。**size の下限は 13px。** 12px まで落とすと画数の多い漢字
+   * （葉・辞・職・鑑）の横画が繋がって別字か黒い塊になる。実測して13pxが下限だった。
    */
   textJP(
     x: number,
     y: number,
     s: string,
     c: string | null,
-    opts: { size?: 16 | 32; letterSpace?: number; threshold?: number } = {},
+    opts: { size?: number; letterSpace?: number; threshold?: number } = {},
   ): number {
     const size = opts.size ?? 16;
     const letterSpace = opts.letterSpace ?? 0;

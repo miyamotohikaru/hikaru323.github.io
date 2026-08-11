@@ -859,13 +859,3 @@ a {
   cursor: default;
 }
 
-.soon {
-  margin-left: auto;
-  padding: 2px 5px 1px;
-  border: 1px solid var(--ink-faint);
-  color: var(--ink-faint);
-  font-size: 8px;
-  line-height: 10px;
-  letter-spacing: 1px;
-  white-space: nowrap;
-}

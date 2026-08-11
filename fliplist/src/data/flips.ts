@@ -203,8 +203,10 @@ export const FLIPS: Flip[] = [
   {
     slug: "kikiippatsu",
     code: "HVC-KK",
-    title: "超巨大こすくまくん黒髭危機一髪",
-    kana: "ちょうきょだいこすくまくんくろひげききいっぱつ",
+    // シートの記載は「超巨大こすくまくん黒髭危機一髪」だが、
+    // 棚に並べる名前としてはユーザー指定でこちらを使う（2026-08-11）
+    title: "こすくまくん危機一髪",
+    kana: "こすくまくんききいっぱつ",
     romaji: "KIKIIPPATSU",
     desc: "世界中の人と1000個の穴に剣を刺していくゲーム",
     url: "https://kosukuma-kikiippatsu.vercel.app",

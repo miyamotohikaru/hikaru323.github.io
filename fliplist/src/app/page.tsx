@@ -163,7 +163,7 @@ function Item({
   const body = (
     <>
       <div className="cell-cart">
-        <Cartridge flip={flip} scale={scale} animate />
+        <Cartridge flip={flip} scale={scale} animate soon={!live} />
       </div>
 
       {/* 色玉は図版の直下・左そろえ。カセットの持ち色をそのまま拾う */}
@@ -177,7 +177,6 @@ function Item({
         <div className="cell-head">
           <span className="cell-no en">{String(n).padStart(2, "0")}</span>
           <span className="cell-code en">{flip.code}</span>
-          {!live && <span className="soon en">COMING SOON</span>}
         </div>
 
         <h3 className="ttl">{flip.title}</h3>
