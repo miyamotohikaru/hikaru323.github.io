@@ -437,12 +437,27 @@ const glyphCache = new Map<string, Glyph | null>();
 let jpCanvas: HTMLCanvasElement | null = null;
 let jpCtx: CanvasRenderingContext2D | null = null;
 
-/** 書体が読み込まれるまでは字母を彫れない。描く前にこれを待つ。 */
+/**
+ * 書体が読み込まれるまでは字母を彫れない。描く前にこれを待つ。
+ *
+ * 待たずに描いた回の字母は代替書体（ゴシック体）から起こしたものになり、
+ * しかも一度掘ると使い回されるので、**読込が遅れた回だけ別の書体で焼き付く**。
+ * だから読み込み終わりに彫った字母を全部捨てる。捨てるのは1回だけでよい。
+ */
+let jpFontSettled = false;
 export function jpFontReady(): Promise<void> {
   if (typeof document === "undefined") return Promise.resolve();
   const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
   if (!fonts) return Promise.resolve();
-  return fonts.load('16px "DotGothic16"').then(() => fonts.ready.then(() => undefined));
+  return fonts
+    .load('16px "DotGothic16"')
+    .then(() => fonts.ready)
+    .then(() => {
+      if (!jpFontSettled) {
+        jpFontSettled = true;
+        glyphCache.clear();
+      }
+    });
 }
 
 function jpGlyph(ch: string, size: number, threshold: number): Glyph | null {
