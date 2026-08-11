@@ -109,12 +109,17 @@ export default function PixelCanvas({
     // 一度目は待たずに描き（書体が既にあれば正しく出る）、整い次第もう一度描く。
     let alive = true;
     let lastStep = -1;
+
+    // **必ず最初に1回描く。**
+    // 動かす場合の描画は「画面に入っているか」で止めているが、
+    // それだけに任せると、読み込みの瞬間に画面内にあったカセットが
+    // 一度も描かれないまま空で残ることがあった（携帯で先頭2本が真っ白になる）。
+    // 1回描いてから回せば、原因が何であれ空にはならない。
+    paint(0);
+
     const start2 = () => {
       if (!alive) return;
-      if (!animate || reduce) {
-        paint(0);
-        return;
-      }
+      if (!animate || reduce) return;
       const loop = (now: number) => {
         if (!start) start = now;
         if (visible.current) {

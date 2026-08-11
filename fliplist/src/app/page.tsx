@@ -81,7 +81,7 @@ export default function Page() {
         <span className="bar-fill" aria-hidden />
         <span className="bar-r">
           <span className="k8 en">CATALOGUE OF FLIPS</span>
-          <span className="k12">第1版</span>
+          <span className="k12">随時更新</span>
         </span>
       </div>
 

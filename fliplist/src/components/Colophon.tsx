@@ -117,11 +117,15 @@ export default function Colophon() {
           <div className="colo-note-head en">ABOUT THIS CATALOGUE</div>
           <p>
             この図録は、株式会社こす.くまがつくった「ふりっぷ」を、思いついた順にならべたものです。
-            収録{n}本。1本ずつにカセットの絵をつけました。同じ絵は1枚もありません。
+            いま{n}本。1本ずつにカセットの絵をつけました。同じ絵は1枚もありません。
           </p>
           <p>
             いま遊べるのは{live}本です。残りは色を落として COMING SOON にしてあります。
             出来上がったら、色がついて押せるようになります。
+          </p>
+          <p>
+            {/* 冊数を数え上げて終わりにしない。棚はこれからも増える。 */}
+            ふりっぷは随時ふえていきます。この棚も、そのたびに増やしていきます。
           </p>
           <p>
             カセットを押すと、それぞれのふりっぷが別のまどで開きます。
@@ -151,7 +155,7 @@ export default function Colophon() {
           </div>
           <div>
             <dt className="en">EDITION</dt>
-            <dd>第1版</dd>
+            <dd>随時更新</dd>
           </div>
         </dl>
       </div>
@@ -181,7 +185,7 @@ export default function Colophon() {
       </div>
 
       <div className="endbar">
-        <span className="k12">ふりっぷ図録 第1版</span>
+        <span className="k12">ふりっぷ図録 随時更新</span>
         <span className="endbar-fill" aria-hidden />
         <span className="k8 en">001 &mdash; 016 / KOSU.KUMA</span>
       </div>
