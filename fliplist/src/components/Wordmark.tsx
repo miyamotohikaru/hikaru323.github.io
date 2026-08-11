@@ -279,6 +279,9 @@ const RIM = (() => {
 
 const INK = "#1b1a17";
 const DEPTH = 5; // 看板の文字が持っている厚み
+// 押し出しは真下。カセットの落ち影が右下なので、右下に出すと厚みが影に見える
+const PUSH_X = 0;
+const PUSH_Y = 1;
 const SIDE = "#c33c27";
 // 面。上から下へ。あいだはディザで繋ぐので帯が線にならない
 const FACE = ["#7ea3e8", "#5480da", "#3f68c8", "#2b4ea2", "#20397a", "#182c5e"];
@@ -301,7 +304,8 @@ function paint(g: PixelGfx, m: Mask, c: string, dx = 0, dy = 0) {
 
 function drawWordmark(g: PixelGfx) {
   // 厚み。看板の文字は板から起きているので、右下に側面が出る
-  for (let d = DEPTH; d >= 1; d--) paint(g, EDGE, d === DEPTH ? INK : SIDE, d, d);
+  for (let d = DEPTH; d >= 1; d--)
+    paint(g, EDGE, d === DEPTH ? INK : SIDE, d * PUSH_X, d * PUSH_Y);
   paint(g, HOLE, PAPER); // 抜きは紙のまま
   paint(g, RIM, INK);
   paint(g, EDGE, INK); // 縁取り
@@ -333,10 +337,10 @@ const BOX = (() => {
   for (let y = 0; y < EDGE.h; y++)
     for (let x = 0; x < EDGE.w; x++) {
       if (!EDGE.on[y * EDGE.w + x]) continue;
-      if (x < l) l = x;
+      if (x + Math.min(0, DEPTH * PUSH_X) < l) l = x + Math.min(0, DEPTH * PUSH_X);
       if (y < t) t = y;
-      if (x + DEPTH > r) r = x + DEPTH;
-      if (y + DEPTH > b) b = y + DEPTH;
+      if (x + Math.max(0, DEPTH * PUSH_X) > r) r = x + Math.max(0, DEPTH * PUSH_X);
+      if (y + DEPTH * PUSH_Y > b) b = y + DEPTH * PUSH_Y;
     }
   return { l, t, r, b };
 })();

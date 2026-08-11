@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 /* ドット絵の図録の版面。
+
+   和文の下限は 14px。DotGothic16 は 16px グリッドのビットマップ書体なので、
+   12px まで落とすと dpr1 の画面で漢字が別字に化ける（実測: 公開「中」→「口」、
+   16「本」→「区」、「世の中」→「ュの口」）。13px から正常だが余裕を見て14px。
+   dpr2 では潰れないので、開発中は気づけない。欧文（.romaji）は12pxでも崩れない。
    文字は必ず整数の級数と整数の行送りで置く。半端な値はドットを潰す。
    和文 DotGothic16 は 12 / 16 / 24 / 32 / 48px、欧文 Press Start 2P は 8 / 16 / 24px。 */
 
@@ -89,7 +94,7 @@ a {
   letter-spacing: 1px;
 }
 .k12 {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 12px;
 }
 .vh {
@@ -250,7 +255,7 @@ a {
   margin: 0;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--rule);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--ink-soft);
 }
@@ -268,10 +273,10 @@ a {
 .mast-sub .en {
   font-size: 16px;
   line-height: 16px;
-  color: var(--accent);
+  color: var(--ink);
 }
 .mast-sub-jp {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
   color: var(--ink-soft);
 }
@@ -301,7 +306,7 @@ a {
 .tally-t {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 12px;
 }
 .tally-t td {
@@ -325,7 +330,12 @@ a {
   color: var(--ink);
 }
 
-/* 状態の印 */
+/* ══ 色の規則 ════════════════════════════════════════════
+   色は「図版」と「状態」にだけ使う。装飾は紙・墨・灰の罫だけで組む
+   （唯一の例外は奥付の黄札1枚）。状態は色を見分けられなくても読めるよう、
+   印の形でも区別する：□構想 → ▨制作中 → ◨完成 → ■公開中（左から進む）、
+   ラベル未着は破線の白枠。 */
+
 .mark {
   display: inline-block;
   width: 8px;
@@ -333,25 +343,27 @@ a {
   margin-right: 6px;
   vertical-align: baseline;
   border: 1px solid var(--ink);
+  background: var(--paper);
 }
 .mark-released {
   background: var(--accent);
 }
 .mark-done {
-  background: var(--ok);
+  background: linear-gradient(to bottom, var(--paper) 0 4px, var(--ok) 4px);
 }
 .mark-wip {
-  background: var(--accent-warm);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--accent-warm) 0 2px,
+    var(--paper) 2px 4px
+  );
 }
 .mark-idea {
   background: var(--paper);
 }
 .mark-empty {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--paper) 0 2px,
-    var(--ink-faint) 2px 4px
-  );
+  border: 1px dashed var(--ink-faint);
+  background: var(--paper);
 }
 
 /* ══ 定義 ════════════════════════════════════════════════ */
@@ -376,7 +388,7 @@ a {
   line-height: 28px;
 }
 .defn-pos {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
   color: var(--ink-soft);
 }
@@ -400,7 +412,7 @@ a {
 }
 .defn-body {
   margin: 8px 0 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 20px;
   color: var(--ink-soft);
 }
@@ -411,7 +423,7 @@ a {
   margin: 14px 0 0;
   padding: 8px 0 0;
   border-top: 1px solid var(--rule-faint);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--ink-faint);
 }
@@ -439,7 +451,7 @@ a {
   margin: 2px 0 7px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--rule-faint);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
 }
 .defn-notes dd:last-child {
@@ -453,27 +465,23 @@ a {
 .toc {
   margin: 32px 0 0;
 }
+/* 目次の見出し。帯は敷かない。刷り色は状態の印のためにとってある */
 .band {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  padding: 8px 10px 7px;
-  background: var(--accent);
-  color: var(--paper);
+  padding: 0 0 7px;
+  border-bottom: 2px solid var(--ink);
 }
 .band-en {
   font-size: 16px;
   line-height: 16px;
 }
-.band-jp {
-  font-size: 12px;
-  line-height: 16px;
-}
 .band-n {
   font-size: 8px;
   line-height: 16px;
-  opacity: 0.8;
+  color: var(--ink-faint);
 }
 
 .legend {
@@ -481,9 +489,8 @@ a {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 18px;
-  padding: 8px 10px 7px;
-  background: var(--paper-lift);
-  border-bottom: 1px solid var(--rule);
+  padding: 8px 0 7px;
+  border-bottom: 1px solid var(--rule-faint);
 }
 .legend-head {
   color: var(--ink-faint);
@@ -492,7 +499,7 @@ a {
 .legend-i {
   display: inline-flex;
   align-items: center;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 12px;
 }
 .legend-i b {
@@ -502,13 +509,16 @@ a {
   color: var(--ink-faint);
 }
 
-/* ── 並び ── */
+/* ── 並び ──
+   ここが版面のいちばん大事なところ。主役はカセットで、文字は札。
+   だから枠は引かず、段と段のあいだにはカセット1本の高さの4割の余白を置く。
+   16本が「表に収まっている」ではなく「棚にならんでいる」と見えるまで空ける。 */
 .grid {
   display: grid;
   justify-content: space-between;
   column-gap: var(--gutter);
-  row-gap: 40px;
-  margin: 26px 0 0;
+  row-gap: 80px;
+  margin: 40px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -524,97 +534,88 @@ a {
   flex-direction: column;
   min-width: 0;
 }
-.cell-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0 4px;
-  border-top: 2px solid var(--ink);
-}
-.cell-no {
-  font-size: 8px;
-  line-height: 12px;
-}
-.cell-code {
-  font-size: 8px;
-  line-height: 12px;
-  color: var(--ink-faint);
-}
-.cell-state {
-  margin-left: auto;
-  font-size: 12px;
-  line-height: 12px;
-  color: var(--ink-soft);
-  white-space: nowrap;
-}
-.cell-state .mark {
-  margin-right: 4px;
-}
 
 .cell-cart {
-  padding: 10px 0 8px;
-  border-bottom: 1px solid var(--rule-faint);
+  padding: 4px 0;
 }
 .cell-in:hover .cell-cart {
   background:
     linear-gradient(var(--paper-deep), var(--paper-deep)) padding-box;
 }
 
-.dots,
-.slotbar {
+/* 色玉。図版の直下、左そろえ。罫をはさまないので図版と一続きに読める */
+.dots {
   display: flex;
   align-items: center;
-  height: 14px;
-}
-.dots {
   gap: 4px;
+  height: 8px;
+  margin-top: 10px;
 }
 .dot {
   width: 8px;
   height: 8px;
   box-shadow: inset 0 0 0 1px #0000002e;
 }
-.slotbar {
-  gap: 8px;
-  padding: 0 5px;
-  border: 1px dashed var(--ink-faint);
-  background: repeating-linear-gradient(
-    45deg,
-    transparent 0 3px,
-    #0000000f 3px 6px
-  );
-  color: var(--ink-soft);
+.dot-void {
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
 }
-.slotbar-jp {
-  font-size: 12px;
-  line-height: 12px;
+
+/* ── 札 ── */
+.cap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  margin-top: 20px;
 }
-.slotbar-en {
+/* 札の行はすべて左そろえ。両端そろえにすると罫が無くても表組みに見える */
+.cell-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cell-no,
+.cell-code {
   font-size: 8px;
   line-height: 12px;
   color: var(--ink-faint);
 }
+.cell-state {
+  font-size: 14px;
+  line-height: 12px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.cell-state .mark {
+  margin-right: 4px;
+}
 
 .ttl {
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   font-size: 16px;
   line-height: 20px;
   font-weight: 400;
 }
+/* 欧文の注記。ドット書体の欧文は和名と同じインク量になってしまうので、
+   和文書体の英数を12pxで組み、字間だけ空けて薄く沈める */
 .romaji {
-  margin: 5px 0 0;
-  font-size: 8px;
-  line-height: 12px;
+  margin: 2px 0 0;
+  font-family: var(--jp);
+  font-size: 12px;
+  line-height: 14px;
+  letter-spacing: 2px;
   color: var(--ink-faint);
 }
+/* 2行ぶんの高さで固定する。説明の長短で札の組みが段ごとにばらつかない */
 .dsc {
+  min-height: 36px;
   margin: 7px 0 10px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--ink-soft);
 }
 .dsc-blank {
-  min-height: 36px;
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0 17px,
@@ -624,23 +625,19 @@ a {
 .meta {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 14px;
   margin-top: auto;
-  padding-top: 5px;
-  border-top: 1px solid var(--rule-faint);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 12px;
   color: var(--ink-faint);
 }
 .meta b {
   margin-right: 6px;
   font-weight: 400;
-  color: var(--ink-soft);
+  color: var(--ink-faint);
 }
 
 .cell-in:hover .ttl {
-  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
@@ -685,7 +682,7 @@ a {
   padding: 4px 8px 5px;
   background: var(--highlight);
   border: 1px solid var(--ink);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 12px;
 }
 .colo-mark b {
@@ -699,7 +696,7 @@ a {
   font-size: 32px;
   line-height: 44px;
   font-weight: 400;
-  color: var(--accent);
+  color: var(--ink);
 }
 .colo-note {
   min-width: 0;
@@ -715,7 +712,7 @@ a {
 }
 .colo-note p {
   margin: 0 0 6px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 18px;
   color: var(--ink-soft);
 }
@@ -739,7 +736,7 @@ a {
 }
 .colo-spec dd {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
 }
 
@@ -766,7 +763,7 @@ a {
   display: flex;
   align-items: baseline;
   gap: 6px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 14px;
   margin-bottom: 4px;
   padding-bottom: 4px;
@@ -779,7 +776,7 @@ a {
 }
 .notice-body {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
   color: var(--ink-soft);
 }
@@ -808,7 +805,7 @@ a {
 }
 .back-arrow {
   font-size: 8px;
-  color: var(--accent);
+  color: var(--ink-faint);
 }
 .back-jp {
   font-size: 16px;
@@ -826,22 +823,23 @@ a {
   color: var(--ink-faint);
 }
 
-/* 地の帯。天の帯と対にして版面を閉じる */
+/* 地の帯。天の帯と対にして版面を閉じる。
+   黒く塗るとここだけがゲームのステータスバーに見えるので、紙のまま罫で閉じる */
 .endbar {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 26px calc(var(--pad) * -1) 0;
-  padding: 9px var(--pad) 8px;
-  background: var(--ink);
-  color: var(--paper);
+  margin: 26px 0 0;
+  padding: 9px 0 0;
+  border-top: 1px solid var(--ink);
+  color: var(--ink-faint);
 }
 .endbar-fill {
   flex: 1;
   height: 5px;
   background-image: repeating-linear-gradient(
     to right,
-    #6f6a5c 0 1px,
+    var(--rule) 0 1px,
     transparent 1px 5px
   );
   background-position: 0 2px;
@@ -933,14 +931,18 @@ a {
   display: none;
 }
 .sheet[data-scale="2"] .grid {
-  row-gap: 28px;
+  row-gap: 56px;
+  margin-top: 28px;
+}
+.sheet[data-scale="2"] .cap {
+  margin-top: 10px;
 }
 .sheet[data-scale="2"] .bar-l .k8,
 .sheet[data-scale="2"] .bar-r .k8 {
   display: none;
 }
 .sheet[data-scale="2"] .ttl {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
 }
 .sheet[data-scale="2"] .cell-code {
@@ -953,8 +955,10 @@ a {
   flex-wrap: wrap;
   gap: 12px;
 }
-.sheet[data-scale="2"] .band-jp {
-  display: none;
+.sheet[data-scale="2"] .romaji {
+  font-size: 12px;
+  line-height: 12px;
+  letter-spacing: 1px;
 }
 .sheet[data-scale="2"] .colo-note,
 .sheet[data-scale="2"] .colo-spec {
@@ -982,4 +986,12 @@ a {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* 「まだ開けません」は状態ではないので、状態の印より弱く、和名より小さく添える。 */
+.cell-nolabel {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 14px;
+  color: var(--ink-faint);
 }

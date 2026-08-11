@@ -30,8 +30,10 @@ type Tier = { cols: number; scale: number; pad: number; gutter: number };
 type Layout = Tier & { logo: number; sheet: number };
 
 const TIERS: Array<[number, Tier]> = [
-  [1232, { cols: 4, scale: 3, pad: 28, gutter: 24 }],
-  [932, { cols: 3, scale: 3, pad: 28, gutter: 24 }],
+  // 段間はカセット幅の15%弱。ここを詰めると16本が「表」に見えてしまう。
+  // しきい値は「紙の幅＋机が見える余白」で決める（紙が画面いっぱいだと図録に見えない）
+  [1344, { cols: 4, scale: 3, pad: 28, gutter: 40 }],
+  [1024, { cols: 3, scale: 3, pad: 28, gutter: 40 }],
   // 2段のときは段間を広めに取る。こうすると見出しロゴが2倍で入る
   [672, { cols: 2, scale: 3, pad: 24, gutter: 72 }],
   [624, { cols: 2, scale: 3, pad: 24, gutter: 24 }],
@@ -142,7 +144,6 @@ export default function Page() {
       <section className="toc">
         <div className="band">
           <span className="band-en en">CONTENTS</span>
-          <span className="band-jp">もくじ ／ ふりっぷ 全{FLIPS.length}本</span>
           <span className="band-n en">
             001 &ndash; {String(FLIPS.length).padStart(3, "0")}
           </span>
@@ -157,10 +158,11 @@ export default function Page() {
               <b className="en">{STATUS[s].en}</b>
             </span>
           ))}
+          {/* 状態ではなく「まだ開けない」ことの説明なので、KEY の並びから外して添える */}
           <span className="legend-i legend-i--empty">
             <i className="mark mark-empty" aria-hidden />
-            未挿入
-            <b className="en">NO CART</b>
+            ラベル未着＝まだ開けません
+            <b className="en">NO LABEL</b>
           </span>
         </div>
 
@@ -213,48 +215,59 @@ function Item({
   const swatch = LABELS[flip.slug]?.swatch ?? [];
   const open = Boolean(flip.url);
 
+  /**
+   * 図版がまず来て、そのあとに札（キャプション）が続く。
+   * 札はぜんぶ薄い墨で組み、和名だけを本墨にする。
+   * カセットの上には何も置かない。上の余白はカセットのためのもの。
+   */
   const body = (
     <>
-      <div className="cell-head">
-        <span className="cell-no en">{String(n).padStart(2, "0")}</span>
-        <span className="cell-code en">{flip.code}</span>
-        <span className="cell-state">
-          <i className={`mark mark-${open ? st.key : "empty"}`} aria-hidden />
-          {open ? st.jp : "未挿入"}
-        </span>
-      </div>
-
       <div className="cell-cart">
         <Cartridge flip={flip} scale={scale} animate={hovered} />
       </div>
 
-      {open ? (
-        <div className="dots" aria-hidden>
-          {swatch.slice(0, 5).map((c, k) => (
-            <span className="dot" key={k} style={{ background: c }} />
-          ))}
-        </div>
-      ) : (
-        <div className="slotbar">
-          <span className="slotbar-jp">ラベル未着</span>
-          <span className="slotbar-en en">EMPTY SLOT</span>
-        </div>
-      )}
+      {/* 色玉は図版の直下・左そろえ。カセットの持ち色をそのまま拾う */}
+      <div className="dots" aria-hidden>
+        {open
+          ? swatch
+              .slice(0, 5)
+              .map((c, k) => <span className="dot" key={k} style={{ background: c }} />)
+          : [0, 1, 2, 3, 4].map((k) => <span className="dot dot-void" key={k} />)}
+      </div>
 
-      <h3 className="ttl">{flip.title}</h3>
-      <p className="romaji en">{flip.romaji}</p>
-      {flip.desc ? (
-        <p className="dsc">{flip.desc}</p>
-      ) : (
-        <p className="dsc dsc-blank" aria-label="内容は未記入" />
-      )}
+      <div className="cap">
+        <div className="cell-head">
+          <span className="cell-no en">{String(n).padStart(2, "0")}</span>
+          <span className="cell-code en">{flip.code}</span>
+          {/*
+            状態（公開中／完成／制作中／構想）と、開けるかどうかは別の軸。
+            以前は url が無いだけで状態を「ラベル未着」に差し替えていたので、
+            INDEX の集計（status で数える）と紙面のバッジが食い違っていた。
+            ——制作中07と出ているのにバッジは5個、構想01はどこにも無い、という状態。
+            状態は必ず status のまま出し、開けないことは別に添える。
+          */}
+          <span className="cell-state">
+            <i className={`mark mark-${st.key}`} aria-hidden />
+            {st.jp}
+            {!open && <em className="cell-nolabel">ラベル未着</em>}
+          </span>
+        </div>
 
-      <div className="meta">
-        <span className="meta-date">
-          <b>{flip.status === "released" ? "公開" : "予定"}</b>
-          {dot(flip.date)}
-        </span>
-        <span className="meta-owner">{flip.owner}</span>
+        <h3 className="ttl">{flip.title}</h3>
+        <p className="romaji">{flip.romaji}</p>
+        {flip.desc ? (
+          <p className="dsc">{flip.desc}</p>
+        ) : (
+          <p className="dsc dsc-blank" aria-label="内容は未記入" />
+        )}
+
+        <div className="meta">
+          <span className="meta-date">
+            <b>{flip.status === "released" ? "公開" : "予定"}</b>
+            {dot(flip.date)}
+          </span>
+          <span className="meta-owner">{flip.owner}</span>
+        </div>
       </div>
     </>
   );

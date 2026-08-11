@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { PixelGfx } from "@/art/gfx";
+import { PixelGfx, jpFontReady } from "@/art/gfx";
 
 type Props = {
   w: number;
@@ -98,18 +98,31 @@ export default function PixelCanvas({
       ctx.drawImage(off, 0, 0, w, h, 0, 0, canvas.width, canvas.height);
     };
 
-    if (!animate || reduce) {
-      paint(0);
-      return;
-    }
-
-    const loop = (now: number) => {
-      if (!start) start = now;
-      if (visible.current) paint(((now - start) / (period * 1000)) % 1);
+    // 和文の字母は書体から起こしているので、読み込み前に描くと文字が消える。
+    // 一度目は待たずに描き（書体が既にあれば正しく出る）、整い次第もう一度描く。
+    let alive = true;
+    const start2 = () => {
+      if (!alive) return;
+      if (!animate || reduce) {
+        paint(0);
+        return;
+      }
+      const loop = (now: number) => {
+        if (!start) start = now;
+        if (visible.current) paint(((now - start) / (period * 1000)) % 1);
+        raf = requestAnimationFrame(loop);
+      };
       raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    start2();
+    jpFontReady().then(() => {
+      if (!alive) return;
+      if (!animate || reduce) paint(0);
+    });
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+    };
   }, [w, h, scale, animate, period]);
 
   return (

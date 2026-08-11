@@ -372,9 +372,139 @@ export class PixelGfx {
     return Math.max(0, w - letterSpace);
   }
 
+  // ── 和文 ──────────────────────────────────────────────────
+
+  /**
+   * 仮名・漢字をドットで置く。
+   *
+   * 手で1文字ずつ字母を彫るのはやめて、すでに版面で使っている DotGothic16 を
+   * 設計級数（16px）で描き、閾値で1bitに落としている。canvas の文字描画は
+   * 必ずアンチエイリアスがかかるが、この書体は16pxグリッドで設計されているので
+   * 中間調はほぼ輪郭にしか出ず、閾値を切れば元のドットがそのまま戻る。
+   *
+   * こうする理由: 実機のファミコンのラベルはカタカナと漢字が主役で、
+   * 欧文だけで組むと「ファミコン」ではなく「欧州のレトロ」に見える。
+   * 16枚のラベルが欧文だけだったのは、ここに和文を打つ道具が無かったせい。
+   *
+   * 戻り値は置いた幅。size は 16 の整数倍のみ（12pxに落とすと漢字が別字に化ける）。
+   */
+  textJP(
+    x: number,
+    y: number,
+    s: string,
+    c: string | null,
+    opts: { size?: 16 | 32; letterSpace?: number; threshold?: number } = {},
+  ): number {
+    const size = opts.size ?? 16;
+    const letterSpace = opts.letterSpace ?? 0;
+    const threshold = opts.threshold ?? 128;
+    let cx = x;
+    for (const ch of s) {
+      const g = jpGlyph(ch, size, threshold);
+      if (!g) {
+        cx += size / 2 + letterSpace;
+        continue;
+      }
+      for (let j = 0; j < g.h; j++)
+        for (let i = 0; i < g.w; i++) if (g.on[j * g.w + i]) this.px(cx + i, y + j, c);
+      cx += g.adv + letterSpace;
+    }
+    return cx - x - letterSpace;
+  }
+
+  textJPWidth(s: string, opts: { size?: 16 | 32; letterSpace?: number } = {}): number {
+    const size = opts.size ?? 16;
+    const letterSpace = opts.letterSpace ?? 0;
+    let w = 0;
+    for (const ch of s) {
+      const g = jpGlyph(ch, size, 128);
+      w += (g ? g.adv : size / 2) + letterSpace;
+    }
+    return Math.max(0, w - letterSpace);
+  }
+
   toImageData(): ImageData {
     return new ImageData(new Uint8ClampedArray(this.data), this.w, this.h);
   }
+}
+
+// ── 和文の字母を書体から起こす ────────────────────────────────
+
+type Glyph = { w: number; h: number; adv: number; on: Uint8Array };
+
+const glyphCache = new Map<string, Glyph | null>();
+let jpCanvas: HTMLCanvasElement | null = null;
+let jpCtx: CanvasRenderingContext2D | null = null;
+
+/** 書体が読み込まれるまでは字母を彫れない。描く前にこれを待つ。 */
+export function jpFontReady(): Promise<void> {
+  if (typeof document === "undefined") return Promise.resolve();
+  const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+  if (!fonts) return Promise.resolve();
+  return fonts.load('16px "DotGothic16"').then(() => fonts.ready.then(() => undefined));
+}
+
+function jpGlyph(ch: string, size: number, threshold: number): Glyph | null {
+  const key = `${ch}|${size}|${threshold}`;
+  const hit = glyphCache.get(key);
+  if (hit !== undefined) return hit;
+  if (typeof document === "undefined") {
+    glyphCache.set(key, null);
+    return null;
+  }
+  if (!jpCanvas) {
+    jpCanvas = document.createElement("canvas");
+    jpCanvas.width = 64;
+    jpCanvas.height = 64;
+    jpCtx = jpCanvas.getContext("2d", { willReadFrequently: true });
+  }
+  const ctx = jpCtx;
+  if (!ctx) {
+    glyphCache.set(key, null);
+    return null;
+  }
+
+  const pad = 4;
+  ctx.clearRect(0, 0, jpCanvas.width, jpCanvas.height);
+  ctx.font = `${size}px "DotGothic16", monospace`;
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#fff";
+  const adv = Math.round(ctx.measureText(ch).width);
+  ctx.fillText(ch, pad, pad + size);
+
+  const img = ctx.getImageData(0, 0, jpCanvas.width, jpCanvas.height).data;
+  // 閾値で1bitにしてから、実際にインクの乗った範囲だけを切り出す
+  let minx = 1e9;
+  let maxx = -1;
+  let miny = 1e9;
+  let maxy = -1;
+  const W = jpCanvas.width;
+  const H = jpCanvas.height;
+  const bits = new Uint8Array(W * H);
+  for (let j = 0; j < H; j++)
+    for (let i = 0; i < W; i++) {
+      const k = (j * W + i) * 4;
+      if (img[k + 3] < threshold) continue;
+      bits[j * W + i] = 1;
+      if (i < minx) minx = i;
+      if (i > maxx) maxx = i;
+      if (j < miny) miny = j;
+      if (j > maxy) maxy = j;
+    }
+  if (maxx < 0) {
+    // 空白など、インクの無い文字
+    const g: Glyph = { w: 0, h: 0, adv: adv || size / 2, on: new Uint8Array(0) };
+    glyphCache.set(key, g);
+    return g;
+  }
+  const gw = maxx - minx + 1;
+  const gh = maxy - miny + 1;
+  const on = new Uint8Array(gw * gh);
+  for (let j = 0; j < gh; j++)
+    for (let i = 0; i < gw; i++) on[j * gw + i] = bits[(miny + j) * W + (minx + i)];
+  const g: Glyph = { w: gw, h: gh, adv: adv || gw + 1, on };
+  glyphCache.set(key, g);
+  return g;
 }
 
 // 3x5 の欧文。ファミコンのラベル隅にある小さい英数字の見た目に寄せてある。

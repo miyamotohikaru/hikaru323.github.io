@@ -28,9 +28,11 @@ export default function Definition() {
               {line}
             </p>
           ))}
+          {/* 用例は見出し語「ふりっぷ」を使った文でなければ辞書にならない。
+              数え方（1本）と、置くという言い方を一文で見せている。 */}
           <p className="defn-ex">
             <span className="defn-ex-tag">用例</span>
-            「{first.desc}」——001 {first.title}
+            「あたらしい ふりっぷ を ひとつ つくって、世の中に置いた。」
           </p>
         </div>
         <dl className="defn-notes">
