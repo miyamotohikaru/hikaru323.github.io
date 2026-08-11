@@ -97,6 +97,7 @@ export default function SpeechDirector() {
     let lastHoverAt = 0;
     let lastRemoteAt = 0;
     let pendingSkin = false; // 解放したスキンの話をまだしていない
+    let idleTurn = 0; // ひとりごとの通し番号(豆知識・雑談を順番で回すのに使う)
     let idleTimer: ReturnType<typeof setTimeout> | null = null;
     const timers = new Set<ReturnType<typeof setTimeout>>();
 
@@ -137,8 +138,11 @@ export default function SpeechDirector() {
       curUntil = now + ms;
       lastAt = now;
       s.say(line.text, line.tone, ms);
-      // 何かしゃべった直後は、ひとりごとの時計を巻き戻して静かにする
-      armIdle(IDLE_MIN, IDLE_MAX);
+      // 何かしゃべった直後は、ひとりごとの時計を巻き戻して静かにする。
+      // ただし**軽い相づち(ホバー・他人の刺し・地球つつき)では巻き戻さない**。
+      // 遊んでいるあいだはそれらが絶えず飛ぶので、巻き戻していると
+      // ひとりごとの出番が永久に来ず、豆知識や雑談がまったく出なくなる。
+      if (prio >= P.PHASE) armIdle(IDLE_MIN, IDLE_MAX);
       return true;
     };
 
@@ -155,9 +159,11 @@ export default function SpeechDirector() {
      */
     const idlePool = (few: boolean): Line[] => {
       if (few) return FEW_LEFT;
-      const r = Math.random();
-      if (r < 0.16) return TRIVIA_EARTH; // 地球の豆知識
-      if (r < 0.31) return RANDOM; // まったく関係ない話
+      // 確率まかせだと「何十回も出ない」ことが普通に起きるので、順番で保証する。
+      // 4回に1回が地球の豆知識、4回に1回がまったく関係ない話、残り半分がふだんの話。
+      idleTurn++;
+      if (idleTurn % 4 === 1) return TRIVIA_EARTH;
+      if (idleTurn % 4 === 3) return RANDOM;
       return IDLE;
     };
 

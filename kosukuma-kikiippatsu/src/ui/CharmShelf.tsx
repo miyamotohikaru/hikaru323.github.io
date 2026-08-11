@@ -1029,6 +1029,25 @@ interface CharmIconProps {
   className?: string;
 }
 
+/**
+ * 未獲得のチャームに出す「?」。実物の形を出すと何がもらえるか先に分かって
+ * しまうので、伏せ字にする。**影(彫り)も ? の形**にしたいので、明るいふちを
+ * 太く敷いた上に暗い本体を重ねて、台に彫られたように見せる
+ * (獲得済みチャームの彫りと同じ、白40%のふち + 黒の本体)。
+ */
+function QuestionArt() {
+  // 他のチャームと同じ高さ(24四方のうち y=7〜21)に収まる大きさ
+  const hook = "M8.6 11 A3.4 3.4 0 1 1 12.6 13.6 L12 15.4 L12 16.9";
+  return (
+    <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path d={hook} stroke="rgba(255,255,255,.4)" strokeWidth="4.6" />
+      <circle cx="12" cy="19.5" r="2" fill="rgba(255,255,255,.4)" />
+      <path d={hook} stroke="rgba(0,0,0,.55)" strokeWidth="3" />
+      <circle cx="12" cy="19.5" r="1.2" fill="rgba(0,0,0,.55)" />
+    </g>
+  );
+}
+
 export function CharmIcon({ index, size = 28, ghost, className }: CharmIconProps) {
   const c = CHARMS[index];
   if (!c) return null;
@@ -1042,18 +1061,12 @@ export function CharmIcon({ index, size = 28, ghost, className }: CharmIconProps
       focusable="false"
     >
       {ghost ? (
-        /* 未獲得は「形だけ」。台のくぼみに彫られた影として、形は読めるままにする。
-           塗りは中立の黒、ふちは 3.1:1 を確保できる明るさ(白40%)。
+        /* 未獲得は「?」。実物の形を出すと、何がもらえるか先に分かってしまって
+           手に入れたときの驚きが消える。**影(彫り)も ? の形**にする。
            丸カンも同じ彫りで置いて、獲得済みと縦の位置がずれないようにする */
         <>
           <RingArt ghost />
-          <path
-            d={charmPath(c.shape)}
-            fill="rgba(0,0,0,.5)"
-            stroke="rgba(255,255,255,.4)"
-            strokeWidth="1"
-            strokeLinejoin="round"
-          />
+          <QuestionArt />
         </>
       ) : (
         <CharmGlyph index={index} />
