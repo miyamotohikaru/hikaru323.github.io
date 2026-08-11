@@ -7,6 +7,7 @@ import TiltCard from "@/components/TiltCard";
 import { Job } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
 import { saveReturn } from "@/lib/returnNav";
+import { primeTick, setTickEnabled, tick } from "@/lib/tick";
 
 /**
  * デッキ表示。151枚を「束」として見せ、指で送る。
@@ -100,7 +101,11 @@ type Flip = {
   /** 携帯でのカード幅（画面幅に対する%）。省略時は72 */
   narrowVW?: number;
   /** 束の枚数に応じて並びを組み直す（円弧のように輪の大きさが枚数で決まるもの） */
-  build?: (total: number) => Partial<Flip>;
+  build?: (total: number, touch: boolean) => Partial<Flip>;
+  /** 描くスロットを明示する（一周ぶんを、遠いところは間引いて並べる） */
+  slots?: number[];
+  /** その位置がカードの裏を向いているか */
+  isBack?: (n: number) => boolean;
   /** 手前に外れた板を地の色より沈ませるか */
   nearDark: boolean;
 };
@@ -111,6 +116,12 @@ const ARC_R = 1.6;
 const ARC_PERSP = 3.2;
 /** 前後それぞれ何枚まで描くか。これより外は互いに隠れて見えなくなる */
 const ARC_REACH = 24;
+/**
+ * 奥へ行くほど持ち上げる量（カード幅に対する比）。
+ * 輪を丸ごと倒すとカードまで傾いて読めなくなるので、カードは立てたまま
+ * 位置だけを楕円にする。これで向こう側が前面カードの上へ回り込む。
+ */
+const ARC_LIFT = 0.95;
 
 /**
  * 円弧の並びを、束の全枚数ぶんの輪としてつくる。
@@ -127,30 +138,52 @@ function arcStops(faces: number, reach: number): Record<number, Stop> {
     const deg = step * n;
     const th = (deg * Math.PI) / 180;
     const a = Math.abs(n);
+    const back = Math.abs(deg) > 90;
     out[n] = S({
       x: ARC_R * Math.sin(th),
+      // y はカード高さに対する比なので、幅の比から直しておく
+      y: (-ARC_LIFT * (1 - Math.cos(th))) / 2 / RATIO,
       z: ARC_R * (Math.cos(th) - 1),
       rotY: deg, // 円筒の接線に沿わせる
-      // 膜が濃いと縁の色がそろってしまい、束ではなく一枚の面に見える
-      veil: Math.min(0.1 + 0.026 * (a - 1), 0.78),
+      // 膜が濃いと縁の色がそろってしまい、束ではなく一枚の面に見える。
+      // 向こう側は暗い背面なので、薄めずそのまま沈ませる
+      veil: back ? 0.42 : Math.min(0.1 + 0.026 * (a - 1), 0.78),
       blur: a <= 2 ? 1.5 : 0,
-      // 端の数枚は消えていくようにして、輪の切れ目を見せない
-      opacity: Math.min(1, (reach - a) / 3),
+      opacity: 1,
     });
   }
   return out;
 }
 
-/** 円弧は束の枚数だけ輪に並ぶので、並びは枚数が決まってから組む */
-function buildArc(total: number) {
+/**
+ * 円弧は束の枚数だけ輪に並ぶので、並びは枚数が決まってから組む。
+ *
+ * 輪を手前に倒すと向こう側が上に覗く。ただし一周ぶんを全部描くと重いので、
+ * 手前は1枚ずつ、遠いところは間引いて並べる。
+ * 遠い位置のカードはほぼ真横〜裏向きで、隣どうしが何重にも重なるため、
+ * 間引いても隙間にはならない。
+ */
+function buildArc(total: number, touch: boolean) {
   const faces = Math.max(total, 3);
-  const reach = Math.min(ARC_REACH, Math.max(Math.floor((faces - 1) / 2), 1));
+  const half = Math.floor(faces / 2);
+  // 触る端末では枚数を抑える。輪の形は保てる範囲で粗くする
+  const reach = Math.min(touch ? 16 : ARC_REACH, Math.max(half, 1));
+  const far = touch ? 4 : 2;
+  const slots: number[] = [];
+  for (let n = -half; n <= half; n++) {
+    const a = Math.abs(n);
+    // 遠いところは間引くが、粗すぎると輪の上辺がギザギザになる
+    if (a <= reach || a % far === 0) slots.push(n);
+  }
+  const step = 360 / faces;
   return {
-    stops: arcStops(faces, reach + 1),
-    min: -(reach + 1),
-    max: reach + 1,
-    ahead: reach,
-    behind: reach,
+    stops: arcStops(faces, half + 1),
+    min: -(half + 1),
+    max: half + 1,
+    ahead: half,
+    behind: half,
+    slots,
+    isBack: (n: number) => Math.abs(step * n) > 90,
     // 1枚送るあいだに輪が動く距離。ここを合わせないと指と輪がずれる
     travel: ARC_R * ((2 * Math.PI) / faces),
   };
@@ -226,7 +259,8 @@ export const FLIPS: Flip[] = [
     origin: "50% 50%",
     perspectiveW: ARC_PERSP,
     travel: 0.07,
-    pad: 0.1,
+    // 向こう側が上へ回り込むので、その分の余白が要る
+    pad: 0.36,
     // 輪は横に場所が要るので、携帯ではカードを一回り小さくして広がる余地をつくる
     narrowVW: 52,
     nearDark: false,
@@ -371,16 +405,19 @@ export default function DeckView({
   const en = lang === "en";
   const total = jobs.length;
 
+  /** 指で操作している端末か。触る端末では傾き効果を止め、実カードの枚数も減らす */
+  const [touch, setTouch] = useState(false);
+
   const flip = useMemo(() => {
     const base = FLIPS.find((f) => f.id === flipId) ?? FLIPS[0];
-    return base.build ? { ...base, ...base.build(total) } : base;
-  }, [flipId, total]);
+    return base.build ? { ...base, ...base.build(total, touch) } : base;
+  }, [flipId, total, touch]);
 
   /** 描画に使う整数の基準。pos の四捨五入 */
   const [anchor, setAnchor] = useState(0);
   const [dragging, setDragging] = useState(false);
-  /** 指で操作している端末か。触る端末では傾き効果を止め、実カードの枚数も減らす */
-  const [touch, setTouch] = useState(false);
+  /** 送るたびの「カチッ」を鳴らすか */
+  const [sound, setSound] = useState(true);
 
   const posRef = useRef(0);
   const anchorRef = useRef(0);
@@ -405,6 +442,15 @@ export default function DeckView({
   const stage = useRef<HTMLDivElement>(null);
   const nodes = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const shadow = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("vja-tick");
+    if (saved === "off") setSound(false);
+  }, []);
+  useEffect(() => {
+    setTickEnabled(sound);
+    localStorage.setItem("vja-tick", sound ? "on" : "off");
+  }, [sound]);
 
   useEffect(() => {
     setTouch(matchMedia("(hover: none)").matches);
@@ -497,6 +543,8 @@ export default function DeckView({
     const a = Math.round(posRef.current);
     if (a !== anchorRef.current) {
       anchorRef.current = a;
+      // 1枚ぶん送られた合図。速い送りでは音の側で自動的に間引かれる
+      tick();
       setAnchor(a);
     }
   }, []);
@@ -718,8 +766,8 @@ export default function DeckView({
   const progress = (anchor / Math.max(total - 1, 1)) * 100;
 
   /** 束に出す枚数ぶんのスロット。key は位置なので中身が変わっても DOM は作り直さない */
-  const slots: number[] = [];
-  for (let k = -flip.ahead; k <= flip.behind; k++) slots.push(k);
+  const slots: number[] = flip.slots ?? [];
+  if (!flip.slots) for (let k = -flip.ahead; k <= flip.behind; k++) slots.push(k);
   // 触る端末では本物のカードを2枚までにして、ぼかしと画像の負担を減らす
   const realSlots = new Set(touch ? flip.realTouch : flip.real);
 
@@ -737,6 +785,7 @@ export default function DeckView({
           ["--deck-vw" as string]: `${flip.narrowVW ?? 72}`,
         }}
         onPointerDown={(e) => {
+          primeTick();
           if (reducedRef.current) return;
           cancelAnimationFrame(springRef.current);
           springRef.current = 0;
@@ -838,13 +887,15 @@ export default function DeckView({
               </div>
             );
           const job = jobs[idx];
+          // 輪の向こう側に回り込んだ位置は、カードの裏として描く
+          const back = flip.isBack?.(k) ?? false;
           return (
             <div
               key={k}
               ref={(el) => void nodes.current.set(k, el)}
               className={`vja-deck-card ${k === 0 ? "is-front" : ""} ${
                 k < 0 && flip.nearDark ? "is-near" : ""
-              }`}
+              } ${back ? "is-back" : ""}`}
               aria-hidden={k !== 0}
             >
               {/* 絵柄はこの中。ぼかしとセピアはここにだけ掛け、膜(::after)は素のまま残す */}
@@ -870,6 +921,8 @@ export default function DeckView({
                       <JobCard job={job} />
                     </TiltCard>
                   </a>
+                ) : back ? (
+                  <div className="vja-deck-back" aria-hidden />
                 ) : realSlots.has(k) ? (
                   <JobCard job={job} />
                 ) : (
@@ -912,6 +965,17 @@ export default function DeckView({
             className="vja-deck-nav"
           >
             <i className="vja-chev is-next" aria-hidden />
+          </button>
+          <button
+            onClick={() => {
+              primeTick();
+              setSound((v) => !v);
+            }}
+            aria-pressed={sound}
+            aria-label={en ? "sound" : "送る音"}
+            className={`vja-deck-nav vja-deck-sound ${sound ? "is-on" : ""}`}
+          >
+            <i aria-hidden />
           </button>
         </div>
 

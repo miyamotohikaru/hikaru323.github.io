@@ -219,6 +219,22 @@ body {
   box-shadow: 0 2px 3px rgba(58, 46, 34, 0.1), 0 22px 30px rgba(58, 46, 34, 0.2);
   border-radius: var(--card-r);
 }
+/* 輪の向こう側に回り込んだカードの裏。
+   紙のカードの裏はやはり紙なので、暗い板にせず紙色のまま少し沈ませる。
+   暗くすると輪の上辺だけが黒い帯になり、前面のカードと張り合ってしまう */
+.vja-deck-back {
+  width: 100%;
+  aspect-ratio: 34 / 47;
+  border-radius: var(--card-r);
+  background: color-mix(in oklab, #cfc6ae 46%, var(--vja-paper));
+  box-shadow: inset 0 0 0 1px rgba(58, 46, 34, 0.16);
+}
+/* 裏を向いた位置は、裏面を隠さずに見せる */
+.vja-deck-card.is-back {
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+}
+
 /* 絵柄の入れ物。ぼかしとセピアはここにだけ掛かる（膜には掛けない） */
 .vja-deck-face {
   width: 100%;
@@ -333,6 +349,34 @@ body {
 }
 .vja-deck-nav:disabled .vja-chev {
   border-color: rgba(58, 46, 34, 0.4);
+}
+
+/* 送る音の入切。鳴っているときだけ音波の線が出る */
+.vja-deck-sound i {
+  position: relative;
+  display: block;
+  width: 5px;
+  height: 9px;
+  border-radius: 1px;
+  background: rgba(58, 46, 34, 0.55);
+}
+.vja-deck-sound i::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 1px;
+  width: 5px;
+  height: 7px;
+  border-right: 1px solid rgba(58, 46, 34, 0.55);
+  border-radius: 0 50% 50% 0 / 0 50% 50% 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.vja-deck-sound.is-on i::after {
+  opacity: 1;
+}
+.vja-deck-sound:not(.is-on) i {
+  background: rgba(58, 46, 34, 0.28);
 }
 
 /* キーボード操作の居場所がわかるように */
