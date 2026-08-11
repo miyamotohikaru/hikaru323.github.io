@@ -389,9 +389,8 @@ function sample(flip: Flip, rel: number): Stop {
   };
 }
 
-/** 端でのゴムのような抵抗（引くほど重くなり、一定以上は動かない） */
-const rubber = (d: number, max: number) =>
-  Math.sign(d) * max * (1 - 1 / (Math.abs(d) / max + 1));
+/** 何枚めか。束は輪になっているので、はみ出したぶんは折り返す */
+const wrap = (n: number, total: number) => ((n % total) + total) % total;
 
 export default function DeckView({
   jobs,
@@ -438,6 +437,8 @@ export default function DeckView({
   const travelRef = useRef(96);
   const flipRef = useRef(flip);
   flipRef.current = flip;
+  const totalRef = useRef(total);
+  totalRef.current = total;
 
   const stage = useRef<HTMLDivElement>(null);
   const nodes = useRef<Map<number, HTMLDivElement | null>>(new Map());
@@ -549,6 +550,24 @@ export default function DeckView({
     }
   }, []);
 
+  /**
+   * 止まったところで、位置を一周ぶんの範囲へ畳む。
+   * 何周も回すと数字が際限なく大きくなるため。
+   * 位置と基準を同じだけずらすので、見た目は変わらない。
+   */
+  const normalize = useCallback(() => {
+    const t = totalRef.current;
+    if (t < 1) return;
+    const a = Math.round(posRef.current);
+    const shift = a - wrap(a, t);
+    if (shift === 0) return;
+    posRef.current -= shift;
+    targetRef.current -= shift;
+    baseRef.current -= shift;
+    anchorRef.current -= shift;
+    setAnchor(anchorRef.current);
+  }, []);
+
   /** バネで target まで運ぶ。離した瞬間の勢いをそのまま引き継ぐ */
   const spring = useCallback(
     (seedPxPerMs: number) => {
@@ -573,6 +592,7 @@ export default function DeckView({
           velRef.current = 0;
           paint();
           syncAnchor();
+          normalize();
           springRef.current = 0;
           return;
         }
@@ -581,7 +601,7 @@ export default function DeckView({
       cancelAnimationFrame(springRef.current);
       springRef.current = requestAnimationFrame(tick);
     },
-    [paint, syncAnchor]
+    [paint, syncAnchor, normalize]
   );
 
   /** 遠くへ送るときの動き。最初は速く、最後にすっと止まる */
@@ -605,18 +625,18 @@ export default function DeckView({
         velRef.current = 0;
         paint();
         syncAnchor();
+        normalize();
         springRef.current = 0;
       };
       cancelAnimationFrame(springRef.current);
       springRef.current = requestAnimationFrame(tick);
     },
-    [paint, syncAnchor]
+    [paint, syncAnchor, normalize]
   );
 
   const goTo = useCallback(
     (n: number, seed = 0) => {
-      const t = Math.min(Math.max(n, 0), total - 1);
-      if (t !== Math.round(posRef.current)) navigator.vibrate?.([0, 14]);
+      const t = n;
       targetRef.current = t;
       if (reducedRef.current) {
         posRef.current = t;
@@ -732,7 +752,7 @@ export default function DeckView({
   useEffect(() => {
     const id = setTimeout(() => {
       for (const n of [anchor + 1, anchor - 1]) {
-        if (n >= 0 && n < total) router.prefetch(`/jobs/${jobs[n].no}`);
+        router.prefetch(`/jobs/${jobs[wrap(n, total)].no}`);
       }
     }, 260);
     return () => clearTimeout(id);
@@ -762,8 +782,9 @@ export default function DeckView({
     []
   );
 
-  const current = jobs[Math.min(Math.max(anchor, 0), total - 1)];
-  const progress = (anchor / Math.max(total - 1, 1)) * 100;
+  const at = wrap(anchor, total);
+  const current = jobs[at];
+  const progress = (at / Math.max(total - 1, 1)) * 100;
 
   /** 束に出す枚数ぶんのスロット。key は位置なので中身が変わっても DOM は作り直さない */
   const slots: number[] = flip.slots ?? [];
@@ -814,15 +835,8 @@ export default function DeckView({
           samples.current.push({ x: e.clientX, t: performance.now() });
           if (samples.current.length > 6) samples.current.shift();
 
-          const travel = travelRef.current;
-          const raw = baseRef.current - dx / travel;
-          // 端では重くする
-          let next = raw;
-          if (raw < 0) next = rubber(raw * travel, travel * 0.6) / travel;
-          else if (raw > total - 1)
-            next =
-              total - 1 + rubber((raw - (total - 1)) * travel, travel * 0.6) / travel;
-          posRef.current = next;
+          // 束は輪なので端がない。指の動きをそのまま位置にする
+          posRef.current = baseRef.current - dx / travelRef.current;
 
           if (!rafRef.current) {
             rafRef.current = requestAnimationFrame(() => {
@@ -945,7 +959,6 @@ export default function DeckView({
         <div className="flex items-center gap-7">
           <button
             onClick={() => step(-1)}
-            disabled={anchor === 0}
             aria-label={en ? "previous card" : "前のカード"}
             className="vja-deck-nav"
           >
@@ -960,7 +973,6 @@ export default function DeckView({
           </p>
           <button
             onClick={() => step(1)}
-            disabled={anchor === total - 1}
             aria-label={en ? "next card" : "次のカード"}
             className="vja-deck-nav"
           >
