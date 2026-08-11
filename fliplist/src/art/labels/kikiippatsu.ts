@@ -1,5 +1,6 @@
 import type { LabelArt } from "./types";
 import { rng, shade, mix, type PixelGfx } from "../gfx";
+import { drawKosukumaSmall, KUMA, KUMA_SMALL_SIZE } from "../kosukuma";
 
 // 超巨大こすくまくん黒髭危機一髪。
 //
@@ -25,15 +26,26 @@ const GOLD_DK = "#96690f";
 const HILTS = ["#b4335f", "#2f68b8", "#b8412e", "#c49b28", "#2f8f86"];
 
 const CORAL = "#f2564a";
-const BEAR_L = "#fbf4dd";
-const BEAR_C = "#e9dcb6";
-const BEAR_S = "#c2b088";
-const BEAR_T = "#d6ab77";
-const BEAR_K = "#2f2942";
+
+// こすくまくんの輪郭。実物は黒に近いが、この絵の地（#06081a〜#0b1030）は
+// それより暗いので、黒のまま置くと輪郭が空に溶けて、ただのクリーム色の塊になる。
+// 空より確実に明るく、クリームよりはるかに暗い青紫に置き換える。
+// 太さ・角丸の頭・1点の目・ほくろは触らない。色だけ。
+const BEAR_LINE = "#1b1830";
+const BEAR_MOLE = "#33513f";
 
 const MCX = 40;
 const MCY = 47;
 const R = 25;
+/** 月の頂点 */
+const MTOP = MCY - R;
+
+// こすくまくんの座り位置。
+// 頂点（y=22）に足を揃えて置くと丈 26 が空にはみ出して頭が枠から出るので、
+// 頂点より少し手前（下）の面に座らせた。足もとが球の手前側に来るので、
+// 剣の生えぎわがくまの後ろから覗いて、かえって「刺されている球の上」に見える。
+const BX = 34;
+const BY = MTOP + 8 - KUMA_SMALL_SIZE.h;
 
 // 4x4 の整列ディザ。階調の境目をNESらしく刻む。
 const BAYER = [
@@ -63,25 +75,6 @@ function moonLevel(x: number, y: number): number {
 const step = (x: number, y: number, d: number) =>
   MOON[Math.max(0, Math.min(MOON.length - 1, Math.floor(moonLevel(x, y)) + d))];
 
-// こすくまくん。丸い耳・点の目・小さな口。輪郭線は引かず、明るさだけで抜く。
-const KUMA = [
-  "..CCC.......CCC..",
-  ".CLTLC.....CLLSC.",
-  ".CLLLC.....CLLSC.",
-  ".CCLLCCCCCCCLLSC.",
-  "..CCCCCCCCCCCCC..",
-  ".CCLLLLLLLLLLLSC.",
-  "CCLLLLLLLLLLLLLSC",
-  "CLLLLLLLLLLLLLLSC",
-  "CLLKKLLLLLLLKKLSC",
-  "CLLKKLLLLLLLKKLSC",
-  "CLLLLLLLLLLLLLLSC",
-  "CLLLLLLKLKLLLLLSC",
-  "CLLLLLLLKLLLLLLSC",
-  ".CCLLLLLLLLLLLSC.",
-  "..CCLLLLLLLLLSC..",
-  "...CCCCCCCCCCC...",
-];
 // ── 発行元の印 ──────────────────────────────────────────
 // 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
 const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
@@ -124,14 +117,6 @@ function jpEdge(
     jp(g, x + dx, y + dy, s, edge, sp);
   jp(g, x, y, s, fill, sp);
 }
-
-const KUMA_PAL: Record<string, string> = {
-  C: BEAR_C,
-  L: BEAR_L,
-  S: BEAR_S,
-  T: BEAR_T,
-  K: BEAR_K,
-};
 
 /**
  * 月に刺さった短剣を1本。ang は月の中心から見た向き、base は根元の半径。
@@ -191,7 +176,7 @@ function dagger(
 
 export const art: LabelArt = {
   slug: "kikiippatsu",
-  swatch: ["#0a0e28", "#68718f", "#f2564a", "#e8b23c", "#e9dcb6"],
+  swatch: ["#0a0e28", "#68718f", "#f2564a", "#e8b23c", KUMA.fill],
   draw: (g, t) => {
     // ── 宇宙 ───────────────────────────────────────────────
     g.rect(0, 0, 68, 40, SKY_DEEP);
@@ -250,7 +235,7 @@ export const art: LabelArt = {
 
     // ── 月 ─────────────────────────────────────────────────
     // ランバートを5段に量子化し、境目を整列ディザで繋ぐ。
-    for (let y = 21; y < 40; y++) {
+    for (let y = MTOP - 1; y < 40; y++) {
       for (let x = 1; x < 67; x++) {
         const dx = x - MCX;
         const dy = y - MCY;
@@ -265,7 +250,7 @@ export const art: LabelArt = {
     for (let a = -Math.PI * 0.995; a < -0.005; a += 0.02) {
       const x = Math.round(MCX + Math.cos(a) * (R - 0.4));
       const y = Math.round(MCY + Math.sin(a) * (R - 0.4));
-      if (y < 21 || y > 39) continue;
+      if (y < MTOP - 1 || y > 39) continue;
       g.px(x, y, Math.cos(a) < 0.1 ? "#cfd8e4" : "#4d5578");
     }
 
@@ -276,7 +261,7 @@ export const art: LabelArt = {
       const rr = Math.sqrt(rc()) * (R - 3);
       const cx = Math.round(MCX + Math.cos(a) * rr);
       const cy = Math.round(MCY + Math.sin(a) * rr);
-      if (cy < 22 || cy > 38 || cx < 2 || cx > 65) continue;
+      if (cy < MTOP + 1 || cy > 38 || cx < 2 || cx > 65) continue;
       const rad = rc() < 0.6 ? 1 : 2;
       g.disc(cx, cy, rad, step(cx, cy, -1));
       g.px(cx + rad, cy + rad - 1, step(cx, cy, 1));
@@ -285,8 +270,8 @@ export const art: LabelArt = {
     }
     // 海。球の大きさを出すために2つだけ、輪郭をぼかして置く。
     for (const [sx, sy, rx, ry] of [
-      [24, 33, 7, 3],
-      [48, 29, 5, 2],
+      [27, 34, 6, 3],
+      [49, 31, 4, 2],
     ]) {
       g.ellipse(sx, sy, rx, ry, step(sx, sy, -1), "half");
       g.ellipse(sx, sy, rx - 2, ry - 1, step(sx, sy, -1));
@@ -309,19 +294,22 @@ export const art: LabelArt = {
     for (const [a, len, h] of LIMB) dagger(g, a, R - 1, len, HILTS[h]);
 
     // 手前の面に生えたぶん。短く、間隔をあけて棘立って見せる。
-    // 数を詰めすぎると球が見えなくなるので、下半分は空けておく。
+    // 根元は月の半径に対する割合で持つ。月の大きさを変えても生え際が動かない。
+    // 真上（こすくまくんの座っている範囲）には生やさない。剣がまるごと
+    // くまの後ろに隠れて、描いても1本も見えないため。かわりに両脇へ寄せ、
+    // くまを左右から挟むように立てて「危機一髪」を作る。
     const FACE: Array<[number, number, number]> = [
-      [-2.86, 20, 1],
-      [-2.6, 15, 4],
-      [-2.34, 21, 3],
-      [-2.02, 13, 2],
-      [-1.74, 20, 0],
-      [-1.4, 22, 1],
-      [-1.1, 15, 4],
-      [-0.78, 21, 3],
-      [-0.44, 14, 2],
+      [-2.75, 0.92, 1],
+      [-2.55, 0.72, 4],
+      [-2.35, 0.88, 3],
+      [-2.1, 0.62, 2],
+      [-1.95, 0.96, 0],
+      [-1.05, 0.96, 1],
+      [-0.9, 0.7, 4],
+      [-0.7, 0.92, 3],
+      [-0.5, 0.72, 2],
     ];
-    for (const [a, rr, h] of FACE) dagger(g, a, rr, 6, HILTS[h]);
+    for (const [a, k, h] of FACE) dagger(g, a, Math.round(k * R), 6, HILTS[h]);
 
     // まだ届いていない剣。左の空いた宙に2本、軌跡の点を引いて飛ばす。
     const FLYING: Array<[number, number, number, number]> = [[13, 37, 0.72, 1]];
@@ -337,11 +325,14 @@ export const art: LabelArt = {
     }
 
     // 動き1: 剣が1本増える。刺さった瞬間だけ小さく火花。
+    // 真上（-1.6）に刺すとくまの背に完全に隠れて、動いていないラベルになる。
+    // くまの右脇、空の見えている側に刺す。
+    const NEW_A = -1.02;
     if (t > 0.5) {
-      dagger(g, -1.6, R - 1, 9, HILTS[2]);
+      dagger(g, NEW_A, R - 1, 9, HILTS[2]);
       if (t < 0.62) {
-        const sx = Math.round(MCX + Math.cos(-1.6) * (R - 1));
-        const sy = Math.round(MCY + Math.sin(-1.6) * (R - 1));
+        const sx = Math.round(MCX + Math.cos(NEW_A) * (R - 1));
+        const sy = Math.round(MCY + Math.sin(NEW_A) * (R - 1));
         g.px(sx - 3, sy, "#fff2b0");
         g.px(sx + 3, sy, "#fff2b0");
         g.px(sx - 2, sy - 2, "#f2564a");
@@ -350,23 +341,19 @@ export const art: LabelArt = {
     }
 
     // ── こすくまくん ───────────────────────────────────────
-    const bx = 32;
-    const by = 7;
-    // 月の上に落ちる接地影
-    g.ellipse(40, 23, 6, 1, "#4a5378");
-    g.hline(37, 23, 6, "#3b446a");
-    g.blit(bx, by, KUMA, KUMA_PAL);
-    // 前足。胴から少しだけはみ出す。
-    g.disc(bx - 1, by + 12, 1, BEAR_C);
-    g.disc(bx + 17, by + 12, 1, BEAR_C);
-    g.px(bx - 1, by + 13, BEAR_S);
-    g.px(bx + 17, by + 13, BEAR_S);
-    // 目の艶、ほっぺ、頭のてっぺんの照り
-    g.px(bx + 4, by + 8, "#7b7396");
-    g.px(bx + 13, by + 8, "#7b7396");
-    g.px(bx + 2, by + 11, "#eeb69c");
-    g.px(bx + 14, by + 11, "#eeb69c");
-    g.hline(bx + 6, by + 5, 5, "#fffdf2");
+    // 姿は kosukuma.ts が正解。ここでは置くだけで、目も耳も足さない。
+    drawKosukumaSmall(g, BX, BY, { line: BEAR_LINE, mole: BEAR_MOLE });
+    // 月に落ちる接地影。くまの後ろに敷くと足で全部隠れるので、足のすぐ下に置く。
+    // 色は月の階調から1段暗いぶんを引く。地の色で塗ると月に穴が開いて見える。
+    for (let x = BX + 1; x < BX + 16; x++)
+      for (let dy = 0; dy < 2; dy++) {
+        const y = BY + 27 + dy;
+        const dx = x - MCX;
+        const dyy = y - MCY;
+        if (dx * dx + dyy * dyy > R * R) continue;
+        if (dy === 1 && ((x + y) & 1) === 0) continue;
+        g.px(x, y, step(x, y, -1));
+      }
 
     // ── 瞬く星 ─────────────────────────────────────────────
     // 動き2: 4つだけ明滅する。全体は動かさない。
@@ -392,8 +379,8 @@ export const art: LabelArt = {
     // 実機の作法どおり、左に2行で組む。1行4字は幅いっぱいになって月を全部食うので、
     // 2字ずつ縦に積んで、右半分を月とくまに明け渡した。
     // 8方向に黒を回す。字間0でも黒が挟まるので、画数の多い漢字が繋がらない。
-    jpEdge(g, 3, 2, "危機", "#ffe9a8", "#05071a");
-    jpEdge(g, 3, 18, "一髪", CORAL, "#05071a");
+    jpEdge(g, 2, 2, "危機", "#ffe9a8", "#05071a");
+    jpEdge(g, 2, 18, "一髪", CORAL, "#05071a");
 
     // ── 枠 ─────────────────────────────────────────────────
     // 16枚共通の作法。外周1pxの単色だけ。四隅の飾りはやめた。

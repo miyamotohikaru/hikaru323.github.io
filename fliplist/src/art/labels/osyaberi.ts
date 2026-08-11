@@ -1,25 +1,56 @@
 import type { LabelArt } from "./types";
 import { shade, type PixelGfx } from "../gfx";
+import { drawKosukuma, KUMA, KUMA_SIZE } from "../kosukuma";
 
 // 元も子もないこすくまくん ── チャットでこすくまくんが身も蓋もないことを言う。
 //
 // 実物のサイトは、クラフト紙の地に切り絵の渦が縁取りされていて、
-// 真ん中に薄い黄色のくま、下に吹き出し。その配置をそのままラベルに畳む。
-// 左にくま、右に会話。くまは笑いも怒りもしない顔のままでいる。
+// 真ん中に薄い黄色のこすくまくん、下に吹き出し。その配置をそのままラベルに畳む。
+// 左にこすくまくん、右に会話。こすくまくんは笑いも怒りもしない顔のままでいる。
+//
+// このラベルではくまが主役なので 26x34 の大きい版（drawKosukuma）を使う。
+// 丈 34 はラベルの 40 をほとんど食うので、周りは次のとおり詰めた:
+//   ・切り絵の帯 4〜5px → 2px。渦と小花もその2pxの上に載る大きさに落とす。
+//   ・台紙は「丸」→「色紙（四隅を落とした八角）」。丸だと 26x34 の矩形が収まらず
+//     頭と足がはみ出して、貼り忘れのように見えた。色紙なら全身の背を取れる。
+//   ・会話は右の1列（x 35..66）に畳んで、行間を1pxずつ詰めた。
 
 const PAPER = "#cfb98f"; // クラフト紙
 const PAPER_DK = "#b8a074";
 const PAPER_LT = "#dfcda6";
 const OUTLINE = "#2b2119";
-const FUR = "#f7f0c2"; // こすくまくんの体
-const FUR_SH = "#e3d79c";
 const BUBBLE = "#fbf6e8";
 const BUBBLE_SH = "#ded2b6";
 const TAG = "#e58aae";
 const TAG_DK = "#b8577f";
+const STAGE = "#e8bcca"; // くまの背にした色紙
+const STAGE_DK = "#c0879c";
 
 // 切り絵の縁。色紙を順に重ねて層に見せる
 const CRAFT = ["#e8709c", "#f2a44a", "#4fb8a2", "#5f9fd8", "#a880d8", "#f0cf5e"];
+
+// ── くまの置き場所 ──────────────────────────────────────
+// 台紙はくまの実寸から起こす。左右に2px、上下に1pxずつの余白。
+const BEAR_X = 5;
+const BEAR_Y = 3;
+const SX = BEAR_X - 2;
+const SY = BEAR_Y - 1;
+const SW = KUMA_SIZE.w + 5; // 耳と手が 26 より1pxずつ外に出るので、その分も見る
+const SH = KUMA_SIZE.h + 3;
+
+/** 四隅を落とした八角形。切り絵の色紙はハサミで角を落としてある。 */
+function octa(x: number, y: number, w: number, h: number, k: number): Array<[number, number]> {
+  return [
+    [x + k, y],
+    [x + w - k, y],
+    [x + w, y + k],
+    [x + w, y + h - k],
+    [x + w - k, y + h],
+    [x + k, y + h],
+    [x, y + h - k],
+    [x, y + k],
+  ];
+}
 
 // ── 発行元の印 ──────────────────────────────────────────
 // 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
@@ -30,7 +61,7 @@ function mark(g: PixelGfx, body: string, eye: string) {
 
 export const art: LabelArt = {
   slug: "osyaberi",
-  swatch: [PAPER, FUR, "#e8bcca", TAG, OUTLINE],
+  swatch: [PAPER, KUMA.fill, STAGE, TAG, OUTLINE],
   draw: (g, t) => {
     // ── 地。クラフト紙 ────────────────────────────────────
     g.rect(0, 0, 68, 40, PAPER);
@@ -52,50 +83,52 @@ export const art: LabelArt = {
       g.ellipse(cx0, cy0, 14, 12, "#00000012", "half");
 
     // ── 切り絵の縁 ───────────────────────────────────────
-    // 周に沿って色紙を長く貼り、深さで濃淡をつける。継ぎ目には白い切り口。
-    const RUN = 17;
+    // 周に沿って色紙を長く貼る。くまが 34 丈あるので帯は2pxまで。
+    // 2pxでも「明るい面／暗い面」の2段は取れるので、紙が重なって見える。
+    const RUN = 13;
+    const W = 2;
     /** 周に沿った位置 p と深さ d を1ドットに落とす */
-    const layer = (x: number, y: number, d: number, p: number, w: number) => {
+    const layer = (x: number, y: number, d: number, p: number) => {
       const idx = Math.floor(p / RUN);
       const c = CRAFT[((idx % CRAFT.length) + CRAFT.length) % CRAFT.length];
       if (p % RUN === 0) {
-        g.px(x, y, "#fdf6e6");
+        g.px(x, y, "#fdf6e6"); // 継ぎ目の切り口
         return;
       }
-      g.px(x, y, d === 0 ? shade(c, 0.22) : d === w - 1 ? shade(c, -0.34) : c);
+      g.px(x, y, d === 0 ? shade(c, 0.22) : shade(c, -0.3));
     };
-    // 外周1pxは枠のために空けておく。色紙はその内側から貼る。
-    const edge = (x: number, y: number) => g.px(x, y, "#0000002e");
     for (let x = 1; x < 67; x++) {
-      const w = 4 + Math.round(Math.sin(x * 0.33) * 1.2);
-      for (let d = 0; d < w; d++) layer(x, 1 + d, d, x, w);
-      edge(x, 1 + w);
-      const w2 = 4 + Math.round(Math.sin(x * 0.29 + 2.2) * 1.2);
-      for (let d = 0; d < w2; d++) layer(x, 38 - d, d, 176 + (67 - x), w2);
-      edge(x, 38 - w2);
+      for (let d = 0; d < W; d++) layer(x, 1 + d, d, x);
+      for (let d = 0; d < W; d++) layer(x, 38 - d, d, 170 + (67 - x));
     }
-    for (let y = 1; y < 39; y++) {
-      const w = 4 + Math.round(Math.sin(y * 0.38 + 1.1) * 1.1);
-      for (let d = 0; d < w; d++) layer(1 + d, y, d, 284 + (39 - y), w);
-      edge(1 + w, y);
-      const w2 = 4 + Math.round(Math.sin(y * 0.44 + 3.4) * 1.1);
-      for (let d = 0; d < w2; d++) layer(66 - d, y, d, 68 + y, w2);
-      edge(66 - w2, y);
+    for (let y = 3; y < 37; y++) {
+      for (let d = 0; d < W; d++) layer(1 + d, y, d, 280 + (39 - y));
+      for (let d = 0; d < W; d++) layer(66 - d, y, d, 66 + y);
     }
-    // 渦。切り絵の帯の上でくるりと巻く
+    // 帯の内側に落ちる影。紙が浮いて見える
+    g.hline(1, 3, 66, "#0000002e");
+    g.hline(1, 36, 66, "#0000002e");
+    g.vline(3, 3, 34, "#0000002e");
+    g.vline(64, 3, 34, "#0000002e");
+
+    // 渦。切り絵の帯の上でくるりと巻く。2pxの帯に載る大きさに縮めた
     for (const [cx0, cy0, dir] of [
-      [4, 12, 1],
-      [64, 24, -1],
+      [12, 2, 1],
+      [64, 20, -1],
       [26, 37, 1],
-      [44, 2, -1],
+      [3, 22, -1],
     ]) {
-      for (let i = 0; i < 15; i++) {
-        const a = i * 0.62 * dir;
-        const r = 0.5 + i * 0.2;
-        g.px(Math.round(cx0 + Math.cos(a) * r), Math.round(cy0 + Math.sin(a) * r), i < 7 ? "#fdf6e6" : "#00000038");
+      for (let i = 0; i < 9; i++) {
+        const a = i * 0.72 * dir;
+        const r = 0.4 + i * 0.14;
+        g.px(
+          Math.round(cx0 + Math.cos(a) * r),
+          Math.round(cy0 + Math.sin(a) * r),
+          i < 4 ? "#fdf6e6" : "#00000038",
+        );
       }
     }
-    // 縁に散る小花と星
+    // 縁に散る小花
     const flower = (x: number, y: number, c: string, core: string) => {
       g.px(x, y - 1, c);
       g.px(x - 1, y, c);
@@ -103,116 +136,50 @@ export const art: LabelArt = {
       g.px(x, y + 1, c);
       g.px(x, y, core);
     };
-    flower(9, 2, "#fdf6e6", "#f0cf5e");
-    flower(61, 4, "#fdf6e6", "#e8709c");
-    flower(2, 24, "#fdf6e6", "#5f9fd8");
-    flower(65, 36, "#fdf6e6", "#f0cf5e");
-    flower(36, 37, "#fdf6e6", "#a880d8");
+    flower(19, 2, "#fdf6e6", "#f0cf5e");
+    flower(61, 2, "#fdf6e6", "#e8709c");
+    flower(2, 30, "#fdf6e6", "#5f9fd8");
+    flower(65, 30, "#fdf6e6", "#f0cf5e");
+    flower(41, 37, "#fdf6e6", "#a880d8");
     flower(53, 2, "#fdf6e6", "#4fb8a2");
-    // 星と紙のパンチ屑
-    const star = (x: number, y: number, c: string) => {
-      g.px(x, y, c);
-      g.px(x - 1, y - 1, c);
-      g.px(x + 1, y - 1, c);
-      g.px(x - 1, y + 1, c);
-      g.px(x + 1, y + 1, c);
-    };
-    star(20, 3, "#fdf6e6");
-    star(46, 37, "#fdf6e6");
-    star(3, 33, "#fdf6e6");
-    star(65, 14, "#fdf6e6");
+    // 紙のパンチ屑
     for (const [x, y, c] of [
-      [30, 3, "#e8709c"],
+      [33, 2, "#e8709c"],
       [15, 37, "#5f9fd8"],
       [58, 37, "#f2a44a"],
-      [3, 8, "#f0cf5e"],
-      [64, 20, "#e8709c"],
-      [42, 2, "#5f9fd8"],
-      [11, 36, "#a880d8"],
+      [2, 12, "#f0cf5e"],
+      [65, 12, "#e8709c"],
+      [46, 2, "#5f9fd8"],
+      [50, 37, "#a880d8"],
     ] as Array<[number, number, string]>) {
       g.px(x, y, c);
       g.px(x + 1, y, c);
-      g.px(x, y + 1, c);
-      g.px(x + 1, y + 1, c);
     }
-    // クラフト紙に散る色紙の粒
-    for (const [x, y, c] of [
-      [31, 12, "#e8a0bc"],
-      [33, 33, "#9fc4dc"],
-      [12, 8, "#e8a0bc"],
-      [56, 31, "#c8b0e0"],
-      [29, 24, "#e8c98a"],
-      [8, 30, "#9fc4dc"],
-      [64, 9, "#e8a0bc"],
-    ] as Array<[number, number, string]>) {
-      g.px(x, y, c);
-      g.px(x + 1, y + 1, c);
+
+    // ── 色紙の台。こすくまくんの背 ───────────────────────
+    g.poly(octa(SX + 1, SY + 2, SW, SH, 4), "#00000020");
+    g.poly(octa(SX, SY, SW, SH, 4), STAGE_DK);
+    g.poly(octa(SX + 1, SY + 1, SW - 2, SH - 2, 4), STAGE);
+    g.poly(octa(SX + 3, SY + 3, SW - 6, SH - 12, 3), "#f2d4de", "half");
+    g.noise(SX, SY, SW, SH, "#f4dde6", 0.06, 55);
+    // 台紙の縁に打った穴。切り絵らしさはここで出す
+    for (let i = 0; i < 8; i++) {
+      const y = SY + 4 + i * 4;
+      g.px(SX + 1, y, STAGE_DK);
+      g.px(SX + SW - 2, y, STAGE_DK);
+    }
+    for (let i = 0; i < 6; i++) {
+      const x = SX + 4 + i * 5;
+      g.px(x, SY + 1, STAGE_DK);
+      g.px(x, SY + SH - 2, STAGE_DK);
     }
 
     // ── こすくまくん ─────────────────────────────────────
-    const bx = 20;
-    const headY = 16;
-    const bodyY = 27;
+    // 姿は kosukuma.ts が正解。ここでは置くだけ。目や口を足さない。
+    g.ellipse(BEAR_X + 13, BEAR_Y + 34, 11, 1, "#00000026");
+    drawKosukuma(g, BEAR_X, BEAR_Y, { blink: t > 0.62 && t < 0.7 });
 
-    // 後ろに敷いた色紙の丸。切り絵の台
-    const STAGE = "#e8bcca";
-    const STAGE_DK = "#c0879c";
-    g.disc(bx, 21, 15, "#00000014");
-    g.disc(bx - 1, 20, 15, STAGE_DK);
-    g.disc(bx - 1, 20, 14, STAGE);
-    g.disc(bx - 1, 20, 10, "#f2d4de", "half");
-    g.ring(bx - 1, 20, 12, "#f6e2e9", 1);
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2 + 0.26;
-      g.px(Math.round(bx - 1 + Math.cos(a) * 12), Math.round(20 + Math.sin(a) * 12), STAGE_DK);
-    }
-    g.noise(5, 5, 32, 32, "#f4dde6", 0.07, 55);
-
-    // 輪郭をまとめて置いてから中身を塗ると、実物と同じ一本線の縁になる
-    // 影。紙に落ちる
-    g.ellipse(bx + 2, bodyY + 8, 10, 2, "#00000018");
-    // 耳
-    g.disc(bx - 7, headY - 6, 4, OUTLINE);
-    g.disc(bx + 7, headY - 6, 4, OUTLINE);
-    // 体と頭
-    g.ellipse(bx, bodyY, 11, 7, OUTLINE);
-    g.disc(bx, headY, 8, OUTLINE);
-    // 中身
-    g.disc(bx - 7, headY - 6, 3, FUR);
-    g.disc(bx + 7, headY - 6, 3, FUR);
-    g.ellipse(bx, bodyY, 10, 6, FUR);
-    g.disc(bx, headY, 7, FUR);
-    // 体の陰。右下に薄く
-    g.ellipse(bx + 4, bodyY + 2, 6, 4, FUR_SH, "quarter");
-    g.ellipse(bx + 5, headY + 3, 3, 2, FUR_SH, "quarter");
-    // 手
-    g.ellipse(bx - 9, bodyY - 1, 3, 2, OUTLINE);
-    g.ellipse(bx + 9, bodyY - 1, 3, 2, OUTLINE);
-    g.ellipse(bx - 9, bodyY - 1, 2, 1, FUR);
-    g.ellipse(bx + 9, bodyY - 1, 2, 1, FUR);
-    // 足
-    g.ellipse(bx - 5, bodyY + 6, 3, 2, OUTLINE);
-    g.ellipse(bx + 5, bodyY + 6, 3, 2, OUTLINE);
-    g.ellipse(bx - 5, bodyY + 6, 2, 1, FUR);
-    g.ellipse(bx + 5, bodyY + 6, 2, 1, FUR);
-    // お腹のほくろ
-    g.px(bx + 7, bodyY + 2, OUTLINE);
-
-    // 顔。なにも思っていない顔。まばたきだけする
-    const blink = t > 0.62 && t < 0.7;
-    if (blink) {
-      g.hline(bx - 5, headY - 1, 3, OUTLINE);
-      g.hline(bx + 3, headY - 1, 3, OUTLINE);
-    } else {
-      g.rect(bx - 5, headY - 2, 2, 3, OUTLINE);
-      g.rect(bx + 4, headY - 2, 2, 3, OUTLINE);
-      g.px(bx - 5, headY - 2, "#6b5a4a");
-      g.px(bx + 4, headY - 2, "#6b5a4a");
-    }
-    g.vline(bx, headY + 1, 2, OUTLINE);
-    g.px(bx - 1, headY + 2, OUTLINE);
-
-    // ── 会話。右に3つ、時間が来ると4つめが出る ──────────────
+    // ── 会話。右の1列に畳む ──────────────────────────────
     /** 吹き出し。tail が left なら左向きの尻尾がつく */
     const bubble = (
       x: number,
@@ -225,10 +192,6 @@ export const art: LabelArt = {
       lineC: string,
     ) => {
       g.rect(x, y, w, h, OUTLINE);
-      g.px(x, y, null);
-      g.px(x + w - 1, y, null);
-      g.px(x, y + h - 1, null);
-      g.px(x + w - 1, y + h - 1, null);
       g.rect(x + 1, y + 1, w - 2, h - 2, fill);
       g.hline(x + 1, y + h - 2, w - 2, BUBBLE_SH);
       if (tail === "left") {
@@ -250,65 +213,67 @@ export const art: LabelArt = {
     };
 
     // 相手（人間）の問いかけ。右寄せの小さいの。彩度を上げて紙から離す
-    bubble(45, 9, 18, 7, "#f2b0ca", [11, 6], "right", "#8f3f60");
+    bubble(43, 10, 20, 7, "#f2b0ca", [13, 7], "right", "#8f3f60");
+    // 問いかけの左に貼った切り絵の欠片。ここを空けると craft 紙が抜けて見える
+    flower(38, 12, "#fdf6e6", "#f0cf5e");
+    g.px(37, 15, "#e8709c");
+    g.px(38, 15, "#e8709c");
+    g.px(40, 16, "#5f9fd8");
+    g.px(41, 16, "#5f9fd8");
+    // 名札の右に時刻の紙片。ここを空けるとクラフト紙が大きく抜けて見える
+    g.rect(50, 18, 13, 3, "#e6d6b2");
+    g.hline(50, 18, 13, "#f2e6c8");
+    for (const x of [52, 54, 56, 59, 61]) g.px(x, 19, "#8a7658");
+
     // こすくまくんの名札つきの返事
-    g.rect(36, 14, 13, 5, TAG_DK);
-    g.rect(36, 14, 13, 4, TAG);
-    g.hline(37, 14, 11, "#f4b3c9");
-    g.px(36, 14, null);
-    g.px(48, 14, null);
-    for (let i = 0; i < 4; i++) g.vline(38 + i * 3, 15, 2, "#ffffff");
-    bubble(36, 19, 27, 9, BUBBLE, [21, 22, 15], "left", "#4a3c2e");
+    g.rect(36, 17, 13, 5, TAG_DK);
+    g.rect(36, 17, 13, 4, TAG);
+    g.hline(37, 17, 11, "#f4b3c9");
+    for (let i = 0; i < 4; i++) g.vline(38 + i * 3, 18, 2, "#ffffff");
+    bubble(36, 22, 28, 9, BUBBLE, [22, 23, 16], "left", "#4a3c2e");
     // 吹き出しの上端に色紙を1枚はさむ。白い長方形に見せない。
-    g.hline(37, 20, 25, "#f2dde6");
-    g.hline(37, 26, 15, "#e6d8c0");
+    g.hline(37, 23, 26, "#f2dde6");
+    g.hline(37, 29, 16, "#e6d8c0");
     // 身も蓋もない一節にだけ朱が引いてある
-    g.hline(39, 24, 13, "#c8506e");
-    g.px(38, 24, "#c8506e");
+    g.hline(40, 27, 13, "#c8506e");
+    g.px(39, 27, "#c8506e");
     // 吹き出しの角にはられた切り絵の花
-    flower(62, 19, "#fdf6e6", "#4fb8a2");
-    flower(35, 18, "#fdf6e6", "#f2a44a");
-    // とどめの一言。「……」だけ
+    flower(63, 22, "#fdf6e6", "#4fb8a2");
+    flower(35, 21, "#fdf6e6", "#f2a44a");
+
+    // 動き2: とどめの一言。打っている途中の点が増えていって、「……」に変わる。
+    // 途中も完成後も同じ吹き出しの形で出す。形が入れ替わると、点滅して見える。
     if (t > 0.45) {
-      bubble(37, 29, 15, 8, BUBBLE, [], "left", "#4a3c2e");
-      for (let i = 0; i < 3; i++) g.rect(40 + i * 4, 32, 2, 2, "#3b2f24");
+      bubble(37, 32, 16, 6, BUBBLE, [], "left", "#4a3c2e");
+      for (let i = 0; i < 3; i++) g.rect(40 + i * 4, 34, 2, 2, "#3b2f24");
     } else {
-      // 打っている途中の点
-      g.rect(38, 30, 12, 5, "#c0a880");
-      g.frame(38, 30, 12, 5, "#9a8260");
-      for (let i = 0; i < 3; i++) g.px(41 + i * 3, 32, "#6b5a4a");
+      bubble(37, 32, 16, 6, "#e0d2b4", [], "left", "#6b5a4a");
+      // PixelCanvas は1周を12コマに割る。12で刻めば点が 1→2→3 と等間隔に増える。
+      const n = 1 + (Math.floor(t * 12) % 3);
+      for (let i = 0; i < n; i++) g.rect(40 + i * 4, 34, 2, 2, "#8a7658");
     }
-    // 返事についた反応。色紙で作ったボタンという体
-    for (const [rx, rc] of [
-      [52, "#e8709c"],
-      [57, "#5f9fd8"],
-      [62, "#f0cf5e"],
-    ] as Array<[number, string]>) {
-      g.disc(rx, 30, 2, OUTLINE);
-      g.disc(rx, 30, 2, rc, "solid");
-      g.ring(rx, 30, 2, OUTLINE, 1);
-      g.px(rx - 1, 29, "#fdf6e6");
-      g.px(rx, 32, "#00000033");
-    }
+    // 返事についた反応。色紙で作ったボタンという体。
+    // 右下 (61,33) の発行元の印にかからない x53..59 にだけ置く。
+    g.disc(57, 34, 2, OUTLINE);
+    g.rect(56, 33, 3, 3, "#e8709c");
+    g.px(56, 33, "#fdf6e6");
+    g.rect(53, 32, 2, 2, "#5f9fd8");
+    g.rect(53, 36, 2, 2, "#f0cf5e");
 
     // ── 名札。題字を兼ねる ────────────────────────────────
-    g.rect(33, 2, 24, 7, TAG_DK);
-    g.rect(33, 2, 24, 6, TAG);
-    g.hline(34, 2, 22, "#f4b3c9");
-    g.text3x5(35, 3, "BLUNT", "#ffffff");
-    g.px(33, 2, null);
-    g.px(56, 2, null);
-    g.px(33, 8, null);
-    g.px(56, 8, null);
+    g.rect(36, 2, 24, 7, TAG_DK);
+    g.rect(36, 2, 24, 6, TAG);
+    g.hline(37, 2, 22, "#f4b3c9");
+    g.text3x5(38, 3, "BLUNT", "#ffffff");
     // 名札を留めるピン
-    g.px(58, 5, TAG_DK);
-    g.px(59, 4, TAG_DK);
-    g.px(59, 6, TAG_DK);
-    g.px(60, 5, TAG_DK);
+    g.px(61, 5, TAG_DK);
+    g.px(62, 4, TAG_DK);
+    g.px(62, 6, TAG_DK);
+    g.px(63, 5, TAG_DK);
 
     // ── 枠 ──────────────────────────────────────────────
     // 16枚共通の作法。外周1pxの単色だけ。切り絵の帯はその内側の絵。
     g.frame(0, 0, 68, 40, OUTLINE);
-    mark(g, OUTLINE, FUR);
+    mark(g, OUTLINE, KUMA.fill);
   },
 };

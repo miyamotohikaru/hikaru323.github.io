@@ -1,5 +1,6 @@
 import type { LabelArt } from "./types";
 import type { PixelGfx } from "../gfx";
+import { drawKosukumaSmall, KUMA, KUMA_SMALL_SIZE } from "../kosukuma";
 
 // インスタント人助け — 半径500m・10分以内。報酬もポイントもない。
 // 実物は地図アプリ。近くで上がった「助けて」に、となりさんが駆けつける。
@@ -28,10 +29,6 @@ const GND_D = "#8a7053";
 const GND_L = "#cdb591";
 const CURB = "#6a533a";
 
-const FUR = "#f8efc6";
-const FUR_S = "#dcc290";
-const FUR_H = "#fffceb";
-
 const RED = "#d92c14";
 const RED_D = "#8f1408";
 const RED_L = "#f2705a";
@@ -42,11 +39,11 @@ const CREAM = "#f6e9c8";
 // 「ー」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
 // 16px の枡の中に据え直すための落とし幅。
 const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
-function jp(g: PixelGfx, x: number, y: number, s: string, c: string, sp = 0) {
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string, size: number, sp = 0) {
   let cx = x;
   for (const ch of s) {
-    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
-    cx += 16 + sp;
+    g.textJP(cx, y + Math.round(((JP_DROP[ch] ?? 0) * size) / 16), ch, c, { size });
+    cx += size + sp;
   }
 }
 /** 8方向にふちを回してから塗る。夕空の上でも字が沈まない。 */
@@ -57,6 +54,7 @@ function jpEdge(
   s: string,
   fill: string,
   edge: string,
+  size = 16,
   sp = 0,
 ) {
   for (const [dx, dy] of [
@@ -69,34 +67,17 @@ function jpEdge(
     [-1, 1],
     [1, 1],
   ] as const)
-    jp(g, x + dx, y + dy, s, edge, sp);
-  jp(g, x, y, s, fill, sp);
+    jp(g, x + dx, y + dy, s, edge, size, sp);
+  jp(g, x, y, s, fill, size, sp);
 }
 
-// こすくま。手前の腕だけ別にして、差し出す動きを付ける。
-const BEAR = [
-  ".KKKK...KKKK......",
-  "KBBBBK.KBBBBK.....",
-  "KBBBBK.KBBBBK.....",
-  "KBHHHBKBBBBBK.....",
-  "KHHHBBBBBBBBK.....",
-  "KHHBBBBBBBBSK.....",
-  "KBBKBBBBBKBSK.....",
-  "KBBBBBBBBBSSK.....",
-  "KBBBBKKKBBSSK.....",
-  ".KBBBBBBSSSK......",
-  "..KBBBBBBBK.......",
-  "...KBBBBBK........",
-  "..KBBBBBBBKK......",
-  ".KHHHBBBBBBBK.....",
-  ".KHHBBBBBBBSK.....",
-  ".KHBBBBBBSSSK.....",
-  ".KBBBSSSSSSBK.....",
-  "..KBBKKKBBBK......",
-  "..KKK...KKKK......",
-];
-const ARM = ["..KKK.", ".KBBBK", "KBBBBK", "KBHBBK", ".KKKK."];
-const FURPAL = { K: INK, B: FUR, H: FUR_H, S: FUR_S };
+// ── こすくまくんの置き場所 ──────────────────────────────
+// 正しいこすくまくんは小さい版でも丈 26。夕空の題字（16px＝丈16）と縦に
+// 並べると 26+16=42 でラベルの 40 を超えるので、両方を上下に積むことはできない。
+// そこで題字を横へどかし、こすくまくんは左端に丸ごと立たせた。
+// 題字は 13px（textJP の下限）まで落として、くまと赤ピンのあいだに収めてある。
+const BX = 2;
+const BY = 31 - KUMA_SMALL_SIZE.h;
 
 // 助けを求めている人。片手を挙げている。
 const PERSON = [
@@ -125,10 +106,8 @@ function mark(g: PixelGfx, body: string, eye: string) {
 
 export const art: LabelArt = {
   slug: "hitodasuke",
-  swatch: ["#f4a54c", "#d92c14", "#f8efc6", "#2a1710", "#c8b298"],
+  swatch: ["#f4a54c", "#d92c14", KUMA.fill, "#2a1710", "#c8b298"],
   draw: (g, t) => {
-    const hand = t < 0.5 ? 0 : 1;
-
     // ── 空 ────────────────────────────────────────────────
     g.rect(0, 0, 68, 22, SKY0);
     g.rect(0, 5, 68, 17, SKY1);
@@ -140,15 +119,15 @@ export const art: LabelArt = {
     g.rect(0, 20, 68, 2, SKY4);
     g.rect(0, 20, 68, 1, SKY3, "half");
 
-    // 夕方の太陽
-    g.disc(9, 6, 5, SUN);
-    g.disc(8, 5, 3, SUN2);
-    g.hline(15, 3, 2, SUN);
-    g.hline(16, 7, 3, SUN);
-    g.hline(1, 13, 3, SUN);
-    g.hline(9, 14, 2, SUN);
-    g.px(2, 1, SUN);
-    g.px(15, 11, SUN);
+    // 夕方の太陽。こすくまくんが左端いっぱいに立つので、その頭の上へ逃がした。
+    // 耳の後ろから半分だけ覗く。
+    g.disc(7, 2, 5, SUN);
+    g.disc(6, 1, 3, SUN2);
+    g.hline(13, 1, 2, SUN);
+    g.hline(14, 5, 3, SUN);
+    g.px(1, 8, SUN);
+    g.px(2, 8, SUN);
+    g.px(12, 8, SUN);
 
     // 鳥
     g.px(46, 3, INK2);
@@ -208,13 +187,16 @@ export const art: LabelArt = {
     groundRing(g, 33, 27, 34, 4, "#fff6dc", "#5c4630");
 
     // 走ってきた足あと。こすくまから、助けを求めた人へ続く。
-    for (let i = 0; i < 5; i++) {
-      const x = 25 + i * 4;
+    // 動き2: 先頭の1歩だけが明るく点る。経路が引かれていく地図の見え方。
+    for (let i = 0; i < 6; i++) {
+      const x = 22 + i * 4;
       const y = 31 - (i % 2) * 2;
-      g.px(x, y, "#6a533a");
-      g.px(x + 1, y, "#6a533a");
-      g.px(x, y - 1, "#6a533a");
-      g.px(x + 1, y + 1, "#8a7053");
+      const lit = Math.floor(t * 6) === i;
+      const c = lit ? "#fff1c4" : "#6a533a";
+      g.px(x, y, c);
+      g.px(x + 1, y, c);
+      g.px(x, y - 1, c);
+      g.px(x + 1, y + 1, lit ? "#e8c98a" : "#8a7053");
     }
 
     // 街かどの案内標識。地図アプリの絵なので、方角の板を立てる。
@@ -243,9 +225,10 @@ export const art: LabelArt = {
     g.hline(24, 33, 6, "#5a2510");
 
     // ── 助けを求める人と荷物 ─────────────────────────────
-    g.ellipse(52, 32, 5, 1, "#00000038");
-    g.ellipse(61, 32, 3, 1, "#00000038");
-    g.blit(48, 20, PERSON, {
+    // ピンの真下に頭が来るよう、人は右へ、荷物は左へ入れ替えた。
+    g.ellipse(60, 32, 5, 1, "#00000038");
+    g.ellipse(50, 32, 3, 1, "#00000038");
+    g.blit(56, 20, PERSON, {
       K: INK,
       S: "#f2b98a",
       N: "#c98a5e",
@@ -253,64 +236,67 @@ export const art: LabelArt = {
       D: "#2b4f86",
       T: "#3a3a4a",
     });
-    g.blit(58, 27, CASE, { K: INK, B: "#a8641f", L: "#d59a4a", M: "#f0c070" });
-    g.px(60, 26, INK);
-    g.px(61, 26, INK);
+    g.blit(48, 27, CASE, { K: INK, B: "#a8641f", L: "#d59a4a", M: "#f0c070" });
+    g.px(50, 26, INK);
+    g.px(51, 26, INK);
 
     // ── 赤いピン ──────────────────────────────────────────
+    // 題字を左へ通すために、もとの位置から3px右・1px下へずらしてある。
     // 合図は輪になって外へ広がる（この絵で動くのはここだけ）
+    // 半径を1つ落として右上へ寄せた。もとの大きさ・位置だと題字の「け」と
+    // 赤どうしが重なって、風船と字が1つの赤い塊に見えたため。
+    const PX0 = 59;
+    const PY0 = 8;
     for (let k = 0; k < 3; k++) {
       const p = (t + k / 3) % 1;
-      const r = 8 + Math.floor(p * 5);
+      const r = 8 + Math.floor(p * 4);
       const c = p < 0.4 ? RED : p < 0.75 ? RED_L : "#f9c2b2";
-      for (let a = -62; a <= 62; a += 7) {
+      for (let a = -55; a <= 55; a += 7) {
         const rad = (a * Math.PI) / 180;
-        g.px(57 + Math.round(Math.sin(rad) * r), 8 - Math.round(Math.cos(rad) * r), c);
+        g.px(PX0 + Math.round(Math.sin(rad) * r), PY0 - Math.round(Math.cos(rad) * r), c);
       }
     }
 
     g.poly(
       [
-        [50, 10],
-        [64, 10],
-        [57, 19],
+        [PX0 - 6, PY0 + 2],
+        [PX0 + 6, PY0 + 2],
+        [PX0, PY0 + 10],
       ],
       INK,
     );
-    g.disc(57, 8, 6, INK);
+    g.disc(PX0, PY0, 5, INK);
     g.poly(
       [
-        [51, 10],
-        [63, 10],
-        [57, 17],
+        [PX0 - 5, PY0 + 2],
+        [PX0 + 5, PY0 + 2],
+        [PX0, PY0 + 8],
       ],
       RED,
     );
-    g.disc(57, 8, 5, RED);
-    g.disc(55, 6, 2, RED_L);
-    g.px(54, 5, "#ffc8b8");
-    g.rect(52, 11, 11, 3, RED_D, "half");
+    g.disc(PX0, PY0, 4, RED);
+    g.disc(PX0 - 2, PY0 - 2, 1, RED_L);
+    g.px(PX0 - 3, PY0 - 3, "#ffc8b8");
+    g.rect(PX0 - 4, PY0 + 3, 9, 3, RED_D, "half");
     // ピンの中の「!」
-    g.vline(57, 5, 4, CREAM);
-    g.px(57, 10, CREAM);
-
-    // ── こすくま。駆けつける。 ───────────────────────────
-    g.ellipse(13, 33, 8, 1, "#00000040");
-    g.blit(5, 15, BEAR, FURPAL);
-    g.blit(16, 27 - hand, ARM, FURPAL);
-    // ほお
-    g.px(6, 22, "#f2a68c");
-    g.px(7, 22, "#f2a68c");
-    g.px(14, 22, "#f2a68c");
-    // 走っている砂ぼこり
-    g.px(2, 32, GND_L);
-    g.px(3, 31, "#ffffff");
-    g.px(0, 30, GND_L);
+    g.vline(PX0, PY0 - 3, 3, CREAM);
+    g.px(PX0, PY0 + 1, CREAM);
 
     // ── 題字 ──────────────────────────────────────────────
-    // 実機の作法どおり、夕空に大きく。こすくまの耳の上を堂々と横切らせる。
     // 赤にクリームのふちを回す。夕焼けのどの段の上でも字が沈まない組み合わせ。
-    jpEdge(g, 3, 2, "人助け", RED, CREAM);
+    // こすくまくん（x1..18）と赤ピン（x54..）のあいだ、x17..55 に納める。
+    jpEdge(g, 17, 2, "人助け", RED, CREAM, 13);
+
+    // ── こすくまくん。駆けつける。 ───────────────────────
+    // 姿は kosukuma.ts が正解。ここでは置くだけ。ほお紅も口も足さない。
+    // 題字より手前に置く。夕空の題字がくまの背に回るのは実機の作法どおり。
+    g.ellipse(BX + 8, 32, 8, 1, "#00000040");
+    drawKosukumaSmall(g, BX, BY);
+    // 駆けつけてきた砂ぼこり。左足の後ろから
+    g.px(1, 31, "#ffffff");
+    g.px(0, 30, GND_L);
+    g.px(20, 31, GND_L);
+    g.px(21, 30, "#ffffff");
 
     // ── 下の帯 ────────────────────────────────────────────
     // 型番は外装の下帯に刻印されているので、ラベルには入れない。

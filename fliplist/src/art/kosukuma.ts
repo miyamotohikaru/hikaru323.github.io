@@ -177,9 +177,11 @@ export function drawKosukumaSmall(g: PixelGfx, x: number, y: number, o: KumaOpti
   paint(g, blob(7.5, 19, 6, 5.5, 2.0), fill, line, false); // 胴
   paint(g, blob(7.5, 8.5, 6.5, 7, 2.2), fill, line, false); // 頭
 
+  // 小さい版は目が1点なので、閉じるときは横に1px伸ばして「線」にする。
+  // 同じ点を描いていると、まばたきを指定しても何も変わらない。
   if (o.blink) {
-    g.px(5, 10, line);
-    g.px(10, 10, line);
+    g.hline(4, 10, 2, line);
+    g.hline(10, 10, 2, line);
   } else {
     g.px(5, 10, line);
     g.px(10, 10, line);
