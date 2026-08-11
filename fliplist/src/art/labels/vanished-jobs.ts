@@ -35,6 +35,13 @@ const PAPER = "#ece0c4";
 const BAND = "#181018";
 const RUST = "#c0453a";
 
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 const MAN = [
   "..KKKK..",
   ".KKKKKK.",
@@ -70,19 +77,19 @@ export const art: LabelArt = {
 
     // 星
     const sr = rng(3311);
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 34; i++) {
       const x = 2 + Math.floor(sr() * 64);
-      const y = 2 + Math.floor(sr() * 12);
-      g.px(x, y, sr() < 0.4 ? "#7f74a4" : "#cabfe0");
+      const y = 2 + Math.floor(sr() * 16);
+      g.px(x, y, sr() < 0.45 ? "#7f74a4" : "#d6cce8");
     }
 
     // 月
-    g.disc(36, 6, 4, "#ded2b2");
-    g.disc(35, 5, 3, "#fdf6dc");
-    g.px(37, 4, "#c8bb9a");
-    g.px(38, 7, "#c8bb9a");
-    g.px(34, 8, "#c8bb9a");
-    g.ring(36, 6, 6, "#463a60", 1);
+    g.disc(47, 7, 4, "#ded2b2");
+    g.disc(46, 6, 3, "#fdf6dc");
+    g.px(48, 5, "#c8bb9a");
+    g.px(49, 8, "#c8bb9a");
+    g.px(45, 9, "#c8bb9a");
+    g.ring(47, 7, 6, "#463a60", 1);
 
     // ── 街なみ。切妻の続く古い通り。 ─────────────────────
     const houses: Array<[number, number, number]> = [
@@ -134,6 +141,17 @@ export const art: LabelArt = {
     }
     g.hline(0, 24, 68, "#7a4e5c");
     g.hline(0, 25, 68, "#0d0a16", "half");
+    // まだ灯りのついている店先。歩道にこぼれている。
+    g.rect(37, 18, 8, 7, "#0f0c18");
+    g.rect(38, 19, 6, 5, "#e8a838");
+    g.vline(41, 19, 5, "#0f0c18");
+    g.hline(38, 21, 6, "#b07820");
+    g.hline(38, 18, 8, "#4e4270");
+    g.px(37, 17, "#4e4270");
+    g.px(44, 17, "#4e4270");
+    g.ellipse(41, 26, 5, 2, "#8a5a2855");
+    g.ellipse(41, 26, 3, 1, "#a86a2855");
+
     // 雨あがりの水たまり。灯りが1本ぶんだけ映る。
     g.ellipse(24, 30, 7, 2, "#2a2334");
     g.ellipse(24, 30, 6, 1, "#3b2f42");
@@ -170,11 +188,13 @@ export const art: LabelArt = {
     g.hline(47, 31, 7, "#5c3c30");
 
     // ── 図鑑の版面。刷り込みの小札。 ─────────────────────
-    g.rect(1, 1, 26, 9, "#130e21d8");
-    g.hline(1, 9, 26, "#7d6136");
-    g.vline(26, 1, 9, "#7d6136");
-    g.text3x5(2, 3, "NO.014", PLATE);
-    g.text3x5(44, 3, "HVC-KS", "#9a86bc");
+    // 標本の番号と年だけ。名前は下の帯が担う。型番は外装に刻印されているので入れない。
+    g.rect(1, 1, 26, 15, "#130e21dc");
+    g.hline(1, 15, 26, "#7d6136");
+    g.vline(26, 1, 15, "#7d6136");
+    g.text3x5(2, 2, "NO.014", PLATE);
+    g.hline(2, 8, 23, "#5e4a2a");
+    g.text3x5(2, 10, "1957", "#9c8558");
     // 絶滅の印
     for (const [dx, dy] of [
       [0, -1],
@@ -183,7 +203,7 @@ export const art: LabelArt = {
       [1, 0],
       [0, 1],
     ] as const)
-      g.px(29 + dx, 5 + dy, RUST);
+      g.px(30 + dx, 4 + dy, RUST);
 
     // 褪せた紙。よごれは控えめに。
     g.noise(1, 1, 66, 30, "#a89478", 0.012, 7717);
@@ -191,24 +211,20 @@ export const art: LabelArt = {
     g.rect(60, 1, 7, 7, "#0a0810", "eighth");
     g.rect(1, 24, 7, 7, "#0a0810", "eighth");
 
-    // ── 下の見出し帯 ──────────────────────────────────────
+    // ── 下の見出し帯。ここが題字 ──────────────────────────
     g.rect(0, 32, 68, 8, BAND);
     g.hline(0, 32, 68, PLATE);
     g.hline(0, 33, 68, "#2e2028");
-    g.text3x5(2, 34, "LAMPLIGHTER", PAPER);
-    g.text3x5(48, 34, "1957", "#b09a6c");
-    g.px(64, 35, RUST);
-    g.px(65, 36, RUST);
-    g.px(64, 37, RUST);
-    g.px(63, 36, RUST);
+    g.text3x5(2, 34, "VANISHED JOBS", PAPER);
+    g.px(55, 35, RUST);
+    g.px(56, 36, RUST);
+    g.px(55, 37, RUST);
+    g.px(54, 36, RUST);
 
     // ── ふち ──────────────────────────────────────────────
-    g.frame(0, 0, 68, 40, "#090710");
-    g.frame(1, 1, 66, 38, "#7d6136");
-    g.px(1, 1, PLATE);
-    g.px(66, 1, PLATE);
-    g.px(1, 38, PLATE);
-    g.px(66, 38, PLATE);
+    // 16枚共通の作法。外周1pxの単色だけ。
+    g.frame(0, 0, 68, 40, "#7d6136");
+    mark(g, PLATE, BAND);
   },
 };
 
@@ -235,10 +251,13 @@ function lamp(g: PixelGfx, x: number, top: number, base: number, size: number, l
   const gw = size * 2 - 1;
   g.rect(x - size + 1, top + size + 1, gw, size + 2, IRON);
   if (lit > 0) {
-    g.rect(x - size + 2, top + size + 1, gw - 2, size + 1, lit > 0.6 ? GOLD2 : "#6b4a24");
+    g.rect(x - size + 2, top + size + 1, gw - 2, size + 1, lit > 0.6 ? "#ffbe44" : "#7a5426");
     if (lit > 0.6) {
-      g.vline(x, gy - 1, 3, GOLD);
-      g.px(x, gy, "#fff6dc");
+      g.vline(x, gy - 1, 3, "#fff2c0");
+      g.px(x, gy, "#ffffff");
+      g.px(x - 1, gy, GOLD);
+      g.px(x + 1, gy, GOLD);
+      g.hline(x - size + 2, top + size + 1, gw - 2, GOLD2);
     } else {
       g.px(x, gy, GOLD3);
     }

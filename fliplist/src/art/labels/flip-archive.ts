@@ -8,15 +8,18 @@ import type { PixelGfx } from "../gfx";
 // だからこの1枚だけはドット絵でも「紙もの」の顔をさせる。
 // 主役は活字。FLIP と、その真下でひっくり返った FLIP。
 
-const PAPER = "#efe9d8";
-const PAPER2 = "#e4ddc7";
-const PAPER3 = "#f8f4e8";
-const RULE = "#b9b096";
-const RULE2 = "#d3cbb4";
+// 16枚を並べたとき、この1枚だけ明度が飛び抜けて穴が空いて見えた。
+// 実物の生成りの紙に忠実であることより、図録として揃うことを取って、
+// 紙の色を一段落としてある（＝すこし日に焼けた紙）。墨と朱はそのまま。
+const PAPER = "#ddd3b4";
+const PAPER2 = "#cfc4a1";
+const PAPER3 = "#ebe2c6";
+const RULE = "#a2977a";
+const RULE2 = "#bdb392";
 const INK = "#1b1a17";
-const INK2 = "#514c40";
+const INK2 = "#4b463a";
 const RED = "#c8402c";
-const SHADOW = "#cdc4ac";
+const SHADOW = "#b5aa89";
 
 const BIG: Record<string, string[]> = {
   F: ["#####", "#....", "#....", "####.", "#....", "#....", "#...."],
@@ -24,6 +27,13 @@ const BIG: Record<string, string[]> = {
   I: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"],
   P: ["####.", "#...#", "#...#", "####.", "#....", "#....", "#...."],
 };
+
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
 
 function rot180(rows: string[]): string[] {
   return rows
@@ -72,7 +82,7 @@ function plate(g: PixelGfx, x: number, y: number, kind: number) {
 
 export const art: LabelArt = {
   slug: "flip-archive",
-  swatch: ["#efe9d8", "#1b1a17", "#c8402c", "#b9b096", "#f8f4e8"],
+  swatch: [PAPER, INK, RED, RULE, PAPER3],
   draw: (g, t) => {
     // ── 生成りの紙 ────────────────────────────────────────
     g.rect(0, 0, 68, 40, PAPER);
@@ -102,8 +112,9 @@ export const art: LabelArt = {
     g.noise(0, 0, 68, 3, PAPER3, 0.1, 313);
 
     // ── 見出しまわり ──────────────────────────────────────
+    // 型番は外装に刻印されているので、ここは通し番号にしてある。
     g.rect(3, 3, 3, 3, RED);
-    g.text3x5(8, 3, "HVC-FA", INK2);
+    g.text3x5(8, 3, "NO.001", INK2);
     g.hline(3, 9, 44, INK);
     g.hline(3, 10, 44, RULE2);
 
@@ -124,15 +135,15 @@ export const art: LabelArt = {
     g.px(31, 22, RED);
 
     // ── 下の罫と欄外 ──────────────────────────────────────
+    // 右端は枠から1px以上あける。欄外の字が枠に触れると刷りずれに見える。
     g.hline(3, 30, 62, INK);
     g.hline(3, 31, 62, RULE2);
     g.text3x5(3, 32, "FLIP ARCHIVE", INK2);
-    g.text3x5(53, 32, "N01", INK2);
-    g.rect(62, 32, 3, 3, RED);
+    g.rect(52, 32, 1, 5, RED);
 
     // ── ふち ──────────────────────────────────────────────
+    // 16枚共通の作法。外周1pxの単色だけ。
     g.frame(0, 0, 68, 40, INK);
-    g.frame(1, 1, 66, 38, PAPER);
-    g.frame(2, 2, 64, 36, RULE);
+    mark(g, INK, PAPER);
   },
 };

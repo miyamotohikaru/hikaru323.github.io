@@ -92,6 +92,13 @@ const MOTH_DOWN = [
 /** 遠くを回っているもの。小さい影 */
 const MOTH_FAR = ["#...#", ".###.", "..#..", ".#.#."];
 
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 /** 楕円の輪郭を1ドットずつ。実物の「描かれた円」に倣ってわずかに歪ませる */
 function traceRing(g: PixelGfx, cx: number, cy: number, rx: number, ry: number, c: string, wobble: number, seed: number) {
   const r = rng(seed);
@@ -232,19 +239,12 @@ export const art: LabelArt = {
     };
     sub(5, 12, "& FLAME", "#a87a34");
     sub(3, 33, "DRAW", "#7a5c2c");
-    sub(43, 33, "CIRCLE", "#7a5c2c");
+    // 右下は発行元の印のためにあけておく
+    sub(37, 33, "CIRCLE", "#7a5c2c");
 
     // ── 枠 ──────────────────────────────────────────────
-    g.frame(0, 0, 68, 40, "#05040a");
-    g.frame(1, 1, 66, 38, "#3a2a12");
-    g.px(1, 1, "#05040a");
-    g.px(66, 1, "#05040a");
-    g.px(1, 38, "#05040a");
-    g.px(66, 38, "#05040a");
-    // 四隅の小さな灯り
-    g.px(2, 2, AMBER);
-    g.px(65, 2, AMBER);
-    g.px(2, 37, AMBER);
-    g.px(65, 37, AMBER);
+    // 16枚共通の作法。外周1pxの単色だけ。16枚でいちばん暗いので琥珀にする。
+    g.frame(0, 0, 68, 40, AMBER);
+    mark(g, AMBER, NIGHT);
   },
 };

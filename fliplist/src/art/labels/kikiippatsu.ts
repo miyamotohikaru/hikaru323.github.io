@@ -82,6 +82,13 @@ const KUMA = [
   "..CCLLLLLLLLLSC..",
   "...CCCCCCCCCCC...",
 ];
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 const KUMA_PAL: Record<string, string> = {
   C: BEAR_C,
   L: BEAR_L,
@@ -364,16 +371,8 @@ export const art: LabelArt = {
     g.text3x5(4, 2, "KIKI", "#ffe9a8", 2);
 
     // ── 枠 ─────────────────────────────────────────────────
+    // 16枚共通の作法。外周1pxの単色だけ。四隅の飾りはやめた。
     g.frame(0, 0, 68, 40, "#cdd4e4");
-    for (const [x, y] of [
-      [0, 0],
-      [67, 0],
-      [0, 39],
-      [67, 39],
-    ]) {
-      g.px(x, y, CORAL);
-      g.px(x === 0 ? 1 : 66, y, CORAL);
-      g.px(x, y === 0 ? 1 : 38, CORAL);
-    }
+    mark(g, "#cdd4e4", SKY_DEEP);
   },
 };

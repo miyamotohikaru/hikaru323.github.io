@@ -1,5 +1,13 @@
 import type { LabelArt } from "./types";
+import type { PixelGfx } from "../gfx";
 import { rng } from "../gfx";
+
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
 
 // 「あと何秒、生きられる？」——36の問いに答えると、残り秒数が出る。
 //
@@ -149,34 +157,20 @@ export const art: LabelArt = {
     g.rect(NOW - 1, trace[NOW] - 1, 3, 3, RED);
     g.px(NOW, trace[NOW], "#fff0e4");
 
-    // ── 下の帯: 答えた36問、読ませない細字、印字のバーコード ──
+    // ── 下の帯: 題字と、答えた36問 ──────────────────────
+    // 記録紙に打ち出された見出しという体裁。赤の細い罫で一段区切る。
+    g.hline(3, 31, 62, "#d99f8a");
+    g.hline(3, 31, 30, RED, "vstripe");
+    g.text3x5(3, 32, "LIFESPAN", INK);
     for (let j = 0; j < 3; j++)
       for (let i = 0; i < 12; i++) {
         const on = (i * 5 + j * 4) % 7 !== 3;
-        g.px(3 + i * 2, 32 + j * 2, on ? INK : "#cf9d88");
+        g.px(36 + i * 2, 32 + j * 2, on ? INK : "#cf9d88");
       }
-    for (let i = 0; i < 5; i++) g.hline(29 + i * 4, 32, 3, "#c08a74");
-    for (let i = 0; i < 4; i++) g.hline(29 + i * 4, 34, 3, "#cf9d88");
-    // 記録紙の端に印字された機械の符号
-    const bar = rng(7);
-    let bx = 50;
-    while (bx < 64) {
-      const w = bar() < 0.35 ? 2 : 1;
-      g.rect(bx, 32, w, 5, INK);
-      bx += w + (bar() < 0.4 ? 2 : 1);
-    }
 
     // ── 外枠 ─────────────────────────────────────────────
-    g.frame(0, 0, 68, 40, "#3a2320");
-    g.frame(1, 1, 66, 38, RED);
-    g.frame(2, 2, 64, 36, "#f3d2c2");
-    for (const [x, y] of [
-      [1, 1],
-      [66, 1],
-      [1, 38],
-      [66, 38],
-    ]) {
-      g.px(x, y, "#3a2320");
-    }
+    // 16枚共通の作法。外周1pxの単色だけ。
+    g.frame(0, 0, 68, 40, RED);
+    mark(g, "#8f2b1e", "#f7ded0");
   },
 };

@@ -1,6 +1,14 @@
 import type { LabelArt } from "./types";
+import type { PixelGfx } from "../gfx";
 import { NES } from "../palette";
 import { shade } from "../gfx";
+
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
 
 // ともだちジェネレーター。さみしい写真に、知らない人がどんどん足される。
 //
@@ -130,11 +138,11 @@ export const art: LabelArt = {
     g.disc(56, 7, 2, "#fff4b0");
     for (let a = 0; a < 8; a++) {
       const rad = (a * Math.PI) / 4;
-      g.px(
-        56 + Math.round(Math.cos(rad) * 6),
-        7 + Math.round(Math.sin(rad) * 6),
-        NES.gold,
-      );
+      const sx = 56 + Math.round(Math.cos(rad) * 6);
+      const sy = 7 + Math.round(Math.sin(rad) * 6);
+      // 写真の縁にかかる光条は出さない。切れた1pxが消し忘れに見える。
+      if (sy < 5) continue;
+      g.px(sx, sy, NES.gold);
     }
     // 雲
     g.blit(7, 4, ["..###..", ".#####.", "#######"], { "#": "#fcfcfc" });
@@ -188,38 +196,31 @@ export const art: LabelArt = {
     g.frame(2, 2, 64, 30, EDGE);
 
     // ── 下の白場 ─────────────────────────────────────────
-    g.text3x5(4, 33, "1", EDGE);
-    g.hline(9, 35, 5, EDGE); // 矢印
-    g.px(13, 34, EDGE);
-    g.px(13, 36, EDGE);
-    g.px(12, 33, EDGE);
-    g.px(12, 37, EDGE);
-    g.text3x5(16, 33, joined ? "21" : "20", RED);
-    for (let i = 0; i < 6; i++) g.hline(27 + i * 4, 34, 3, "#a8a6a0");
-    for (let i = 0; i < 4; i++) g.hline(27 + i * 4, 36, 3, "#c8c6c0");
+    // 題字・実数・カメラ・発行元。読ませない細字はやめて、題字に置き換えた。
+    g.text3x5(3, 33, "FRIENDS", EDGE);
+    g.text3x5(33, 33, "1", EDGE);
+    g.hline(38, 35, 5, EDGE); // 矢印
+    g.px(42, 34, EDGE);
+    g.px(42, 36, EDGE);
+    g.px(41, 33, EDGE);
+    g.px(41, 37, EDGE);
+    g.text3x5(45, 33, joined ? "21" : "20", RED);
     // 小さなカメラ
     g.blit(
-      52,
+      53,
       32,
       ["..##...", "#######", "#..#..#", "#.###.#", "#..#..#", "#######"],
       {
         "#": "#585660",
       },
     );
-    g.px(55, 34, "#a8c8e8");
-    g.px(55, 35, "#a8c8e8");
-    g.px(54, 35, "#7098c8");
+    g.px(56, 34, "#a8c8e8");
+    g.px(56, 35, "#a8c8e8");
+    g.px(55, 35, "#7098c8");
 
     // ── 外枠 ─────────────────────────────────────────────
+    // 16枚共通の作法。外周1pxの単色だけ。
     g.frame(0, 0, 68, 40, EDGE);
-    g.frame(1, 1, 66, 38, "#c8c6be");
-    for (const [x, y] of [
-      [1, 1],
-      [66, 1],
-      [1, 38],
-      [66, 38],
-    ]) {
-      g.px(x, y, EDGE);
-    }
+    mark(g, EDGE, PRINT);
   },
 };

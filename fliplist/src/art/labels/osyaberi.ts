@@ -21,6 +21,13 @@ const TAG_DK = "#b8577f";
 // 切り絵の縁。色紙を順に重ねて層に見せる
 const CRAFT = ["#e8709c", "#f2a44a", "#4fb8a2", "#5f9fd8", "#a880d8", "#f0cf5e"];
 
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 export const art: LabelArt = {
   slug: "osyaberi",
   swatch: [PAPER, FUR, "#e8bcca", TAG, OUTLINE],
@@ -57,22 +64,23 @@ export const art: LabelArt = {
       }
       g.px(x, y, d === 0 ? shade(c, 0.22) : d === w - 1 ? shade(c, -0.34) : c);
     };
+    // 外周1pxは枠のために空けておく。色紙はその内側から貼る。
     const edge = (x: number, y: number) => g.px(x, y, "#0000002e");
-    for (let x = 0; x < 68; x++) {
+    for (let x = 1; x < 67; x++) {
       const w = 4 + Math.round(Math.sin(x * 0.33) * 1.2);
-      for (let d = 0; d < w; d++) layer(x, d, d, x, w);
-      edge(x, w);
+      for (let d = 0; d < w; d++) layer(x, 1 + d, d, x, w);
+      edge(x, 1 + w);
       const w2 = 4 + Math.round(Math.sin(x * 0.29 + 2.2) * 1.2);
-      for (let d = 0; d < w2; d++) layer(x, 39 - d, d, 176 + (67 - x), w2);
-      edge(x, 39 - w2);
+      for (let d = 0; d < w2; d++) layer(x, 38 - d, d, 176 + (67 - x), w2);
+      edge(x, 38 - w2);
     }
-    for (let y = 0; y < 40; y++) {
+    for (let y = 1; y < 39; y++) {
       const w = 4 + Math.round(Math.sin(y * 0.38 + 1.1) * 1.1);
-      for (let d = 0; d < w; d++) layer(d, y, d, 284 + (39 - y), w);
-      edge(w, y);
+      for (let d = 0; d < w; d++) layer(1 + d, y, d, 284 + (39 - y), w);
+      edge(1 + w, y);
       const w2 = 4 + Math.round(Math.sin(y * 0.44 + 3.4) * 1.1);
-      for (let d = 0; d < w2; d++) layer(67 - d, y, d, 68 + y, w2);
-      edge(67 - w2, y);
+      for (let d = 0; d < w2; d++) layer(66 - d, y, d, 68 + y, w2);
+      edge(66 - w2, y);
     }
     // 渦。切り絵の帯の上でくるりと巻く
     for (const [cx0, cy0, dir] of [
@@ -241,15 +249,25 @@ export const art: LabelArt = {
       });
     };
 
-    // 相手（人間）の問いかけ。右寄せの小さいの
-    bubble(45, 9, 18, 7, "#f4d3e0", [11, 6], "right", "#a05070");
+    // 相手（人間）の問いかけ。右寄せの小さいの。彩度を上げて紙から離す
+    bubble(45, 9, 18, 7, "#f2b0ca", [11, 6], "right", "#8f3f60");
     // こすくまくんの名札つきの返事
-    g.rect(36, 15, 13, 4, TAG);
-    g.hline(37, 15, 11, "#f4b3c9");
-    g.px(36, 15, null);
-    g.px(48, 15, null);
-    for (let i = 0; i < 4; i++) g.vline(38 + i * 3, 16, 2, "#ffffff");
+    g.rect(36, 14, 13, 5, TAG_DK);
+    g.rect(36, 14, 13, 4, TAG);
+    g.hline(37, 14, 11, "#f4b3c9");
+    g.px(36, 14, null);
+    g.px(48, 14, null);
+    for (let i = 0; i < 4; i++) g.vline(38 + i * 3, 15, 2, "#ffffff");
     bubble(36, 19, 27, 9, BUBBLE, [21, 22, 15], "left", "#4a3c2e");
+    // 吹き出しの上端に色紙を1枚はさむ。白い長方形に見せない。
+    g.hline(37, 20, 25, "#f2dde6");
+    g.hline(37, 26, 15, "#e6d8c0");
+    // 身も蓋もない一節にだけ朱が引いてある
+    g.hline(39, 24, 13, "#c8506e");
+    g.px(38, 24, "#c8506e");
+    // 吹き出しの角にはられた切り絵の花
+    flower(62, 19, "#fdf6e6", "#4fb8a2");
+    flower(35, 18, "#fdf6e6", "#f2a44a");
     // とどめの一言。「……」だけ
     if (t > 0.45) {
       bubble(37, 29, 15, 8, BUBBLE, [], "left", "#4a3c2e");
@@ -259,6 +277,18 @@ export const art: LabelArt = {
       g.rect(38, 30, 12, 5, "#c0a880");
       g.frame(38, 30, 12, 5, "#9a8260");
       for (let i = 0; i < 3; i++) g.px(41 + i * 3, 32, "#6b5a4a");
+    }
+    // 返事についた反応。色紙で作ったボタンという体
+    for (const [rx, rc] of [
+      [52, "#e8709c"],
+      [57, "#5f9fd8"],
+      [62, "#f0cf5e"],
+    ] as Array<[number, string]>) {
+      g.disc(rx, 30, 2, OUTLINE);
+      g.disc(rx, 30, 2, rc, "solid");
+      g.ring(rx, 30, 2, OUTLINE, 1);
+      g.px(rx - 1, 29, "#fdf6e6");
+      g.px(rx, 32, "#00000033");
     }
 
     // ── 名札。題字を兼ねる ────────────────────────────────
@@ -277,10 +307,8 @@ export const art: LabelArt = {
     g.px(60, 5, TAG_DK);
 
     // ── 枠 ──────────────────────────────────────────────
+    // 16枚共通の作法。外周1pxの単色だけ。切り絵の帯はその内側の絵。
     g.frame(0, 0, 68, 40, OUTLINE);
-    g.px(1, 1, OUTLINE);
-    g.px(66, 1, OUTLINE);
-    g.px(1, 38, OUTLINE);
-    g.px(66, 38, OUTLINE);
+    mark(g, OUTLINE, FUR);
   },
 };

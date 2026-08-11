@@ -26,6 +26,13 @@ const RED = "#e63030";
 const BLUE = "#2a52d0";
 const GREEN = "#3a9e3a";
 
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 /** 広告の面。縁と上辺のハイライトを必ず同じ作法で入れる。 */
 function adBox(g: PixelGfx, x: number, y: number, w: number, h: number, bg: string) {
   g.rect(x + 1, y + 1, w, h, "#00000055");
@@ -137,14 +144,16 @@ export const art: LabelArt = {
     g.text3x5(54, 19, "NEW", RED, 1);
 
     // 上の帯。看板がいちばん大きい。
+    // 左端の白い札だけが広告ではなく、このゲームの題字。まだ塗り潰されていない。
     adBox(g, 1, 1, 66, 9, MAGENTA);
     stripes(g, 2, 2, 64, 7, YELLOW, 8);
     g.rect(2, 2, 64, 7, "#e02a86", "half");
-    g.rect(17, 2, 36, 7, MAGENTA);
-    g.text3x5(20, 3, "MEGA SALE", WHITE);
-    g.rect(3, 2, 12, 7, YELLOW);
-    g.frame(3, 2, 12, 7, INK);
-    g.text3x5(5, 3, "AD", INK, 1);
+    g.rect(19, 2, 34, 7, MAGENTA);
+    g.text3x5(21, 3, "MEGA SALE", WHITE);
+    g.rect(2, 2, 15, 7, WHITE);
+    g.frame(2, 2, 15, 7, INK);
+    g.text3x5(4, 3, "ADS", INK, 1);
+    g.hline(4, 7, 11, RED);
     logo(g, 2, 58, 2, WHITE, CYAN);
 
     // 下の帯。
@@ -167,21 +176,23 @@ export const art: LabelArt = {
 
     // ── ゲーム本体が追いやられた窓 ─────────────────────────
     // 残ったのは右下のこれだけ。中身はさっき描いた画面の切り抜き。
+    // 右下の隅は発行元の印にあけてあるので、窓はそのぶん細い。
     const gx = 49;
     const gy = 28;
-    g.rect(gx, gy, 17, 11, "#1a2a5c");
-    g.rect(gx, gy + 6, 17, 5, GREEN);
-    g.hline(gx, gy + 6, 17, "#63c455");
-    g.rect(gx, gy + 8, 17, 3, "#7a4a20");
-    g.rect(gx + 5, gy + 2, 3, 4, "#f2e0c0");
-    g.rect(gx + 5, gy + 2, 3, 1, RED);
+    const gw = 10;
+    g.rect(gx, gy, gw, 11, "#1a2a5c");
+    g.rect(gx, gy + 6, gw, 5, GREEN);
+    g.hline(gx, gy + 6, gw, "#63c455");
+    g.rect(gx, gy + 8, gw, 3, "#7a4a20");
+    g.rect(gx + 3, gy + 2, 3, 4, "#f2e0c0");
+    g.rect(gx + 3, gy + 2, 3, 1, RED);
+    g.px(gx + 3, gy + 4, INK);
     g.px(gx + 5, gy + 4, INK);
-    g.px(gx + 7, gy + 4, INK);
-    g.disc(gx + 12, gy + 3, 1, YELLOW);
+    g.disc(gx + 8, gy + 3, 1, YELLOW);
     g.px(gx + 1, gy + 1, WHITE);
-    g.px(gx + 3, gy + 1, WHITE);
-    g.frame(gx, gy, 17, 11, WHITE);
-    g.frame(gx - 1, gy - 1, 19, 13, INK);
+    g.px(gx + 2, gy + 1, WHITE);
+    g.frame(gx, gy, gw, 11, WHITE);
+    g.frame(gx - 1, gy - 1, gw + 2, 13, INK);
 
     // ── 割り込みの全画面広告 ───────────────────────────────
     // 見出し帯・図・文言・残り時間。ふつうの広告の作法どおりに組む。
@@ -189,8 +200,6 @@ export const art: LabelArt = {
     adBox(g, 15, 11, 34, 17, CREAM);
     g.rect(16, 12, 32, 6, RED);
     g.text3x5(17, 12, "CONGRATS", WHITE, 1);
-    g.px(46, 13, WHITE);
-    g.px(46, 15, WHITE);
     g.hline(16, 17, 32, "#a01818");
     // 左に図、右に文言。光条は図の後ろだけに収める。
     for (let a = 0; a < 12; a++) {
@@ -244,6 +253,8 @@ export const art: LabelArt = {
     g.text3x5(46, 7, "AD", INK, 1);
 
     // ── 画面の縁 ───────────────────────────────────────────
+    // 16枚共通の作法。外周1pxの単色だけ。
     g.frame(0, 0, 68, 40, INK);
+    mark(g, WHITE, INK);
   },
 };

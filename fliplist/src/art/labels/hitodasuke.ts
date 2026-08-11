@@ -97,6 +97,13 @@ const PERSON = [
 ];
 const CASE = [".KKKK.", "KLLLLK", "KMMMMK", "KBBBBK", "KBBBBK", "KKKKKK"];
 
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 export const art: LabelArt = {
   slug: "hitodasuke",
   swatch: ["#f4a54c", "#d92c14", "#f8efc6", "#2a1710", "#c8b298"],
@@ -254,34 +261,34 @@ export const art: LabelArt = {
       const c = p < 0.4 ? RED : p < 0.75 ? RED_L : "#f9c2b2";
       for (let a = -62; a <= 62; a += 7) {
         const rad = (a * Math.PI) / 180;
-        g.px(54 + Math.round(Math.sin(rad) * r), 7 - Math.round(Math.cos(rad) * r), c);
+        g.px(54 + Math.round(Math.sin(rad) * r), 8 - Math.round(Math.cos(rad) * r), c);
       }
     }
 
     g.poly(
       [
-        [48, 9],
-        [60, 9],
+        [47, 10],
+        [61, 10],
         [54, 19],
       ],
       INK,
     );
-    g.disc(54, 7, 6, INK);
+    g.disc(54, 8, 6, INK);
     g.poly(
       [
-        [49, 9],
-        [59, 9],
+        [48, 10],
+        [60, 10],
         [54, 17],
       ],
       RED,
     );
-    g.disc(54, 7, 5, RED);
-    g.disc(52, 5, 2, RED_L);
-    g.px(51, 4, "#ffc8b8");
-    g.rect(50, 9, 9, 3, RED_D, "half");
+    g.disc(54, 8, 5, RED);
+    g.disc(52, 6, 2, RED_L);
+    g.px(51, 5, "#ffc8b8");
+    g.rect(49, 11, 11, 3, RED_D, "half");
     // ピンの中の「!」
-    g.vline(54, 4, 4, CREAM);
-    g.px(54, 9, CREAM);
+    g.vline(54, 5, 4, CREAM);
+    g.px(54, 10, CREAM);
 
     // ── こすくま。駆けつける。 ───────────────────────────
     g.ellipse(13, 32, 8, 1, "#00000040");
@@ -297,19 +304,17 @@ export const art: LabelArt = {
     g.px(0, 28, GND_L);
 
     // ── 下の帯 ────────────────────────────────────────────
+    // 型番は外装の下帯に刻印されているので、ラベルには入れない。
+    // 性能の表記だけを、右端まで詰めずに置く。
     g.rect(0, 33, 68, 7, INK);
     g.hline(0, 33, 68, INK2);
     g.hline(0, 34, 68, "#6b3c1c", "half");
     g.text3x5(2, 34, "500M 10MIN", CREAM);
-    g.text3x5(45, 34, "HVC-IH", "#eda45e");
-    g.px(42, 36, "#eda45e");
 
     // ── ふち ──────────────────────────────────────────────
+    // 16枚共通の作法。外周1pxの単色だけ。
     g.frame(0, 0, 68, 40, INK);
-    g.hline(1, 1, 66, "#ffffff2e");
-    g.vline(1, 1, 38, "#ffffff2e");
-    g.vline(66, 1, 38, "#00000038");
-    g.hline(1, 38, 66, "#00000038");
+    mark(g, CREAM, INK);
   },
 };
 

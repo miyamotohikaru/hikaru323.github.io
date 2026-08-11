@@ -1,6 +1,15 @@
 import type { LabelArt } from "./types";
+import type { PixelGfx } from "../gfx";
 import { NES } from "../palette";
 import { rng } from "../gfx";
+
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+// 丸い耳がふたつと点の目。地の色に応じて色だけ替える。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
 
 // ブラウザのテキストが、渦を巻いて一点に吸い込まれていく。
 //
@@ -170,12 +179,13 @@ export const art: LabelArt = {
       }
     }
 
-    // 引き伸ばされた活字。まだ字の形が残っているもの
+    // 引き伸ばされた活字。まだ字の形が残っているもの。
+    // 題字のすぐ下には置かない。置くと題字の2行目に見えて、しかも円盤に食われる。
     for (const [lx, ly, ch, c] of [
-      [23, 8, "T", "#e4dff2"],
-      [28, 6, "E", "#b0a8cc"],
-      [25, 33, "X", "#e4dff2"],
-      [32, 35, "T", "#b0a8cc"],
+      [22, 31, "T", "#e4dff2"],
+      [29, 33, "E", "#b0a8cc"],
+      [36, 31, "X", "#e4dff2"],
+      [43, 33, "T", "#b0a8cc"],
     ] as Array<[number, number, string, string]>) {
       g.text3x5(lx + 1, ly + 1, ch, "#150c26");
       g.text3x5(lx, ly, ch, c);
@@ -274,9 +284,9 @@ export const art: LabelArt = {
 
     // 遠い星の十字。空いたところに散らす
     for (const [sx, sy] of [
-      [60, 34],
+      [58, 30],
       [63, 12],
-      [36, 36],
+      [50, 36],
       [26, 5],
     ] as Array<[number, number]>) {
       g.px(sx, sy, NES.white);
@@ -287,18 +297,8 @@ export const art: LabelArt = {
     }
 
     // ── 外枠 ─────────────────────────────────────────────
-    // 黒い外装に貼るので、いちばん外は明るくしてラベルの輪郭を立てる
+    // 16枚共通の作法。外周1pxの単色だけ。黒い外装に貼るので明るい紫にする。
     g.frame(0, 0, 68, 40, "#9a72e0");
-    g.frame(1, 1, 66, 38, "#2a1146");
-    for (const [x, y] of [
-      [0, 0],
-      [67, 0],
-      [0, 39],
-      [67, 39],
-    ]) {
-      g.px(x, y, NES.cyanLt);
-    }
-    g.hline(2, 1, 64, "#5c3a94", "half");
-    g.hline(2, 38, 64, "#5c3a94", "half");
+    mark(g, "#cfc6ea", "#1d1033");
   },
 };

@@ -72,6 +72,13 @@ const FACES: Array<[string, string, string]> = [
 /** 蜂。W=翅 #=縞 Y=体 */
 const BEE = [".WW.WW.", "..###..", ".#Y#Y#.", "..###.."];
 
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 function drawScene(g: PixelGfx, m: Mode) {
   const c = P[m];
   // 空
@@ -255,14 +262,17 @@ export const art: LabelArt = {
     };
     tag(3, 23, "HUMAN", "#fdf8ec");
     tag(55, 23, "BEE", "#d8f4a0");
+    // 題字。空にじかに置く。ここが人の目の側であることも兼ねる。
+    tag(2, 2, "CREATURE", "#fdf8ec");
 
     // ── 下の帯。生き物セレクタ ─────────────────────────────
     g.rect(0, 29, 68, 11, "#efe6d0");
     g.hline(0, 29, 68, "#c0b498");
     g.rect(0, 37, 68, 3, "#ded2b4");
     g.noise(0, 30, 68, 9, "#e2d6bc", 0.12, 13);
+    // 右下は発行元の印にあけておくので、間隔を詰めて左に寄せる
     FACES.forEach(([body, eye, kind], i) => {
-      const cx = 6 + i * 9;
+      const cx = 5 + i * 8;
       const cy = 34;
       g.disc(cx, cy, 4, "#00000018");
       g.disc(cx, cy, 3, shade(body, -0.35));
@@ -308,18 +318,15 @@ export const art: LabelArt = {
       }
     });
     // 全24種
-    g.text3x5(58, 32, "24", "#5c5346");
-    g.px(57, 32, "#5c5346");
-    g.px(57, 36, "#5c5346");
-    g.hline(56, 31, 10, "#c0b498");
-    g.hline(56, 37, 10, "#c0b498");
+    g.text3x5(52, 32, "24", "#5c5346");
+    g.px(51, 32, "#5c5346");
+    g.px(51, 36, "#5c5346");
+    g.hline(50, 31, 9, "#c0b498");
+    g.hline(50, 37, 9, "#c0b498");
 
     // ── 枠 ──────────────────────────────────────────────
+    // 16枚共通の作法。外周1pxの単色だけ。
     g.frame(0, 0, 68, 40, "#1a1a20");
-    g.frame(1, 1, 66, 38, "#3f6b46");
-    g.px(1, 1, "#1a1a20");
-    g.px(66, 1, "#1a1a20");
-    g.px(1, 38, "#1a1a20");
-    g.px(66, 38, "#1a1a20");
+    mark(g, "#5c5346", "#efe6d0");
   },
 };

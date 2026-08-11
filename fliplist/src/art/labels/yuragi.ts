@@ -1,21 +1,25 @@
 import type { LabelArt } from "./types";
+import type { PixelGfx } from "../gfx";
 import { rng } from "../gfx";
 
 // ゆらぎの拡張機能 — 実物は Chrome 拡張「ゆらぎ1/f」。
 // 開いているページの本文を1文字ずつ span に割って、1/f ノイズで呼吸させる。
 // ろうそく／心拍／木漏れ日／川／オーロラ／こすくま の6ジャンルを重ねがけできる。
-// ポップアップは黒茶の板に、橙に光る球のダイヤル。
 //
-// だからラベルは「揺れているページ」と「その脇に浮いている球」。
-// 罫のようにまっすぐ組まれた本文が、行ごとにわずかにたわむ。
+// 前の版は、本文を1pxの粒で敷き詰めていたせいで、本番の倍率だと
+// ただの灰色のノイズにしか見えなかった。動かさないと主題が出ない絵は失格なので、
+// 「何が揺れているのか」を止め絵で言い切る形に描き直してある。
+//   ・題字そのものを1文字ずつ上下にずらす。ずれた字の裏に、
+//     ずれていない薄い字を重ねて置く。この2つの差が「ゆらぎ」の正体になる。
+//   ・そのすぐ下に、まっすぐな点線の罫を1本通す。曲がっていないものが隣にあると、
+//     曲がっているものが曲がって見える。
+//   ・本文は1pxの粒をやめて、2px厚の帯にした。6倍で行として読める太さ。
+// 右のポップアップ（橙に光る球のダイヤル）はそのまま置く。
 
-// 拡張機能はどのページにもかかる。ここでは白いページの上で揺らしている。
-// 手前の黒い板（ポップアップ）だけが橙に光る、という明暗にする。
 const BG = "#181410";
 const PAGE = "#efe9da";
-const PAGE2 = "#c9c1ae";
+const PAGE2 = "#cec6b2";
 const CHROME = "#5e6167";
-const CHROME_D = "#efe9da";
 const PANEL = "#1d1409";
 const EDGE = "#55402c";
 const EDGE_L = "#8a6440";
@@ -23,6 +27,8 @@ const EDGE_L = "#8a6440";
 const TXT = "#403b31";
 const TXT_D = "#8d8674";
 const TXT_H = "#100e0a";
+const HOT = "#e2650c";
+const HOT_D = "#a8480a";
 
 const ORB = "#ffb066";
 const ORB_C = "#fff2e2";
@@ -34,123 +40,123 @@ const GENRE = ["#ff8a4c", "#e87b6b", "#cdb454", "#5fb6c4", "#b06ff0", "#e8ddc8"]
 
 const CURSOR = ["K....", "KK...", "KWK..", "KWWK.", "KWWWK", "KWKKK", "KK.K."];
 
+// 題字の 5x7。ゆらぎで1文字ずつ上下するので、字は太めに取る。
+const GLYPH: Record<string, string[]> = {
+  Y: ["#...#", "#...#", ".#.#.", "..#..", "..#..", "..#..", "..#.."],
+  U: ["#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+  R: ["####.", "#...#", "#...#", "####.", "#..#.", "#...#", "#...#"],
+  A: [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+  G: [".###.", "#....", "#....", "#..##", "#...#", "#...#", ".###."],
+  I: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"],
+};
+
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 export const art: LabelArt = {
   slug: "yuragi",
-  swatch: ["#14100c", "#ffb066", "#c9b79e", "#5fb6c4", "#55402c"],
+  swatch: [PAGE, HOT, ORB, "#5fb6c4", PANEL],
   draw: (g, t) => {
     const TAU = Math.PI * 2;
+
+    // 1/f。低い周波数ほど振幅が大きい正弦を3つ足す。
+    // t の係数はすべて整数倍なので、t=0 と t=1 で必ず同じ形に戻る。
+    const wave = (x: number, k: number) =>
+      Math.sin(x * 0.09 + t * TAU + k) * 2.5 +
+      Math.sin(x * 0.21 - t * TAU * 2 + k * 1.7) * 1.1 +
+      Math.sin(x * 0.44 + t * TAU * 3 + k * 2.4) * 0.5;
 
     // ── 地 ────────────────────────────────────────────────
     g.rect(0, 0, 68, 40, BG);
 
-    // ── 左：ブラウザの窓 ──────────────────────────────────
-    const PW = 42; // 窓の幅（x=1..42）
-    g.rect(1, 1, PW, 38, PAGE);
-    g.noise(1, 8, PW, 24, "#f4eee0", 0.08, 3391);
+    // ── 左：ゆれているページ ──────────────────────────────
+    g.rect(1, 1, 42, 38, PAGE);
+    g.noise(1, 6, 42, 33, "#f6f1e4", 0.07, 3391);
 
-    // 窓の上端。信号3つとタブ。
-    g.rect(1, 1, PW, 7, CHROME);
-    g.hline(1, 1, PW, "#a89e88");
-    g.rect(3, 3, 2, 2, "#c9533c");
-    g.rect(7, 3, 2, 2, "#d0a032");
-    g.rect(11, 3, 2, 2, "#5f9450");
-    // ひらいているタブ。ページと地続きに見えるよう白く抜く。
-    g.rect(16, 1, 26, 7, CHROME_D);
-    g.hline(16, 1, 26, "#8e836d");
-    g.vline(15, 2, 6, "#8e836d");
-    g.vline(42, 2, 6, "#8e836d");
-    g.px(15, 1, CHROME);
-    g.text3x5(18, 2, "YURAGI", "#3c372c");
-    g.hline(1, 8, 14, "#8e836d");
-    g.hline(43, 8, PW - 42, "#8e836d");
+    // 窓の上端。信号3つと、拡張機能のボタン。これだけで「ブラウザ」になる。
+    g.rect(1, 1, 42, 5, CHROME);
+    g.hline(1, 1, 42, "#7c8087");
+    g.hline(1, 5, 42, "#3c4046");
+    g.rect(3, 2, 2, 2, "#e0604a");
+    g.rect(7, 2, 2, 2, "#e8b23a");
+    g.rect(11, 2, 2, 2, "#63b45c");
+    g.rect(16, 2, 18, 2, "#42464c"); // 見えているだけの URL 欄
+    g.disc(39, 3, 2, "#2a1c10");
+    g.disc(39, 3, 1, ORB);
 
-    // ── 本文。1/f でたわむ。 ─────────────────────────────
-    // マウスの近くほど強く反応する、という実物の挙動もそのまま。
-    const CX = 27;
-    const CY = 23;
-    const wob = (x: number, y: number, i: number) => {
-      const a =
-        Math.sin(x * 0.36 + t * TAU + i * 0.9) * 0.62 +
-        Math.sin(x * 0.13 - t * TAU * 0.5 + i * 0.45) * 0.52;
-      const d = Math.abs(x - CX) + Math.abs(y - CY) * 1.6;
-      const near = Math.max(0, 1 - d / 15);
-      return Math.round(a * (1 + near * 2.4));
-    };
-
-    // 見出し。太い字。
-    {
-      const r = rng(4471);
-      let x = 3;
-      while (x < 34) {
-        const wlen = 3 + Math.floor(r() * 5);
-        if (x + wlen > 34) break;
-        for (let k = 0; k < wlen; k++) {
-          const dy = wob(x + k, 10, 0);
-          g.px(x + k, 9 + dy, TXT_H);
-          g.px(x + k, 10 + dy, TXT_H);
-        }
-        x += wlen + 3;
-      }
-      // まっすぐなはずの罫。たわんでいることが、これで分かる。
-      for (let x2 = 3; x2 < 41; x2++) {
-        g.px(x2, 13 + wob(x2, 13, 1) * 2, "#c96a20");
-        g.px(x2, 31 + wob(x2, 31, 5) * 2, "#a89e88");
-      }
+    // ── 題字。1文字ずつ、ゆらぎのぶんだけ上下する ────────
+    // 揺れていない位置に薄い字を残す。この差が、止め絵での主題になる。
+    const TITLE = "YURAGI";
+    for (let i = 0; i < TITLE.length; i++) {
+      const rows = GLYPH[TITLE[i]];
+      if (!rows) continue;
+      const cx = 4 + i * 6;
+      g.blit(cx, 11, rows, { "#": PAGE2 }); // 揺れる前の位置
+    }
+    for (let i = 0; i < TITLE.length; i++) {
+      const rows = GLYPH[TITLE[i]];
+      if (!rows) continue;
+      const cx = 4 + i * 6;
+      const dy = Math.round(wave(cx * 1.7, 0) * 1.05);
+      g.blit(cx + 1, 12 + dy, rows, { "#": "#d8cfb8" }); // 落ち影
+      g.blit(cx, 11 + dy, rows, { "#": TXT_H });
     }
 
-    // 本文
-    for (let i = 0; i < 5; i++) {
-      const y0 = 16 + i * 3;
-      const r = rng(9137 + i * 71);
-      let x = 3;
+    // ── まっすぐな罫。曲がっていないものが隣にあると、差が見える ──
+    for (let x = 3; x < 41; x += 2) g.px(x, 21, PAGE2);
+    g.px(3, 20, HOT);
+    g.px(3, 22, HOT);
+    g.px(40, 20, HOT);
+    g.px(40, 22, HOT);
+
+    // ── 本文。1pxの粒ではなく2px厚の帯にして、行として読ませる ──
+    for (let r = 0; r < 3; r++) {
+      const y0 = 25 + r * 5;
+      const rr = rng(9137 + r * 71);
+      let x = 4;
       while (x < 40) {
-        const wlen = 2 + Math.floor(r() * 5);
+        const wlen = 3 + Math.floor(rr() * 6);
         if (x + wlen > 40) break;
-        const dim = r() < 0.34;
+        // 1行だけ、ろうそく色が乗っている（ジャンルがかかっている行）
+        const hot = r === 1 && x > 13 && x < 30;
         for (let k = 0; k < wlen; k++) {
           const px = x + k;
-          g.px(px, y0 + wob(px, y0, i + 2), dim ? TXT_D : TXT);
+          const dy = Math.round(wave(px, r * 1.9 + 1.2) * 0.75);
+          g.px(px, y0 + dy, hot ? HOT : TXT);
+          g.px(px, y0 + dy + 1, hot ? HOT_D : TXT_D);
         }
         x += wlen + 2;
       }
     }
 
-    // 窓の右端の巻き取り
-    g.vline(41, 8, 25, PAGE2);
-    g.rect(41, 11, 1, 9, "#8e836d");
-
-    // マウスの矢印。この周りだけ、字がつよく反応する。
-    g.blit(CX - 1, CY - 3, CURSOR, { K: "#141109", W: "#fbf7ec" });
-    g.px(CX + 5, CY - 5, "#c9b79e");
-    g.px(CX - 6, CY + 4, "#c9b79e");
-
-    // 窓の下の帯
-    g.rect(1, 32, PW, 7, CHROME);
-    g.hline(1, 32, PW, "#8e836d");
-    g.hline(1, 33, PW, "#d2c9b4");
-    g.text3x5(3, 34, "1/F", "#8c3f10");
-    g.text3x5(18, 34, "HVC-YR", "#5c5648");
+    // マウスの矢印。この周りの字がいちばんよく動く、という実物の挙動の名残り。
+    g.blit(31, 29, CURSOR, { K: "#141109", W: "#fbf7ec" });
+    g.px(37, 27, PAGE2);
+    g.px(29, 35, PAGE2);
 
     // ── 右：ポップアップの板 ──────────────────────────────
     const PX0 = 44;
-    g.rect(PX0, 2, 23, 36, PANEL);
-    g.frame(PX0, 2, 23, 36, EDGE);
-    g.hline(PX0 + 1, 3, 21, "#2f2115");
+    g.rect(PX0, 1, 23, 38, PANEL);
+    g.frame(PX0, 1, 23, 38, EDGE);
     g.hline(PX0 + 1, 2, 21, EDGE_L);
-    g.px(PX0, 2, "#2b1f14");
-    g.px(PX0 + 22, 2, "#2b1f14");
-    g.px(PX0, 37, "#2b1f14");
-    g.px(PX0 + 22, 37, "#2b1f14");
+    g.hline(PX0 + 1, 3, 21, "#2f2115");
 
-    // 見出しの罫
-    g.hline(PX0 + 3, 6, 17, "#4a3626");
-    g.px(PX0 + 3, 5, "#8a6a48");
-    g.px(PX0 + 5, 5, "#8a6a48");
-    g.px(PX0 + 7, 5, "#8a6a48");
+    // 見出し。拡張機能の名前をそのまま出す。
+    g.text3x5(PX0 + 2, 5, "1/F", ORB);
+    g.px(PX0 + 18, 5, "#8a6a48");
+    g.px(PX0 + 20, 5, "#8a6a48");
+    g.px(PX0 + 19, 6, "#8a6a48");
+    g.px(PX0 + 18, 7, "#8a6a48");
+    g.px(PX0 + 20, 7, "#8a6a48");
+    g.hline(PX0 + 2, 10, 19, "#4a3626");
 
     // 球のダイヤル。ゆっくり呼吸する。
     const cx = 55;
-    const cy = 16;
+    const cy = 19;
     const breath = Math.sin(t * TAU) * 0.5 + 0.5;
     g.ring(cx, cy, 8, TRACK, 1);
     // 目盛りの弧。上から時計回りに7割ほど。
@@ -163,7 +169,8 @@ export const art: LabelArt = {
         on ? TRACK_F : "#4a3524",
       );
     }
-    // 球の光
+    // 球の光。まわりに薄い暈をつけて、板から浮かせる。
+    g.disc(cx, cy, 6, "#2e1a0c");
     g.disc(cx, cy, 5, "#4a2612");
     g.disc(cx, cy, 4 + (breath > 0.55 ? 1 : 0), ORB_E);
     g.disc(cx, cy, 3, ORB);
@@ -175,35 +182,23 @@ export const art: LabelArt = {
 
     // 6つのジャンル。上の3つが点いている。
     for (let i = 0; i < 6; i++) {
-      const gx = PX0 + 4 + (i % 3) * 6;
-      const gy = 27 + Math.floor(i / 3) * 6;
+      const gx = PX0 + 3 + i * 3;
       const on = i < 3;
-      const c = GENRE[i];
-      if (on) {
-        g.disc(gx, gy, 2, c);
-        g.px(gx - 1, gy - 1, "#fff2e2");
-        g.px(gx + 1, gy + 1, "#00000055");
-      } else {
-        g.blit(gx - 2, gy - 2, [".KKK.", "K...K", "K...K", "K...K", ".KKK."], {
-          K: "#503b28",
-        });
-      }
+      g.px(gx, 32, "#0e0904");
+      g.rect(gx, 29, 2, 3, on ? GENRE[i] : "#4a3524");
+      if (on) g.px(gx, 29, "#fff2e2");
     }
 
     // 静寂 ←→ 自然 の目盛り
-    g.hline(PX0 + 3, 35, 17, "#3d2a1b");
-    g.hline(PX0 + 3, 35, 11, TRACK_F);
-    g.rect(PX0 + 13, 34, 2, 3, "#ffe0b8");
-    g.px(PX0 + 3, 33, "#6e5a44");
-    g.px(PX0 + 19, 33, "#6e5a44");
+    g.hline(PX0 + 2, 35, 12, TRACK);
+    g.hline(PX0 + 2, 35, 7, TRACK_F);
+    g.rect(PX0 + 7, 34, 2, 3, "#ffe0b8");
+    g.px(PX0 + 2, 33, "#6e5a44");
+    g.px(PX0 + 13, 33, "#6e5a44");
 
     // ── ふち ──────────────────────────────────────────────
-    g.frame(0, 0, 68, 40, "#0a0806");
-    g.hline(1, 0, 66, "#8f8f8a");
-    g.vline(0, 1, 38, "#75756f");
-    g.vline(67, 1, 38, "#4c4c47");
-    g.hline(1, 39, 66, "#4c4c47");
-    g.px(0, 0, "#8f8f8a");
-    g.px(67, 39, "#3a3a36");
+    // 16枚共通の作法。外周1pxの単色だけ。灰色の外装に貼るので橙にする。
+    g.frame(0, 0, 68, 40, HOT);
+    mark(g, ORB, PANEL);
   },
 };

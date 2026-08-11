@@ -8,9 +8,13 @@ import type { PixelGfx } from "../gfx";
 //
 // だからこの1枚も、人を描かない。病室も、拘束具も、薬も、脳も描かない。
 // 描くのは図書館の名刺箪笥 ——「名前が与えられ、分類され、時代とともに書き換えられてきた」
-// という、そのことだけ。名札には、まだ名前のない抽斗も、
-// 線を引いて書き直された抽斗もある。下には年表が一本通る。
-// 16本のなかでいちばん静かな1枚でよい。
+// という、そのことだけ。16本のなかでいちばん静かな1枚でよい。
+//
+// 前の版は 15杯を等間隔に並べていたので、本番の倍率だとただの格子模様に見えた。
+// 反復は情報量ではないので、杯数を 6 に減らして1杯を倍の大きさにし、
+// 名札に「A-C」のような読める見出しを入れた。1杯だけ開いていて、
+// そこから索引の札が1枚持ち上がっている。札には、消された前の名前と、
+// 引き直された今の名前が書いてある。図鑑の主題はこの1枚の札にある。
 
 const PAPER = "#ece3ce";
 const PAPER_DK = "#dccfb2";
@@ -27,66 +31,48 @@ const WOOD_LT = "#dcc59c";
 const CARCASS = "#382b18";
 const CARD = "#f7f1e2";
 
-const COLS = 5;
-const ROWS = 3;
-const DW = 12;
-const DH = 8;
-const GX = 4;
-const GY = 9;
+const DW = 19; // 抽斗の面の幅
+const DH = 9; // 抽斗の面の高さ
+const COLX = [4, 24, 44];
+const ROWY = [14, 23];
+const CAB_Y = 13; // 箪笥の天板
+const CAB_H = 20;
 
-/**
- * 名札。3行ぶんの余白があるので、
- * 上に今の名前、下に前の名前の残り、書き換えられたものには紅の線を引く。
- */
-function plate(
-  g: PixelGfx,
-  x: number,
-  y: number,
-  ticks: number,
-  old: number,
-  rewritten: boolean,
-  aged = false,
-) {
-  // 古い名札は日に焼けている。同じ棚に、違う時代の紙が並んでいる。
-  g.rect(x, y, 7, 5, aged ? "#d8c69c" : PAPER);
-  g.frame(x, y, 7, 5, "#8c7448");
-  g.hline(x + 1, y + 1, 5, aged ? "#e8d9b2" : "#fdf8ec");
-  for (let i = 0; i < ticks; i++) g.px(x + 1 + i, y + 2, NAVY);
-  for (let i = 0; i < old; i++) g.px(x + 1 + i, y + 3, PAPER_DP);
-  if (rewritten) {
-    g.hline(x + 1, y + 3, 5, CRIMSON);
-    g.px(x + 1, y + 2, CRIMSON);
-  }
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
 }
 
-/** 抽斗ひとつ。面は 11x7、右と下に1pxだけ箪笥の躯体を残して隣と切る。 */
-function drawer(
-  g: PixelGfx,
-  x: number,
-  y: number,
-  ticks: number,
-  old: number,
-  rewritten = false,
-  seed = 0,
-  aged = false,
-) {
-  g.rect(x, y, DW - 1, DH - 1, WOOD);
-  // 木目。1本ずつ位置を変える。
-  g.vline(x + 8 + (seed % 2), y + 1, DH - 3, "#b89a70");
-  g.vline(x + 9, y + 1, DH - 3, WOOD_DK);
-  g.hline(x + 1, y + 1, DW - 3, WOOD_LT);
-  g.hline(x + 1, y + DH - 3, DW - 3, WOOD_DK);
-  g.frame(x, y, DW - 1, DH - 1, WOOD_DP);
-  plate(g, x + 1, y + 1, ticks, old, rewritten, aged);
+/**
+ * 抽斗ひとつ。名札には見出しの範囲だけを打つ。中身は書かない。
+ * 字は必ず名札の枠から1pxあける。詰めると「刷りが切れている」ように見える。
+ */
+function drawer(g: PixelGfx, x: number, y: number, from: string, to: string, seed: number) {
+  const aged = seed % 3 === 1;
+  g.rect(x, y, DW, DH, WOOD);
+  // 木目。1杯ずつ位置を変える。
+  g.vline(x + 15 + (seed % 2), y + 1, DH - 2, "#b89a70");
+  g.hline(x + 1, y + 1, DW - 2, WOOD_LT);
+  g.hline(x + 1, y + DH - 2, DW - 2, WOOD_DK);
+  g.frame(x, y, DW, DH, WOOD_DP);
+  // 名札。真鍮の枠に紙をはさんである。古い札は日に焼けている。
+  g.rect(x + 1, y + 1, 14, 7, aged ? "#e2d3ae" : PAPER);
+  g.frame(x + 1, y + 1, 14, 7, "#8c7448");
+  g.hline(x + 2, y + 2, 12, aged ? "#f0e4c4" : "#fdf8ec");
+  g.text3x5(x + 3, y + 2, from, NAVY);
+  g.hline(x + 7, y + 4, 2, NAVY);
+  g.text3x5(x + 10, y + 2, to, NAVY);
   // 引き手
-  g.disc(x + 9, y + 3, 1, "#634c28");
-  g.px(x + 8, y + 2, "#cdb68e");
-  g.px(x + 10, y + 4, "#3f2f16");
+  g.rect(x + 16, y + 3, 2, 3, "#634c28");
+  g.px(x + 16, y + 3, "#cdb68e");
+  g.px(x + 17, y + 5, "#3f2f16");
 }
 
 export const art: LabelArt = {
   slug: "diagnosis",
-  swatch: ["#ece3ce", "#232a46", "#c8405f", "#ac9066", "#f7f1e2"],
+  swatch: [PAPER, NAVY, CRIMSON, WOOD, CARD],
   draw: (g, t) => {
     // ── 紙 ─────────────────────────────────────────────────
     g.rect(0, 0, 68, 40, PAPER);
@@ -99,7 +85,7 @@ export const art: LabelArt = {
     g.vline(65, 2, 36, PAPER_DP);
 
     // ── 標題 ───────────────────────────────────────────────
-    // 標題は字間を空けて紙色の縁を回す。図鑑の扉らしく、重いが騒がしくない。
+    // 字間を空けて紙色の縁を回す。図鑑の扉らしく、重いが騒がしくない。
     for (const [dx, dy] of [
       [-1, 0],
       [1, 0],
@@ -108,95 +94,100 @@ export const art: LabelArt = {
     ])
       g.text3x5(5 + dx, 2 + dy, "DIAGNOSIS", "#f7f1e0", 2);
     g.text3x5(5, 2, "DIAGNOSIS", NAVY, 2);
-    g.px(48, 6, CRIMSON);
     g.text3x5(53, 2, "151", CRIMSON);
     g.hline(53, 1, 11, NAVY_PALE);
-    g.hline(5, 7, 58, NAVY_LT);
-    g.hline(5, 7, 58, NAVY, "half");
+    g.hline(5, 9, 58, NAVY_LT);
+    g.hline(5, 9, 58, NAVY, "half");
 
     // ── 名刺箪笥 ───────────────────────────────────────────
-    g.rect(GX - 1, GY - 1, COLS * DW + 2, ROWS * DH + 2, CARCASS);
-    g.hline(GX - 1, GY - 1, COLS * DW + 2, "#241a0e");
-    g.hline(GX - 1, GY + ROWS * DH, COLS * DW + 2, "#241a0e");
+    // 6杯。等間隔だが、数が少ないので格子には見えない。
+    g.rect(3, CAB_Y, 61, CAB_H, CARCASS);
+    g.hline(3, CAB_Y, 61, "#241a0e");
+    g.hline(3, CAB_Y + CAB_H - 1, 61, "#241a0e");
+    g.vline(3, CAB_Y, CAB_H, "#241a0e");
+    g.vline(63, CAB_Y, CAB_H, "#4a3a20");
 
-    // 名札の刻みは1つずつ変える。0 は「まだ名前がついていない」抽斗。
-    const TICKS = [
-      [5, 3, 4, 3, 5],
-      [4, 5, 3, 5, 0],
-      [3, 4, 5, 4, 2],
+    // 開いているのは上段の真ん中。だから見出しは D-H だけ欠けている。
+    const OPEN_C = 1;
+    const OPEN_R = 0;
+    const LABELS: Array<Array<[string, string]>> = [
+      [
+        ["A", "C"],
+        ["", ""],
+        ["I", "M"],
+      ],
+      [
+        ["N", "R"],
+        ["S", "U"],
+        ["V", "Z"],
+      ],
     ];
-    const OLD = [
-      [2, 0, 3, 0, 2],
-      [0, 2, 0, 2, 0],
-      [2, 0, 3, 0, 3],
-    ];
-    // 名前のない抽斗（TICKS=0）は書き換えようがないので、そこには紅を引かない。
-    const REWRITTEN = new Set(["0,3", "2,1", "2,3"]);
-    const AGED = new Set(["0,0", "0,4", "1,1", "2,2", "2,4"]);
-
-    // 動き: 抽斗が1つだけ、ゆっくり開いて閉じる。
-    const open = Math.round(4 * Math.max(0, Math.sin(t * Math.PI * 2)));
-    const OPEN_R = 1;
-    const OPEN_C = 2;
-
-    for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++) {
+    for (let r = 0; r < 2; r++)
+      for (let c = 0; c < 3; c++) {
         if (r === OPEN_R && c === OPEN_C) continue;
-        drawer(
-          g,
-          GX + c * DW,
-          GY + r * DH,
-          TICKS[r][c],
-          OLD[r][c],
-          REWRITTEN.has(`${r},${c}`),
-          r * 5 + c,
-          AGED.has(`${r},${c}`),
-        );
+        drawer(g, COLX[c], ROWY[r], LABELS[r][c][0], LABELS[r][c][1], r * 3 + c);
       }
 
     // ── 開いた抽斗 ─────────────────────────────────────────
-    // 中には索引の札が立っている。1枚だけ持ち上がって、書き直しの跡が見える。
-    const ox = GX + OPEN_C * DW;
-    const oy = GY + OPEN_R * DH;
-    if (open > 0) {
-      g.rect(ox, oy, DW - 1, DH - 1, "#2b2114");
-      g.rect(ox + 1, oy + 1, DW - 3, DH - 3, "#1b150e");
-      for (let i = 0; i < 4; i++) {
-        const cx = ox + 1 + i * 2;
-        g.vline(cx, oy + 1, DH - 3, i === 2 ? CARD : PAPER_DK);
-        g.vline(cx + 1, oy + 1, DH - 3, PAPER_DP);
-      }
-      const lift = open;
-      g.rect(ox + 2, oy - lift, 6, 7, CARD);
-      g.frame(ox + 2, oy - lift, 6, 7, NAVY_PALE);
-      g.hline(ox + 3, oy + 2 - lift, 4, NAVY);
-      g.hline(ox + 3, oy + 4 - lift, 4, PAPER_DP);
-      g.hline(ox + 3, oy + 4 - lift, 4, CRIMSON, "vstripe");
+    const ox = COLX[OPEN_C];
+    const oy = ROWY[OPEN_R];
+    g.rect(ox, oy, DW, DH, "#2a2114");
+    g.rect(ox + 1, oy + 1, DW - 2, DH - 4, "#17110a");
+    // 抽斗の側板。ここが無いと、ただの穴になる。
+    g.vline(ox + 1, oy + 1, DH - 2, WOOD_DK);
+    g.vline(ox + DW - 2, oy + 1, DH - 2, WOOD_DP);
+    g.frame(ox, oy, DW, DH, WOOD_DP);
+    // 立っている索引の札
+    for (let i = 0; i < 7; i++) {
+      const cx = ox + 3 + i * 2;
+      g.vline(cx, oy + 2, DH - 6, i === 3 ? CARD : PAPER_DK);
+      g.vline(cx + 1, oy + 2, DH - 6, PAPER_DP);
     }
-    drawer(g, ox, oy + open, TICKS[OPEN_R][OPEN_C], OLD[OPEN_R][OPEN_C], true, 7);
+    // 手前に倒れた前板。引き手が下を向いている。
+    g.hline(ox + 1, oy + DH - 3, DW - 2, WOOD_LT);
+    g.rect(ox + 1, oy + DH - 2, DW - 2, 2, WOOD);
+    g.hline(ox + 1, oy + DH - 1, DW - 2, WOOD_DK);
+    g.rect(ox + 8, oy + DH - 2, 3, 2, "#634c28");
+    g.px(ox + 8, oy + DH - 2, "#cdb68e");
+
+    // ── 持ち上がった1枚 ────────────────────────────────────
+    // 消された前の名前と、引き直された今の名前。図鑑の主題はここにある。
+    const lift = 1 + Math.round(3 * Math.max(0, Math.sin(t * Math.PI * 2)));
+    const cx0 = ox + 5;
+    const cy0 = oy - lift;
+    g.rect(cx0 + 1, cy0 + 1, 9, 10, "#00000026");
+    g.rect(cx0, cy0, 9, 10, CARD);
+    g.frame(cx0, cy0, 9, 10, NAVY_PALE);
+    g.hline(cx0 + 1, cy0 + 1, 7, "#ffffff");
+    g.hline(cx0 + 2, cy0 + 2, 5, NAVY_PALE); // 番号
+    g.hline(cx0 + 2, cy0 + 4, 6, PAPER_DP); // 消された前の名前
+    g.hline(cx0 + 1, cy0 + 4, 7, CRIMSON);
+    g.hline(cx0 + 2, cy0 + 6, 5, NAVY); // 引き直された今の名前
+    g.hline(cx0 + 2, cy0 + 7, 4, NAVY);
+    g.px(cx0 + 2, cy0 + 8, NAVY_PALE);
+    g.px(cx0 + 4, cy0 + 8, NAVY_PALE);
+    g.px(cx0 + 6, cy0 + 8, NAVY_PALE);
 
     // ── 年表 ───────────────────────────────────────────────
     // 名前が与えられた年に目盛りを打つ。実物と同じ 1518 から 2022 まで。
     const AY = 36;
-    g.text3x5(5, AY - 2, "1518", "#9aa1b6");
-    g.text3x5(49, AY - 2, "2022", "#9aa1b6");
-    g.hline(21, AY, 26, NAVY_LT);
-    g.px(20, AY, NAVY);
-    g.px(47, AY, NAVY);
-    const MARKS = [1, 3, 6, 8, 11, 13, 14, 16, 17, 19, 20, 21, 22, 23, 24];
-    for (const m of MARKS) g.px(21 + m, AY - 1, NAVY_LT);
-    for (const m of [8, 17, 22]) g.vline(21 + m, AY - 2, 2, NAVY);
+    g.text3x5(3, AY - 2, "1518", "#9aa1b6");
+    g.text3x5(42, AY - 2, "2022", "#9aa1b6");
+    g.hline(20, AY, 20, NAVY_LT);
+    g.px(19, AY, NAVY);
+    g.px(40, AY, NAVY);
+    const MARKS = [1, 3, 5, 7, 8, 10, 12, 13, 15, 16, 17, 18, 19];
+    for (const m of MARKS) g.px(20 + m, AY - 1, NAVY_LT);
+    for (const m of [7, 13, 17]) g.vline(20 + m, AY - 2, 2, NAVY);
     // いま開いている抽斗が指している年
-    g.vline(21 + 19, AY - 3, 3, CRIMSON);
-    g.px(21 + 18, AY - 4, CRIMSON);
-    g.px(21 + 20, AY - 4, CRIMSON);
-    g.hline(5, AY + 3, 58, PAPER_DP, "vstripe");
+    g.vline(20 + 15, AY - 3, 3, CRIMSON);
+    g.px(20 + 14, AY - 4, CRIMSON);
+    g.px(20 + 16, AY - 4, CRIMSON);
+    g.hline(3, 38, 50, PAPER_DP, "vstripe");
 
     // ── 枠 ─────────────────────────────────────────────────
+    // 16枚共通の作法。外周1pxの単色だけ。
     g.frame(0, 0, 68, 40, NAVY);
-    g.px(1, 1, NAVY_PALE);
-    g.px(66, 1, NAVY_PALE);
-    g.px(1, 38, NAVY_PALE);
-    g.px(66, 38, NAVY_PALE);
+    mark(g, NAVY, PAPER);
   },
 };

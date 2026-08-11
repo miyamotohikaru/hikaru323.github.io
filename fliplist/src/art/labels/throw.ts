@@ -57,6 +57,13 @@ function word(g: PixelGfx, x: number, y: number, s: string, fill: string, edge: 
   put(0, 0, fill);
 }
 
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 /** 群衆の1人。3x5。両手を上げて見上げている。 */
 const CROWD = ["#.#", ".#.", "###", ".#.", "#.#"];
 
@@ -228,21 +235,20 @@ export const art: LabelArt = {
     g.hline(37, 34, 3, GRASS_DK);
     g.hline(44, 35, 3, GRASS_DK);
     g.hline(51, 34, 3, GRASS_DK);
-    g.blit(58, 29, THROWER, { "#": "#0b1a0f" });
-    g.hline(57, 38, 7, GRASS_DK2);
+    // 投げた本人。右下の隅は発行元の印にあけておくので、少し内側に立たせる。
+    g.blit(55, 29, THROWER, { "#": "#0b1a0f" });
+    g.hline(54, 38, 7, GRASS_DK2);
 
     // ── 題字 ────────────────────────────────────────────
+    // 下辺の枠に食われないよう、副題の箱は1px以上あけて置く。
     word(g, 3, 23, "THROW", "#ffffff", INK, "#f2d05a");
-    g.rect(2, 31, 27, 9, INK);
-    g.frame(2, 31, 27, 9, "#f2d05a");
-    g.text3x5(5, 33, "TO WIN", "#f2d05a");
+    g.rect(2, 30, 29, 8, INK);
+    g.frame(2, 30, 29, 8, "#f2d05a");
+    g.text3x5(5, 32, "TO WIN", "#f2d05a");
 
     // ── 枠 ──────────────────────────────────────────────
+    // 16枚共通の作法。外周1pxの単色だけ。
     g.frame(0, 0, 68, 40, INK);
-    g.frame(1, 1, 66, 38, "#42589a");
-    g.px(1, 1, INK);
-    g.px(66, 1, INK);
-    g.px(1, 38, INK);
-    g.px(66, 38, INK);
+    mark(g, "#f2d05a", INK);
   },
 };

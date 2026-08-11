@@ -29,6 +29,13 @@ const RED = "#e0475a";
 const MAGENTA = "#d060b0";
 const GOLD = "#f0c64a";
 
+// ── 発行元の印 ──────────────────────────────────────────
+// 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
+const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
+function mark(g: PixelGfx, body: string, eye: string) {
+  g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
 /** 留めピン。標本は必ずこれで刺してある。 */
 function pin(g: PixelGfx, x: number, top: number, len: number) {
   g.vline(x, top, len, BRASS_DK);
@@ -273,11 +280,8 @@ export const art: LabelArt = {
     );
 
     // ── 枠 ─────────────────────────────────────────────────
-    g.frame(1, 1, 66, 38, BRASS_DK);
-    g.frame(0, 0, 68, 40, EDGE);
-    g.px(1, 1, BRASS_LT);
-    g.px(66, 1, BRASS_LT);
-    g.px(1, 38, BRASS_LT);
-    g.px(66, 38, BRASS_LT);
+    // 16枚共通の作法。外周1pxの単色だけ。標本箱の真鍮の縁は絵の側の線。
+    g.frame(0, 0, 68, 40, BRASS);
+    mark(g, BRASS_LT, EDGE);
   },
 };
