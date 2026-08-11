@@ -36,6 +36,19 @@ function mark(g: PixelGfx, body: string, eye: string) {
   g.blit(61, 33, MARK, { "#": body, o: eye });
 }
 
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string) {
+  let cx = x;
+  for (const ch of s) {
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16;
+  }
+}
+
 /** 留めピン。標本は必ずこれで刺してある。 */
 function pin(g: PixelGfx, x: number, top: number, len: number) {
   g.vline(x, top, len, BRASS_DK);
@@ -117,38 +130,41 @@ export const art: LabelArt = {
     g.noise(2, 2, 64, 36, FELT_LT, 0.14, 5501);
     g.noise(2, 2, 64, 36, FELT_DK, 0.1, 8812);
 
-    // ── 上の分類表 ─────────────────────────────────────────
-    // 6つに分けたつもりが、下でひと組にまとまってしまう図。
-    // 標題は字間を空けて黒で縁取る。真鍮の枠に負けない重さにする。
+    // ── 題字 ─────────────────────────────────────────────
+    // 実機の作法どおり、上の16行をまるごと題字に使う。
+    // そのぶん標本箱は1段になった。「上下で成り立たない対」は諦めて、
+    // 「左右で相容れない対」だけを残す。器の話なので、段が減っても嘘にはならない。
     for (const [dx, dy] of [
       [-1, 0],
       [1, 0],
       [0, -1],
       [0, 1],
-    ])
-      g.text3x5(4 + dx, 2 + dy, "VALUES", "#14092a", 2);
-    g.text3x5(4, 2, "VALUES", CREAM, 2);
-    g.hline(4, 8, 26, BRASS_DK);
-    g.px(31, 8, BRASS);
+      [-1, -1],
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+    ] as const)
+      jp(g, 3 + dx, 2 + dy, "価値観", "#14092a");
+    jp(g, 3, 2, "価値観", CREAM);
 
+    // 分類の色玉。6つに分けたつもりが、下でひと組にまとまってしまう図。
     const CHIPS = [CREAM, CYAN, ORANGE, GREEN, RED, MAGENTA];
     CHIPS.forEach((c, i) => {
-      const x = 34 + i * 5;
-      g.rect(x, 2, 3, 3, c);
-      g.px(x, 2, "#ffffff");
-      g.px(x + 2, 4, SHADOW);
-      g.vline(x + 1, 5, 2, BRASS_DK);
+      const x = 52 + (i % 2) * 7;
+      const y = 3 + Math.floor(i / 2) * 4;
+      g.rect(x, y, 5, 3, c);
+      g.px(x, y, "#ffffff");
+      g.px(x + 4, y + 2, SHADOW);
     });
-    g.hline(35, 7, 28, BRASS);
-    g.px(34, 7, BRASS_DK);
-    g.px(63, 7, BRASS_DK);
-    g.vline(49, 8, 1, BRASS);
+    g.hline(52, 15, 12, BRASS);
+    g.px(51, 15, BRASS_DK);
+    g.px(64, 15, BRASS_DK);
 
     // ── 標本箱 ─────────────────────────────────────────────
     const CX = 3;
-    const CY = 9;
+    const CY = 19;
     const CW = 62;
-    const CH = 28;
+    const CH = 19;
     g.rect(CX, CY, CW, CH, FELT_DK);
     g.frame(CX, CY, CW, CH, BRASS);
     g.hline(CX + 1, CY, CW - 2, BRASS_LT);
@@ -167,69 +183,44 @@ export const art: LabelArt = {
       g.vline(dx + 1, CY + 1, CH - 2, "#452f10");
       g.vline(dx, CY + 1, CH - 3, BRASS);
     }
-    // 横の仕切りは真ん中の列だけ通さない。中央が背の高い1マスになる。
-    for (const [x0, w] of [
-      [4, 14],
-      [19, 13],
-      [50, 14],
-    ]) {
-      g.hline(x0, 23, w, BRASS_DK);
-      g.hline(x0, 22, w, "#3a2410");
-      g.hline(x0, 24, w, "#452f10");
-    }
 
     // マスの通し番号。中身が無くても番号だけは先に振ってある、という体。
     for (const [nx, ny, s] of [
-      [5, 11, "1"],
-      [5, 25, "2"],
-      [20, 11, "3"],
-      [20, 25, "4"],
-      [51, 11, "5"],
-      [51, 25, "6"],
+      [5, 21, "1"],
+      [20, 21, "2"],
+      [51, 21, "3"],
     ] as Array<[number, number, string]>)
       g.text3x5(nx, ny, s, "#6b4f18");
 
     // ── 標本 ───────────────────────────────────────────────
-    // 左右は必ず対。上と下で成り立たないものを並べる。
-    pin(g, 10, 11, 3);
-    specimen(g, "disc", 10, 17, CREAM);
-    tag(g, 6, 20);
-
-    pin(g, 10, 25, 2);
-    specimen(g, "ring", 10, 30, CREAM);
-    tag(g, 6, 34);
-
-    pin(g, 25, 11, 2);
-    specimen(g, "up", 25, 17, CYAN);
-    tag(g, 21, 20);
+    // 左右は必ず対。同じ棚で相容れないものを向かい合わせる。
+    pin(g, 10, 21, 3);
+    specimen(g, "disc", 10, 28, CREAM);
+    tag(g, 6, 32);
 
     // 動き: このマスだけ標本が入れ替わる。差し替えの一瞬は空になる。
-    pin(g, 25, 25, 2);
+    pin(g, 25, 21, 2);
     const phase = t % 1;
-    if (phase < 0.44) specimen(g, "down", 25, 30, ORANGE);
-    else if (phase > 0.56) specimen(g, "square", 25, 30, MAGENTA);
+    if (phase < 0.44) specimen(g, "down", 25, 28, ORANGE);
+    else if (phase > 0.56) specimen(g, "square", 25, 28, MAGENTA);
     else {
       // 差し替えの一瞬。空いた枠だけが破線で残る。
-      g.hline(21, 26, 9, "#6a5020", "vstripe");
-      g.hline(21, 34, 9, "#6a5020", "vstripe");
-      g.vline(21, 26, 9, "#6a5020", "hstripe");
-      g.vline(29, 26, 9, "#6a5020", "hstripe");
-      g.px(25, 28, BRASS_LT);
+      g.hline(21, 24, 9, "#6a5020", "vstripe");
+      g.hline(21, 32, 9, "#6a5020", "vstripe");
+      g.vline(21, 24, 9, "#6a5020", "hstripe");
+      g.vline(29, 24, 9, "#6a5020", "hstripe");
+      g.px(25, 26, BRASS_LT);
     }
-    tag(g, 21, 34);
+    tag(g, 21, 32);
 
-    pin(g, 56, 11, 2);
-    specimen(g, "plus", 56, 17, GREEN);
-    tag(g, 52, 20);
-
-    pin(g, 56, 25, 2);
-    specimen(g, "bar", 56, 30, RED);
-    tag(g, 52, 34);
+    pin(g, 56, 21, 2);
+    specimen(g, "plus", 56, 28, GREEN);
+    tag(g, 52, 32);
 
     // ── 中央：どちらとも決まらない標本 ─────────────────────
     // 左半分は地に図、右半分は図に地。同じものが同時に二通りある。
     const bx = 34;
-    const by = 12;
+    const by = 21;
     g.rect(bx + 1, by + 1, 13, 13, SHADOW);
     for (let j = 0; j < 13; j++)
       for (let i = 0; i < 13; i++) {
@@ -243,38 +234,33 @@ export const art: LabelArt = {
     pin(g, bx + 6, by - 2, 2);
 
     // 対になる矢印。噛み合わないまま向かい合っている。
-    const ay = 28;
-    g.hline(34, ay, 6, GOLD);
-    g.px(38, ay - 1, GOLD);
-    g.px(38, ay + 1, GOLD);
-    g.px(37, ay - 2, GOLD);
-    g.px(37, ay + 2, GOLD);
-    g.hline(42, ay, 6, CYAN);
+    const ay = 35;
+    g.hline(34, ay, 5, GOLD);
+    g.px(37, ay - 1, GOLD);
+    g.px(37, ay + 1, GOLD);
+    g.hline(42, ay, 5, CYAN);
     g.px(43, ay - 1, CYAN);
     g.px(43, ay + 1, CYAN);
-    g.px(44, ay - 2, CYAN);
-    g.px(44, ay + 2, CYAN);
     g.px(40, ay - 1, "#ffffff");
     g.px(41, ay + 1, "#ffffff");
-    tag(g, 36, 32, 9);
 
     // ── ガラス ─────────────────────────────────────────────
     // 斜めの照りを2本。標本箱がガラス越しであることだけ伝える。
     g.poly(
       [
-        [5, 35],
-        [15, 10],
-        [21, 10],
-        [11, 35],
+        [7, 36],
+        [16, 20],
+        [22, 20],
+        [13, 36],
       ],
       "#dbe8ff16",
     );
     g.poly(
       [
-        [24, 35],
-        [34, 10],
-        [36, 10],
-        [26, 35],
+        [26, 36],
+        [35, 20],
+        [37, 20],
+        [28, 36],
       ],
       "#dbe8ff14",
     );

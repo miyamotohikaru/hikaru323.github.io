@@ -21,6 +21,19 @@ function mark(g: PixelGfx, body: string, eye: string) {
 
 const PRINT = "#f4f2ea"; // 印画紙
 const EDGE = "#20242c";
+
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「ー」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string, sp = 0) {
+  let cx = x;
+  for (const ch of s) {
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16 + sp;
+  }
+}
 const RED = "#d82800";
 const GRASS = "#3aa03c";
 const GRASS_DK = "#1f7030";
@@ -132,43 +145,32 @@ export const art: LabelArt = {
     g.clip(3, 3, 62, 28); // ここから先は写真の中だけ
 
     // ── 空 ───────────────────────────────────────────────
-    g.ditherV(3, 3, 62, 23, "#3cbcfc", "#b4f0fc");
-    // 太陽
-    g.disc(56, 7, 4, NES.yellow);
-    g.disc(56, 7, 2, "#fff4b0");
-    for (let a = 0; a < 8; a++) {
-      const rad = (a * Math.PI) / 4;
-      const sx = 56 + Math.round(Math.cos(rad) * 6);
-      const sy = 7 + Math.round(Math.sin(rad) * 6);
-      // 写真の縁にかかる光条は出さない。切れた1pxが消し忘れに見える。
-      if (sy < 5) continue;
-      g.px(sx, sy, NES.gold);
-    }
-    // 雲
-    g.blit(7, 4, ["..###..", ".#####.", "#######"], { "#": "#fcfcfc" });
-    g.blit(6, 6, [".#####.."], { "#": "#dceef8" });
-    g.blit(30, 3, ["..####..", ".######.", "########"], { "#": "#fcfcfc" });
-    g.blit(29, 5, [".######."], { "#": "#dceef8" });
-    g.blit(44, 7, ["..###.", ".#####"], { "#": "#eaf8fc" });
+    // 上半分は題字の座。太陽と光条はやめて、地の階調だけにしてある。
+    // 大きな和文を空にじかに置くので、下地が騒がしいと字が読めない。
+    g.ditherV(3, 3, 62, 24, "#3cbcfc", "#b4f0fc");
+    // 雲。題字の下、頭のすぐ上にだけ低く出す。
+    g.blit(7, 15, ["..###..", ".#####.", "#######"], { "#": "#fcfcfc" });
+    g.blit(6, 17, [".#####.."], { "#": "#dceef8" });
+    g.blit(44, 14, ["..####..", ".######.", "########"], { "#": "#fcfcfc" });
+    g.blit(43, 16, [".######."], { "#": "#dceef8" });
 
     // ── 草地 ─────────────────────────────────────────────
-    g.rect(3, 26, 62, 5, GRASS);
-    g.hline(3, 26, 62, "#5cc44c");
-    g.rect(3, 28, 62, 3, GRASS_DK, "half");
+    g.rect(3, 27, 62, 4, GRASS);
+    g.hline(3, 27, 62, "#5cc44c");
+    g.rect(3, 29, 62, 2, GRASS_DK, "half");
     g.hline(3, 30, 62, "#175a26");
     for (let i = 0; i < 22; i++)
-      g.px(4 + i * 3 - (i & 1), 27 + (i % 3), "#7ad85c");
-
-    // ── 後列 ─────────────────────────────────────────────
-    for (let i = 0; i < BACK.length; i++) person(4 + i * 6, 8, BACK[i], HEAD);
+      g.px(4 + i * 3 - (i & 1), 28 + (i % 2), "#7ad85c");
 
     // ── 前列 ─────────────────────────────────────────────
+    // 題字に16行ゆずったぶん、後列の頭は落とした。
+    // 20人の群れは前列だけでも成り立つが、題字が無いと「ファミコン」に見えない。
     for (let i = 0; i < FRONT.length; i++)
-      person(1 + i * 6, 14, FRONT[i], BODY);
+      person(1 + i * 6, 18, FRONT[i], BODY);
 
     // ── 動くもの: 右端からもう1人フレームインする ───────
     const joined = t >= 0.5;
-    if (joined) person(60, 14, NEWCOMER, BODY);
+    if (joined) person(60, 18, NEWCOMER, BODY);
 
     // ── 本物はこの1人だけ。顔検出のような四隅の鉤で囲う ──
     // 群衆は赤い服だらけなので、鉤は白＋影にして必ず抜けるようにする
@@ -181,23 +183,28 @@ export const art: LabelArt = {
         [1, 1],
       ]) {
         const cx = rx + sx * 6 + o;
-        const cy = 17 + sy * 6 + o;
+        const cy = 24 + sy * 6 + o;
         g.hline(sx < 0 ? cx : cx - 3, cy, 4, c);
         g.vline(cx, sy < 0 ? cy : cy - 3, 4, c);
       }
     };
     bracket("#101418", 1);
     bracket(NES.white, 0);
-    g.px(rx + 6, 11, RED);
-    g.px(rx - 6, 23, RED);
+    g.px(rx + 6, 18, RED);
+    g.px(rx - 6, 30, RED);
 
     g.unclip();
     g.frame(3, 3, 62, 28, "#00000033");
     g.frame(2, 2, 64, 30, EDGE);
 
+    // ── 題字 ─────────────────────────────────────────────
+    // 実機の作法どおり、空にじかに大きく。写真の枠は跨いでよい。
+    // 濃紺の1色べた。空の水色との差だけで抜くので、ふち取りはいらない。
+    jp(g, 2, 2, "ともだち", EDGE);
+
     // ── 下の白場 ─────────────────────────────────────────
-    // 題字・実数・カメラ・発行元。読ませない細字はやめて、題字に置き換えた。
-    g.text3x5(3, 33, "FRIENDS", EDGE);
+    // 題字が和文になったので、ここは欧文の従属表記と実数だけ。
+    g.text3x5(3, 33, "FRIENDS", "#5c6472");
     g.text3x5(33, 33, "1", EDGE);
     g.hline(38, 35, 5, EDGE); // 矢印
     g.px(42, 34, EDGE);

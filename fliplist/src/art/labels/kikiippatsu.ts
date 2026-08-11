@@ -31,7 +31,7 @@ const BEAR_S = "#c2b088";
 const BEAR_T = "#d6ab77";
 const BEAR_K = "#2f2942";
 
-const MCX = 34;
+const MCX = 40;
 const MCY = 47;
 const R = 25;
 
@@ -87,6 +87,42 @@ const KUMA = [
 const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
 function mark(g: PixelGfx, body: string, eye: string) {
   g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string, sp = 0) {
+  let cx = x;
+  for (const ch of s) {
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16 + sp;
+  }
+}
+/** 8方向に黒を回してから塗る。字と字のあいだにも黒が入って、画数が繋がらない。 */
+function jpEdge(
+  g: PixelGfx,
+  x: number,
+  y: number,
+  s: string,
+  fill: string,
+  edge: string,
+  sp = 0,
+) {
+  for (const [dx, dy] of [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ] as const)
+    jp(g, x + dx, y + dy, s, edge, sp);
+  jp(g, x, y, s, fill, sp);
 }
 
 const KUMA_PAL: Record<string, string> = {
@@ -288,7 +324,7 @@ export const art: LabelArt = {
     for (const [a, rr, h] of FACE) dagger(g, a, rr, 6, HILTS[h]);
 
     // まだ届いていない剣。左の空いた宙に2本、軌跡の点を引いて飛ばす。
-    const FLYING: Array<[number, number, number, number]> = [[11, 16, 0.72, 1]];
+    const FLYING: Array<[number, number, number, number]> = [[13, 37, 0.72, 1]];
     for (const [fx, fy, a, h] of FLYING) {
       for (let i = 1; i <= 4; i++) {
         g.px(
@@ -314,11 +350,11 @@ export const art: LabelArt = {
     }
 
     // ── こすくまくん ───────────────────────────────────────
-    const bx = 26;
+    const bx = 32;
     const by = 7;
     // 月の上に落ちる接地影
-    g.ellipse(34, 23, 6, 1, "#4a5378");
-    g.hline(31, 23, 6, "#3b446a");
+    g.ellipse(40, 23, 6, 1, "#4a5378");
+    g.hline(37, 23, 6, "#3b446a");
     g.blit(bx, by, KUMA, KUMA_PAL);
     // 前足。胴から少しだけはみ出す。
     g.disc(bx - 1, by + 12, 1, BEAR_C);
@@ -352,23 +388,12 @@ export const art: LabelArt = {
       }
     });
 
-    // ── 文字 ───────────────────────────────────────────────
-    // 題名は絵の一部として空に置く。
-    // 3x5 を1px右にもう一度打って太らせ、下に黒を敷いて空から浮かせる。
-    // 太らせるのではなく、8方向に黒を回して縁を取る。字形は崩さずに重くなる。
-    for (const [dx, dy] of [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1],
-      [-1, -1],
-      [1, -1],
-      [-1, 1],
-      [1, 1],
-    ])
-      g.text3x5(4 + dx, 2 + dy, "KIKI-IPPATSU", "#05071a", 2);
-    g.text3x5(4, 2, "KIKI-IPPATSU", CORAL, 2);
-    g.text3x5(4, 2, "KIKI", "#ffe9a8", 2);
+    // ── 題字 ───────────────────────────────────────────────
+    // 実機の作法どおり、左に2行で組む。1行4字は幅いっぱいになって月を全部食うので、
+    // 2字ずつ縦に積んで、右半分を月とくまに明け渡した。
+    // 8方向に黒を回す。字間0でも黒が挟まるので、画数の多い漢字が繋がらない。
+    jpEdge(g, 3, 2, "危機", "#ffe9a8", "#05071a");
+    jpEdge(g, 3, 18, "一髪", CORAL, "#05071a");
 
     // ── 枠 ─────────────────────────────────────────────────
     // 16枚共通の作法。外周1pxの単色だけ。四隅の飾りはやめた。

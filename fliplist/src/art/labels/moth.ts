@@ -26,34 +26,17 @@ const AMBER = "#c98a2a";
 // 軌跡の線。実物の画面に残る細い円と同じ色味
 const TRACE = ["#4a6b46", "#6b3a2c", "#5c5230", "#2f5a5c", "#5c3a52"];
 
-const GLYPH: Record<string, string[]> = {
-  M: ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"],
-  O: [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
-  T: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."],
-  H: ["#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
-};
-
-function word(g: PixelGfx, x: number, y: number, s: string, fill: string, edge: string) {
-  const put = (dx: number, dy: number, c: string) => {
-    let cx = x + dx;
-    for (const ch of s) {
-      const rows = GLYPH[ch];
-      if (rows) g.blit(cx, y + dy, rows, { "#": c });
-      cx += 6;
-    }
-  };
-  for (const [dx, dy] of [
-    [-1, 0],
-    [1, 0],
-    [0, -1],
-    [0, 1],
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-    [1, 1],
-  ])
-    put(dx, dy, edge);
-  put(0, 0, fill);
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string, sp = 0) {
+  let cx = x;
+  for (const ch of s) {
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16 + sp;
+  }
 }
 
 // 蛾。d=縁 D=翅 L=鱗粉 b=胴。羽ばたきの2コマ。
@@ -118,7 +101,8 @@ export const art: LabelArt = {
   swatch: [NIGHT, FLAME_O, FLAME_I, "#4a6b46", MOTH_B],
   draw: (g, t) => {
     const FX = 33; // 火の位置
-    const FY = 17;
+    // 題字に上の16行をゆずったので、蝋燭は下げて背も詰めてある。
+    const FY = 24;
 
     // ── 闇 ──────────────────────────────────────────────
     g.rect(0, 0, 68, 40, NIGHT);
@@ -144,19 +128,19 @@ export const art: LabelArt = {
     traceRing(g, FX + 3, FY + 1, 30, 19, "#3a4a3a", 2.8, 83);
 
     // ── 蝋燭 ────────────────────────────────────────────
-    g.rect(FX - 3, FY + 6, 7, 11, WAX_SH);
-    g.rect(FX - 2, FY + 6, 4, 11, WAX);
-    g.vline(FX + 3, FY + 6, 11, WAX_DK);
+    g.rect(FX - 3, FY + 6, 7, 6, WAX_SH);
+    g.rect(FX - 2, FY + 6, 4, 6, WAX);
+    g.vline(FX + 3, FY + 6, 6, WAX_DK);
     g.hline(FX - 3, FY + 6, 7, "#fff6e0");
     // 垂れた蝋
-    g.vline(FX - 3, FY + 8, 4, "#fff6e0");
+    g.vline(FX - 3, FY + 8, 3, "#fff6e0");
+    g.px(FX - 4, FY + 9, WAX_SH);
     g.px(FX - 4, FY + 10, WAX_SH);
-    g.px(FX - 4, FY + 11, WAX_SH);
     // 受け皿
-    g.ellipse(FX, FY + 18, 8, 2, "#4a3a24");
-    g.ellipse(FX, FY + 17, 7, 2, "#7a6038");
-    g.ellipse(FX, FY + 16, 5, 1, "#a88450");
-    g.hline(FX - 4, FY + 16, 9, WAX);
+    g.ellipse(FX, FY + 13, 8, 2, "#4a3a24");
+    g.ellipse(FX, FY + 12, 7, 2, "#7a6038");
+    g.ellipse(FX, FY + 11, 5, 1, "#a88450");
+    g.hline(FX - 4, FY + 11, 9, WAX);
     // 芯
     g.vline(FX, FY + 4, 2, "#2a2018");
 
@@ -191,13 +175,13 @@ export const art: LabelArt = {
     g.px(fx - 4, FY - 5 + sway, FLAME_O);
 
     // ── 遠くを回っている蛾 ───────────────────────────────
-    g.blit(7, 25, MOTH_FAR, { "#": "#4a3c2c" });
-    g.blit(58, 27, MOTH_FAR, { "#": "#3e3226" });
-    g.blit(13, 8, MOTH_FAR, { "#": "#3a3026" });
+    g.blit(6, 30, MOTH_FAR, { "#": "#4a3c2c" });
+    g.blit(60, 32, MOTH_FAR, { "#": "#3e3226" });
+    g.blit(11, 20, MOTH_FAR, { "#": "#3a3026" });
 
     // ── 蛾。火に向かって右上から降りてくる。羽が1コマ動く ────
-    const mx = 43;
-    const my = 4;
+    const mx = 44;
+    const my = 19;
     g.blit(mx, my, t < 0.5 ? MOTH_UP : MOTH_DOWN, {
       d: MOTH_D,
       D: MOTH_B,
@@ -221,12 +205,14 @@ export const art: LabelArt = {
     const r = rng(97);
     for (let i = 0; i < 10; i++) {
       const x = Math.round(mx + 2 + r() * 15);
-      const y = Math.round(my + 15 + r() * 9);
+      const y = Math.round(my + 14 + r() * 5);
       g.px(x, y, i % 3 === 0 ? "#e0c8a4" : "#7a6450");
     }
 
     // ── 題字と隅の文字 ───────────────────────────────────
-    word(g, 4, 3, "MOTH", AMBER, "#140e04");
+    // 16枚でいちばん暗い地なので、題字は炎の色をそのまま借りる。
+    // 闇にじかに置けば1色べたで抜ける。ふち取りは要らない（画数が潰れる）。
+    jp(g, 2, 2, "火入る虫", FLAME_M);
     const sub = (x: number, y: number, s: string, c: string) => {
       for (const [dx, dy] of [
         [-1, 0],
@@ -237,10 +223,8 @@ export const art: LabelArt = {
         g.text3x5(x + dx, y + dy, s, "#140e04");
       g.text3x5(x, y, s, c);
     };
-    sub(5, 12, "& FLAME", "#a87a34");
-    sub(3, 33, "DRAW", "#7a5c2c");
-    // 右下は発行元の印のためにあけておく
-    sub(37, 33, "CIRCLE", "#7a5c2c");
+    // 欧文は従。受け皿にかからない左端だけ。
+    sub(3, 34, "MOTH", AMBER);
 
     // ── 枠 ──────────────────────────────────────────────
     // 16枚共通の作法。外周1pxの単色だけ。16枚でいちばん暗いので琥珀にする。

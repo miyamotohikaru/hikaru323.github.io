@@ -35,6 +35,18 @@ function mark(g: PixelGfx, body: string, eye: string) {
   g.blit(61, 33, MARK, { "#": body, o: eye });
 }
 
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string) {
+  let cx = x;
+  for (const ch of s) {
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16;
+  }
+}
 function rot180(rows: string[]): string[] {
   return rows
     .slice()
@@ -105,41 +117,41 @@ export const art: LabelArt = {
       if (px > 68 || px < -14 || py > 40 || py < -18) continue;
       plate(g, px, py, ((i % 2) + 2) % 2);
     }
-    // 帯の下をうっすら紙に戻して、版面の余白を作る
-    g.rect(0, 31, 68, 9, PAPER);
-    g.noise(0, 31, 68, 9, PAPER2, 0.1, 991);
-    g.rect(0, 0, 68, 3, PAPER);
-    g.noise(0, 0, 68, 3, PAPER3, 0.1, 313);
-
-    // ── 見出しまわり ──────────────────────────────────────
-    // 型番は外装に刻印されているので、ここは通し番号にしてある。
-    g.rect(3, 3, 3, 3, RED);
-    g.text3x5(8, 3, "NO.001", INK2);
-    g.hline(3, 9, 44, INK);
-    g.hline(3, 10, 44, RULE2);
+    // 帯の下をうっすら紙に戻して、題字の座を作る
+    g.rect(0, 19, 68, 21, PAPER);
+    g.noise(0, 19, 68, 21, PAPER2, 0.1, 991);
+    g.rect(0, 0, 68, 2, PAPER);
+    g.noise(0, 0, 68, 2, PAPER3, 0.1, 313);
 
     // ── 主役の活字。上は正しく、下はひっくり返っている。 ─
     // 白場を作って、紙に刷った活字らしく見せる
-    g.rect(3, 13, 28, 17, SHADOW);
-    g.rect(2, 12, 28, 17, PAPER);
-    g.noise(2, 12, 28, 17, PAPER3, 0.16, 77);
-    g.frame(2, 12, 28, 17, RULE);
-    word(g, 4, 13, "FLIP", INK);
-    g.hline(4, 20, 24, INK);
-    word(g, 4, 22, "FLIP", RED, true);
+    g.rect(3, 3, 28, 16, SHADOW);
+    g.rect(2, 2, 28, 16, PAPER);
+    g.noise(2, 2, 28, 16, PAPER3, 0.16, 77);
+    g.frame(2, 2, 28, 16, RULE);
+    word(g, 4, 3, "FLIP", INK);
+    g.hline(4, 10, 24, INK);
+    word(g, 4, 11, "FLIP", RED, true);
     // ひっくり返る、の印
-    g.px(31, 18, RED);
-    g.px(32, 19, RED);
-    g.px(33, 20, RED);
-    g.px(32, 21, RED);
-    g.px(31, 22, RED);
+    g.px(31, 8, RED);
+    g.px(32, 9, RED);
+    g.px(33, 10, RED);
+    g.px(32, 11, RED);
+    g.px(31, 12, RED);
 
-    // ── 下の罫と欄外 ──────────────────────────────────────
-    // 右端は枠から1px以上あける。欄外の字が枠に触れると刷りずれに見える。
-    g.hline(3, 30, 62, INK);
-    g.hline(3, 31, 62, RULE2);
-    g.text3x5(3, 32, "FLIP ARCHIVE", INK2);
-    g.rect(52, 32, 1, 5, RED);
+    // ── 和文の題字 ────────────────────────────────────────
+    // 「図鑑」は 16px のこの書体だと「鑑」が黒い塊になって読めない。
+    // 実機の図鑑ものがそうしていたように、かなで開いて「ずかん」と組む。
+    // 上の活字と合わせて「FLIPずかん」と読ませる。
+    g.hline(2, 19, 62, INK);
+    g.hline(2, 20, 62, RULE2);
+    jp(g, 2, 22, "ずかん", INK);
+
+    // ── 欄外 ──────────────────────────────────────────────
+    // 型番は外装に刻印されているので、ここは通し番号にしてある。
+    g.text3x5(52, 22, "001", INK2);
+    g.rect(52, 28, 3, 3, RED);
+    g.hline(52, 33, 8, RULE);
 
     // ── ふち ──────────────────────────────────────────────
     // 16枚共通の作法。外周1pxの単色だけ。

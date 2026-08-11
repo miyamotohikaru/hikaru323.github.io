@@ -34,8 +34,8 @@ const CARD = "#f7f1e2";
 const DW = 19; // 抽斗の面の幅
 const DH = 9; // 抽斗の面の高さ
 const COLX = [4, 24, 44];
-const ROWY = [14, 23];
-const CAB_Y = 13; // 箪笥の天板
+const ROWY = [20, 29];
+const CAB_Y = 19; // 箪笥の天板
 const CAB_H = 20;
 
 // ── 発行元の印 ──────────────────────────────────────────
@@ -43,6 +43,19 @@ const CAB_H = 20;
 const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
 function mark(g: PixelGfx, body: string, eye: string) {
   g.blit(61, 33, MARK, { "#": body, o: eye });
+}
+
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string) {
+  let cx = x;
+  for (const ch of s) {
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16;
+  }
 }
 
 /**
@@ -85,19 +98,25 @@ export const art: LabelArt = {
     g.vline(65, 2, 36, PAPER_DP);
 
     // ── 標題 ───────────────────────────────────────────────
-    // 字間を空けて紙色の縁を回す。図鑑の扉らしく、重いが騒がしくない。
-    for (const [dx, dy] of [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1],
-    ])
-      g.text3x5(5 + dx, 2 + dy, "DIAGNOSIS", "#f7f1e0", 2);
-    g.text3x5(5, 2, "DIAGNOSIS", NAVY, 2);
-    g.text3x5(53, 2, "151", CRIMSON);
-    g.hline(53, 1, 11, NAVY_PALE);
-    g.hline(5, 9, 58, NAVY_LT);
-    g.hline(5, 9, 58, NAVY, "half");
+    // 和文は「索引」の二字だけにしてある。この題材で大きく打ってよいのは、
+    // 中身ではなく器の名前だけ。病名は一つも書かない。
+    jp(g, 4, 2, "索引", NAVY);
+
+    // 年表。標題の右のあきへ移した。実物と同じ 1518 から 2022 まで。
+    g.text3x5(36, 2, "1518", "#9aa1b6");
+    g.hline(36, 9, 28, NAVY_LT);
+    g.px(35, 9, NAVY);
+    g.px(64, 9, NAVY);
+    const MARKS = [1, 3, 5, 7, 8, 10, 12, 13, 15, 16, 17, 18, 19, 21, 23, 24];
+    for (const m of MARKS) g.px(36 + m, 8, NAVY_LT);
+    for (const m of [7, 13, 17, 23] as const) g.vline(36 + m, 7, 2, NAVY);
+    // いま開いている抽斗が指している年
+    g.vline(36 + 20, 7, 2, CRIMSON);
+    g.text3x5(50, 11, "2022", "#9aa1b6");
+    g.text3x5(36, 11, "151", CRIMSON);
+
+    g.hline(4, 17, 60, NAVY_LT);
+    g.hline(4, 17, 60, NAVY, "half");
 
     // ── 名刺箪笥 ───────────────────────────────────────────
     // 6杯。等間隔だが、数が少ないので格子には見えない。
@@ -107,14 +126,14 @@ export const art: LabelArt = {
     g.vline(3, CAB_Y, CAB_H, "#241a0e");
     g.vline(63, CAB_Y, CAB_H, "#4a3a20");
 
-    // 開いているのは上段の真ん中。だから見出しは D-H だけ欠けている。
-    const OPEN_C = 1;
+    // 開いているのは上段のいちばん右。だから見出しは I-M だけ欠けている。
+    const OPEN_C = 2;
     const OPEN_R = 0;
     const LABELS: Array<Array<[string, string]>> = [
       [
         ["A", "C"],
+        ["D", "H"],
         ["", ""],
-        ["I", "M"],
       ],
       [
         ["N", "R"],
@@ -167,23 +186,6 @@ export const art: LabelArt = {
     g.px(cx0 + 2, cy0 + 8, NAVY_PALE);
     g.px(cx0 + 4, cy0 + 8, NAVY_PALE);
     g.px(cx0 + 6, cy0 + 8, NAVY_PALE);
-
-    // ── 年表 ───────────────────────────────────────────────
-    // 名前が与えられた年に目盛りを打つ。実物と同じ 1518 から 2022 まで。
-    const AY = 36;
-    g.text3x5(3, AY - 2, "1518", "#9aa1b6");
-    g.text3x5(42, AY - 2, "2022", "#9aa1b6");
-    g.hline(20, AY, 20, NAVY_LT);
-    g.px(19, AY, NAVY);
-    g.px(40, AY, NAVY);
-    const MARKS = [1, 3, 5, 7, 8, 10, 12, 13, 15, 16, 17, 18, 19];
-    for (const m of MARKS) g.px(20 + m, AY - 1, NAVY_LT);
-    for (const m of [7, 13, 17]) g.vline(20 + m, AY - 2, 2, NAVY);
-    // いま開いている抽斗が指している年
-    g.vline(20 + 15, AY - 3, 3, CRIMSON);
-    g.px(20 + 14, AY - 4, CRIMSON);
-    g.px(20 + 16, AY - 4, CRIMSON);
-    g.hline(3, 38, 50, PAPER_DP, "vstripe");
 
     // ── 枠 ─────────────────────────────────────────────────
     // 16枚共通の作法。外周1pxの単色だけ。

@@ -37,21 +37,40 @@ const RED_D = "#8f1408";
 const RED_L = "#f2705a";
 const CREAM = "#f6e9c8";
 
-// ラベルの中に置く大きな文字。3x5 では小さすぎるので必要な字だけ持つ。
-const BIG: Record<string, string[]> = {
-  H: ["#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
-  E: ["#####", "#....", "#....", "####.", "#....", "#....", "#####"],
-  L: ["#....", "#....", "#....", "#....", "#....", "#....", "#####"],
-  P: ["####.", "#...#", "#...#", "####.", "#....", "#....", "#...."],
-};
-
-function bigWord(g: PixelGfx, x: number, y: number, s: string, c: string) {
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「ー」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string, sp = 0) {
   let cx = x;
   for (const ch of s) {
-    const rows = BIG[ch];
-    if (rows) g.blit(cx, y, rows, { "#": c });
-    cx += 6;
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16 + sp;
   }
+}
+/** 8方向にふちを回してから塗る。夕空の上でも字が沈まない。 */
+function jpEdge(
+  g: PixelGfx,
+  x: number,
+  y: number,
+  s: string,
+  fill: string,
+  edge: string,
+  sp = 0,
+) {
+  for (const [dx, dy] of [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ] as const)
+    jp(g, x + dx, y + dy, s, edge, sp);
+  jp(g, x, y, s, fill, sp);
 }
 
 // こすくま。手前の腕だけ別にして、差し出す動きを付ける。
@@ -138,21 +157,6 @@ export const art: LabelArt = {
     g.px(41, 6, INK2);
     g.px(42, 5, INK2);
     g.px(43, 6, INK2);
-
-    // ── 題字。ふち取りしてから塗る。 ─────────────────────
-    for (const [dx, dy] of [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1],
-      [-1, -1],
-      [1, -1],
-      [-1, 1],
-      [1, 1],
-    ] as const)
-      bigWord(g, 18 + dx, 3 + dy, "HELP", CREAM);
-    bigWord(g, 19, 4, "HELP", RED_D);
-    bigWord(g, 18, 3, "HELP", RED);
 
     // ── 町なみ ────────────────────────────────────────────
     const blds: Array<[number, number, number]> = [
@@ -261,47 +265,52 @@ export const art: LabelArt = {
       const c = p < 0.4 ? RED : p < 0.75 ? RED_L : "#f9c2b2";
       for (let a = -62; a <= 62; a += 7) {
         const rad = (a * Math.PI) / 180;
-        g.px(54 + Math.round(Math.sin(rad) * r), 8 - Math.round(Math.cos(rad) * r), c);
+        g.px(57 + Math.round(Math.sin(rad) * r), 8 - Math.round(Math.cos(rad) * r), c);
       }
     }
 
     g.poly(
       [
-        [47, 10],
-        [61, 10],
-        [54, 19],
+        [50, 10],
+        [64, 10],
+        [57, 19],
       ],
       INK,
     );
-    g.disc(54, 8, 6, INK);
+    g.disc(57, 8, 6, INK);
     g.poly(
       [
-        [48, 10],
-        [60, 10],
-        [54, 17],
+        [51, 10],
+        [63, 10],
+        [57, 17],
       ],
       RED,
     );
-    g.disc(54, 8, 5, RED);
-    g.disc(52, 6, 2, RED_L);
-    g.px(51, 5, "#ffc8b8");
-    g.rect(49, 11, 11, 3, RED_D, "half");
+    g.disc(57, 8, 5, RED);
+    g.disc(55, 6, 2, RED_L);
+    g.px(54, 5, "#ffc8b8");
+    g.rect(52, 11, 11, 3, RED_D, "half");
     // ピンの中の「!」
-    g.vline(54, 5, 4, CREAM);
-    g.px(54, 10, CREAM);
+    g.vline(57, 5, 4, CREAM);
+    g.px(57, 10, CREAM);
 
     // ── こすくま。駆けつける。 ───────────────────────────
-    g.ellipse(13, 32, 8, 1, "#00000040");
-    g.blit(5, 13, BEAR, FURPAL);
-    g.blit(16, 25 - hand, ARM, FURPAL);
+    g.ellipse(13, 33, 8, 1, "#00000040");
+    g.blit(5, 15, BEAR, FURPAL);
+    g.blit(16, 27 - hand, ARM, FURPAL);
     // ほお
-    g.px(6, 20, "#f2a68c");
-    g.px(7, 20, "#f2a68c");
-    g.px(14, 20, "#f2a68c");
+    g.px(6, 22, "#f2a68c");
+    g.px(7, 22, "#f2a68c");
+    g.px(14, 22, "#f2a68c");
     // 走っている砂ぼこり
-    g.px(2, 30, GND_L);
-    g.px(3, 29, "#ffffff");
-    g.px(0, 28, GND_L);
+    g.px(2, 32, GND_L);
+    g.px(3, 31, "#ffffff");
+    g.px(0, 30, GND_L);
+
+    // ── 題字 ──────────────────────────────────────────────
+    // 実機の作法どおり、夕空に大きく。こすくまの耳の上を堂々と横切らせる。
+    // 赤にクリームのふちを回す。夕焼けのどの段の上でも字が沈まない組み合わせ。
+    jpEdge(g, 3, 2, "人助け", RED, CREAM);
 
     // ── 下の帯 ────────────────────────────────────────────
     // 型番は外装の下帯に刻印されているので、ラベルには入れない。

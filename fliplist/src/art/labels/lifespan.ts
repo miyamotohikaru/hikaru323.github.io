@@ -9,6 +9,19 @@ function mark(g: PixelGfx, body: string, eye: string) {
   g.blit(61, 33, MARK, { "#": body, o: eye });
 }
 
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string, sp = 0) {
+  let cx = x;
+  for (const ch of s) {
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16 + sp;
+  }
+}
+
 // 「あと何秒、生きられる？」——36の問いに答えると、残り秒数が出る。
 //
 // 図の骨組み: 心電計から出てきた記録紙そのもの。
@@ -99,31 +112,27 @@ export const art: LabelArt = {
     g.hline(54, 12, 5, "#c85018");
     g.hline(55, 13, 3, "#c85018");
 
-    // ── 残量のバー ────────────────────────────────────────
-    g.rect(3, 17, 42, 5, "#eac6b4");
-    g.frame(3, 17, 42, 5, "#8f4a38");
-    g.rect(4, 18, 10, 3, RED);
-    g.rect(4, 18, 10, 3, REDDK, "half");
-    g.vline(14, 17, 5, INK); // いまの水位
-    for (let i = 1; i < 8; i++) g.vline(3 + i * 5, 17, 2, "#b4705c");
-    g.text3x5(48, 18, "24%", INK);
-    // 小さい心臓
-    g.blit(60, 17, [".#.#.", "#####", "#####", ".###.", "..#.."], { "#": RED });
-    g.px(61, 18, "#f8907c");
+    // ── 題字 ──────────────────────────────────────────────
+    // 記録紙に打ち出された見出し、という体裁。上下を赤の罫ではさむ。
+    // 残量のバーはここに場所を譲った。数字と心電図が残っていれば主題は立つ。
+    g.hline(3, 15, 62, "#d99f8a");
+    g.hline(3, 15, 62, RED, "vstripe");
+    jp(g, 2, 16, "寿命測定", INK);
+    g.hline(3, 32, 62, "#d99f8a");
+    g.hline(3, 32, 30, RED, "vstripe");
 
     // ── 心電図 ────────────────────────────────────────────
     // 拍は右へ行くほど小さく、間隔は広がる。弱って遅くなっていく。
-    const baseY = 28;
+    const baseY = 37;
     const trace: number[] = new Array(68).fill(baseY);
     const put = (i: number, v: number) => {
       if (i >= 0 && i < 68) trace[i] = v;
     };
     const beats: Array<[number, number]> = [
-      [6, 6],
-      [19, 5],
-      [34, 5],
-      [50, 3],
-      [63, 2],
+      [8, 4],
+      [21, 4],
+      [34, 3],
+      [46, 2],
     ];
     for (const [bx, a] of beats) {
       put(bx - 4, baseY - 1);
@@ -132,20 +141,22 @@ export const art: LabelArt = {
       put(bx, baseY + 1);
       put(bx + 1, baseY - a);
       put(bx + 2, baseY - a);
-      put(bx + 3, baseY + 2);
+      put(bx + 3, baseY + 1);
       put(bx + 6, baseY - 1);
       put(bx + 7, baseY - 2);
       put(bx + 8, baseY - 2);
       put(bx + 9, baseY - 1);
     }
-    // 拍のあいだの微細なゆらぎ。真っ直ぐな線にしない
+    // 拍のあいだのゆらぎ。帯が6行しかないので、粒は間引いて拍を立たせる。
     const wob = rng(4649);
-    for (let x = 3; x < 65; x++)
-      if (trace[x] === baseY && wob() < 0.22) trace[x] -= 1;
+    for (let x = 3; x < 54; x++)
+      if (trace[x] === baseY && trace[x - 1] === baseY && wob() < 0.06)
+        trace[x] -= 1;
 
-    const NOW = 44;
-    g.vline(NOW, 23, 9, "#eab8a6");
-    for (let x = 3; x < 65; x++) {
+    // 発行元の印にかからないところまでで打ち切る
+    const NOW = 40;
+    g.vline(NOW, 33, 6, "#eab8a6");
+    for (let x = 3; x < 54; x++) {
       const c = x <= NOW ? INK : "#c08a74"; // これから来るぶんは薄い
       const y0 = trace[x];
       const y1 = trace[x + 1] ?? y0;
@@ -156,17 +167,8 @@ export const art: LabelArt = {
     // いま
     g.rect(NOW - 1, trace[NOW] - 1, 3, 3, RED);
     g.px(NOW, trace[NOW], "#fff0e4");
-
-    // ── 下の帯: 題字と、答えた36問 ──────────────────────
-    // 記録紙に打ち出された見出しという体裁。赤の細い罫で一段区切る。
-    g.hline(3, 31, 62, "#d99f8a");
-    g.hline(3, 31, 30, RED, "vstripe");
-    g.text3x5(3, 32, "LIFESPAN", INK);
-    for (let j = 0; j < 3; j++)
-      for (let i = 0; i < 12; i++) {
-        const on = (i * 5 + j * 4) % 7 !== 3;
-        g.px(36 + i * 2, 32 + j * 2, on ? INK : "#cf9d88");
-      }
+    // 残量。バーは題字に場所を譲った。心臓ひとつだけ、波形の先に残す。
+    g.blit(55, 34, [".#.#.", "#####", ".###.", "..#.."], { "#": REDDK });
 
     // ── 外枠 ─────────────────────────────────────────────
     // 16枚共通の作法。外周1pxの単色だけ。

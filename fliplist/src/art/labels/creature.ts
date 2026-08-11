@@ -79,6 +79,41 @@ function mark(g: PixelGfx, body: string, eye: string) {
   g.blit(61, 33, MARK, { "#": body, o: eye });
 }
 
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string, sp = 0) {
+  let cx = x;
+  for (const ch of s) {
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16 + sp;
+  }
+}
+/** 8方向にふちを回してから塗る。空にも複眼のます目にも負けない。 */
+function jpEdge(
+  g: PixelGfx,
+  x: number,
+  y: number,
+  s: string,
+  fill: string,
+  edge: string,
+) {
+  for (const [dx, dy] of [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ] as const)
+    jp(g, x + dx, y + dy, s, edge);
+  jp(g, x, y, s, fill);
+}
+
 function drawScene(g: PixelGfx, m: Mode) {
   const c = P[m];
   // 空
@@ -119,8 +154,9 @@ function drawScene(g: PixelGfx, m: Mode) {
     g.ellipse(x + w - 3, y - 1, 3, 2, c.cloud);
     g.hline(x - w + 1, y + 2, w * 2 - 2, c.cloudSh);
   };
-  cloud(28, 5, 7);
-  cloud(58, 3, 5);
+  // 題字が上の16行を占めるので、雲は題字の裾より下だけに出す。
+  cloud(20, 18, 5);
+  cloud(58, 4, 5);
 
   // 遠い丘
   g.ellipse(12, 22, 22, 5, c.hill);
@@ -151,13 +187,13 @@ function drawScene(g: PixelGfx, m: Mode) {
 
   // 主役の花。境目にまたがるように置く
   const fx = 37;
-  const fy = 12;
-  g.vline(fx, fy + 6, 13, c.stem);
-  g.vline(fx + 1, fy + 9, 10, shade(c.stem, -0.3));
-  g.ellipse(fx - 5, fy + 11, 5, 2, c.leaf);
-  g.ellipse(fx + 6, fy + 14, 5, 2, c.leaf);
-  g.ellipse(fx - 5, fy + 11, 4, 1, shade(c.leaf, 0.22));
-  g.ellipse(fx + 6, fy + 14, 4, 1, shade(c.leaf, 0.22));
+  const fy = 20;
+  g.vline(fx, fy + 5, 8, c.stem);
+  g.vline(fx + 1, fy + 6, 6, shade(c.stem, -0.3));
+  g.ellipse(fx - 5, fy + 5, 5, 2, c.leaf);
+  g.ellipse(fx + 6, fy + 7, 5, 2, c.leaf);
+  g.ellipse(fx - 5, fy + 5, 4, 1, shade(c.leaf, 0.22));
+  g.ellipse(fx + 6, fy + 7, 4, 1, shade(c.leaf, 0.22));
   // 花びらは付け根から先へ伸びる木の葉型。1枚ずつ縁取りしてから塗る
   const petal = (a: number, len: number, wid: number, col: string) => {
     const dx = Math.cos(a);
@@ -176,18 +212,18 @@ function drawScene(g: PixelGfx, m: Mode) {
   // 1枚ずつ縁取ってから塗る。重ねる順に描くと花びらの境目が残る
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
-    petal(a, 11.4, 4.6, c.petalDk);
-    petal(a, 10.4, 3.4, c.petalEdge);
-    petal(a, 9.2, 2.2, c.petal);
+    petal(a, 9.2, 3.7, c.petalDk);
+    petal(a, 8.2, 2.7, c.petalEdge);
+    petal(a, 7.2, 1.8, c.petal);
   }
   // 紫外線で見える蜜標。人の目には出ない模様
-  g.ring(fx, fy, 5, c.guide, 2);
-  g.disc(fx, fy, 3, c.core);
-  g.disc(fx, fy, 2, c.coreLt, "half");
+  g.ring(fx, fy, 4, c.guide, 2);
+  g.disc(fx, fy, 2, c.core);
+  g.disc(fx, fy, 1, c.coreLt);
   g.px(fx - 1, fy - 1, c.coreLt);
 
-  // 蜂
-  g.blit(15, 7, BEE, { W: "#ffffffbb", "#": shade(c.bee, -0.62), Y: c.bee });
+  // 蜂。題字をよけて、右上のあきへ。
+  g.blit(52, 11, BEE, { W: "#ffffffbb", "#": shade(c.bee, -0.62), Y: c.bee });
 }
 
 export const art: LabelArt = {
@@ -234,20 +270,11 @@ export const art: LabelArt = {
     g.vline(split - 1, SY0, SY1 - SY0 + 1, "#1a1a20");
     g.vline(split, SY0, SY1 - SY0 + 1, "#fdf8ec");
     g.vline(split + 1, SY0, SY1 - SY0 + 1, "#1a1a20");
-    // つまみ。花にかからないよう下に置く
-    const ky = 24;
-    g.rect(split - 4, ky - 4, 9, 9, "#1a1a20");
-    g.rect(split - 3, ky - 3, 7, 7, "#fdf8ec");
-    g.px(split - 4, ky - 4, null);
-    g.px(split + 4, ky - 4, null);
-    g.px(split - 4, ky + 4, null);
-    g.px(split + 4, ky + 4, null);
-    g.hline(split - 3, ky + 3, 7, "#c8c0ac");
-    // 左右の矢印
-    g.px(split - 2, ky, "#1a1a20");
-    g.vline(split - 1, ky - 1, 3, "#1a1a20");
-    g.px(split + 2, ky, "#1a1a20");
-    g.vline(split + 1, ky - 1, 3, "#1a1a20");
+    // つまみは外した。題字に上の16行をゆずったぶん花を下げたので、
+    // 境目の上でつまみと花の芯がぶつかる。動く境目そのものが
+    // 「左右に振れる」ことを言っているので、箱は無くても意味は通る。
+    // 代わりに、境目の足もとに振れ幅の目盛りだけ残す。
+    for (const dx of [-4, -2, 2, 4]) g.px(split + dx, 28, "#1a1a20");
 
     // ── どちらの目か。ます目のあとに置くので潰れない ──────────
     const tag = (x: number, y: number, s: string, fg: string) => {
@@ -262,8 +289,10 @@ export const art: LabelArt = {
     };
     tag(3, 23, "HUMAN", "#fdf8ec");
     tag(55, 23, "BEE", "#d8f4a0");
-    // 題字。空にじかに置く。ここが人の目の側であることも兼ねる。
-    tag(2, 2, "CREATURE", "#fdf8ec");
+    // ── 題字 ────────────────────────────────────────────
+    // 空にじかに大きく。人の目の側から虫の目の側へ、境目をまたいで置く。
+    // またぐことで「同じ一枚の景色」だと言い切れる。
+    jpEdge(g, 3, 2, "生き物", "#fdf8ec", "#11131a");
 
     // ── 下の帯。生き物セレクタ ─────────────────────────────
     g.rect(0, 29, 68, 11, "#efe6d0");

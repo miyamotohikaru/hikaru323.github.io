@@ -40,6 +40,19 @@ const bow = (x: number) => {
   return Math.round((1 - d * d) * 2);
 };
 
+// ── 和文の題字 ──────────────────────────────────────────
+// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
+// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
+// 16px の枡の中に据え直すための落とし幅。
+const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
+function jp(g: PixelGfx, x: number, y: number, s: string, c: string) {
+  let cx = x;
+  for (const ch of s) {
+    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
+    cx += 16;
+  }
+}
+
 export const art: LabelArt = {
   slug: "words",
   swatch: [COVER, GOLD, PAPER, INK, RED],
@@ -54,16 +67,24 @@ export const art: LabelArt = {
     g.hline(1, 38, 66, COVER_DK);
     g.vline(66, 1, 38, COVER_DK);
 
+    // ── 題字。表紙の天に金の箔押しで ──────────────────────
+    // 実機の作法どおり、上の16行をまるごと題字に使う。
+    // 窓（見開き）はそのぶん下へ下げて、丈を詰めた。
+    jp(g, 2, 2, "言葉辞典", GOLD);
+    g.px(2, 19, GOLD);
+    g.px(65, 19, GOLD);
+
     // ── 紙面 ─────────────────────────────────────────────
+    const PTOP = 20;
+    const PBOT = 37;
     for (let x = 3; x <= 64; x++) {
       const b = bow(x);
-      const top = 3 + b;
-      const bot = 33 - b;
+      const top = PTOP + b;
+      const bot = PBOT - b;
       g.vline(x, top, bot - top + 1, PAPER);
       g.px(x, top, PAPER_HI); // 天は光を受ける
       g.px(x, bot, PAPER_DK);
       g.px(x, bot + 1, STACK1); // 小口に見える紙の束
-      g.px(x, bot + 2, STACK2);
     }
     // 喉の影
     for (const [x, c] of [
@@ -73,7 +94,7 @@ export const art: LabelArt = {
       [35, "#d2c4a1"],
     ] as Array<[number, string]>) {
       const b = bow(x);
-      g.vline(x, 3 + b, 31 - 2 * b, c);
+      g.vline(x, PTOP + b, PBOT - PTOP + 1 - 2 * b, c);
     }
 
     // ── 段組 ─────────────────────────────────────────────
@@ -109,60 +130,49 @@ export const art: LabelArt = {
       }
     };
 
-    // 左ページ
-    g.text3x5(5, 6, "SOREBI", INK);
-    g.hline(5, 12, 26, FAINT);
-    // 外の段は木版の図で切れる。内の段は紙の下端まで流す
-    column(5, 12, 14, 18, 3301);
-    column(19, 12, 14, 30, 3307);
+    // 左ページ。見出し語ひとつと、木版の図。
+    g.text3x5(5, 22, "SOREBI", INK);
+    g.hline(5, 27, 26, FAINT);
+    column(19, 12, 29, 35, 3307);
 
     // ── 語釈にはさまった木版の図 ─────────────────────────
     // 鍵に見えるが、鍵ではない。何を開けるためのものかは書かれていない。
     // 存在しない言葉の図なので、分からないのが正しい。
-    g.rect(5, 20, 13, 7, PAPER_HI);
-    g.frame(5, 20, 13, 7, INK);
-    g.rect(6, 21, 11, 5, PAPER);
+    g.rect(5, 29, 13, 7, PAPER_HI);
+    g.frame(5, 29, 13, 7, INK);
+    g.rect(6, 30, 11, 5, PAPER);
     g.blit(
       6,
-      21,
+      30,
       [".##........", "#..#.......", "#..########", "#..#....#.#", ".##.....#.."],
       { "#": INK },
     );
-    g.px(8, 22, FAINT); // 彫りの中の白
-    g.px(15, 24, SOFT);
-    g.text3x5(4, 28, "128", FAINT); // ノンブル
+    g.px(8, 31, FAINT); // 彫りの中の白
+    g.px(15, 33, SOFT);
 
     // 右ページ
-    g.text3x5(36, 6, "TOKEBI", INK);
-    g.hline(36, 12, 26, FAINT);
-    column(36, 12, 14, 30, 3313);
-    column(50, 12, 14, 23, 3319); // ここだけ末尾が空いている
-    g.text3x5(63 - g.text3x5Width("129"), 28, "129", FAINT);
+    g.text3x5(36, 22, "TOKEBI", INK);
+    g.hline(36, 27, 26, FAINT);
+    column(36, 12, 29, 35, 3313);
+    column(50, 12, 29, 32, 3319); // ここだけ末尾が空いている
 
     // ── 動くもの: 新しい見出し語が1つ載る ────────────────
     if (t >= 0.5) {
-      g.rect(50, 25, 6, 2, INK);
-      g.hline(58, 26, 3, FAINT);
-      g.px(48, 25, GOLD); // 追加された印
-      g.px(48, 26, RED);
+      g.rect(50, 34, 6, 2, INK);
+      g.hline(58, 35, 3, FAINT);
+      g.px(48, 34, GOLD); // 追加された印
+      g.px(48, 35, RED);
     }
 
     // ── しおり ───────────────────────────────────────────
-    // 表紙の下端より先には出さない。題字の上を横切ると字が読めなくなる。
-    g.rect(33, 28, 2, 6, RED);
-    g.vline(33, 28, 6, "#e8506c");
-    g.px(34, 33, "#8c0c24");
+    // 天から垂らす。題字の金の下から出て、紙面の途中で切れる。
+    g.rect(33, 18, 2, 9, RED);
+    g.vline(33, 18, 9, "#e8506c");
+    g.px(34, 26, "#8c0c24");
 
-    // ── 表紙の下端。ここに金の箔押しで題名が入る ─────────
-    // ラベル全面が表紙で、真ん中の窓から見開きが見えている、という組み方。
-    g.rect(1, 33, 66, 6, COVER);
-    g.noise(1, 33, 66, 6, "#7a1c2a", 0.16, 992);
-    g.noise(1, 33, 66, 6, "#9c3040", 0.07, 57);
-    g.hline(1, 33, 66, COVER_DK);
-    g.hline(1, 34, 66, COVER_LT, "half");
-    g.text3x5(4, 34, "FICTIONARY", GOLD);
-    g.px(46, 36, GOLD);
-    g.px(48, 36, GOLD);
+    // ── 表紙の小口 ───────────────────────────────────────
+    g.hline(1, 38, 66, COVER_DK);
+    // ノンブルは紙面が詰まったので落とした。字を入れる余白がもう無い。
 
     // ── 外枠 ─────────────────────────────────────────────
     // 16枚共通の作法。外周1pxの単色だけ。金の小口に見立てる。
