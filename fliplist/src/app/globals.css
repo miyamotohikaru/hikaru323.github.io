@@ -259,6 +259,10 @@ a {
   font-size: 16px;
   line-height: 16px;
   color: var(--ink);
+  /* Press Start 2P はベースラインが箱の中で低いので、
+     baseline で揃えると箱ごと2px持ち上がって和文より上に浮く。実測して戻す。 */
+  position: relative;
+  top: 2px;
 }
 .mast-sub-jp {
   font-size: 14px;
