@@ -247,34 +247,6 @@ body {
   color: var(--vja-accent);
   font-weight: 600;
 }
-/* 円筒の向こう側に回り込んだカードの裏面。隙間から覗いて一周ぶんの厚みを見せる */
-.vja-deck-back {
-  width: 100%;
-  aspect-ratio: 34 / 47;
-  border-radius: var(--card-r);
-  /* のっぺりした板だと「数枚しかない」ように見える。
-     重なったカードの小口（紙の断面）として描き、束の厚みを出す */
-  background: repeating-linear-gradient(
-      90deg,
-      rgba(243, 238, 224, 0.16) 0 1px,
-      rgba(243, 238, 224, 0.05) 1px 2px,
-      rgba(243, 238, 224, 0) 2px 5px
-    ),
-    radial-gradient(
-      58% 44% at 50% 50%,
-      rgba(243, 238, 224, 0.1),
-      rgba(243, 238, 224, 0) 72%
-    ),
-    var(--vja-ink);
-  /* 継ぎ目が見えないと、背面が並んでいるのか一枚の壁なのか分からなくなる */
-  box-shadow: inset 0 0 0 1px rgba(243, 238, 224, 0.26);
-}
-/* 裏を向いた位置のカードは、裏面を隠さずに見せる */
-.vja-deck-card.is-back {
-  backface-visibility: visible;
-  -webkit-backface-visibility: visible;
-}
-
 /* 奥のカードの代役（ぼかしきると色の板と同じなので、板で描いて描画を節約する） */
 .vja-deck-proxy {
   width: 100%;
@@ -296,8 +268,10 @@ body {
 }
 /* 円弧は奥のカードが薄い縁だけの姿になる。
    膜は絵柄の上に乗るので、縁の線は膜の側に持たせないと一緒に沈んでしまう */
-.vja-deck[data-flip="arc"] .vja-deck-card:not(.is-front)::after {
-  box-shadow: inset 0 0 0 1px rgba(58, 46, 34, 0.11);
+/* 円弧はカードの縁だけが並ぶ。境目の線が弱いと、束ではなく一枚の面に見える。
+   膜(::after)の不透明度は奥行きで変わるので、線は板そのものに持たせる */
+.vja-deck[data-flip="arc"] .vja-deck-proxy {
+  box-shadow: inset 0 0 0 1px rgba(58, 46, 34, 0.2);
 }
 
 /* ピント面より手前の板だけは、地の色より少し沈ませて重さを出す

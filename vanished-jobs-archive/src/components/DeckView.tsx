@@ -99,45 +99,61 @@ type Flip = {
   pad: number;
   /** 携帯でのカード幅（画面幅に対する%）。省略時は72 */
   narrowVW?: number;
+  /** 束の枚数に応じて並びを組み直す（円弧のように輪の大きさが枚数で決まるもの） */
+  build?: (total: number) => Partial<Flip>;
   /** 手前に外れた板を地の色より沈ませるか */
   nearDark: boolean;
 };
 
-/** 円弧は円筒に貼った回転台。位置は10個で一周する */
-const ARC_FACES = 10;
-/** 円筒の半径（カード幅に対する比）。大きいほどカード同士の隙間が開く */
-const ARC_R = 1.85;
+/** 円筒の半径（カード幅に対する比） */
+const ARC_R = 1.6;
 /** 円弧の遠近の強さ（カード幅に対する比） */
 const ARC_PERSP = 3.2;
-/** 90度を越えた位置のカードは裏を向く。そこは背面として描く */
-const arcIsBack = (n: number) => Math.abs(((360 / ARC_FACES) * n) % 360) > 90;
+/** 前後それぞれ何枚まで描くか。これより外は互いに隠れて見えなくなる */
+const ARC_REACH = 24;
 
 /**
- * 円弧の並びを、円筒に貼った回転台としてつくる。
+ * 円弧の並びを、束の全枚数ぶんの輪としてつくる。
  *
- * 奥へ一列に退かせる並べ方だと、横幅をいくらでも食うので携帯に収まらない。
- * 円筒なら、正面の数枚のほかは向こう側へ回り込むだけなので幅を食わず、
- * カード同士の隙間から裏を向いたカードの背面が覗いて「一周ぶんある」と分かる。
+ * 151枚をそのまま円に並べると1枚あたり約2.4度しかないので、カードは
+ * 9割がた重なり、縁だけが少しずつずれて覗く。その縁の連なりが束の厚みになる。
+ * 輪の向こう側は手前のカードに完全に隠れるため、描くのは手前側だけでよい。
  */
-function arcStops(): Record<number, Stop> {
+function arcStops(faces: number, reach: number): Record<number, Stop> {
   const out: Record<number, Stop> = { 0: FOCUS };
-  // 背面は暗さを残す。地の色で薄めすぎると、灰色の壁が一枚あるように見えてしまう
-  const veil = [0, 0.18, 0.35, 0.26, 0.34, 0.4, 0.4];
-  const blur = [0, 0, 2, 0, 0, 0, 0];
-  for (let n = -5; n <= 6; n++) {
+  const step = 360 / Math.max(faces, 3);
+  for (let n = -reach; n <= reach; n++) {
     if (n === 0) continue;
-    const deg = (360 / ARC_FACES) * n;
+    const deg = step * n;
     const th = (deg * Math.PI) / 180;
-    const a = Math.min(Math.abs(n), 6);
+    const a = Math.abs(n);
     out[n] = S({
       x: ARC_R * Math.sin(th),
       z: ARC_R * (Math.cos(th) - 1),
       rotY: deg, // 円筒の接線に沿わせる
-      veil: veil[a],
-      blur: blur[a],
+      // 膜が濃いと縁の色がそろってしまい、束ではなく一枚の面に見える
+      veil: Math.min(0.1 + 0.026 * (a - 1), 0.78),
+      blur: a <= 2 ? 1.5 : 0,
+      // 端の数枚は消えていくようにして、輪の切れ目を見せない
+      opacity: Math.min(1, (reach - a) / 3),
     });
   }
   return out;
+}
+
+/** 円弧は束の枚数だけ輪に並ぶので、並びは枚数が決まってから組む */
+function buildArc(total: number) {
+  const faces = Math.max(total, 3);
+  const reach = Math.min(ARC_REACH, Math.max(Math.floor((faces - 1) / 2), 1));
+  return {
+    stops: arcStops(faces, reach + 1),
+    min: -(reach + 1),
+    max: reach + 1,
+    ahead: reach,
+    behind: reach,
+    // 1枚送るあいだに輪が動く距離。ここを合わせないと指と輪がずれる
+    travel: ARC_R * ((2 * Math.PI) / faces),
+  };
 }
 
 export const FLIPS: Flip[] = [
@@ -197,24 +213,25 @@ export const FLIPS: Flip[] = [
     },
   },
   {
-    // 円筒に貼った回転台。隙間から裏を向いたカードが覗き、一周ぶんの厚みが見える
+    // 束の全枚数を円に並べる。1枚ずつずれた縁の連なりが、そのまま束の厚みになる
     id: "arc",
     ja: "円弧",
     en: "ARC",
-    min: -5,
-    max: 6,
-    ahead: 4,
-    behind: 5,
-    real: [0, 1, -1, 2, -2],
+    min: -2,
+    max: 2,
+    ahead: 1,
+    behind: 1,
+    real: [0, 1, -1],
     realTouch: [0, 1, -1],
     origin: "50% 50%",
     perspectiveW: ARC_PERSP,
-    travel: 0.5,
+    travel: 0.07,
     pad: 0.1,
-    // 回転台は横に場所が要るので、携帯ではカードを一回り小さくして並ぶ余地をつくる
-    narrowVW: 55,
+    // 輪は横に場所が要るので、携帯ではカードを一回り小さくして広がる余地をつくる
+    narrowVW: 52,
     nearDark: false,
-    stops: arcStops(),
+    stops: {},
+    build: buildArc,
   },
   {
     // 手札から一枚ずつ放る。抜けていくカードは色を保ったまま大きく回る
@@ -308,11 +325,11 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  * だったときに束のまわりが苔色になる——つまりページの空気が
  * データの並び順で決まってしまう。明るさだけをもらい、色相は紙の側に固定する。
  */
-function plateColor(hex: string) {
+function plateColor(hex: string, depth = 1) {
   const n = parseInt(hex.slice(1), 16);
   const lum =
     (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
-  const t = Math.min(Math.max(1 - lum, 0.22), 0.55);
+  const t = Math.min(Math.min(Math.max(1 - lum, 0.22), 0.55) * depth, 1);
   return `color-mix(in oklab, #cfc6ae ${Math.round(t * 100)}%, var(--vja-paper))`;
 }
 
@@ -354,7 +371,10 @@ export default function DeckView({
   const en = lang === "en";
   const total = jobs.length;
 
-  const flip = useMemo(() => FLIPS.find((f) => f.id === flipId) ?? FLIPS[0], [flipId]);
+  const flip = useMemo(() => {
+    const base = FLIPS.find((f) => f.id === flipId) ?? FLIPS[0];
+    return base.build ? { ...base, ...base.build(total) } : base;
+  }, [flipId, total]);
 
   /** 描画に使う整数の基準。pos の四捨五入 */
   const [anchor, setAnchor] = useState(0);
@@ -421,8 +441,9 @@ export default function DeckView({
         `rotate(${s.rot.toFixed(2)}deg) scale(${s.scale.toFixed(4)})`;
       el.style.opacity = s.opacity.toFixed(3);
       el.style.setProperty("--veil", s.veil.toFixed(3));
+      // 手前ほど上に。同じ距離なら手前側(rel<0)を上に置く
       el.style.zIndex = String(
-        rel >= 0 ? Math.round(100 - rel * 10) : Math.round(96 + rel * 4)
+        Math.round(100 - Math.abs(rel) * 3) * 2 + (rel < 0 ? 1 : 0)
       );
       el.style.pointerEvents = Math.abs(rel) < 0.5 ? "auto" : "none";
 
@@ -456,7 +477,7 @@ export default function DeckView({
       const el = nodes.current.get(0);
       if (el) widthRef.current = el.clientWidth || 300;
       travelRef.current = Math.min(
-        Math.max(widthRef.current * flipRef.current.travel, 56),
+        Math.max(widthRef.current * flipRef.current.travel, 18),
         150
       );
       paint();
@@ -817,15 +838,13 @@ export default function DeckView({
               </div>
             );
           const job = jobs[idx];
-          // 円筒の向こう側に回り込んだ位置は、カードの裏面として描く
-          const back = flip.id === "arc" && arcIsBack(k);
           return (
             <div
               key={k}
               ref={(el) => void nodes.current.set(k, el)}
               className={`vja-deck-card ${k === 0 ? "is-front" : ""} ${
                 k < 0 && flip.nearDark ? "is-near" : ""
-              } ${back ? "is-back" : ""}`}
+              }`}
               aria-hidden={k !== 0}
             >
               {/* 絵柄はこの中。ぼかしとセピアはここにだけ掛け、膜(::after)は素のまま残す */}
@@ -851,15 +870,14 @@ export default function DeckView({
                       <JobCard job={job} />
                     </TiltCard>
                   </a>
-                ) : back ? (
-                  <div className="vja-deck-back" aria-hidden />
                 ) : realSlots.has(k) ? (
                   <JobCard job={job} />
                 ) : (
                   // ぼかしきったカードは色の板と見分けがつかないので板で描く
                   <div
                     className="vja-deck-proxy"
-                    style={{ background: plateColor(job.color) }}
+                    // 円弧は縁だけが並ぶので、色の幅を広げないと一枚の面に見える
+                    style={{ background: plateColor(job.color, flip.id === "arc" ? 1.6 : 1) }}
                     aria-hidden
                   />
                 )}
