@@ -134,19 +134,13 @@ export default function StabSword() {
     _n.copy(hw.normal);
     const t = Date.now() - s.phaseAt;
 
-    // 大きさ。構えのあいだは引きの2ショットでも見えるヒーローサイズだが、
-    // 穴が「刃がちょうど通る幅のスリット」になったので、**突きの後半で1倍まで
-    // 縮めて、刺さりきる瞬間にスリットへぴったり収める**。
-    // これで safe→idle で Swords の剣(1倍)へ引き渡すときの段差も消える。
-    let shrink = 1 / HERO_SCALE; // 既定 = 刺さった状態
-    if (s.phase === "stabbing") {
-      const p = Math.min(t / T_STAB, 1);
-      shrink =
-        p <= 0.68
-          ? 1
-          : 1 + (1 / HERO_SCALE - 1) * easeInCubic(Math.min((p - 0.68) / 0.31, 1));
-    }
-    const eff = HERO_SCALE * shrink; // いまの実寸倍率
+    // 大きさは刺さったあともヒーローサイズのまま。
+    // 一度スリットの幅に合わせて1倍まで縮めたが、**それだとチャームが小さすぎて
+    // 見えなくなった**(判定待ち〜セーフは、自分の剣をいちばん眺める時間なのに)。
+    // スリットとの幅の一致より、ぶら下げたチャームが見えることを優先する。
+    // 引きの2ショットなので、1倍では剣そのものも豆粒になってしまう。
+    const eff = HERO_SCALE;
+    const shrink = 1;
     const tipBuried = -SWORD_DIMS.bury * eff; // 刺さりきった状態の剣先の高さ
 
     let h = tipBuried; // 剣先の高さ(法線方向)

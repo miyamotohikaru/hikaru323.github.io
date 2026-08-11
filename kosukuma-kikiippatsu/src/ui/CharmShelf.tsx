@@ -1238,9 +1238,11 @@ export function CharmShelf() {
       <div className="kk-charms-next">
         {next ? (
           <>
+            {/* 何がもらえるかは言わない(棚も「?」なので、ここで名前を出すと
+                伏せている意味がなくなる)。本数だけ伝えて、中身は開けてのお楽しみ */}
             <p className="kk-charms-line">
-              <CharmIcon index={level} size={18} className="kk-charms-line-ico" />
-              つぎは <b>{next.need}本</b>で {next.name} <em>あと{remain}本！</em>
+              <CharmIcon index={level} size={18} className="kk-charms-line-ico" ghost />
+              つぎは <b>{next.need}本</b>で ？がもらえる！ <em>あと{remain}本！</em>
             </p>
             <div className="kk-charms-bar" aria-hidden="true">
               <i style={{ width: `${pct}%` }} />
