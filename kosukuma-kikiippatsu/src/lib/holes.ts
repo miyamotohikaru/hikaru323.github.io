@@ -1,95 +1,130 @@
-// 月面上の穴の配置。フィボナッチ球で均等散布したあと、決定的な乱数で
-// 位置をずらし口径にも個体差をつけて、クレーターのような自然なバラつきに
-// する。こすくまくんが刺さっている北極まわり(POLAR_CAP_DEG)は除外。
+// 月面上の剣穴の配置。
+//
+// 実物の黒ひげ危機一発の樽は、たがとたがのあいだに「縦長のスリット」が
+// 行ごとに規則正しく並んでいる。だからここもフィボナッチ螺旋(均等だが不規則)を
+// やめて、**緯度の輪(行) × その輪を等分した位置(列)** に置く。
+// ジッターも入れない — 樽の穴は打ち抜きなので、きれいに揃っているのが正しい。
+//
+// 行の間隔と、行の中の間隔がだいたい同じになるように輪の数と各輪の個数を決める。
+// 球なので緯度が上がるほど周が短くなり、1行あたりの本数はそのぶん減る。
+// 1行おきに半ピッチずらして、レンガのように互い違いにする(縦の筋を作らない)。
+//
+// こすくまくんが刺さっている北極まわり(POLAR_CAP_DEG)は除外。
 // 結果は決定的(サーバー/全クライアントで同一。index = holeId)。
 
 import { HOLE_COUNT, MOON_RADIUS, POLAR_CAP_DEG } from "./config";
-import { hashString, mulberry32 } from "./prng";
 
 export interface HolePoint {
   /** 月中心からのローカル座標(半径 MOON_RADIUS 上) */
   position: [number, number, number];
   /** 外向き法線(単位ベクトル) */
   normal: [number, number, number];
-  /** 穴の口径の個体差(1が標準。小さい穴多め・大きい穴少なめ) */
+  /** 穴の大きさの個体差。スリットは打ち抜きなので常に 1(APIは互換のため残す) */
   scale: number;
 }
 
-/** 位置ずらしの最大距離(月面上の弧長, world units)。穴間隔は約0.56 */
-const JITTER_MAX = 0.34;
+/** 南極まわりも少しだけ空ける(1本しか入らない輪を作らない) */
+const SOUTH_CAP_DEG = 8;
 
 let cache: HolePoint[] | null = null;
+
+/**
+ * 各輪の本数を決める。行の間隔と行内の間隔がそろう本数を出し、
+ * 合計がぴったり HOLE_COUNT になるよう端数の大きい輪から1本ずつ足す。
+ */
+function ringCounts(thetas: number[], pitch: number): number[] {
+  const raw = thetas.map(
+    (t) => (2 * Math.PI * MOON_RADIUS * Math.sin(t)) / pitch
+  );
+  const counts = raw.map((v) => Math.max(1, Math.floor(v)));
+  let total = counts.reduce((a, b) => a + b, 0);
+  // 端数(切り捨てた小数)が大きい輪から順に1本ずつ足して HOLE_COUNT に合わせる
+  const order = raw
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac);
+  let k = 0;
+  while (total < HOLE_COUNT) {
+    counts[order[k % order.length].i]++;
+    total++;
+    k++;
+  }
+  // 多すぎたら、本数の多い輪から減らす(輪が消えないよう1本は残す)
+  while (total > HOLE_COUNT) {
+    let big = 0;
+    for (let i = 1; i < counts.length; i++) {
+      if (counts[i] > counts[big]) big = i;
+    }
+    if (counts[big] <= 1) break;
+    counts[big]--;
+    total--;
+  }
+  return counts;
+}
 
 /** HOLE_COUNT 個の穴の位置を返す(index = holeId)。結果はモジュール内キャッシュ */
 export function getHolePoints(): HolePoint[] {
   if (cache) return cache;
-  const capCos = Math.cos((POLAR_CAP_DEG * Math.PI) / 180);
-  const golden = Math.PI * (3 - Math.sqrt(5));
-  const rng = mulberry32(hashString("kosukuma-holes-v2"));
-  const pts: HolePoint[] = [];
-  // 十分多めに生成して、キャップ外のものから先頭 HOLE_COUNT 個を採用
-  const overshoot = Math.ceil(HOLE_COUNT / (1 - (1 - capCos) / 2)) + 64;
-  for (let i = 0; i < overshoot && pts.length < HOLE_COUNT; i++) {
-    const y = 1 - (2 * (i + 0.5)) / overshoot; // 1 → -1
-    if (y > capCos) continue; // 北極キャップは除外
-    const r = Math.sqrt(1 - y * y);
-    const theta = golden * i;
-    let nx = Math.cos(theta) * r;
-    let ny = y;
-    let nz = Math.sin(theta) * r;
 
-    // ── 決定的ジッター(接平面方向へずらして再正規化) ──
-    // 分岐に関わらず消費する乱数の個数を揃えて決定性を保つ
-    const jAngle = rng() * Math.PI * 2;
-    const jDist = Math.pow(rng(), 0.75) * JITTER_MAX;
-    // 小さめ中心の分布(集合体恐怖症に配慮して「丸の群れ」感を抑える)
-    const scale = 0.5 + 1.35 * Math.pow(rng(), 2.4);
+  const t0 = (POLAR_CAP_DEG * Math.PI) / 180; // 北のふち
+  const t1 = ((180 - SOUTH_CAP_DEG) * Math.PI) / 180; // 南のふち
+  const span = t1 - t0;
 
-    // 接平面の基底(法線がY軸に近い場合はX軸から作る)
-    let t1x: number, t1y: number, t1z: number;
-    if (Math.abs(ny) < 0.94) {
-      // t1 = normalize(n × up)
-      const len = Math.hypot(nz, nx);
-      t1x = nz / len;
-      t1y = 0;
-      t1z = -nx / len;
-    } else {
-      // t1 = normalize(n × xAxis)
-      const len = Math.hypot(nz, ny);
-      t1x = 0;
-      t1y = nz / len;
-      t1z = -ny / len;
-    }
-    // t2 = n × t1
-    const t2x = ny * t1z - nz * t1y;
-    const t2y = nz * t1x - nx * t1z;
-    const t2z = nx * t1y - ny * t1x;
+  // 使える帯の面積から1穴あたりの間隔を出し、そこから行数を決める
+  const area =
+    2 * Math.PI * MOON_RADIUS * MOON_RADIUS * (Math.cos(t0) - Math.cos(t1));
+  const pitch = Math.sqrt(area / HOLE_COUNT); // 穴どうしの目標間隔
+  const rows = Math.max(2, Math.round((span * MOON_RADIUS) / pitch));
 
-    const ang = jDist / MOON_RADIUS; // 弧長→角度
-    const ox = (t1x * Math.cos(jAngle) + t2x * Math.sin(jAngle)) * ang;
-    const oy = (t1y * Math.cos(jAngle) + t2y * Math.sin(jAngle)) * ang;
-    const oz = (t1z * Math.cos(jAngle) + t2z * Math.sin(jAngle)) * ang;
-    const jx = nx + ox;
-    const jy = ny + oy;
-    const jz = nz + oz;
-    const jlen = Math.hypot(jx, jy, jz);
-    const jnx = jx / jlen;
-    const jny = jy / jlen;
-    const jnz = jz / jlen;
-
-    // ずらした結果が北極キャップへ入るときだけ、ずらし無しにする
-    if (jny <= capCos - 0.005) {
-      nx = jnx;
-      ny = jny;
-      nz = jnz;
-    }
-
-    pts.push({
-      position: [nx * MOON_RADIUS, ny * MOON_RADIUS, nz * MOON_RADIUS],
-      normal: [nx, ny, nz],
-      scale,
-    });
+  const thetas: number[] = [];
+  for (let r = 0; r < rows; r++) {
+    thetas.push(t0 + (span * (r + 0.5)) / rows);
   }
+  const counts = ringCounts(thetas, pitch);
+
+  const pts: HolePoint[] = [];
+  for (let r = 0; r < rows; r++) {
+    const theta = thetas[r];
+    const n = counts[r];
+    const sin = Math.sin(theta);
+    const y = Math.cos(theta);
+    // 1行おきに半ピッチずらす(レンガ積み)。縦にまっすぐ筋が通るのを避ける
+    const offset = ((r % 2) * Math.PI) / n;
+    for (let c = 0; c < n; c++) {
+      const phi = offset + (2 * Math.PI * c) / n;
+      const nx = Math.cos(phi) * sin;
+      const nz = Math.sin(phi) * sin;
+      pts.push({
+        position: [nx * MOON_RADIUS, y * MOON_RADIUS, nz * MOON_RADIUS],
+        normal: [nx, y, nz],
+        scale: 1,
+      });
+    }
+  }
+
   cache = pts;
   return pts;
+}
+
+/**
+ * 穴のスリットの「縦」方向(北極を向く接ベクトル)。
+ * 樽のスリットが縦に切られているのと同じで、**穴も剣もこの向きにそろえる**。
+ * 3Dの穴(Holes)と剣(orientSword)が同じ答えを使うための唯一の窓口。
+ */
+export function slotUp(
+  normal: readonly [number, number, number] | Float32Array | number[]
+): [number, number, number] {
+  const [nx, ny, nz] = normal as number[];
+  // worldUp から法線成分を抜いたもの = 経線に沿った「上」
+  let ux = -nx * ny;
+  let uy = 1 - ny * ny;
+  let uz = -nz * ny;
+  const len = Math.hypot(ux, uy, uz);
+  if (len < 1e-6) {
+    // 極の真上(法線が±Yと平行)。経線が定義できないのでX軸へ逃がす
+    return [1, 0, 0];
+  }
+  ux /= len;
+  uy /= len;
+  uz /= len;
+  return [ux, uy, uz];
 }

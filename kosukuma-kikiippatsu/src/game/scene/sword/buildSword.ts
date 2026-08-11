@@ -27,6 +27,8 @@ import {
   type CharmMaterial,
 } from "@/lib/config";
 import { charmIndicesFrom } from "@/lib/style";
+// 穴のスリットの向き。穴(Holes.tsx)と剣で必ず同じ答えを使うための唯一の窓口
+import { slotUp } from "@/lib/holes";
 import { hashString, mulberry32, randRange } from "@/lib/prng";
 import { makeCharmParts, type CharmBuild, type CharmPaint } from "./charmGeometry";
 
@@ -465,18 +467,32 @@ export function tickSwordMaterial(mat: THREE.Material, t: number): void {
   if (u) u.value = t;
 }
 
-// ── 刺さり姿勢(全プレイヤーで同じ見た目にする決定的な傾き) ────────
+// ── 刺さり姿勢(スリットに沿った、全プレイヤーで同じ向き) ────────
 
-const UP = new THREE.Vector3(0, 1, 0);
 const _poseEuler = new THREE.Euler();
 const _poseQuat = new THREE.Quaternion();
+/** スリットの基底を組むスクラッチ */
+const _slotX = new THREE.Vector3();
+const _slotZ = new THREE.Vector3();
+const _slotBasis = new THREE.Matrix4();
 /** 房のゆれ計算のスクラッチ(毎フレームの割り当てを避ける) */
 const _swayEuler = new THREE.Euler();
 
 /**
  * 穴の法線と holeId から、その穴に刺さる剣のワールド姿勢を組み立てる。
- * 傾き(2〜6°)・ロール・大きさは holeId から決定的に決まるので、
- * だれの画面でも同じ剣が同じ向きで刺さって見える。
+ *
+ * 月の穴は丸ではなく **縦長のスリット**(`Holes.tsx`)。板を通している以上、
+ * 剣は「刃の平らな面がスリットと同じ平面」にしか入らないので:
+ *   ・ロールは `slotUp()`(スリットの長辺 = 経線方向)にきっちりそろえる。
+ *     剣ローカルの ±X が刃の幅方向 = 鍔のバーの向きなので、
+ *     これをスリットの長辺に合わせると、刃も鍔も縦向きにそろう。
+ *   ・傾きは **スリットの面内だけ**。板にはさまれているので横にはコケない。
+ *     長辺方向(南北)へ 1.2〜4.2°、holeId から決まる向きにおじぎさせる。
+ *   ・半分は前後ひっくり返す(実物も裏表どちらでも刺さる)。180°回しても
+ *     刃の面はスリットの中に残るので、これは嘘にならない。
+ * 傾き・裏表・大きさは holeId から決定的に決まるので、だれの画面でも同じに見える。
+ *
+ * 向きの正は `slotUp()` ただ1つ。穴(`Holes.tsx`)も同じ関数から取っている。
  * @returns 大きさの個体差(0.92〜1.08)
  */
 export function orientSword(
@@ -484,12 +500,21 @@ export function orientSword(
   holeId: number,
   outQuat: THREE.Quaternion
 ): number {
-  outQuat.setFromUnitVectors(UP, normal);
+  // ローカル X = スリットの長辺 / Y = 法線 / Z = 短辺(= X × Y)
+  const u = slotUp([normal.x, normal.y, normal.z]);
+  _slotX.set(u[0], u[1], u[2]);
+  _slotZ.crossVectors(_slotX, normal);
+  _slotBasis.makeBasis(_slotX, normal, _slotZ);
+  outQuat.setFromRotationMatrix(_slotBasis);
+
   const rng = mulberry32(hashString(`sword-${holeId}`));
-  const tilt = THREE.MathUtils.degToRad(randRange(rng, 2, 6));
-  const tiltDir = randRange(rng, 0, Math.PI * 2);
-  const roll = randRange(rng, 0, Math.PI * 2);
-  _poseEuler.set(Math.cos(tiltDir) * tilt, roll, Math.sin(tiltDir) * tilt, "YXZ");
+  const flip = rng() < 0.5 ? Math.PI : 0; // 裏表
+  const tilt =
+    THREE.MathUtils.degToRad(randRange(rng, 1.2, 4.2)) *
+    (rng() < 0.5 ? -1 : 1);
+  // "YXZ" = Ry · Rx · Rz。ロール(Y)は裏返しだけに使い、
+  // 倒すのは Z(スリットの短辺)まわり = 長辺方向へのおじぎのみ
+  _poseEuler.set(0, flip, tilt, "YXZ");
   _poseQuat.setFromEuler(_poseEuler);
   outQuat.multiply(_poseQuat);
   return randRange(rng, 0.92, 1.08);
