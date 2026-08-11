@@ -17,6 +17,7 @@ import { useGameStore } from "@/game/store";
 import { getHoleWorld } from "@/game/scene/sharedRefs";
 import {
   buildToySword,
+  slotAlignQuat,
   SWORD_DIMS,
   type ToySword,
 } from "@/game/scene/sword/buildSword";
@@ -30,8 +31,7 @@ const HERO_SCALE = 2.6;
 
 // 高さは「剣先の高さ」で組み立てる(構えの気持ちよさをこの値で調整してきたので)。
 // ルート(=刺さり口)は剣先より刃の埋まるぶんだけ上にある。
-const ROOT_LIFT = SWORD_DIMS.bury * HERO_SCALE;
-const TIP_BURIED = -ROOT_LIFT; // 刺さりきった状態 = ルートが月面ちょうど
+// 突きの後半で剣が縮むので、この変換は毎フレームその時点の倍率で計算する。
 const RAISE_H = 1.9; // 構えの高さ(穴の法線上)
 
 // 刃に沿ってきらめきが走る範囲(ヒーローサイズでの world units)
@@ -134,7 +134,22 @@ export default function StabSword() {
     _n.copy(hw.normal);
     const t = Date.now() - s.phaseAt;
 
-    let h = TIP_BURIED; // 剣先の高さ(法線方向)
+    // 大きさ。構えのあいだは引きの2ショットでも見えるヒーローサイズだが、
+    // 穴が「刃がちょうど通る幅のスリット」になったので、**突きの後半で1倍まで
+    // 縮めて、刺さりきる瞬間にスリットへぴったり収める**。
+    // これで safe→idle で Swords の剣(1倍)へ引き渡すときの段差も消える。
+    let shrink = 1 / HERO_SCALE; // 既定 = 刺さった状態
+    if (s.phase === "stabbing") {
+      const p = Math.min(t / T_STAB, 1);
+      shrink =
+        p <= 0.68
+          ? 1
+          : 1 + (1 / HERO_SCALE - 1) * easeInCubic(Math.min((p - 0.68) / 0.31, 1));
+    }
+    const eff = HERO_SCALE * shrink; // いまの実寸倍率
+    const tipBuried = -SWORD_DIMS.bury * eff; // 刺さりきった状態の剣先の高さ
+
+    let h = tipBuried; // 剣先の高さ(法線方向)
     let yaw = 0;
     let scale = 1;
     let sparkleT = -1; // 0..1: 構え中のきらめき進行(負なら非表示)
@@ -160,7 +175,7 @@ export default function StabSword() {
       } else {
         // 一閃: 一気に突き刺す(p=1 で impact イベントと着地が同期)
         const q = Math.min((p - 0.68) / 0.31, 1);
-        h = RAISE_H + 0.35 + (TIP_BURIED - RAISE_H - 0.35) * easeInCubic(q);
+        h = RAISE_H + 0.35 + (tipBuried - RAISE_H - 0.35) * easeInCubic(q);
       }
     } else if (s.phase === "suspense") {
       // 判定待ち: 柄が小刻みに震える(複数周波数の合成で機械っぽさを消す)
@@ -176,14 +191,16 @@ export default function StabSword() {
     const g = rig.sword.root;
     g.visible = true;
     // 剣先の高さ h に、刃が埋まるぶんを足すと刺さり口(=ルート)の高さになる
-    g.position.copy(_pos).addScaledVector(_n, h + ROOT_LIFT);
-    _qAlign.setFromUnitVectors(UP, _n);
+    g.position.copy(_pos).addScaledVector(_n, h + SWORD_DIMS.bury * eff);
+    // 穴がスリットになったので、剣もスリットと同じ向きで入る。
+    // 月の剣(Swords)・降ってくる剣(RemoteStabs)と同じ1本の関数を使う
+    slotAlignQuat(_n.x, _n.y, _n.z, _qAlign);
     _qYaw.setFromAxisAngle(UP, yaw);
     // 震えは刺さり口を支点に。刺さった剣が根元で揺れる感じになる
     _eTilt.set(tiltX, 0, tiltZ);
     _qTilt.setFromEuler(_eTilt);
     g.quaternion.copy(_qAlign).multiply(_qYaw).multiply(_qTilt);
-    g.scale.setScalar(Math.max(scale, 0.001));
+    g.scale.setScalar(Math.max(scale, 0.001) * shrink);
     // チャームの揺れ・にじいろの色相
     rig.sword.update(state.clock.elapsedTime);
 
