@@ -1,0 +1,250 @@
+import type { LabelArt } from "./types";
+import type { PixelGfx } from "../gfx";
+import { rng } from "../gfx";
+
+// 飛んで火入る虫 ── 実物は MOTH & FLAME / DRAW A CIRCLE。
+// 暗闇のなかで円を描くゲームで、描かれた円が細い線になって画面に何重にも残る。
+// その「灯りのまわりを回った軌跡」をそのままラベルにする。
+// 中心に蝋燭の火、まわりに何重もの円、その上を蛾が一匹。16枚でいちばん暗い1枚。
+
+const NIGHT = "#0b0a16";
+const NIGHT2 = "#141327";
+const GLOW1 = "#2a1c1c";
+const GLOW2 = "#4a2c14";
+const GLOW3 = "#7a4a12";
+const FLAME_O = "#e8760e";
+const FLAME_M = "#f5b028";
+const FLAME_I = "#fce89a";
+const WAX = "#d2c39c";
+const WAX_SH = "#9a8b68";
+const WAX_DK = "#5f5540";
+const MOTH_B = "#b89468";
+const MOTH_D = "#7a6044";
+const MOTH_L = "#f2e0bc";
+const AMBER = "#c98a2a";
+
+// 軌跡の線。実物の画面に残る細い円と同じ色味
+const TRACE = ["#4a6b46", "#6b3a2c", "#5c5230", "#2f5a5c", "#5c3a52"];
+
+const GLYPH: Record<string, string[]> = {
+  M: ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"],
+  O: [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+  T: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."],
+  H: ["#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+};
+
+function word(g: PixelGfx, x: number, y: number, s: string, fill: string, edge: string) {
+  const put = (dx: number, dy: number, c: string) => {
+    let cx = x + dx;
+    for (const ch of s) {
+      const rows = GLYPH[ch];
+      if (rows) g.blit(cx, y + dy, rows, { "#": c });
+      cx += 6;
+    }
+  };
+  for (const [dx, dy] of [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ])
+    put(dx, dy, edge);
+  put(0, 0, fill);
+}
+
+// 蛾。d=縁 D=翅 L=鱗粉 b=胴。羽ばたきの2コマ。
+const MOTH_UP = [
+  "..d.............d..",
+  "...d...........d...",
+  "....d....b....d....",
+  ".....d...b...d.....",
+  ".dddd...dbd...dddd.",
+  "ddDDDdd.dbd.ddDDDdd",
+  "dDLLLDDddbdddDLLLDd",
+  "dDLLLDDDDbDDDDLLLDd",
+  ".dDDDDDDDbDDDDDDDd.",
+  "..dDDDDDDbDDDDDDd..",
+  "...dDDLDDbDDLDDd...",
+  "....dDDDDbDDDDd....",
+  "......dDDbDDd......",
+  ".......ddbdd.......",
+];
+const MOTH_DOWN = [
+  "..d.............d..",
+  "...d...........d...",
+  "....d....b....d....",
+  ".....d...b...d.....",
+  "........dbd........",
+  "...dddd.dbd.dddd...",
+  "..dDDLDdDbDdDLDDd..",
+  ".dDDLLLDDbDDLLLDDd.",
+  ".dDDDDDDDbDDDDDDDd.",
+  "..dDDDDDDbDDDDDDd..",
+  "...dDDLDDbDDLDDd...",
+  "....dDDDDbDDDDd....",
+  "......dDDbDDd......",
+  ".......ddbdd.......",
+];
+/** 遠くを回っているもの。小さい影 */
+const MOTH_FAR = ["#...#", ".###.", "..#..", ".#.#."];
+
+/** 楕円の輪郭を1ドットずつ。実物の「描かれた円」に倣ってわずかに歪ませる */
+function traceRing(g: PixelGfx, cx: number, cy: number, rx: number, ry: number, c: string, wobble: number, seed: number) {
+  const r = rng(seed);
+  const jitter: number[] = [];
+  for (let i = 0; i < 24; i++) jitter.push((r() - 0.5) * wobble);
+  for (let i = 0; i < 180; i++) {
+    const a = (i / 180) * Math.PI * 2;
+    const j = jitter[Math.floor((i / 180) * 24) % 24];
+    const x = Math.round(cx + Math.cos(a) * (rx + j));
+    const y = Math.round(cy + Math.sin(a) * (ry + j));
+    g.px(x, y, c);
+  }
+}
+
+export const art: LabelArt = {
+  slug: "moth",
+  swatch: [NIGHT, FLAME_O, FLAME_I, "#4a6b46", MOTH_B],
+  draw: (g, t) => {
+    const FX = 33; // 火の位置
+    const FY = 17;
+
+    // ── 闇 ──────────────────────────────────────────────
+    g.rect(0, 0, 68, 40, NIGHT);
+    g.rect(0, 0, 68, 40, NIGHT2, "quarter");
+    g.noise(0, 0, 68, 40, "#1c1a30", 0.07, 41);
+
+    // ── 火のまわりの明かり。外から内へ段を重ねる ────────────
+    g.ellipse(FX, FY, 30, 20, GLOW1, "eighth");
+    g.ellipse(FX, FY, 24, 16, GLOW1, "quarter");
+    g.ellipse(FX, FY, 17, 12, GLOW1, "half");
+    g.ellipse(FX, FY, 13, 9, GLOW1);
+    g.ellipse(FX, FY, 11, 8, GLOW2, "half");
+    g.ellipse(FX, FY, 8, 6, GLOW2);
+    g.ellipse(FX, FY, 6, 5, GLOW3, "half");
+    g.ellipse(FX, FY, 4, 4, GLOW3);
+
+    // ── 軌跡。灯りのまわりを回った円が何重にも残っている ─────
+    traceRing(g, FX - 1, FY + 1, 27, 17, TRACE[0], 2.2, 11);
+    traceRing(g, FX + 2, FY - 1, 23, 15, TRACE[1], 2.6, 23);
+    traceRing(g, FX - 2, FY, 19, 13, TRACE[2], 2.0, 37);
+    traceRing(g, FX + 1, FY + 2, 15, 10, TRACE[3], 1.8, 51);
+    traceRing(g, FX, FY - 2, 11, 8, TRACE[4], 1.6, 67);
+    traceRing(g, FX + 3, FY + 1, 30, 19, "#3a4a3a", 2.8, 83);
+
+    // ── 蝋燭 ────────────────────────────────────────────
+    g.rect(FX - 3, FY + 6, 7, 11, WAX_SH);
+    g.rect(FX - 2, FY + 6, 4, 11, WAX);
+    g.vline(FX + 3, FY + 6, 11, WAX_DK);
+    g.hline(FX - 3, FY + 6, 7, "#fff6e0");
+    // 垂れた蝋
+    g.vline(FX - 3, FY + 8, 4, "#fff6e0");
+    g.px(FX - 4, FY + 10, WAX_SH);
+    g.px(FX - 4, FY + 11, WAX_SH);
+    // 受け皿
+    g.ellipse(FX, FY + 18, 8, 2, "#4a3a24");
+    g.ellipse(FX, FY + 17, 7, 2, "#7a6038");
+    g.ellipse(FX, FY + 16, 5, 1, "#a88450");
+    g.hline(FX - 4, FY + 16, 9, WAX);
+    // 芯
+    g.vline(FX, FY + 4, 2, "#2a2018");
+
+    // ── 炎。1コマ揺れる ─────────────────────────────────
+    const sway = t < 0.5 ? 0 : 1;
+    const fx = FX + (sway ? 1 : 0);
+    g.poly(
+      [
+        [fx, FY - 7],
+        [fx + 3, FY - 1],
+        [fx + 2, FY + 4],
+        [fx - 2 - sway, FY + 4],
+        [fx - 3, FY - 1],
+      ],
+      FLAME_O,
+    );
+    g.poly(
+      [
+        [fx, FY - 5],
+        [fx + 2, FY - 1],
+        [fx + 1, FY + 3],
+        [fx - 1 - sway, FY + 3],
+        [fx - 2, FY - 1],
+      ],
+      FLAME_M,
+    );
+    g.vline(fx, FY - 3, 5, FLAME_I);
+    g.px(fx - (sway ? 1 : 0), FY + 1, FLAME_I);
+    g.px(fx, FY - 4, "#fff8d8");
+    // 火の粉
+    g.px(fx + 4, FY - 8 - sway, FLAME_M);
+    g.px(fx - 4, FY - 5 + sway, FLAME_O);
+
+    // ── 遠くを回っている蛾 ───────────────────────────────
+    g.blit(7, 25, MOTH_FAR, { "#": "#4a3c2c" });
+    g.blit(58, 27, MOTH_FAR, { "#": "#3e3226" });
+    g.blit(13, 8, MOTH_FAR, { "#": "#3a3026" });
+
+    // ── 蛾。火に向かって右上から降りてくる。羽が1コマ動く ────
+    const mx = 43;
+    const my = 4;
+    g.blit(mx, my, t < 0.5 ? MOTH_UP : MOTH_DOWN, {
+      d: MOTH_D,
+      D: MOTH_B,
+      L: MOTH_L,
+      b: "#9a7a52",
+    });
+    // 胴の陰。1本入れると翅が2枚に割れて見えなくなる
+    g.vline(mx + 9, my + 6, 7, "#6b5238");
+    // 火に向いた側だけ、うっすら暖かい
+    for (const [dx, dy] of [
+      [3, 11],
+      [4, 10],
+      [5, 12],
+      [6, 9],
+      [7, 12],
+      [2, 9],
+    ])
+      g.px(mx + dx, my + dy, "#d8a860");
+
+    // 蛾から落ちる鱗粉
+    const r = rng(97);
+    for (let i = 0; i < 10; i++) {
+      const x = Math.round(mx + 2 + r() * 15);
+      const y = Math.round(my + 15 + r() * 9);
+      g.px(x, y, i % 3 === 0 ? "#e0c8a4" : "#7a6450");
+    }
+
+    // ── 題字と隅の文字 ───────────────────────────────────
+    word(g, 4, 3, "MOTH", AMBER, "#140e04");
+    const sub = (x: number, y: number, s: string, c: string) => {
+      for (const [dx, dy] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ])
+        g.text3x5(x + dx, y + dy, s, "#140e04");
+      g.text3x5(x, y, s, c);
+    };
+    sub(5, 12, "& FLAME", "#a87a34");
+    sub(3, 33, "DRAW", "#7a5c2c");
+    sub(43, 33, "CIRCLE", "#7a5c2c");
+
+    // ── 枠 ──────────────────────────────────────────────
+    g.frame(0, 0, 68, 40, "#05040a");
+    g.frame(1, 1, 66, 38, "#3a2a12");
+    g.px(1, 1, "#05040a");
+    g.px(66, 1, "#05040a");
+    g.px(1, 38, "#05040a");
+    g.px(66, 38, "#05040a");
+    // 四隅の小さな灯り
+    g.px(2, 2, AMBER);
+    g.px(65, 2, AMBER);
+    g.px(2, 37, AMBER);
+    g.px(65, 37, AMBER);
+  },
+};
