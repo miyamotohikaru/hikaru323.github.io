@@ -473,10 +473,34 @@ const _poseEuler = new THREE.Euler();
 const _poseQuat = new THREE.Quaternion();
 /** スリットの基底を組むスクラッチ */
 const _slotX = new THREE.Vector3();
+const _slotY = new THREE.Vector3();
 const _slotZ = new THREE.Vector3();
 const _slotBasis = new THREE.Matrix4();
 /** 房のゆれ計算のスクラッチ(毎フレームの割り当てを避ける) */
 const _swayEuler = new THREE.Euler();
+
+/**
+ * その穴のスリットに合わせた姿勢。
+ * ローカル X = スリットの長辺(= `slotUp()`。経線方向) / Y = 外向き法線 /
+ * Z = 短辺(= X × Y)。
+ *
+ * **穴(`Holes.tsx`)も、刺さった剣も、降ってくる剣も、向きはぜんぶここから取る。**
+ * 別々に組み立てると必ずズレて、剣がスリットを横切って刺さってしまうので、
+ * 実装はこの1本だけにしておくこと。
+ */
+export function slotAlignQuat(
+  nx: number,
+  ny: number,
+  nz: number,
+  outQuat: THREE.Quaternion
+): THREE.Quaternion {
+  const u = slotUp([nx, ny, nz]);
+  _slotX.set(u[0], u[1], u[2]);
+  _slotY.set(nx, ny, nz);
+  _slotZ.crossVectors(_slotX, _slotY);
+  _slotBasis.makeBasis(_slotX, _slotY, _slotZ);
+  return outQuat.setFromRotationMatrix(_slotBasis);
+}
 
 /**
  * 穴の法線と holeId から、その穴に刺さる剣のワールド姿勢を組み立てる。
@@ -492,7 +516,7 @@ const _swayEuler = new THREE.Euler();
  *     刃の面はスリットの中に残るので、これは嘘にならない。
  * 傾き・裏表・大きさは holeId から決定的に決まるので、だれの画面でも同じに見える。
  *
- * 向きの正は `slotUp()` ただ1つ。穴(`Holes.tsx`)も同じ関数から取っている。
+ * 向きの正は上の `slotAlignQuat()` ただ1つ。穴(`Holes.tsx`)も同じ関数を呼んでいる。
  * @returns 大きさの個体差(0.92〜1.08)
  */
 export function orientSword(
@@ -500,12 +524,7 @@ export function orientSword(
   holeId: number,
   outQuat: THREE.Quaternion
 ): number {
-  // ローカル X = スリットの長辺 / Y = 法線 / Z = 短辺(= X × Y)
-  const u = slotUp([normal.x, normal.y, normal.z]);
-  _slotX.set(u[0], u[1], u[2]);
-  _slotZ.crossVectors(_slotX, normal);
-  _slotBasis.makeBasis(_slotX, normal, _slotZ);
-  outQuat.setFromRotationMatrix(_slotBasis);
+  slotAlignQuat(normal.x, normal.y, normal.z, outQuat);
 
   const rng = mulberry32(hashString(`sword-${holeId}`));
   const flip = rng() < 0.5 ? Math.PI : 0; // 裏表

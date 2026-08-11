@@ -3,8 +3,9 @@
 // 1000個の剣穴。黒ひげ危機一発の樽とおなじ **縦長のスリット(打ち抜きの切り欠き)**。
 // まるいクレーターではない、というのがこのファイルでいちばん大事なところ。
 //
-//   ・向き: 長辺は経線方向(北極を向く)。正は `slotUp()` ただひとつで、
-//     剣 (`orientSword`) もまったく同じ関数から向きを取る。別々に計算すると必ずズレる。
+//   ・向き: 長辺は経線方向(北極を向く)。正は `slotAlignQuat()`(中身は `slotUp()`)
+//     ただひとつで、剣 (`orientSword`) もまったく同じ関数から向きを取る。
+//     別々に計算すると必ずズレて、剣がスリットを横切って刺さってしまう。
 //   ・寸法: 「刃のいちばん太いところがちょうど通る」大きさから逆算する。
 //     刃より狭いと嘘に見えるし、広すぎるとスカスカに見える。
 //   ・奥ゆき: 真っ黒な板を貼るのではなく、内壁のある小さな切り欠きとして作る。
@@ -19,9 +20,9 @@ import * as THREE from "three";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { COLORS, HOLE_COUNT, MOON_RADIUS } from "@/lib/config";
 import { getBit } from "@/lib/bitmask";
-import { getHolePoints, slotUp } from "@/lib/holes";
+import { getHolePoints } from "@/lib/holes";
 import { useGameStore } from "@/game/store";
-import { SWORD_DIMS } from "./sword/buildSword";
+import { slotAlignQuat, SWORD_DIMS } from "./sword/buildSword";
 import { getHoleWorld } from "./sharedRefs";
 
 // ── スリットの寸法(すべて剣の刃から逆算する) ───────────────────
@@ -83,30 +84,6 @@ const COLOR_PULSE = new THREE.Color("#fff4b8"); // 選択中の明滅の明る�
 const tmpObj = new THREE.Object3D();
 const tmpColor = new THREE.Color();
 const tmpQuat = new THREE.Quaternion();
-// スリットの姿勢を組むスクラッチ
-const _sx = new THREE.Vector3();
-const _sy = new THREE.Vector3();
-const _sz = new THREE.Vector3();
-const _basis = new THREE.Matrix4();
-
-/**
- * その穴のスリットの姿勢。
- * ローカル X = スリットの長辺(= `slotUp()`。経線方向) / Y = 外向き法線 /
- * Z = 短辺(= X × Y)。**`orientSword` とまったく同じ組み立て方**にしてある。
- */
-function slotQuat(
-  nx: number,
-  ny: number,
-  nz: number,
-  out: THREE.Quaternion
-): void {
-  const u = slotUp([nx, ny, nz]);
-  _sx.set(u[0], u[1], u[2]);
-  _sy.set(nx, ny, nz);
-  _sz.crossVectors(_sx, _sy);
-  _basis.makeBasis(_sx, _sy, _sz);
-  out.setFromRotationMatrix(_basis);
-}
 
 interface RingPoint {
   x: number;
@@ -263,7 +240,7 @@ export default function Holes() {
       pos[i * 3] = p.position[0];
       pos[i * 3 + 1] = p.position[1];
       pos[i * 3 + 2] = p.position[2];
-      slotQuat(p.normal[0], p.normal[1], p.normal[2], tmpQuat);
+      slotAlignQuat(p.normal[0], p.normal[1], p.normal[2], tmpQuat);
       quat[i * 4] = tmpQuat.x;
       quat[i * 4 + 1] = tmpQuat.y;
       quat[i * 4 + 2] = tmpQuat.z;
@@ -413,7 +390,7 @@ export default function Holes() {
         const hw = getHoleWorld(selected);
         // 土手(高さ0.028)より上へ浮かせて、枠が月面に沈まないようにする
         marker.position.copy(hw.pos).addScaledVector(hw.normal, 0.05);
-        slotQuat(hw.normal.x, hw.normal.y, hw.normal.z, tmpQuat);
+        slotAlignQuat(hw.normal.x, hw.normal.y, hw.normal.z, tmpQuat);
         marker.quaternion.copy(tmpQuat);
         // 刺し〜判定はカメラが引くのでマーカーを大きくして見失わせない
         const far = s.phase === "confirming" ? 1 : 2.1;

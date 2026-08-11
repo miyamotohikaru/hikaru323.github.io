@@ -622,26 +622,226 @@ function buildTassel(bag: Bag): void {
   }
 }
 
-/** こすくまヘッド: このゲームだけの1個。クリーム色の樹脂のあたま */
+// ── こすくまくん(全身)──────────────────────────────
+// 300本刺した人がもらう、このゲームの主役チャーム。公式ロゴのおすわりポーズを
+// そのまま「成型された樹脂のフィギュア」にする。
+//
+// **太い黒の輪郭線がこのキャラクターの記号**なので、ここだけ特別な作りをする。
+// パーツごとに ひとまわり大きい黒の殻をかぶせ、その **面を裏返して** 重ねる
+// (インクアウトライン)。表を向いた面はカリングで消えるので、殻は本体から
+// はみ出したふちだけが残る = それがそのまま輪郭線になる。
+// 殻の塗り分けは `accent`(config の accentHex = ほぼ黒の樹脂)。
+// `dark` は共通マテリアルが両面描画なので、裏返しの殻には**使えない**。
+//
+// 奥行き(z)の並べ方が線の出かたを決める。手前のパーツの **中心z** が、
+// 重なる奥のパーツの **表面z** より前に来ていること(殻のふちは中心zの高さに
+// 出るので、これを崩すと境目の線が本体に食われて消える)。
+// ロゴの線の重なりに合わせて、こう並べる:
+//   みみ(-0.09) → おなか(-0.06) → うで・あし(+0.05) → あたま+むね(+0.07)
+// みみだけ後ろ = あたまの線が耳の内側を横切る(ロゴと同じ)。
+// うで・あしは おなかより前 = 輪郭がまるごと体の上に出るので、小さくても
+// 「うで」「あし」だと分かる。ふくらんだ面はあたまの裾の線より前に来るので、
+// 見た目の重なりは みみ → おなか → あたま → うで・あし の順になる。
+//
+// 座標は「図の高さ = 1」の単位空間。**2D(src/ui/CharmShelf.tsx の BEAR_LOBES)と
+// 同じ表**なので、片方だけ動かさないこと。
+
+/** 輪郭線の太さ。26pxで約1px、9pxでもシルエットが締まる。ここが生命線 */
+const BEAR_INK = 0.04;
+/** 組み上がったあと背を 1 にそろえる倍率(ロゴの縦横比 0.77 は保つ) */
+const BEAR_FIT = 0.9;
+/** あたま+むね: 中心z と ふくらみ(片側) */
+const BEAR_HEAD_Z = 0.07;
+const BEAR_HEAD_T = 0.105;
+/** おなか: 中心z と ふくらみ(片側) */
+const BEAR_BELLY_Z = -0.06;
+const BEAR_BELLY_T = 0.1;
+/** うで・あし の 中心z(おなかより前に出して、輪郭をまるごと見せる) */
+const BEAR_LIMB_Z = 0.05;
+
+/**
+ * まるい四角(スーパー楕円)の輪郭。ロゴの胴は「丸でも四角でもない おむすび」。
+ * 上はドーム、下は肩の張った箱、というふうに上下で丸みがちがうので、
+ * べき乗を上下で別に持つ。
+ * @param pTop 上半分の丸み。小さいほど四角(1で楕円)
+ * @param pBot 下半分の丸み
+ * @param taper 上がひろく下がすぼまる量
+ */
+function squirclePoints(
+  cx: number,
+  cy: number,
+  a: number,
+  b: number,
+  pTop: number,
+  pBot: number,
+  taper: number,
+  n = 64
+): THREE.Vector2[] {
+  const pts: THREE.Vector2[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * Math.PI * 2;
+    const c = Math.cos(t);
+    const s = Math.sin(t);
+    const p = s >= 0 ? pTop : pBot;
+    const x = Math.sign(c) * Math.pow(Math.abs(c), p) * a * (1 + taper * s);
+    const y = Math.sign(s) * Math.pow(Math.abs(s), p) * b;
+    pts.push(new THREE.Vector2(cx + x, cy + y));
+  }
+  return pts;
+}
+
+/** 左回りの閉じた輪郭を、外へ w だけ太らせる(黒い殻の輪郭) */
+function offsetPoints(pts: THREE.Vector2[], w: number): THREE.Vector2[] {
+  const n = pts.length;
+  const edgeN = (i: number) => {
+    const p = pts[i];
+    const q = pts[(i + 1) % n];
+    const dx = q.x - p.x;
+    const dy = q.y - p.y;
+    const l = Math.hypot(dx, dy) || 1;
+    return new THREE.Vector2(dy / l, -dx / l); // 左回りなら (dy,-dx) が外向き
+  };
+  const out: THREE.Vector2[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = edgeN((i - 1 + n) % n);
+    const b = edgeN(i);
+    const m = new THREE.Vector2().addVectors(a, b);
+    m.normalize();
+    // 角でも幅が細らないように 1/cos で伸ばす(伸びすぎは止める)
+    const k = Math.min(1 / Math.max(m.dot(b), 0.4), 2.2);
+    out.push(new THREE.Vector2(pts[i].x + m.x * w * k, pts[i].y + m.y * w * k));
+  }
+  return out;
+}
+
+/** 面と法線を裏返す。表側が消えるので、本体からはみ出したふちだけが見える */
+function invertFaces(geo: THREE.BufferGeometry): THREE.BufferGeometry {
+  const idx = geo.getIndex();
+  if (idx) {
+    for (let i = 0; i < idx.count; i += 3) {
+      const a = idx.getX(i);
+      idx.setX(i, idx.getX(i + 2));
+      idx.setX(i + 2, a);
+    }
+    idx.needsUpdate = true;
+  }
+  const nrm = geo.getAttribute("normal");
+  if (nrm) {
+    for (let i = 0; i < nrm.count; i++) {
+      nrm.setXYZ(i, -nrm.getX(i), -nrm.getY(i), -nrm.getZ(i));
+    }
+    nrm.needsUpdate = true;
+  }
+  return geo;
+}
+
+/**
+ * ふくらんだ かたまり ひとつ(本体 + 黒い殻)。あたまとおなかに使う。
+ * 殻は rings=2 = ふちから頂点までひと息の円錐にしてある。こうすると
+ * 「はみ出した帯」がほぼ中心zの高さに並ぶので、前後のパーツに食われにくい。
+ */
+function bearLobe(
+  bag: Bag,
+  outline: THREE.Vector2[],
+  z: number,
+  thick: number,
+  nBody: number,
+  nInk: number
+): void {
+  const body = inflate(resample(outline, nBody), thick, 3, 0.75);
+  put(bag, xf(body, [0, 0, z]), "body");
+  const ink = inflate(
+    offsetPoints(resample(outline, nInk), BEAR_INK),
+    thick * 0.7,
+    2,
+    2.5
+  );
+  put(bag, invertFaces(xf(ink, [0, 0, z])), "accent");
+}
+
+/**
+ * まるい部品ひとつ(本体 + 黒い殻)。みみ・うで・あし はぜんぶこれ。
+ * 経度は必ず8分割にする。4の倍数だと真横(x = ±r)に頂点が来るので、
+ * 正面から見た輪郭の幅がぶれない = 黒い線の太さが均一になる。
+ * 太さのばらつきは、分割を増やすより先に効く。
+ */
+function bearBlob(
+  bag: Bag,
+  cx: number,
+  cy: number,
+  cz: number,
+  rx: number,
+  ry: number,
+  rz: number,
+  seg: number,
+  inkSeg: number
+): void {
+  const body = new THREE.SphereGeometry(1, 8, seg);
+  put(bag, xf(body, [cx, cy, cz], undefined, [rx, ry, rz]), "body");
+  const ink = xf(new THREE.SphereGeometry(1, 8, inkSeg), [cx, cy, cz], undefined, [
+    rx + BEAR_INK,
+    ry + BEAR_INK,
+    rz + BEAR_INK * 0.6,
+  ]);
+  put(bag, invertFaces(ink), "accent");
+}
+
+/** こすくまくん: 公式ロゴの全身。おすわりポーズのクリーム色の樹脂 */
 function buildBear(bag: Bag): void {
-  const R = 0.44;
-  const head = ball(R, 16);
-  put(bag, xf(head, undefined, undefined, [1, 0.95, 0.92]), "body");
   for (const s of [-1, 1]) {
-    const ear = ball(R * 0.42, 10);
-    put(bag, xf(ear, [s * R * 0.78, R * 0.72, -R * 0.06], undefined, [1, 1, 0.72]), "body");
+    // みみ(あたまの後ろへ。あたまの線が耳の内側を横切る形になる)
+    bearBlob(bag, s * 0.268, 0.4, -0.09, 0.135, 0.135, 0.055, 6, 5);
+    // うで(短く、左右へちょこんと出る)
+    bearBlob(bag, s * 0.3, -0.145, BEAR_LIMB_Z, 0.085, 0.068, 0.055, 5, 4);
+    // あし(おすわりなので、おなかの裾から少しはみ出すだけ)
+    bearBlob(bag, s * 0.258, -0.442, BEAR_LIMB_Z, 0.078, 0.06, 0.05, 4, 3);
   }
-  // 鼻さき(ちょっと前に出す)
-  const snout = ball(R * 0.44, 12);
-  put(bag, xf(snout, [0, -R * 0.24, R * 0.78], undefined, [1.15, 0.9, 0.7]), "body");
-  // 目・鼻(config の accentHex。つやのある樹脂の黒でぷつっと)
+  // おなか
+  bearLobe(
+    bag,
+    squirclePoints(0, -0.235, 0.31, 0.245, 0.75, 0.45, 0.1),
+    BEAR_BELLY_Z,
+    BEAR_BELLY_T,
+    18,
+    14
+  );
+  // あたま + むね(この裾の線がおなかとの境目になる)
+  bearLobe(
+    bag,
+    squirclePoints(0, 0.185, 0.315, 0.305, 0.85, 0.5, 0.03),
+    BEAR_HEAD_Z,
+    BEAR_HEAD_T,
+    22,
+    16
+  );
+  // 目。ロゴより気持ち大きいのは、26pxでも点として残すため(これ以上は別人になる)
   for (const s of [-1, 1]) {
-    const eye = stud(R * 0.13, 0.5);
-    onSphere(eye, new THREE.Vector3(s * 0.42, 0.24, 0.87), R * 0.94);
-    put(bag, eye, "accent");
+    put(
+      bag,
+      xf(ball(0.027, 6), [s * 0.073, 0.093, BEAR_HEAD_Z + BEAR_HEAD_T * 0.94]),
+      "accent"
+    );
   }
-  const nose = ball(R * 0.13, 8);
-  put(bag, xf(nose, [0, -R * 0.2, R * 1.06], undefined, [1.25, 0.85, 1]), "accent");
+  // 口。逆さの三角のような小さな点なので、3面のコーンを下向きに埋める
+  const mouth = new THREE.ConeGeometry(0.032, 0.03, 3);
+  put(
+    bag,
+    xf(
+      mouth,
+      [0, 0.048, BEAR_HEAD_Z + BEAR_HEAD_T * 0.92],
+      [0, 0, Math.PI],
+      [1, 1, 0.5]
+    ),
+    "accent"
+  );
+  // おなかの右下のほくろ
+  put(
+    bag,
+    xf(ball(0.026, 6), [0.188, -0.325, BEAR_BELLY_Z + BEAR_BELLY_T * 0.8]),
+    "accent"
+  );
+  // ここまでロゴの比率のまま組んだので、最後に背を 1 へそろえる
+  for (const it of bag) xf(it.geo, undefined, undefined, BEAR_FIT);
 }
 
 // ── 隠しチャーム「ちきゅう」────────────────────────────────

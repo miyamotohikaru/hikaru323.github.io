@@ -151,7 +151,7 @@ export type CharmShape =
   | "star" // ぷっくり星
   | "plate" // ネームプレート
   | "tassel" // ひものタッセル
-  | "bear" // こすくまくんの顔
+  | "bear" // こすくまくん(全身。公式ロゴのポーズ)
   | "earth"; // ちきゅう(隠し)
 
 /** チャームの素材。見た目(金属感・透け・つや)を決める */
@@ -278,7 +278,7 @@ export const CHARMS: readonly Charm[] = [
   },
   {
     need: 300,
-    name: "こすくまヘッド",
+    name: "こすくまくん",
     emoji: "🐻",
     shape: "bear",
     hex: "#fdf7c1",

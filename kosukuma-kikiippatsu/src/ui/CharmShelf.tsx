@@ -296,17 +296,188 @@ function wingD(): string {
   return specs.map(([l, w, d]) => featherD(rx, ry, l, w, d)).join("") + ball;
 }
 
+// ── こすくまくん(全身)──────────────────────────────────
+// 300本刺した人がもらう、このゲームの主役チャーム。公式ロゴのおすわりポーズ。
+// **太い黒の輪郭線がこのキャラクターの記号**なので、線は塗りのおまけではなく
+// 主役として引く(accentsOf で accentHex の線を1本、共通の輪郭線の下に敷く)。
+//
+// 3D(charmGeometry.ts の buildBear)は、パーツごとに ひとまわり大きい黒の殻を
+// 裏返して重ねた「インクアウトライン」で線を出している。つまり
+// **手前のパーツに隠れた線は消える**。ここも同じ規則で線を作るので、
+// 下の表は 3D と同じ数値・同じ並び順(奥 → 手前)にしておくこと。
+
+/** 単位空間(図の高さ ≒ 1)→ 24の箱。本体が y 5.6〜22.6 に収まる倍率 */
+const BEAR_S = 16.4;
+const BEAR_CX = 12;
+const BEAR_CY = 14.37;
+
+interface BearLobe {
+  /** まるい部品(みみ・うで・あし)か、まるい四角(あたま・おなか)か */
+  round: boolean;
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
+  /** まるい四角のときだけ: 上半分/下半分の丸みと、上下の広がりの差 */
+  pTop?: number;
+  pBot?: number;
+  taper?: number;
+}
+
+/**
+ * 奥 → 手前。この並びがそのまま線の重なりになる。
+ * 3D で見えている重なりと同じ順(みみ → おなか → あたま → うで・あし)。
+ */
+const BEAR_LOBES: BearLobe[] = [
+  // みみ: あたまの後ろ。あたまの線が耳の内側を横切る
+  { round: true, cx: -0.268, cy: 0.4, rx: 0.135, ry: 0.135 },
+  { round: true, cx: 0.268, cy: 0.4, rx: 0.135, ry: 0.135 },
+  // おなか
+  {
+    round: false,
+    cx: 0,
+    cy: -0.235,
+    rx: 0.31,
+    ry: 0.245,
+    pTop: 0.75,
+    pBot: 0.45,
+    taper: 0.1,
+  },
+  // あたま + むね。この裾の線が おなかとの境目になる
+  {
+    round: false,
+    cx: 0,
+    cy: 0.185,
+    rx: 0.315,
+    ry: 0.305,
+    pTop: 0.85,
+    pBot: 0.5,
+    taper: 0.03,
+  },
+  // あし・うで: いちばん手前。輪郭がまるごと体の上に出るので、小さくても
+  // 「あし」「うで」だと分かる(ロゴと同じ重なり)
+  { round: true, cx: -0.258, cy: -0.442, rx: 0.078, ry: 0.06 },
+  { round: true, cx: 0.258, cy: -0.442, rx: 0.078, ry: 0.06 },
+  { round: true, cx: -0.3, cy: -0.145, rx: 0.085, ry: 0.068 },
+  { round: true, cx: 0.3, cy: -0.145, rx: 0.085, ry: 0.068 },
+];
+
+/** かたまり1つの輪郭を、24の箱の点列にする */
+function bearPoly(l: BearLobe, n: number): Pt[] {
+  const out: Pt[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * Math.PI * 2;
+    const c = Math.cos(t);
+    const s = Math.sin(t);
+    let x: number;
+    let y: number;
+    if (l.round) {
+      x = l.cx + c * l.rx;
+      y = l.cy + s * l.ry;
+    } else {
+      const p = s >= 0 ? (l.pTop ?? 1) : (l.pBot ?? 1);
+      x =
+        l.cx +
+        Math.sign(c) * Math.abs(c) ** p * l.rx * (1 + (l.taper ?? 0) * s);
+      y = l.cy + Math.sign(s) * Math.abs(s) ** p * l.ry;
+    }
+    out.push([BEAR_CX + x * BEAR_S, BEAR_CY - y * BEAR_S]);
+  }
+  return out;
+}
+
+const BEAR_POLYS = BEAR_LOBES.map((l) => bearPoly(l, l.round ? 24 : 44));
+
+function inPoly(pts: Pt[], x: number, y: number): boolean {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i];
+    const [xj, yj] = pts[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function polyD(pts: Pt[], close: boolean): string {
+  return (
+    "M" +
+    pts.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join("L") +
+    (close ? "Z" : "")
+  );
+}
+
+/** 塗り: かたまりを全部重ねる(向きをそろえてあるので nonzero で union になる) */
+function bearBodyD(): string {
+  return BEAR_POLYS.map((p) => polyD(p, true)).join("");
+}
+
+/**
+ * 線: 手前のかたまりに隠れていない部分だけを残す。
+ * 端は二分探索で詰めて、線が手前のパーツのふちでぴたりと止まるようにする
+ * (ここを雑にすると、耳の弧が顔の中へ少しはみ出して にじんで見える)。
+ */
+function bearInkD(): string {
+  const out: string[] = [];
+  BEAR_POLYS.forEach((pts, li) => {
+    const front = BEAR_POLYS.slice(li + 1);
+    const n = pts.length;
+    const seen = (p: Pt) => !front.some((f) => inPoly(f, p[0], p[1]));
+    const vis = pts.map(seen);
+    if (vis.every((v) => v)) {
+      out.push(polyD(pts, true));
+      return;
+    }
+    const start = vis.findIndex((v, i) => v && !vis[(i - 1 + n) % n]);
+    if (start < 0) return; // まるごと隠れている
+    const edge = (a: Pt, b: Pt): Pt => {
+      let lo = a; // 見えている側
+      let hi = b; // 隠れている側
+      for (let k = 0; k < 5; k++) {
+        const m: Pt = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2];
+        if (seen(m)) lo = m;
+        else hi = m;
+      }
+      return lo;
+    };
+    let run: Pt[] = [];
+    for (let k = 0; k < n; k++) {
+      const i = (start + k) % n;
+      if (vis[i]) {
+        if (run.length === 0) run.push(edge(pts[i], pts[(i - 1 + n) % n]));
+        run.push(pts[i]);
+      } else if (run.length > 0) {
+        run.push(edge(pts[(i - 1 + n) % n], pts[i]));
+        out.push(polyD(run, false));
+        run = [];
+      }
+    }
+    if (run.length > 1) out.push(polyD(run, false));
+  });
+  return out.join("");
+}
+
+/** 目・口・ほくろ。3D の buildBear と同じ位置(単位空間 → 24の箱) */
+const BEAR_EYE_R = 0.027 * BEAR_S;
+const BEAR_EYES: Pt[] = [-0.073, 0.073].map((x) => [
+  BEAR_CX + x * BEAR_S,
+  BEAR_CY - 0.093 * BEAR_S,
+]);
+/** 口: 逆さの三角のような小さな点(3Dは3面のコーンを下向きに埋めている) */
+const BEAR_MOUTH =
+  `M${(BEAR_CX - 0.032 * BEAR_S).toFixed(2)} ${(BEAR_CY - 0.063 * BEAR_S).toFixed(2)}` +
+  `L${(BEAR_CX + 0.032 * BEAR_S).toFixed(2)} ${(BEAR_CY - 0.063 * BEAR_S).toFixed(2)}` +
+  `L${BEAR_CX.toFixed(2)} ${(BEAR_CY - 0.033 * BEAR_S).toFixed(2)}Z`;
+const BEAR_MOLE: Pt = [BEAR_CX + 0.188 * BEAR_S, BEAR_CY + 0.325 * BEAR_S];
+
 /**
  * 輪郭線だけ別の形にしたいときの上書き。
- * こすくまヘッドの耳は「顔のうしろに丸くはみ出す」形なので、輪郭を塗りと同じ
- * 形で引くと、顔の上に耳の円が輪っかになって浮き出てしまう。耳は顔と交わる点で
- * 切った弧(閉じない)にして、外側だけをなぞる。
+ * こすくまくんは「手前のパーツに隠れた線は消える」ので、塗り(union)とは
+ * 別に、見えている線だけをつないだ形を持つ。
  */
 const STROKE: Partial<Record<CharmShape, string>> = {
-  bear:
-    "M4.9 11.02A3.1 3.1 0 1 1 9.02 6.9" +
-    "M19.1 11.02A3.1 3.1 0 1 0 14.98 6.9" +
-    "M4.3 14a7.7 7.7 0 1 0 15.4 0a7.7 7.7 0 1 0-15.4 0",
+  bear: bearInkD(),
 };
 
 /** ハート: おなじみのハート曲線。ぷっくりさせたいので横に少し広げてある */
@@ -419,11 +590,8 @@ const BODY: Record<CharmShape, string> = {
     "a2.8 2.8 0 0 1-2.8-2.8v-12a2.8 2.8 0 0 1 2.8-2.8Z",
   // タッセル: 口金 + 5本のひも
   tassel: TASSEL_CRIMP + TASSEL_CORDS.join(""),
-  // こすくまヘッド: まるい耳ふたつ + まるい顔
-  bear:
-    "M3.1 8.2a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0-6.2 0Z" +
-    "M14.7 8.2a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0-6.2 0Z" +
-    "M4.3 14a7.7 7.7 0 1 0 15.4 0a7.7 7.7 0 1 0-15.4 0Z",
+  // こすくまくん: 全身(みみ・あたま+むね・うで・おなか・あし)の union
+  bear: bearBodyD(),
   // ちきゅう(隠し): 球 + こわれて飛んだ かけら2つ(3Dの buildEarth と同じ約束)
   earth:
     "M3.8 14a8.2 8.2 0 1 0 16.4 0a8.2 8.2 0 1 0-16.4 0Z" +
@@ -731,13 +899,34 @@ function accentsOf(c: Charm, detail: boolean, clip: string): ReactNode {
     case "bear":
       return (
         <>
-          {/* 鼻さき。3Dは同じ色の球を前に出すだけなので、こちらも少し明るくする程度 */}
-          <ellipse cx="12" cy="16.4" rx="3.9" ry="3" fill={lite(c.hex, 0.4)} />
+          {/* 太い黒の輪郭線。このキャラクターの記号なので、**粒(9px)でも描く**。
+              上に重なる共通の輪郭線(半透明)と同じ形・同じ太さなので、2本が
+              ぴたりと重なって、ロゴの太い線と同じ濃さになる */}
+          <path
+            d={STROKE.bear}
+            fill="none"
+            stroke={ac}
+            strokeWidth="0.95"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          {/* 目・口・ほくろは 24px の絵でも1px弱。粒では落とす(LOD) */}
           {detail && (
             <g fill={ac}>
-              <ellipse cx="8.9" cy="12.6" rx="1.05" ry="1.2" />
-              <ellipse cx="15.1" cy="12.6" rx="1.05" ry="1.2" />
-              <ellipse cx="12" cy="15.5" rx="1.25" ry="0.95" />
+              {BEAR_EYES.map(([x, y]) => (
+                <circle
+                  key={x}
+                  cx={x.toFixed(2)}
+                  cy={y.toFixed(2)}
+                  r={BEAR_EYE_R.toFixed(2)}
+                />
+              ))}
+              <path d={BEAR_MOUTH} />
+              <circle
+                cx={BEAR_MOLE[0].toFixed(2)}
+                cy={BEAR_MOLE[1].toFixed(2)}
+                r={(0.026 * BEAR_S).toFixed(2)}
+              />
             </g>
           )}
         </>
