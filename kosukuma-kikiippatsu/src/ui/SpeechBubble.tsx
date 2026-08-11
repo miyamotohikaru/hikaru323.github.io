@@ -150,6 +150,42 @@ function tailPath(
   return `M${f(b1x)},${f(b1y)}Q${f(c1x)},${f(c1y)} ${f(tipX)},${f(tipY)}Q${f(c2x)},${f(c2y)} ${f(b2x)},${f(b2y)}Z`;
 }
 
+/**
+ * 尻尾の付け根に貼る「継ぎ目かくし」。地色だけの板で、線は引かない。
+ *
+ * 尻尾は地色(.sb-fill)の背面に描いているので、尻尾じたいの根元の線は隠れる。
+ * ところが **本体のふちの線(border)は尻尾の口の上をそのまま横切る**ので、
+ * 吹き出しと尻尾のあいだに1本の線が残ってしまう。これを地色で塗りつぶす。
+ *
+ * 幅は尻尾の付け根とそろえ、本体の内側へ深く・外側へはほんの少しだけ伸ばす
+ * (外へ出しすぎると、尻尾の両サイドの線が根元で途切れて見える)。
+ */
+function tailJoinPath(
+  tone: SpeechTone,
+  ax: number,
+  ay: number,
+  nx: number,
+  ny: number
+): string {
+  // ねむいときの尻尾は離れた丸なので、隠すべき継ぎ目がない
+  if (tone === "sleepy") return "";
+  const px = -ny;
+  const py = nx;
+  const IN = 5.5; // 本体の内側へ(ふち3px + 余裕)
+  const OUT = 0.6; // 外側へ(はみ出しすぎない)
+  const w = TAIL_W - 0.4; // 両サイドの線を食べないよう気持ち内側で
+  const ix = ax - nx * IN;
+  const iy = ay - ny * IN;
+  const ox = ax + nx * OUT;
+  const oy = ay + ny * OUT;
+  return (
+    `M${f(ix - px * w)},${f(iy - py * w)}` +
+    `L${f(ox - px * w)},${f(oy - py * w)}` +
+    `L${f(ox + px * w)},${f(oy + py * w)}` +
+    `L${f(ix + px * w)},${f(iy + py * w)}Z`
+  );
+}
+
 export default function SpeechBubble() {
   // 再レンダリングはセリフが変わったときだけ(位置追従は rAF が直接さわる)
   const speech = useGameStore((s) => s.speech);
@@ -162,6 +198,7 @@ export default function SpeechBubble() {
   const bodyRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLParagraphElement>(null);
   const tailRef = useRef<SVGPathElement>(null);
+  const joinRef = useRef<SVGPathElement>(null); // 尻尾の継ぎ目かくし
 
   // 1行に入る全角文字数。字の大きさ(clamp)と最大幅から測るので、画面幅で変わる。
   // 変わったときだけ setState する(セリフごとの再レンダリングは増やさない)
@@ -357,6 +394,7 @@ export default function SpeechBubble() {
       Math.abs(tipY - last.tipY) > 0.5
     ) {
       tail.setAttribute("d", tailPath(sp.tone, ax, ay, nx, ny, tipX, tipY));
+      joinRef.current?.setAttribute("d", tailJoinPath(sp.tone, ax, ay, nx, ny));
       // ぽんっと出るときの基点も尻尾の付け根に合わせる(頭から生えて見える)
       body.style.transformOrigin = `${f(ax)}px ${f(ay)}px`;
       last.ax = ax;
@@ -458,6 +496,15 @@ export default function SpeechBubble() {
                   />
                 </svg>
                 <span className="sb-fill" />
+                {/* 地色のあとに、継ぎ目だけを地色で塗りつぶす板を重ねる。
+                    本体のふちの線が尻尾の口を横切るのを消すため */}
+                <svg className="sb-tail sb-join">
+                  <path
+                    ref={joinRef}
+                    d=""
+                    transform={`translate(${TAIL_PAD},${TAIL_PAD})`}
+                  />
+                </svg>
               </span>
               {/* 改行は wrapJa が入れる。CSSは white-space:pre-wrap でそれを守るだけ */}
               <p className="sb-text" ref={textRef}>

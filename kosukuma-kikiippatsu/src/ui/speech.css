@@ -99,6 +99,13 @@
   stroke-linecap: round;
 }
 
+/* 継ぎ目かくし。地色だけを塗って、本体のふちの線が尻尾の口を横切るのを消す。
+   線は絶対に引かない(引いたら元の木阿弥) */
+.sb-join path {
+  fill: var(--sb-fill);
+  stroke: none;
+}
+
 /* セリフ。position:relative で .sb-fill より前面に置く。
    改行は wrapJa.ts が決めて \n で渡してくる(日本語の禁則と文節を見て折る)。
    pre-wrap はその \n を守るための指定。それでも入りきらないときだけ、

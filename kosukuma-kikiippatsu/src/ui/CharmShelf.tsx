@@ -1138,9 +1138,9 @@ export function CharmShelf() {
 
   // 隠しは持っている人にしか存在しない。持っていない人の棚は12枠ちょうど。
   // CHARMS の index はアイコンの参照に要るので、絞り込んでも持ち歩く
-  const slots = CHARMS.map((c, i) => ({ c, i })).filter(
-    ({ c }) => !c.secret || hasEarth
-  );
+  // 隠しチャームも最初から枠を出す。ただし中身は「?」のまま、
+  // 何本刺せばもらえるかも出さない(条件は教えない)ので、伏せたままになる
+  const slots = CHARMS.map((c, i) => ({ c, i }));
   // CHARMS[level] をそのまま使うと、12個そろった人に隠しチャームの名前と
   // 条件(Infinity本)が「つぎは…」として出てしまう。ここで必ず止める
   const next = level < NORMAL_CHARM_COUNT ? CHARMS[level] : undefined;
@@ -1181,7 +1181,9 @@ export function CharmShelf() {
 
       {/* 13個になったら1行7枠にする。3行目を作ると棚が縦に伸びて、
           引き出しの中で下の進捗バーが押し出されてしまうため */}
-      <ul className={`kk-charms-grid${hasEarth ? " wide" : ""}`}>
+      {/* 枠は隠しぶんを入れて常に13個なので、列数もつねに7(=7×2行)。
+          6列だと13個目だけが3行目に取り残されて、引き出しからあふれる */}
+      <ul className="kk-charms-grid wide">
         {slots.map(({ c, i }) => {
           const got = owned.includes(i);
           const isOn = got && on.has(i);
@@ -1191,12 +1193,19 @@ export function CharmShelf() {
               <span className="kk-charm-cell">
                 <CharmIcon
                   index={i}
-                  size={got ? (hasEarth ? 24 : 26) : hasEarth ? 20 : 21}
+                  size={got ? 24 : 20}
                   ghost={!got}
                 />
               </span>
               <span className="kk-charm-need">
-                {got ? (isOn ? "ついてる" : "はずした") : c.need}
+                {got
+                  ? isOn
+                    ? "ついてる"
+                    : "はずした"
+                  : /* 隠しは必要本数が無い(刺しては手に入らない)ので ? のまま */
+                    c.secret
+                    ? "？"
+                    : c.need}
               </span>
             </>
           );
@@ -1250,7 +1259,11 @@ export function CharmShelf() {
           </>
         ) : (
           <p className="kk-charms-line kk-charms-done">
-            ぜんぶ あつめた！ すごい！ 🎉
+            {/* 13個目の枠が「?」で残っているのに「ぜんぶ」と言うと嘘になる。
+                手に入れかたは教えないまま、まだ何かあることだけ匂わせる */}
+            {hasEarth
+              ? "ぜんぶ あつめた！ すごい！ 🎉"
+              : "12こ あつめた！ ……まだ あるみたい？"}
           </p>
         )}
       </div>
