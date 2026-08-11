@@ -243,22 +243,6 @@ a {
 .mast-logo {
   min-width: 0;
 }
-.mast-side {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 14px;
-  width: 236px;
-}
-.mast-lead {
-  margin: 0;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--rule);
-  font-size: 14px;
-  line-height: 18px;
-  color: var(--ink-soft);
-}
 .wordmark {
   width: fit-content;
 }
@@ -299,36 +283,6 @@ a {
   letter-spacing: 1px;
 }
 
-.tally {
-  flex: none;
-  padding: 26px 14px 12px;
-}
-.tally-t {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  line-height: 12px;
-}
-.tally-t td {
-  padding: 3px 0;
-  white-space: nowrap;
-}
-.tally-t td:first-child {
-  padding-right: 16px;
-  width: 100%;
-}
-.tally-n {
-  text-align: right;
-  font-size: 8px;
-  color: var(--ink-soft);
-}
-.tally-sum td {
-  border-top: 1px solid var(--rule);
-  padding-top: 5px;
-}
-.tally-sum .tally-n {
-  color: var(--ink);
-}
 
 /* ══ 色の規則 ════════════════════════════════════════════
    色は「図版」と「状態」にだけ使う。装飾は紙・墨・灰の罫だけで組む
@@ -336,35 +290,6 @@ a {
    印の形でも区別する：□構想 → ▨制作中 → ◨完成 → ■公開中（左から進む）、
    ラベル未着は破線の白枠。 */
 
-.mark {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 6px;
-  vertical-align: baseline;
-  border: 1px solid var(--ink);
-  background: var(--paper);
-}
-.mark-released {
-  background: var(--accent);
-}
-.mark-done {
-  background: linear-gradient(to bottom, var(--paper) 0 4px, var(--ok) 4px);
-}
-.mark-wip {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--accent-warm) 0 2px,
-    var(--paper) 2px 4px
-  );
-}
-.mark-idea {
-  background: var(--paper);
-}
-.mark-empty {
-  border: 1px dashed var(--ink-faint);
-  background: var(--paper);
-}
 
 /* ══ 定義 ════════════════════════════════════════════════ */
 
@@ -484,30 +409,6 @@ a {
   color: var(--ink-faint);
 }
 
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 18px;
-  padding: 8px 0 7px;
-  border-bottom: 1px solid var(--rule-faint);
-}
-.legend-head {
-  color: var(--ink-faint);
-  margin-right: 2px;
-}
-.legend-i {
-  display: inline-flex;
-  align-items: center;
-  font-size: 14px;
-  line-height: 12px;
-}
-.legend-i b {
-  margin-left: 6px;
-  font-size: 8px;
-  font-weight: 400;
-  color: var(--ink-faint);
-}
 
 /* ── 並び ──
    ここが版面のいちばん大事なところ。主役はカセットで、文字は札。
@@ -556,10 +457,6 @@ a {
   height: 8px;
   box-shadow: inset 0 0 0 1px #0000002e;
 }
-.dot-void {
-  background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--rule);
-}
 
 /* ── 札 ── */
 .cap {
@@ -580,15 +477,6 @@ a {
   font-size: 8px;
   line-height: 12px;
   color: var(--ink-faint);
-}
-.cell-state {
-  font-size: 14px;
-  line-height: 12px;
-  color: var(--ink-faint);
-  white-space: nowrap;
-}
-.cell-state .mark {
-  margin-right: 4px;
 }
 
 .ttl {
@@ -622,42 +510,11 @@ a {
     var(--rule-faint) 17px 18px
   );
 }
-.meta {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  margin-top: auto;
-  font-size: 14px;
-  line-height: 12px;
-  color: var(--ink-faint);
-}
-.meta b {
-  margin-right: 6px;
-  font-weight: 400;
-  color: var(--ink-faint);
-}
 
 .cell-in:hover .ttl {
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
-}
-/* まだ差し込めないもの。棚の凹みだけがある状態に見せる */
-.cell.is-empty .cell-cart {
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent 0 4px,
-    #00000012 4px 8px
-  );
-  box-shadow:
-    inset 1px 1px 0 #b3ab95,
-    inset -1px -1px 0 #fdf9ee;
-}
-.cell.is-empty .ttl {
-  color: var(--ink-faint);
-}
-.cell.is-empty .cell-in {
-  cursor: default;
 }
 
 /* ══ 奥付 ════════════════════════════════════════════════ */
@@ -889,10 +746,6 @@ a {
   gap: 20px;
   padding: 28px 0 20px;
 }
-.sheet[data-cols="2"] .mast-side {
-  flex: 1 1 220px;
-  width: auto;
-}
 .sheet[data-cols="2"] .defn-row {
   display: block;
 }
@@ -988,10 +841,31 @@ a {
   }
 }
 
-/* 「まだ開けません」は状態ではないので、状態の印より弱く、和名より小さく添える。 */
-.cell-nolabel {
-  margin-left: 6px;
-  font-style: normal;
-  font-size: 14px;
+/* ══ まだ遊べないもの ════════════════════════════════════
+   棚に並ぶ姿は変えず、彩度だけを落として COMING SOON を添える。
+   ラベルを剥がした無地の外装にすると「作り忘れ」に見えるので採らない。 */
+
+.cell.is-soon .cell-cart canvas {
+  /* 「少しグレー」。絵が読めなくなるほど抜くと、棚が死んで見える */
+  filter: grayscale(0.5) opacity(0.9);
+}
+.cell.is-soon .dots {
+  filter: grayscale(0.5) opacity(0.8);
+}
+.cell.is-soon .ttl {
+  color: var(--ink-soft);
+}
+.cell.is-soon .cell-in {
+  cursor: default;
+}
+
+.soon {
+  margin-left: auto;
+  padding: 2px 5px 1px;
+  border: 1px solid var(--ink-faint);
   color: var(--ink-faint);
+  font-size: 8px;
+  line-height: 10px;
+  letter-spacing: 1px;
+  white-space: nowrap;
 }

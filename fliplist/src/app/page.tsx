@@ -5,21 +5,11 @@ import Cartridge from "@/components/Cartridge";
 import Wordmark, { WORDMARK } from "@/components/Wordmark";
 import Definition from "@/components/Definition";
 import Colophon from "@/components/Colophon";
-import { FLIPS, type Flip, type FlipStatus } from "@/data/flips";
+import { FLIPS, type Flip } from "@/data/flips";
 import { LABELS } from "@/art/labels";
 import { CART_BUFFER } from "@/art/spec";
 
 const HOME = "https://kosukuma.com/home.html";
-
-const STATUS: Record<FlipStatus, { jp: string; en: string; key: string }> = {
-  released: { jp: "公開中", en: "RELEASED", key: "released" },
-  done: { jp: "完成", en: "DONE", key: "done" },
-  wip: { jp: "制作中", en: "IN PROGRESS", key: "wip" },
-  idea: { jp: "構想", en: "IDEA", key: "idea" },
-};
-const ORDER: FlipStatus[] = ["released", "done", "wip", "idea"];
-
-const dot = (d: string) => d.replace(/-/g, ".");
 
 /**
  * 版面はドット絵の整数倍でしか組めない。
@@ -63,9 +53,7 @@ function useLayout(): Layout {
 }
 
 export default function Page() {
-  const [hover, setHover] = useState<string | null>(null);
   const { cols, scale, logo, pad, gutter, sheet } = useLayout();
-  const count = (s: FlipStatus) => FLIPS.filter((f) => f.status === s).length;
   const cartW = CART_BUFFER.W * scale;
 
   return (
@@ -110,32 +98,6 @@ export default function Page() {
           </p>
         </div>
 
-        <div className="mast-side">
-          <p className="mast-lead">
-            1本を1本のカセットに見立てて、つくった順にならべています。
-            ラベルの絵は、ふりっぷごとに描き下ろしました。
-          </p>
-          <div className="tally plate">
-            <span className="plate-tab en">INDEX</span>
-            <table className="tally-t">
-              <tbody>
-                {ORDER.map((s) => (
-                  <tr key={s}>
-                    <td>
-                      <i className={`mark mark-${s}`} aria-hidden />
-                      {STATUS[s].jp}
-                    </td>
-                    <td className="tally-n en">{String(count(s)).padStart(2, "0")}</td>
-                  </tr>
-                ))}
-                <tr className="tally-sum">
-                  <td>合計</td>
-                  <td className="tally-n en">{String(FLIPS.length).padStart(2, "0")}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
       </header>
 
       <Definition />
@@ -146,23 +108,6 @@ export default function Page() {
           <span className="band-en en">CONTENTS</span>
           <span className="band-n en">
             001 &ndash; {String(FLIPS.length).padStart(3, "0")}
-          </span>
-        </div>
-
-        <div className="legend">
-          <span className="legend-head k8 en">KEY</span>
-          {ORDER.map((s) => (
-            <span className="legend-i" key={s}>
-              <i className={`mark mark-${s}`} aria-hidden />
-              {STATUS[s].jp}
-              <b className="en">{STATUS[s].en}</b>
-            </span>
-          ))}
-          {/* 状態ではなく「まだ開けない」ことの説明なので、KEY の並びから外して添える */}
-          <span className="legend-i legend-i--empty">
-            <i className="mark mark-empty" aria-hidden />
-            ラベル未着＝まだ開けません
-            <b className="en">NO LABEL</b>
           </span>
         </div>
 
@@ -181,8 +126,6 @@ export default function Page() {
               flip={flip}
               n={i + 1}
               scale={scale}
-              hovered={hover === flip.slug}
-              onHover={setHover}
             />
           ))}
         </ol>
@@ -202,18 +145,15 @@ function Item({
   flip,
   n,
   scale,
-  hovered,
-  onHover,
 }: {
   flip: Flip;
   n: number;
   scale: number;
-  hovered: boolean;
-  onHover: (s: string | null) => void;
 }) {
-  const st = STATUS[flip.status];
   const swatch = LABELS[flip.slug]?.swatch ?? [];
-  const open = Boolean(flip.url);
+  // 見せ方は「いま遊べるか」の二択だけにする。
+  // 完成／制作中／構想の区別は棚の上では意味を持たないので、まとめて COMING SOON。
+  const live = flip.status === "released" && Boolean(flip.url);
 
   /**
    * 図版がまず来て、そのあとに札（キャプション）が続く。
@@ -223,34 +163,21 @@ function Item({
   const body = (
     <>
       <div className="cell-cart">
-        <Cartridge flip={flip} scale={scale} animate={hovered} />
+        <Cartridge flip={flip} scale={scale} animate />
       </div>
 
       {/* 色玉は図版の直下・左そろえ。カセットの持ち色をそのまま拾う */}
       <div className="dots" aria-hidden>
-        {open
-          ? swatch
-              .slice(0, 5)
-              .map((c, k) => <span className="dot" key={k} style={{ background: c }} />)
-          : [0, 1, 2, 3, 4].map((k) => <span className="dot dot-void" key={k} />)}
+        {swatch.slice(0, 5).map((c, k) => (
+          <span className="dot" key={k} style={{ background: c }} />
+        ))}
       </div>
 
       <div className="cap">
         <div className="cell-head">
           <span className="cell-no en">{String(n).padStart(2, "0")}</span>
           <span className="cell-code en">{flip.code}</span>
-          {/*
-            状態（公開中／完成／制作中／構想）と、開けるかどうかは別の軸。
-            以前は url が無いだけで状態を「ラベル未着」に差し替えていたので、
-            INDEX の集計（status で数える）と紙面のバッジが食い違っていた。
-            ——制作中07と出ているのにバッジは5個、構想01はどこにも無い、という状態。
-            状態は必ず status のまま出し、開けないことは別に添える。
-          */}
-          <span className="cell-state">
-            <i className={`mark mark-${st.key}`} aria-hidden />
-            {st.jp}
-            {!open && <em className="cell-nolabel">ラベル未着</em>}
-          </span>
+          {!live && <span className="soon en">COMING SOON</span>}
         </div>
 
         <h3 className="ttl">{flip.title}</h3>
@@ -260,25 +187,15 @@ function Item({
         ) : (
           <p className="dsc dsc-blank" aria-label="内容は未記入" />
         )}
-
-        <div className="meta">
-          <span className="meta-date">
-            <b>{flip.status === "released" ? "公開" : "予定"}</b>
-            {dot(flip.date)}
-          </span>
-          <span className="meta-owner">{flip.owner}</span>
-        </div>
       </div>
     </>
   );
 
   return (
     <li
-      className={`cell${open ? "" : " is-empty"}`}
-      onMouseEnter={() => onHover(flip.slug)}
-      onMouseLeave={() => onHover(null)}
+      className={`cell${live ? "" : " is-soon"}`}
     >
-      {open ? (
+      {live ? (
         <a className="cell-in" href={flip.url} target="_blank" rel="noopener noreferrer">
           {body}
         </a>

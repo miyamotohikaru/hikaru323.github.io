@@ -93,7 +93,8 @@ function Notice({
 export default function Colophon() {
   const n = FLIPS.length;
   const by = (s: string) => FLIPS.filter((f) => f.status === s).length;
-  const empty = FLIPS.filter((f) => !f.url).length;
+  // 棚に出しているのは「いま遊べるか」の二択だけ。それ以外は COMING SOON。
+  const live = FLIPS.filter((f) => f.status === "released" && f.url).length;
 
   return (
     <footer className="colophon" id="colophon">
@@ -119,12 +120,12 @@ export default function Colophon() {
             収録{n}本。1本ずつにカセットの絵をつけました。同じ絵は1枚もありません。
           </p>
           <p>
-            ラベルの貼られていないカセットは、まだ中身がありません。差し込めるようになったら、
-            この棚に絵がつきます。いまのところ{empty}本が空です。
+            いま遊べるのは{live}本です。残りは色を落として COMING SOON にしてあります。
+            出来上がったら、色がついて押せるようになります。
           </p>
           <p>
             カセットを押すと、それぞれのふりっぷが別のまどで開きます。
-            制作中のものは、予告なく変わったり、なくなったりします。
+            つくっている途中のものは、予告なく変わったり、なくなったりします。
           </p>
         </div>
 
@@ -157,13 +158,13 @@ export default function Colophon() {
 
       <div className="notices">
         <Notice icon="warn" head="注意" en="CAUTION">
-          ラベルのないカセットは差し込めません。押しても何も起きません。
+          色の落ちたカセットはまだ差し込めません。押しても何も起きません。
         </Notice>
         <Notice icon="insert" head="差込" en="INSERT">
           カセットを押すと、別のまどでふりっぷが開きます。
         </Notice>
         <Notice icon="wip" head="制作中" en="IN PROGRESS">
-          日付は予定です。前後することがあります。
+          COMING SOON のものは、出来上がる時期が前後することがあります。
         </Notice>
         <Notice icon="home" head="本体" en="HOME">
           ここは棚です。会社の入口はとなりにあります。

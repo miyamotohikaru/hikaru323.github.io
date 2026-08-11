@@ -18,16 +18,16 @@ type Props = {
 export default function Cartridge({ flip, scale, animate = false }: Props) {
   const draw = useCallback(
     (g: PixelGfx, t: number) => {
-      const blank = !flip.url;
-      drawCartridge(g, { shellName: flip.shell, code: flip.code, blank });
-      if (blank) return;
+      // ラベルは16本すべてに貼る。まだ遊べないことは版面側（COMING SOON と
+      // カセットの彩度）で示す。外装だけの無地は「作り忘れ」に見えるので使わない。
+      drawCartridge(g, { shellName: flip.shell, code: flip.code });
       const art = LABELS[flip.slug];
       if (!art) return;
       const label = new PixelGfx(CART.LABEL_W, CART.LABEL_H);
       art.draw(label, t);
       g.paste(label, CART.LABEL_X, CART.LABEL_Y);
     },
-    [flip.shell, flip.code, flip.slug, flip.url],
+    [flip.shell, flip.code, flip.slug],
   );
 
   return (
