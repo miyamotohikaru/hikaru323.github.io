@@ -1,5 +1,6 @@
 import type { LabelArt } from "./types";
 import type { PixelGfx } from "../gfx";
+import { JP_TH, ascent, jpRow } from "../jptitle";
 
 // 精神病図鑑（Diagnosis Archive）。
 //
@@ -32,30 +33,32 @@ const CARCASS = "#382b18";
 const CARD = "#f7f1e2";
 
 const DW = 19; // 抽斗の面の幅
-const DH = 9; // 抽斗の面の高さ
+const DH = 8; // 抽斗の面の高さ
 const COLX = [4, 24, 44];
-const ROWY = [20, 29];
-const CAB_Y = 19; // 箪笥の天板
-const CAB_H = 20;
+const DRAWER_Y = 31;
+const CAB_Y = 31; // 箪笥の天板
+const CAB_H = 8;
+
+// ── 題字 ────────────────────────────────────────────────
+// 「精神病図鑑」5文字。1行に流すと 13px でも 65px でぎりぎりだが、
+// **13px では精と鑑が黒い塊になる**（精の月の横画、鑑の監の横画が繋がる）。
+// 15px まで上げると画と画のあいだが開いて画数が数えられるので、
+// 3字＋2字の2行に割って 15px で組む。4字までなら 15px x 4 = 60px で入る。
+// 「鑑」だけは 15px でも左右の半分が繋がって黒い塊になる。17px まで上げると
+// 金偏と監のあいだに1本の縦の余白が通って、はじめて2つの部品に見える。
+// 2字の行は 17px x 2 = 34px なので幅は余る。行が1px 伸びるだけで済む。
+const T_SIZE_A = 15;
+const T_SIZE_B = 17;
+const T_A = "精神病";
+const T_B = "図鑑";
+/** 題字は左に寄せる。右のあきに年代と、抽斗から持ち上がった札を通す。 */
+const T_X = 2;
 
 // ── 発行元の印 ──────────────────────────────────────────
 // 16枚すべて同じ意匠・同じ位置・同じ大きさ。右下の隅に 5x5 のくまの顔。
 const MARK = ["#...#", ".###.", "#####", "#o#o#", ".#o#."];
 function mark(g: PixelGfx, body: string, eye: string) {
   g.blit(61, 33, MARK, { "#": body, o: eye });
-}
-
-// ── 和文の題字 ──────────────────────────────────────────
-// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
-// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
-// 16px の枡の中に据え直すための落とし幅。
-const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
-function jp(g: PixelGfx, x: number, y: number, s: string, c: string) {
-  let cx = x;
-  for (const ch of s) {
-    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
-    cx += 16;
-  }
 }
 
 /**
@@ -70,17 +73,18 @@ function drawer(g: PixelGfx, x: number, y: number, from: string, to: string, see
   g.hline(x + 1, y + 1, DW - 2, WOOD_LT);
   g.hline(x + 1, y + DH - 2, DW - 2, WOOD_DK);
   g.frame(x, y, DW, DH, WOOD_DP);
-  // 名札。真鍮の枠に紙をはさんである。古い札は日に焼けている。
-  g.rect(x + 1, y + 1, 14, 7, aged ? "#e2d3ae" : PAPER);
-  g.frame(x + 1, y + 1, 14, 7, "#8c7448");
-  g.hline(x + 2, y + 2, 12, aged ? "#f0e4c4" : "#fdf8ec");
-  g.text3x5(x + 3, y + 2, from, NAVY);
-  g.hline(x + 7, y + 4, 2, NAVY);
-  g.text3x5(x + 10, y + 2, to, NAVY);
+  // 名札。丈が8pxに詰まったので真鍮の枠はやめて、紙の面と天の照りだけにした。
+  // 字は5px必要なので、枠を回すと1pxも余らない。古い札は日に焼けている。
+  g.rect(x + 1, y + 1, 15, 6, aged ? "#e2d3ae" : PAPER);
+  g.hline(x + 1, y + 1, 15, aged ? "#f0e4c4" : "#fdf8ec");
+  g.hline(x + 1, y + 6, 15, "#8c7448");
+  g.text3x5(x + 2, y + 2, from, NAVY);
+  g.hline(x + 6, y + 4, 2, NAVY);
+  g.text3x5(x + 9, y + 2, to, NAVY);
   // 引き手
-  g.rect(x + 16, y + 3, 2, 3, "#634c28");
-  g.px(x + 16, y + 3, "#cdb68e");
-  g.px(x + 17, y + 5, "#3f2f16");
+  g.rect(x + 17, y + 2, 2, 4, "#634c28");
+  g.px(x + 17, y + 2, "#cdb68e");
+  g.px(x + 18, y + 5, "#3f2f16");
 }
 
 export const art: LabelArt = {
@@ -98,58 +102,55 @@ export const art: LabelArt = {
     g.vline(65, 2, 36, PAPER_DP);
 
     // ── 標題 ───────────────────────────────────────────────
-    // 和文は「索引」の二字だけにしてある。この題材で大きく打ってよいのは、
-    // 中身ではなく器の名前だけ。病名は一つも書かない。
-    jp(g, 4, 2, "索引", NAVY);
+    // 「精神病図鑑」を全文字。器の名前だけを打つ作法は変えない ——
+    // 病名は一つも書かない。左に寄せて、右のあきに年代と札を通す。
+    jpRow(g, 1, T_A, NAVY, {
+      size: T_SIZE_A,
+      ascent: ascent(T_A, T_SIZE_A, JP_TH),
+      x: T_X,
+    });
+    jpRow(g, 16, T_B, NAVY, {
+      size: T_SIZE_B,
+      ascent: ascent(T_B, T_SIZE_B, JP_TH),
+      x: T_X,
+    });
 
-    // 年表。標題の右のあきへ移した。実物と同じ 1518 から 2022 まで。
-    g.text3x5(36, 2, "1518", "#9aa1b6");
-    g.hline(36, 9, 28, NAVY_LT);
-    g.px(35, 9, NAVY);
-    g.px(64, 9, NAVY);
-    const MARKS = [1, 3, 5, 7, 8, 10, 12, 13, 15, 16, 17, 18, 19, 21, 23, 24];
-    for (const m of MARKS) g.px(36 + m, 8, NAVY_LT);
-    for (const m of [7, 13, 17, 23] as const) g.vline(36 + m, 7, 2, NAVY);
-    // いま開いている抽斗が指している年
-    g.vline(36 + 20, 7, 2, CRIMSON);
-    g.text3x5(50, 11, "2022", "#9aa1b6");
-    g.text3x5(36, 11, "151", CRIMSON);
-
-    g.hline(4, 17, 60, NAVY_LT);
-    g.hline(4, 17, 60, NAVY, "half");
+    // 年表。題字の右のあきへ縦に積んだ。実物と同じ 1518 から 2022 まで。
+    g.text3x5(50, 2, "1518", NAVY_PALE);
+    g.vline(56, 8, 4, NAVY_LT);
+    g.px(55, 10, NAVY_LT);
+    g.px(57, 10, NAVY_LT);
+    g.px(56, 11, NAVY);
+    g.text3x5(50, 13, "2022", NAVY_PALE);
+    // 収録数。下の行が2字ぶん短いので、そのあきに置く。
+    g.text3x5(37, 24, "151", CRIMSON);
+    g.hline(37, 22, 11, NAVY_LT);
+    g.hline(37, 30, 11, PAPER_DP);
 
     // ── 名刺箪笥 ───────────────────────────────────────────
-    // 6杯。等間隔だが、数が少ないので格子には見えない。
+    // 3杯。題字に上の28行を明け渡したので、段は1段だけ残した。
+    // 「名前が与えられ、分類され、書き換えられる」ことは1段でも言える。
     g.rect(3, CAB_Y, 61, CAB_H, CARCASS);
     g.hline(3, CAB_Y, 61, "#241a0e");
     g.hline(3, CAB_Y + CAB_H - 1, 61, "#241a0e");
     g.vline(3, CAB_Y, CAB_H, "#241a0e");
     g.vline(63, CAB_Y, CAB_H, "#4a3a20");
 
-    // 開いているのは上段のいちばん右。だから見出しは I-M だけ欠けている。
+    // 開いているのはいちばん右。だから見出しは S-Z だけ欠けている。
     const OPEN_C = 2;
-    const OPEN_R = 0;
-    const LABELS: Array<Array<[string, string]>> = [
-      [
-        ["A", "C"],
-        ["D", "H"],
-        ["", ""],
-      ],
-      [
-        ["N", "R"],
-        ["S", "U"],
-        ["V", "Z"],
-      ],
+    const LABELS: Array<[string, string]> = [
+      ["A", "H"],
+      ["I", "R"],
+      ["", ""],
     ];
-    for (let r = 0; r < 2; r++)
-      for (let c = 0; c < 3; c++) {
-        if (r === OPEN_R && c === OPEN_C) continue;
-        drawer(g, COLX[c], ROWY[r], LABELS[r][c][0], LABELS[r][c][1], r * 3 + c);
-      }
+    for (let c = 0; c < 3; c++) {
+      if (c === OPEN_C) continue;
+      drawer(g, COLX[c], DRAWER_Y, LABELS[c][0], LABELS[c][1], c);
+    }
 
     // ── 開いた抽斗 ─────────────────────────────────────────
     const ox = COLX[OPEN_C];
-    const oy = ROWY[OPEN_R];
+    const oy = DRAWER_Y;
     g.rect(ox, oy, DW, DH, "#2a2114");
     g.rect(ox + 1, oy + 1, DW - 2, DH - 4, "#17110a");
     // 抽斗の側板。ここが無いと、ただの穴になる。
@@ -173,7 +174,9 @@ export const art: LabelArt = {
     // 消された前の名前と、引き直された今の名前。図鑑の主題はここにある。
     const lift = 1 + Math.round(3 * Math.max(0, Math.sin(t * Math.PI * 2)));
     const cx0 = ox + 5;
-    const cy0 = oy - lift;
+    // 箪笥が1段になったぶん、札は抽斗より高く持ち上げる。
+    // 題字は左に寄せてあるので、この列は上まで空いている。
+    const cy0 = oy - lift - 6;
     g.rect(cx0 + 1, cy0 + 1, 9, 10, "#00000026");
     g.rect(cx0, cy0, 9, 10, CARD);
     g.frame(cx0, cy0, 9, 10, NAVY_PALE);

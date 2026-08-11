@@ -1,5 +1,6 @@
 import type { LabelArt } from "./types";
 import type { PixelGfx } from "../gfx";
+import { JP_TH, ascent, jpRow } from "../jptitle";
 
 // 世界一広告の多いゲーム。まだ制作中。
 //
@@ -56,32 +57,17 @@ function closeBtn(g: PixelGfx, x: number, y: number) {
 }
 
 // ── 和文の題字 ──────────────────────────────────────────
-// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
-// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
-// 16px の枡の中に据え直すための落とし幅。
-const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
-function jp(g: PixelGfx, x: number, y: number, s: string, c: string) {
-  let cx = x;
-  for (const ch of s) {
-    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
-    cx += 16;
-  }
-}
-/** 8方向に黒を回してから塗る。広告の地はどれも彩度が高いので、これが要る。 */
-function jpEdge(g: PixelGfx, x: number, y: number, s: string, fill: string, edge: string) {
-  for (const [dx, dy] of [
-    [-1, 0],
-    [1, 0],
-    [0, -1],
-    [0, 1],
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-    [1, 1],
-  ] as const)
-    jp(g, x + dx, y + dy, s, edge);
-  jp(g, x, y, s, fill);
-}
+// 「世界一広告の多いゲーム」11文字。漢字はどれも画数が少ないので 11px で持つ
+// （11px x 6 = 66px＝ラベルの内寸ちょうど）。6字＋5字の2行。
+// 題字も広告の一枚として組む。上の看板が「世界一広告の」、
+// 割り込みの全画面が「多いゲーム」。合わせて読ませる。
+//
+// **ふちは回さない。** 11px の字間は1pxしかないので、8方向に黒を回すと
+// 字と字がくっついて帯が1枚の黒い板になる。かわりに、字が乗る面だけ
+// 斜めの縞を抜いて無地にした。無地の上なら1色べたで抜ける。
+const T_A = "世界一広告の";
+const T_B = "多いゲーム";
+const T_SIZE = 11;
 
 /** 中身のない社章。丸・三角・四角の組み合わせだけで作る。 */
 function logo(g: PixelGfx, kind: number, x: number, y: number, a: string, b: string) {
@@ -141,65 +127,84 @@ export const art: LabelArt = {
     g.disc(47, 16, 2, YELLOW);
 
     // ── 広告 ───────────────────────────────────────────────
-    // 題字も広告の一枚として組む。この企画に限っては、それが正しい。
-    // 上の看板が「広告」、割り込みの全画面が「だらけ」。合わせて読ませる。
-    // 下のゲームが見えるのは、帯と帯のあいだの2行と、右の細い窓だけ。
+    // 題字が11文字になったので、看板は2枚とも幅いっぱいの帯に組み直した。
+    // 下のゲームが見えるのは、帯と帯のあいだの1行と、右の細い窓、
+    // そして下の帯だけ。
 
-    // 上の看板。ここに和文の題字を大きく打つ。
-    adBox(g, 1, 1, 66, 18, MAGENTA);
-    stripes(g, 2, 2, 64, 16, YELLOW, 8);
-    g.rect(2, 2, 64, 16, "#e02a86", "half");
-    jpEdge(g, 3, 2, "広告", YELLOW, INK);
-    // 右にたたき売りの札
-    g.rect(41, 3, 23, 7, WHITE);
-    g.frame(41, 3, 23, 7, INK);
-    g.text3x5(43, 4, "SALE", RED, 1);
-    g.hline(43, 8, 19, RED);
-    logo(g, 2, 41, 11, WHITE, CYAN);
-    g.rect(50, 11, 14, 6, YELLOW);
-    g.frame(50, 11, 14, 6, INK);
-    g.text3x5(53, 12, "NEW", INK);
+    // 上の看板。ここに和文の題字の1行目。字が乗る10行は縞を抜いて無地にする。
+    adBox(g, 0, 0, 68, 13, MAGENTA);
+    stripes(g, 1, 11, 66, 1, YELLOW, 4);
+    const asc = ascent(T_A + T_B, T_SIZE, JP_TH);
+    jpRow(g, 1, T_A, YELLOW, { size: T_SIZE, ascent: asc });
 
     // 割り込みの全画面広告。ここが題字の2行目。
-    adBox(g, 1, 21, 51, 18, CREAM);
-    jpEdge(g, 3, 22, "だらけ", INK, CREAM);
-    g.hline(2, 38, 49, RED);
+    adBox(g, 0, 14, 61, 12, CREAM);
+    jpRow(g, 15, T_B, INK, { size: T_SIZE, ascent: asc, width: 60 });
+    g.hline(1, 24, 59, RED);
 
-    // 右の細い窓。追いやられたゲーム本体はここだけ。
-    g.rect(52, 21, 15, 18, "#1a2a5c");
-    g.rect(52, 30, 15, 9, GREEN);
-    g.hline(52, 30, 15, "#63c455");
-    g.rect(52, 33, 15, 6, "#7a4a20");
-    g.rect(56, 25, 4, 5, "#f2e0c0");
-    g.rect(56, 25, 4, 2, RED);
-    g.px(57, 28, INK);
-    g.px(59, 28, INK);
-    g.disc(63, 24, 1, YELLOW);
-    g.px(54, 23, WHITE);
-    g.px(55, 23, WHITE);
-    g.frame(52, 21, 15, 18, WHITE);
-    g.frame(51, 20, 17, 20, INK);
+    // 右の細い窓。押しのけられたゲームがここから覗いている。
+    g.rect(62, 15, 5, 10, "#1a2a5c");
+    g.rect(62, 20, 5, 5, GREEN);
+    g.hline(62, 20, 5, "#63c455");
+    g.rect(62, 22, 5, 3, "#7a4a20");
+    g.px(64, 17, YELLOW);
+    g.px(63, 18, WHITE);
+    g.frame(62, 15, 5, 10, WHITE);
+    g.frame(61, 14, 7, 12, INK);
+
+    // ── 下の帯。追いやられたゲーム本体 ─────────────────────
+    g.rect(0, 27, 68, 13, "#1a2a5c");
+    g.rect(0, 32, 68, 8, GREEN);
+    g.hline(0, 32, 68, "#63c455");
+    g.rect(0, 34, 68, 6, "#7a4a20");
+    g.rect(0, 34, 68, 6, "#5c3416", "quarter");
+    for (let i = 2; i < 68; i += 5) {
+      g.px(i, 33, "#2a7a2a");
+      g.px(i + 1, 33, "#8ede2a");
+    }
+    // 主人公。ここだけはっきり描いておく。
+    g.rect(7, 27, 5, 5, "#f2e0c0");
+    g.rect(7, 27, 5, 2, RED);
+    g.px(8, 30, INK);
+    g.px(10, 30, INK);
+    g.rect(6, 31, 2, 2, BLUE);
+    g.rect(11, 31, 2, 2, BLUE);
+    g.disc(20, 29, 2, YELLOW);
+    // 帯の縁。ここも同じ1pxの黒
+    g.hline(0, 26, 68, INK);
+    // たたき売りの札。ゲームの上にそのまま貼ってある。
+    g.rect(25, 28, 19, 7, WHITE);
+    g.frame(25, 28, 19, 7, INK);
+    g.text3x5(27, 29, "SALE", RED, 1);
+    g.hline(27, 33, 15, RED);
+    logo(g, 2, 45, 28, WHITE, CYAN);
+    g.rect(53, 28, 13, 6, YELLOW);
+    g.frame(53, 28, 13, 6, INK);
+    g.text3x5(54, 29, "NEW", INK);
 
     // ── 動き: バナーが1枚重なる ────────────────────────────
     if (t > 0.5) {
-      adBox(g, 30, 10, 30, 12, BLUE);
-      stripes(g, 31, 11, 28, 10, "#5c7ce8", 9);
-      g.rect(32, 11, 26, 6, YELLOW);
-      g.frame(32, 11, 26, 6, INK);
-      g.text3x5(34, 12, "50%OFF", INK);
-      g.text3x5(33, 18, "NO ADS", WHITE);
-      closeBtn(g, 26, 18);
+      adBox(g, 15, 30, 39, 9, BLUE);
+      stripes(g, 16, 31, 37, 7, "#5c7ce8", 9);
+      g.rect(17, 31, 26, 7, YELLOW);
+      g.frame(17, 31, 26, 7, INK);
+      g.text3x5(19, 32, "50%OFF", INK);
+      g.text3x5(45, 32, "NO", WHITE);
+      g.text3x5(45, 36, "AD", WHITE);
+      closeBtn(g, 9, 31);
     }
 
     // ── 迷子の閉じるボタンたち ─────────────────────────────
     // どれも面の外にずれている。押せない。
-    closeBtn(g, 45, 16);
-    closeBtn(g, 8, 17);
-    closeBtn(g, 60, 15);
+    // 置き場所は題字の字面を避けてある。読めない題字は広告にもならない。
+    closeBtn(g, 61, 8);
+    closeBtn(g, 3, 22);
+    closeBtn(g, 16, 25);
+    // 押せない読み込みの棒。1周で0まで減る（＝終わらない広告）
     const left = Math.max(0, Math.round(10 * (1 - Math.min(1, t * 2))));
-    g.rect(38, 32, 12, 4, WHITE);
-    g.frame(38, 32, 12, 4, INK);
-    g.rect(39, 33, left, 2, GREEN);
+    g.rect(48, 35, 12, 4, WHITE);
+    g.frame(48, 35, 12, 4, INK);
+    g.rect(49, 36, left, 2, GREEN);
 
     // ── 画面の縁 ───────────────────────────────────────────
     // 16枚共通の作法。外周1pxの単色だけ。

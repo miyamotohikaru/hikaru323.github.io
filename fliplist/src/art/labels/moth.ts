@@ -1,6 +1,7 @@
 import type { LabelArt } from "./types";
 import type { PixelGfx } from "../gfx";
 import { rng } from "../gfx";
+import { JP_TH, ascent, jpRow } from "../jptitle";
 
 // 飛んで火入る虫 ── 実物は MOTH & FLAME / DRAW A CIRCLE。
 // 暗闇のなかで円を描くゲームで、描かれた円が細い線になって画面に何重にも残る。
@@ -27,17 +28,13 @@ const AMBER = "#c98a2a";
 const TRACE = ["#4a6b46", "#6b3a2c", "#5c5230", "#2f5a5c", "#5c3a52"];
 
 // ── 和文の題字 ──────────────────────────────────────────
-// 書体から起こした字母は「インクの外接矩形」で返ってくるので、
-// 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
-// 16px の枡の中に据え直すための落とし幅。
-const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
-function jp(g: PixelGfx, x: number, y: number, s: string, c: string, sp = 0) {
-  let cx = x;
-  for (const ch of s) {
-    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
-    cx += 16 + sp;
-  }
-}
+// 「飛んで火入る虫」7文字。16px は1行4字が限界（5字で80px）なので3字＋4字に割る。
+// 13px で 3字=39px / 4字=52px。**11px には落とせない** ——「飛」の左半分の
+// 横画が3本とも繋がって、ただの黒い縦棒になる。13px でようやく数えられる。
+// 上下あわせて25行を題字に明け渡し、蝋燭と蛾は下の13行に組み直した。
+const T_A = "飛んで";
+const T_B = "火入る虫";
+const T_SIZE = 13;
 
 // 蛾。d=縁 D=翅 L=鱗粉 b=胴。羽ばたきの2コマ。
 const MOTH_UP = [
@@ -101,8 +98,9 @@ export const art: LabelArt = {
   swatch: [NIGHT, FLAME_O, FLAME_I, "#4a6b46", MOTH_B],
   draw: (g, t) => {
     const FX = 33; // 火の位置
-    // 題字に上の16行をゆずったので、蝋燭は下げて背も詰めてある。
-    const FY = 24;
+    // 題字に上の25行をゆずったので、蝋燭は下の13行に組み直した。
+    // 炎7行・蝋4行・受け皿1行。3つの部分が判る最小寸。
+    const FY = 31;
 
     // ── 闇 ──────────────────────────────────────────────
     g.rect(0, 0, 68, 40, NIGHT);
@@ -110,78 +108,77 @@ export const art: LabelArt = {
     g.noise(0, 0, 68, 40, "#1c1a30", 0.07, 41);
 
     // ── 火のまわりの明かり。外から内へ段を重ねる ────────────
-    g.ellipse(FX, FY, 30, 20, GLOW1, "eighth");
-    g.ellipse(FX, FY, 24, 16, GLOW1, "quarter");
-    g.ellipse(FX, FY, 17, 12, GLOW1, "half");
-    g.ellipse(FX, FY, 13, 9, GLOW1);
-    g.ellipse(FX, FY, 11, 8, GLOW2, "half");
-    g.ellipse(FX, FY, 8, 6, GLOW2);
-    g.ellipse(FX, FY, 6, 5, GLOW3, "half");
-    g.ellipse(FX, FY, 4, 4, GLOW3);
+    // 明かりの芯は炎の高さ（FY-2）。蝋燭が下がったぶん、かさも下げる。
+    const GY = FY - 2;
+    g.ellipse(FX, GY, 30, 20, GLOW1, "eighth");
+    g.ellipse(FX, GY, 24, 16, GLOW1, "quarter");
+    g.ellipse(FX, GY, 17, 12, GLOW1, "half");
+    g.ellipse(FX, GY, 13, 9, GLOW1);
+    g.ellipse(FX, GY, 11, 8, GLOW2, "half");
+    g.ellipse(FX, GY, 8, 6, GLOW2);
+    g.ellipse(FX, GY, 6, 5, GLOW3, "half");
+    g.ellipse(FX, GY, 4, 4, GLOW3);
 
     // ── 軌跡。灯りのまわりを回った円が何重にも残っている ─────
-    traceRing(g, FX - 1, FY + 1, 27, 17, TRACE[0], 2.2, 11);
-    traceRing(g, FX + 2, FY - 1, 23, 15, TRACE[1], 2.6, 23);
-    traceRing(g, FX - 2, FY, 19, 13, TRACE[2], 2.0, 37);
-    traceRing(g, FX + 1, FY + 2, 15, 10, TRACE[3], 1.8, 51);
-    traceRing(g, FX, FY - 2, 11, 8, TRACE[4], 1.6, 67);
-    traceRing(g, FX + 3, FY + 1, 30, 19, "#3a4a3a", 2.8, 83);
+    traceRing(g, FX - 1, GY + 1, 27, 17, TRACE[0], 2.2, 11);
+    traceRing(g, FX + 2, GY - 1, 23, 15, TRACE[1], 2.6, 23);
+    traceRing(g, FX - 2, GY, 19, 13, TRACE[2], 2.0, 37);
+    traceRing(g, FX + 1, GY + 2, 15, 10, TRACE[3], 1.8, 51);
+    traceRing(g, FX, GY - 2, 11, 8, TRACE[4], 1.6, 67);
+    traceRing(g, FX + 3, GY + 1, 30, 19, "#3a4a3a", 2.8, 83);
 
     // ── 蝋燭 ────────────────────────────────────────────
-    g.rect(FX - 3, FY + 6, 7, 6, WAX_SH);
-    g.rect(FX - 2, FY + 6, 4, 6, WAX);
-    g.vline(FX + 3, FY + 6, 6, WAX_DK);
-    g.hline(FX - 3, FY + 6, 7, "#fff6e0");
+    g.rect(FX - 3, FY + 3, 7, 4, WAX_SH);
+    g.rect(FX - 2, FY + 3, 4, 4, WAX);
+    g.vline(FX + 3, FY + 3, 4, WAX_DK);
+    g.hline(FX - 3, FY + 3, 7, "#fff6e0");
     // 垂れた蝋
-    g.vline(FX - 3, FY + 8, 3, "#fff6e0");
-    g.px(FX - 4, FY + 9, WAX_SH);
-    g.px(FX - 4, FY + 10, WAX_SH);
+    g.vline(FX - 3, FY + 4, 2, "#fff6e0");
+    g.px(FX - 4, FY + 5, WAX_SH);
     // 受け皿
-    g.ellipse(FX, FY + 13, 8, 2, "#4a3a24");
-    g.ellipse(FX, FY + 12, 7, 2, "#7a6038");
-    g.ellipse(FX, FY + 11, 5, 1, "#a88450");
-    g.hline(FX - 4, FY + 11, 9, WAX);
+    g.ellipse(FX, FY + 7, 8, 1, "#4a3a24");
+    g.ellipse(FX, FY + 7, 6, 1, "#7a6038");
+    g.hline(FX - 4, FY + 6, 9, "#a88450");
     // 芯
-    g.vline(FX, FY + 4, 2, "#2a2018");
+    g.vline(FX, FY + 1, 2, "#2a2018");
 
     // ── 炎。1コマ揺れる ─────────────────────────────────
     const sway = t < 0.5 ? 0 : 1;
     const fx = FX + (sway ? 1 : 0);
     g.poly(
       [
-        [fx, FY - 7],
+        [fx, FY - 5],
         [fx + 3, FY - 1],
-        [fx + 2, FY + 4],
-        [fx - 2 - sway, FY + 4],
+        [fx + 2, FY + 2],
+        [fx - 2 - sway, FY + 2],
         [fx - 3, FY - 1],
       ],
       FLAME_O,
     );
     g.poly(
       [
-        [fx, FY - 5],
+        [fx, FY - 4],
         [fx + 2, FY - 1],
-        [fx + 1, FY + 3],
-        [fx - 1 - sway, FY + 3],
+        [fx + 1, FY + 1],
+        [fx - 1 - sway, FY + 1],
         [fx - 2, FY - 1],
       ],
       FLAME_M,
     );
-    g.vline(fx, FY - 3, 5, FLAME_I);
-    g.px(fx - (sway ? 1 : 0), FY + 1, FLAME_I);
-    g.px(fx, FY - 4, "#fff8d8");
+    g.vline(fx, FY - 3, 4, FLAME_I);
+    g.px(fx, FY - 3, "#fff8d8");
     // 火の粉
-    g.px(fx + 4, FY - 8 - sway, FLAME_M);
-    g.px(fx - 4, FY - 5 + sway, FLAME_O);
+    g.px(fx + 4, FY - 6 - sway, FLAME_M);
+    g.px(fx - 4, FY - 4 + sway, FLAME_O);
 
     // ── 遠くを回っている蛾 ───────────────────────────────
-    g.blit(6, 30, MOTH_FAR, { "#": "#4a3c2c" });
-    g.blit(60, 32, MOTH_FAR, { "#": "#3e3226" });
-    g.blit(11, 20, MOTH_FAR, { "#": "#3a3026" });
+    g.blit(3, 27, MOTH_FAR, { "#": "#4a3c2c" });
+    g.blit(63, 29, MOTH_FAR, { "#": "#3e3226" });
+    g.blit(21, 34, MOTH_FAR, { "#": "#3a3026" });
 
-    // ── 蛾。火に向かって右上から降りてくる。羽が1コマ動く ────
-    const mx = 44;
-    const my = 19;
+    // ── 蛾。火に向かって右から降りてくる。羽が1コマ動く ────
+    const mx = 42;
+    const my = 25;
     g.blit(mx, my, t < 0.5 ? MOTH_UP : MOTH_DOWN, {
       d: MOTH_D,
       D: MOTH_B,
@@ -201,18 +198,22 @@ export const art: LabelArt = {
     ])
       g.px(mx + dx, my + dy, "#d8a860");
 
-    // 蛾から落ちる鱗粉
+    // 蛾から落ちる鱗粉。丈が無くなったので、翅の下ではなく火の側へ流す。
     const r = rng(97);
     for (let i = 0; i < 10; i++) {
-      const x = Math.round(mx + 2 + r() * 15);
-      const y = Math.round(my + 14 + r() * 5);
+      const x = Math.round(mx - 8 + r() * 10);
+      const y = Math.round(my + 6 + r() * 8);
       g.px(x, y, i % 3 === 0 ? "#e0c8a4" : "#7a6450");
     }
 
     // ── 題字と隅の文字 ───────────────────────────────────
     // 16枚でいちばん暗い地なので、題字は炎の色をそのまま借りる。
-    // 闇にじかに置けば1色べたで抜ける。ふち取りは要らない（画数が潰れる）。
-    jp(g, 2, 2, "火入る虫", FLAME_M);
+    // 闇にじかに置けば1色べたで抜ける。ふち取りは回さない（画数が潰れる）が、
+    // 軌跡の円と明かりのかさの上に乗るので、1pxの影だけは敷いて地から押し出す。
+    const asc = ascent(T_A + T_B, T_SIZE, JP_TH);
+    const to = { size: T_SIZE, ascent: asc, shadow: "#0a0910" };
+    jpRow(g, 1, T_A, FLAME_M, to);
+    jpRow(g, 14, T_B, FLAME_M, to);
     const sub = (x: number, y: number, s: string, c: string) => {
       for (const [dx, dy] of [
         [-1, 0],
