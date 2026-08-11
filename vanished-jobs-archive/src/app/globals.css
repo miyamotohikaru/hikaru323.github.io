@@ -155,6 +155,7 @@ body {
   /* カード高さ(1.382)＋めくり方ごとの余白。JS が差し替える */
   --deck-fit: 1.522;
   --deck-vw: 72;
+  --deck-vw-wide: 30;
   --deck-w: min(
     calc(var(--deck-vw) * 1vw),
     calc((100svh - 310px) / var(--deck-fit)),
@@ -188,7 +189,11 @@ body {
 @media (min-width: 768px) {
   /* 310px はスマホのツールバーぶんの見込み。PCではそこまで要らないので取り戻す */
   .vja-deck {
-    --deck-w: min(30vw, calc((100svh - 190px) / var(--deck-fit)), 440px);
+    --deck-w: min(
+      calc(var(--deck-vw-wide) * 1vw),
+      calc((100svh - 190px) / var(--deck-fit)),
+      440px
+    );
   }
 }
 

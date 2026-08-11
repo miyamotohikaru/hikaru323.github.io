@@ -100,6 +100,8 @@ type Flip = {
   pad: number;
   /** 携帯でのカード幅（画面幅に対する%）。省略時は72 */
   narrowVW?: number;
+  /** PCでのカード幅（画面幅に対する%）。省略時は30 */
+  wideVW?: number;
   /** 束の枚数に応じて並びを組み直す（円弧のように輪の大きさが枚数で決まるもの） */
   build?: (total: number, touch: boolean) => Partial<Flip>;
   /** 描くスロットを明示する（一周ぶんを、遠いところは間引いて並べる） */
@@ -109,6 +111,48 @@ type Flip = {
   /** 手前に外れた板を地の色より沈ませるか */
   nearDark: boolean;
 };
+
+/** 横ながしで前後に並べる枚数 */
+const RAIL_REACH = 5;
+
+/**
+ * 横ながしの並びをつくる。
+ *
+ * 隠れているカードも中身が読めるように、全部を本物のカードで描く。
+ * 重なりの幅（＝1枚が覗く量）は画面の広さで変える。狭い画面で広く取ると
+ * 2〜3枚しか入らないので、そのぶん詰めて枚数を確保する。
+ */
+function buildRail(total: number, touch: boolean) {
+  const gap = touch ? 0.28 : 0.4; // カード幅に対する、1枚ぶんのずれ
+  const stops: Record<number, Stop> = { 0: FOCUS };
+  for (let n = -RAIL_REACH - 1; n <= RAIL_REACH + 1; n++) {
+    if (n === 0) continue;
+    const a = Math.abs(n);
+    stops[n] = S({
+      x: gap * n,
+      scale: 1 - 0.028 * a,
+      blur: 0, // 中身を読ませたいのでぼかさない
+      veil: Math.min(0.1 + 0.1 * (a - 1), 0.5),
+      // 近いカードは色を残し、遠いほど暖色へ畳んで束の中で浮かないようにする
+      tone: Math.min(0.3 + 0.15 * (a - 1), 0.9),
+      sat: 0.75,
+      opacity: a > RAIL_REACH ? 0 : 1,
+    });
+  }
+  const real = [0];
+  for (let n = 1; n <= RAIL_REACH; n++) real.push(n, -n);
+  return {
+    stops,
+    min: -(RAIL_REACH + 1),
+    max: RAIL_REACH + 1,
+    ahead: RAIL_REACH,
+    behind: RAIL_REACH,
+    real,
+    realTouch: real,
+    // ずれた幅ぶん指を動かせば1枚進む（列が指についてくる）
+    travel: gap,
+  };
+}
 
 /** 円筒の半径（カード幅に対する比） */
 const ARC_R = 1.6;
@@ -218,32 +262,26 @@ export const FLIPS: Flip[] = [
     },
   },
   {
-    // 平らな一列。前後のカードが両脇から覗くので、いま何番めかが分かりやすい
+    // 平らな一列。前後のカードが両脇に重なって並び、どれも中身が読める
     id: "rail",
     ja: "横ながし",
     en: "RAIL",
-    min: -3,
-    max: 3,
-    ahead: 3,
-    behind: 3,
-    real: [0, 1, -1],
-    realTouch: [0, 1, -1],
+    min: -1,
+    max: 1,
+    ahead: 1,
+    behind: 1,
+    real: [0],
+    realTouch: [0],
     origin: "50% 50%",
     perspectiveW: 3.2,
-    travel: 0.5,
+    travel: 0.4,
     pad: 0.1,
+    // 横に何枚も並べるので、カードは一回り小さくして場所をつくる
+    wideVW: 24,
+    narrowVW: 56,
     nearDark: false,
-    stops: {
-      // 間隔は等しく。ここが不揃いだと、同じだけ指を動かしても
-      // 束のどこにいるかで送りの速さが変わってしまう
-      [-3]: S({ x: -2.58, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
-      [-2]: S({ x: -1.72, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
-      [-1]: S({ x: -0.86, scale: 0.93, blur: 2, veil: 0.28 }),
-      [0]: FOCUS,
-      [1]: S({ x: 0.86, scale: 0.93, blur: 2, veil: 0.28 }),
-      [2]: S({ x: 1.72, scale: 0.865, blur: 6, opacity: 0.55, veil: 0.52 }),
-      [3]: S({ x: 2.58, scale: 0.8, blur: 10, opacity: 0, veil: 0.7 }),
-    },
+    stops: {},
+    build: buildRail,
   },
   {
     // 束の全枚数を円に並べる。1枚ずつずれた縁の連なりが、そのまま束の厚みになる
@@ -804,6 +842,7 @@ export default function DeckView({
           // 画面の高さからカード幅を決めるときは、めくり方ごとの余白ぶんも見込む
           ["--deck-fit" as string]: (1.382 + flip.pad).toFixed(3),
           ["--deck-vw" as string]: `${flip.narrowVW ?? 72}`,
+          ["--deck-vw-wide" as string]: `${flip.wideVW ?? 30}`,
         }}
         onPointerDown={(e) => {
           primeTick();
