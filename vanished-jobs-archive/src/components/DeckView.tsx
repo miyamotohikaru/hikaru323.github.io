@@ -25,6 +25,10 @@ const V_WINDOW = 70; // 速度をとる時間窓(ms)
 const AXIS_LOCK = 5; // 横に動かす意思が見えたら掴む(px)
 const TAP_SLOP = 10;
 const TAP_MS = 400;
+/** 離した瞬間の速さから、どれだけ滑らせるか(ms) */
+const MOMENTUM_MS = 150;
+/** 一度に送る上限(枚) */
+const MAX_GLIDE = 40;
 const SPRING_K = 210;
 const SPRING_C = 24;
 
@@ -511,6 +515,35 @@ export default function DeckView({
     [paint, syncAnchor]
   );
 
+  /** 遠くへ送るときの動き。最初は速く、最後にすっと止まる */
+  const glideTo = useCallback(
+    (target: number) => {
+      const from = posRef.current;
+      const d = Math.abs(target - from);
+      const dur = Math.min(300 + 55 * d, 950);
+      const t0 = performance.now();
+      const tick = (now: number) => {
+        const t = Math.min((now - t0) / dur, 1);
+        const e = 1 - Math.pow(1 - t, 3);
+        posRef.current = from + (target - from) * e;
+        paint();
+        syncAnchor();
+        if (t < 1) {
+          springRef.current = requestAnimationFrame(tick);
+          return;
+        }
+        posRef.current = target;
+        velRef.current = 0;
+        paint();
+        syncAnchor();
+        springRef.current = 0;
+      };
+      cancelAnimationFrame(springRef.current);
+      springRef.current = requestAnimationFrame(tick);
+    },
+    [paint, syncAnchor]
+  );
+
   const goTo = useCallback(
     (n: number, seed = 0) => {
       const t = Math.min(Math.max(n, 0), total - 1);
@@ -523,9 +556,12 @@ export default function DeckView({
         syncAnchor();
         return;
       }
-      spring(seed);
+      // 隣へ動くだけならバネ（手応えのある戻り）。
+      // 遠くへ送るときはバネだと一瞬で飛んでしまうので、束が回る時間をつくる
+      if (Math.abs(t - posRef.current) > 1.5) glideTo(t);
+      else spring(seed);
     },
-    [total, spring, paint, syncAnchor]
+    [total, spring, glideTo, paint, syncAnchor]
   );
 
   const step = useCallback(
@@ -550,15 +586,23 @@ export default function DeckView({
   }, []);
 
   /** 指を離した／取り上げられたときの後始末。行き先を決めてバネに渡す */
+  /**
+   * 指を離したあとの行き先を決める。
+   * 離した瞬間の速さぶんだけ滑らせてから、いちばん近いカードで止まる。
+   * ここを ±1 に丸めてしまうと、どれだけ勢いよく払っても1枚しか進まない。
+   */
   const settle = useCallback(() => {
-    const from = Math.round(baseRef.current);
-    const moved = posRef.current - from;
     const vx = releaseV(); // px/ms（指の動き。右へ動かすと正）
-    const flick =
-      Math.abs(vx) > 0.6 && (moved === 0 || Math.sign(-vx) === Math.sign(moved));
-    let target = from;
-    if (Math.abs(moved) > 0.5) target = from + (moved < 0 ? -1 : 1);
-    else if (flick && Math.abs(moved) > 0.06) target = from + (vx < 0 ? 1 : -1);
+    const travel = travelRef.current;
+    // 速さ(px/ms)を「枚/ms」に直し、滑る時間ぶんだけ先へ送る
+    const glide = Math.min(
+      Math.max((-vx / travel) * MOMENTUM_MS, -MAX_GLIDE),
+      MAX_GLIDE
+    );
+    let target = Math.round(posRef.current + glide);
+    // ほとんど動かしていない指離しでは、いまのカードに留まる
+    const base = Math.round(baseRef.current);
+    if (Math.abs(posRef.current - base) < 0.06 && Math.abs(glide) < 0.5) target = base;
     goTo(target, -vx);
   }, [releaseV, goTo]);
 
@@ -615,11 +659,14 @@ export default function DeckView({
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  // 前後は先読み
+  // 前後は先読み。長く送っているあいだは通り過ぎるだけなので、止まってから読む
   useEffect(() => {
-    for (const n of [anchor + 1, anchor - 1]) {
-      if (n >= 0 && n < total) router.prefetch(`/jobs/${jobs[n].no}`);
-    }
+    const id = setTimeout(() => {
+      for (const n of [anchor + 1, anchor - 1]) {
+        if (n >= 0 && n < total) router.prefetch(`/jobs/${jobs[n].no}`);
+      }
+    }, 260);
+    return () => clearTimeout(id);
   }, [anchor, jobs, total, router]);
 
   // タブを離れると requestAnimationFrame が止まるので、中途半端な位置で

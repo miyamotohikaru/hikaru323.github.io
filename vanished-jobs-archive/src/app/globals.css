@@ -252,9 +252,17 @@ body {
   width: 100%;
   aspect-ratio: 34 / 47;
   border-radius: var(--card-r);
-  background: radial-gradient(
+  /* のっぺりした板だと「数枚しかない」ように見える。
+     重なったカードの小口（紙の断面）として描き、束の厚みを出す */
+  background: repeating-linear-gradient(
+      90deg,
+      rgba(243, 238, 224, 0.16) 0 1px,
+      rgba(243, 238, 224, 0.05) 1px 2px,
+      rgba(243, 238, 224, 0) 2px 5px
+    ),
+    radial-gradient(
       58% 44% at 50% 50%,
-      rgba(243, 238, 224, 0.11),
+      rgba(243, 238, 224, 0.1),
       rgba(243, 238, 224, 0) 72%
     ),
     var(--vja-ink);
