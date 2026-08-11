@@ -249,7 +249,8 @@ a {
 .mast-sub {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  /* 一続きの文なので語間は詰める。和欧の書体差だけで「FLIP」を立たせる */
+  gap: 6px;
   margin: 14px 0 0;
   padding-top: 8px;
   border-top: 1px solid var(--rule);
@@ -262,7 +263,7 @@ a {
 .mast-sub-jp {
   font-size: 14px;
   line-height: 16px;
-  color: var(--ink-soft);
+  color: var(--ink);
 }
 
 /* 小箱（角に見出しの札がつく囲み） */
@@ -343,22 +344,6 @@ a {
 }
 .defn-body + .defn-body {
   margin-top: 0;
-}
-.defn-ex {
-  margin: 14px 0 0;
-  padding: 8px 0 0;
-  border-top: 1px solid var(--rule-faint);
-  font-size: 14px;
-  line-height: 18px;
-  color: var(--ink-faint);
-}
-.defn-ex-tag {
-  display: inline-block;
-  margin-right: 8px;
-  padding: 1px 5px 2px;
-  background: var(--paper-deep);
-  border: 1px solid var(--rule);
-  color: var(--ink-soft);
 }
 .defn-notes {
   flex: none;

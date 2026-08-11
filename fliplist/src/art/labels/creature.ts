@@ -1,5 +1,6 @@
 import type { LabelArt } from "./types";
 import { shade, type PixelGfx } from "../gfx";
+import { ascent, jpRow } from "../jptitle";
 
 // 生き物の視点 ── 同じ写真を、24種の生き物の目で見る。
 //
@@ -83,23 +84,20 @@ function mark(g: PixelGfx, body: string, eye: string) {
 // 書体から起こした字母は「インクの外接矩形」で返ってくるので、
 // 「一」のように中ほどだけに墨のある字は行の上端に貼りついてしまう。
 // 16px の枡の中に据え直すための落とし幅。
-const JP_DROP: Record<string, number> = { ー: 7, 一: 7, ッ: 3, ェ: 5, の: 2, る: 2 };
-function jp(g: PixelGfx, x: number, y: number, s: string, c: string, sp = 0) {
-  let cx = x;
-  for (const ch of s) {
-    g.textJP(cx, y + (JP_DROP[ch] ?? 0), ch, c);
-    cx += 16 + sp;
-  }
-}
-/** 8方向にふちを回してから塗る。空にも複眼のます目にも負けない。 */
-function jpEdge(
-  g: PixelGfx,
-  x: number,
-  y: number,
-  s: string,
-  fill: string,
-  edge: string,
-) {
+/**
+ * 題字。「生き物の視点」6文字を1行に収めるため 11px まで落とす（6x11=66px）。
+ *
+ * 級数と閾値は実測で決めた。**12px は使えない** ——「生」の中の横画が消えて
+ * 「ヒ」に見える。11px でも既定の閾値128だと「物」が潰れるので 190 に上げる。
+ * 級数を上げれば読みやすくなる、という単調な関係になっていないので、
+ * 別の題字に変えるときは必ず刷って確かめること。
+ *
+ * 空にも複眼のます目にも負けないよう、8方向にふちを回してから塗る。
+ */
+const T_SIZE = 11;
+const T_TH = 190;
+function title(g: PixelGfx, y: number, s: string, fill: string, edge: string) {
+  const o = { size: T_SIZE, threshold: T_TH, ascent: ascent(s, T_SIZE, T_TH) };
   for (const [dx, dy] of [
     [-1, 0],
     [1, 0],
@@ -109,9 +107,12 @@ function jpEdge(
     [1, -1],
     [-1, 1],
     [1, 1],
-  ] as const)
-    jp(g, x + dx, y + dy, s, edge);
-  jp(g, x, y, s, fill);
+  ] as const) {
+    const prev = g.pushOrigin(dx, dy);
+    jpRow(g, y, s, edge, o);
+    g.popOrigin(prev);
+  }
+  jpRow(g, y, s, fill, o);
 }
 
 function drawScene(g: PixelGfx, m: Mode) {
@@ -292,7 +293,7 @@ export const art: LabelArt = {
     // ── 題字 ────────────────────────────────────────────
     // 空にじかに大きく。人の目の側から虫の目の側へ、境目をまたいで置く。
     // またぐことで「同じ一枚の景色」だと言い切れる。
-    jpEdge(g, 3, 2, "生き物", "#fdf8ec", "#11131a");
+    title(g, 3, "生き物の視点", "#fdf8ec", "#11131a");
 
     // ── 下の帯。生き物セレクタ ─────────────────────────────
     g.rect(0, 29, 68, 11, "#efe6d0");

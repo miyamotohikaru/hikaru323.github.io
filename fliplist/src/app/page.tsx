@@ -91,10 +91,11 @@ export default function Page() {
           <h1 className="vh">ふりっぷ 一覧 — 株式会社こす.くま</h1>
           <Wordmark scale={logo} />
           <p className="mast-sub">
+            {/* 「ふりっぷ」は FLIP の一種、という言い切り。
+                FLIP だけ欧文のドット書体にして、外来の語だと見せる。 */}
+            <span className="mast-sub-jp">ふりっぷとは</span>
             <span className="en">FLIP</span>
-            <span className="mast-sub-jp">
-              こす.くまがつくった小さなあそびと実験。
-            </span>
+            <span className="mast-sub-jp">の一種。</span>
           </p>
         </div>
 
