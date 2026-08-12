@@ -105,12 +105,53 @@ export default function WordArtCheck() {
         ))}
       </div>
 
-      <Sweep k="gold" text="株式会社こす.くま" weights={[500, 600, 700]} />
-      <Sweep k="lime" text="株式会社こす.くま" weights={[400, 500, 600]} />
-      <Sweep k="cyan" text="FLIP事業について" weights={[300, 400, 500]} />
-      <Sweep k="green" text="最新情報" weights={[600, 700, 800]} />
+      {/* 傾きの検証。Chrome は font-style: oblique <角度> の角度を無視して
+          いつも 14.03°（dx/dy=0.25）で合成する。だから WordArt では italic のまま
+          要素側で 2° 戻して手本の 12.0° に合わせている */}
+      <p style={{ font: MONO, color: "#7a6a4a", margin: "0 0 3px" }}>
+        傾きの検証: 上から italic / oblique 12deg / oblique 20deg / normal（上 3 つは全部 14.03°）
+      </p>
+      <div id="slant-test" style={{ background: "#fff", padding: 20 }}>
+        {(["italic", "oblique 12deg", "oblique 20deg", "normal"] as const).map((st) => (
+          <div
+            key={st}
+            style={{
+              font: `${st} 400 160px "Hiragino Sans",sans-serif`,
+              lineHeight: 1,
+              color: "#000",
+              whiteSpace: "pre",
+            }}
+          >
+            llll
+          </div>
+        ))}
+      </div>
+
+      <Sweep k="gold" text="株式会社こす.くま" weights={[600]} />
+      <Sweep k="lime" text="株式会社こす.くま" weights={[400]} />
+      <Sweep k="cyan" text="FLIP事業について" weights={[300]} />
+      <Sweep k="green" text="最新情報" weights={[600]} />
 
       <hr style={{ border: 0, borderTop: "1px dashed #c9b68c", margin: "26px 0" }} />
+
+      <p style={{ font: MONO, color: "#7a6a4a", margin: "0 0 6px" }}>
+        本物の地色（bg.gif のクリーム）の上。白縁の gold / green はここで初めて縁が見える
+      </p>
+      <div
+        style={{
+          background: "url(/hp/bg.gif)",
+          padding: 16,
+          display: "grid",
+          gap: 10,
+          justifyItems: "start",
+          marginBottom: 18,
+        }}
+      >
+        <WordArt variant="gold" size={52}>株式会社こす.くま</WordArt>
+        <WordArt variant="green" size={24}>最新情報</WordArt>
+        <WordArt variant="lime" size={40}>ふりっぷとは</WordArt>
+        <WordArt variant="cyan" size={40}>FLIP事業について</WordArt>
+      </div>
 
       <p style={{ font: MONO, color: "#7a6a4a", margin: "0 0 6px" }}>呼び出しの見本</p>
       <div style={{ background: "#fff", padding: 14, display: "grid", gap: 10, justifyItems: "start" }}>
@@ -143,8 +184,20 @@ export default function WordArtCheck() {
         <WordArt variant="lime" size={40} shadow>影を足した lime</WordArt>
         <WordArt variant="cyan" size={40} shadow>影を足した cyan</WordArt>
         <WordArt variant="gold" size={40} shadow={false}>影を消した gold</WordArt>
-        <div style={{ width: 420 }}>
+        <div style={{ width: 420, textAlign: "left" }}>
           <WordArt variant="cyan" size={30}>折り返しても縁がずれないかを見る長めの見出し</WordArt>
+        </div>
+      </div>
+
+      <p style={{ font: MONO, color: "#7a6a4a", margin: "16px 0 6px" }}>
+        中央揃えの箱（本物の home.css は全部まんなか寄せ）。上=origin 既定 / 下=origin center
+      </p>
+      <div style={{ background: "#fff", padding: 14, textAlign: "center" }}>
+        <div style={{ outline: "1px dashed #ccc" }}>
+          <WordArt variant="cyan" size={40}>FLIP事業について</WordArt>
+        </div>
+        <div style={{ outline: "1px dashed #ccc", marginTop: 8 }}>
+          <WordArt variant="cyan" size={40} origin="center">FLIP事業について</WordArt>
         </div>
       </div>
     </main>

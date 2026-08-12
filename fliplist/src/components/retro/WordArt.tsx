@@ -1,38 +1,80 @@
 /* 会社HP（kosukuma.com）の見出し画像を、画像を使わずに組む部品。
+ * 文字は本物の HTML テキストのまま。選択もコピーも検索もできる。
  *
- * 手本は 4 枚。実測値はすべてこのファイルの中に書いてある。
- *   public/hp/ttl.gif            773x117  「株式会社こす.くま」 金グラデ＋白縁＋やわらかい灰の落ち影
- *   public/hp/heading-company.png 2167x256 「株式会社こす.くま」 #00FF00 ＋ 黒の細い縁（落ち影なし）
- *   public/hp/heading-flip.png    2273x256 「FLIP事業について」  #00FFFF ＋ #FF0000 の縁（落ち影なし）
- *   public/hp/ttl_news.gif        150x40   「最新情報」          緑グラデ＋白縁（落ち影なし）
+ * ── 手本（すべて public/hp/ に実物がある。数値はこのファイルの中で実測済み）
+ *   ttl.gif             773x117   「株式会社こす.くま」 金の縦グラデ＋白縁＋やわらかい灰の落ち影
+ *   heading-company.png 2167x256  「株式会社こす.くま」 #00FF00 ＋ 黒の細い縁
+ *   heading-flip.png    2273x256  「FLIP事業について」  #00FFFF ＋ #FF0000 の縁
+ *   ttl_news.gif        150x40    「最新情報」          緑の縦グラデ＋白縁
  *
- * 縁は -webkit-text-stroke ではなく text-shadow を 16 方向へ重ねてつくる。
- * text-stroke は字の内側へ半分食い込むので、手本のように「外側だけ」太らせられない。
- * 16 方向なら円の内接多角形の誤差が cos(11.25°)=98.1% で、縁の太さのむらは 2% 未満。
+ *   落ち影は ttl.gif だけにある。heading-company / heading-flip は
+ *   PNG8 の色を全部数えても灰色が 1 画素も無く、影は付いていない（<shadow> で足せる）。
+ *   4 枚はそれぞれ別の WordArt なので、太さも縁の太さも横の伸びもそろっていない。
+ *   variant ごとにその手本の値を既定にしてある。ページ内でそろえたいときは
+ *   weight / wide を明示的に渡す。
  *
- * 落ち影は filter: drop-shadow() を縁の層にかける。text-shadow で足すと「字の影」に
- * なるが、手本は「縁まで含めた形の影」なので、縁を描いたあとの絵に対してぼかす。
+ * ── 縁のつくり
+ *   -webkit-text-stroke は字の内側へ半分食い込むので使えない。手本の縁は
+ *   「字の外側だけ」に付いている（塗りの高さ＋縁×2＝全体の高さ が実測で一致する）。
+ *   なので text-shadow を 16 方向へ重ねて外へ太らせる。16 方向の内接多角形の
+ *   誤差は cos(11.25°)=98.1% で、縁の太さのむらは 2% 未満。
  *
- * 自己完結。globals.css には触らない。React 19 の <style href precedence> で
- * head に一度だけ上がる（同じ href は重複排除される）。 */
+ * ── 傾き
+ *   手本の傾きは dx/dy=0.2126（12.0°）。Chrome の合成イタリックは 0.25（14.0°）
+ *   固定で、font-style: oblique 12deg を書いても効かない（実測で確認）。
+ *   なので italic のまま、要素側で 2° ぶんだけ逆にせん断して 12° に合わせる。
+ *   せん断が小さいので、折り返した 2 行目のずれは 1 行あたり 0.04em で目に見えない。
+ *   横の伸ばし（scaleX）とせん断はどちらも要素の transform なので、
+ *   縁のリングの座標をあらかじめ逆変換しておき、変換後にちょうど真円になるようにする。
+ *
+ * ── 注意
+ *   transform はレイアウト幅を変えない。wide ≠ 1 の variant（cyan は 1.093、
+ *   gold は 0.967）は、字面が要素の幅と (wide-1) ぶんずれる。基点は origin で選ぶ:
+ *     origin="center"（既定） 中心が動かない。本物の home.css は全部まんなか寄せ
+ *                             なので、こちらを既定にしてある
+ *     origin="left"           左端が動かない。左寄せで縦の線をそろえたいとき
+ *   overflow:hidden の箱に入れるときは外側に (wide-1)/2 ぶんの余白を持たせるか、
+ *   wide={1} を渡して素の字面にする。
+ *
+ * 自己完結。globals.css には触らない。CSS は React 19 の
+ * <style href precedence> で head に一度だけ上がる（同じ href は重複排除される）。 */
 
 import type { CSSProperties, ElementType, ReactNode } from "react";
 
 export type WordArtVariant = "gold" | "lime" | "cyan" | "green";
 
-/* ── 実測値 ──────────────────────────────────────────────────────────
+/* ── 実測値 ─────────────────────────────────────────────────────────────
 
-   縁の太さは font-size に対する比（em）。手本の実測から出した:
-     gold  ttl.gif            白縁 3.5px / 字の高さ 68px  → 0.045em
-     lime  heading-company    黒縁 3.3px / 字の高さ 248px → 0.012em
-     cyan  heading-flip       赤縁 7.0px / 字の高さ 252px → 0.024em
-     green ttl_news.gif       白縁 1.8px / 字の高さ 38px  → 0.042em
-   （字の高さ ≒ 0.88em として換算。em に持たせたので級数を落としても比は崩れない）
+   lineEm（縁の太さ / font-size）は
+     「縁の太さ ÷ 塗りの高さ」×「塗りの高さ ÷ font-size」
+   で出した。em に持たせたので、級数を落としても縁の比は崩れない。
 
-   grad の位置は「字面の上端=0 / 下端=1」。line box ではなく字の高さを基準に
-   測ったので、実際の背景ボックスへは buildFill() で写しなおす。 */
+     variant  縁÷塗りの高さ   その weight の 塗り÷em   lineEm
+     gold     3.5/70  =0.0500      0.9267             0.0463
+     lime     3.0/242 =0.0124      0.9167             0.0114
+     cyan     7.0/238 =0.0294      0.9233             0.0272
+     green    ~1.7/37 =0.046       0.9333             0.0430
+
+   weight は「字の面積 ÷ 塗りの高さ²」を手本と canvas で突き合わせて決めた
+   （アンチエイリアスの影響を受けない量。手本は PNG/GIF の色を混色ぶんまで
+   ほどいて足している）。手本 → いちばん近い Hiragino Sans のウエイト:
+     gold  2.515 → W5 相当 600（600 は 2.426 / 700 は 2.858）
+     lime  1.852 → W3 相当 400（400 は 1.757 / 500 は 2.090）
+     cyan  1.459 → W2 相当 300（scaleX 1.093 を割り戻すと 1.335）
+     green 1.854 → wide 0.86 を割り戻すと 2.156 → W6 相当 700（600 は 1.906 / 700 は 2.195）
+
+   wide は「字面の横幅 ÷ 塗りの高さ」を手本と突き合わせた比。
+     gold 8.529/8.822=0.967  lime 8.901/8.875=1.003
+     cyan 9.471/8.667=1.093  green 3.750/4.249=0.883・重ね合わせ探索 0.835 → 0.86 */
 
 type Stop = readonly [pos: number, color: string];
+
+type Shadow = {
+  readonly x: number;
+  readonly y: number;
+  readonly blur: number;
+  readonly color: string;
+};
 
 type Spec = {
   /** 塗り。1 色なら color、2 色以上なら background-clip:text の縦グラデ */
@@ -42,58 +84,63 @@ type Spec = {
   /** 縁の太さ（em） */
   readonly lineEm: number;
   /** 落ち影。手本に無いものは null */
-  readonly shadow: { readonly x: number; readonly y: number; readonly blur: number; readonly color: string } | null;
-  /** 字の太さ。手本 4 枚はそれぞれ別の WordArt なので太さがそろっていない */
+  readonly shadow: Shadow | null;
+  /** 字の太さ */
   readonly weight: number;
-  /** 横への伸び。手本の字面の縦横比から出した */
+  /** 横への伸び（scaleX） */
   readonly wide: number;
 };
 
+/* ttl.gif の落ち影。ほぼ真下に落ちていて（右へは 6px ほどしか出ない）、
+   字の下端から字面の 25% ぶんまでだらだら伸びる、かなり拡散した影。
+   字の縁からの距離ごとに黒さを測って合わせた実測値:
+     手本 0.11 / 0.11 / 0.12 / 0.09 / 0.08 / 0.12 / 0.10 / 0.07 / 0.06（字面の 0.5〜20%）
+     これ 0.13 / 0.13 / 0.12 / 0.12 / 0.12 / 0.11 / 0.10 / 0.07 / 0.05          */
+const GOLD_SHADOW: Shadow = { x: 0.02, y: 0.075, blur: 0.09, color: "rgba(0,0,0,0.36)" };
+
 const SPECS: Record<WordArtVariant, Spec> = {
-  // ttl.gif。上が濃い山吹、真ん中がいちばん明るい黄、下がまた山吹に落ちる
+  // ttl.gif。上が濃い山吹 → 真ん中がいちばん明るい黄 → 下でまた山吹に落ちる
   gold: {
     fill: [
       [0.0, "#fd9e03"],
-      [0.12, "#fd9e03"],
-      [0.2, "#fdba02"],
-      [0.3, "#fed602"],
-      [0.4, "#fdef01"],
+      [0.11, "#fd9e03"],
+      [0.2, "#febf02"],
+      [0.3, "#fed902"],
+      [0.4, "#feed01"],
       [0.5, "#fff701"],
-      [0.62, "#fff701"],
-      [0.72, "#fee401"],
-      [0.82, "#feda01"],
-      [0.9, "#fdca02"],
+      [0.7, "#fff701"],
+      [0.8, "#fee401"],
+      [0.9, "#fecf02"],
       [1.0, "#febf02"],
     ],
     line: "#ffffff",
-    lineEm: 0.045,
-    // 実測: いちばん濃いところで黒 40% 程度、字の高さの 12% ぶん右下へ広がる
-    shadow: { x: 0.03, y: 0.045, blur: 0.035, color: "rgba(86,84,76,0.55)" },
-    weight: 700,
-    wide: 1.0,
+    lineEm: 0.0463,
+    shadow: GOLD_SHADOW,
+    weight: 600,
+    wide: 0.967,
   },
 
-  // heading-company.png。純緑に黒の細い縁だけ。影は本当に無い
+  // heading-company.png。純緑に黒の細い縁だけ。影は無い
   lime: {
     fill: "#00ff00",
     line: "#000000",
-    lineEm: 0.012,
+    lineEm: 0.0114,
     shadow: null,
-    weight: 500,
-    wide: 1.01,
+    weight: 400,
+    wide: 1.003,
   },
 
-  // heading-flip.png。純シアンに純赤の縁。影は本当に無い
+  // heading-flip.png。純シアンに純赤の縁。影は無い。4 枚でいちばん横に広い
   cyan: {
     fill: "#00ffff",
     line: "#ff0000",
-    lineEm: 0.024,
+    lineEm: 0.0272,
     shadow: null,
-    weight: 400,
-    wide: 1.09,
+    weight: 300,
+    wide: 1.093,
   },
 
-  // ttl_news.gif。上が明るい緑、下へ深緑。白縁。影は無い
+  // ttl_news.gif。上が明るい緑 → 下へ深緑。白縁。影は無い
   green: {
     fill: [
       [0.0, "#2aaf20"],
@@ -104,23 +151,27 @@ const SPECS: Record<WordArtVariant, Spec> = {
       [1.0, "#0a6404"],
     ],
     line: "#ffffff",
-    lineEm: 0.042,
+    lineEm: 0.043,
     shadow: null,
     weight: 700,
-    wide: 1.0,
+    // 4 枚でいちばん縦長。手本が 150x40 に「緑の内側まで」切り詰められていて
+    // 縁がどこも残っていないので、字送りから出した推定値（0.835〜0.883 の真ん中）
+    wide: 0.86,
   },
 };
 
-/* ── 字面の位置 ──────────────────────────────────────────────────────
+/* ── 字面の位置 ────────────────────────────────────────────────────────
    グラデを「字面の帯」にぴったり載せるための座標。Hiragino Sans を
-   canvas.measureText で実測した値から出している（100px, italic）:
+   canvas.measureText で実測した値（100px, italic）:
      fontBoundingBoxAscent 88 / Descent 12（em ボックス 100）
-     和文の字面 actualBoundingBoxAscent 84.5 / Descent 9.0
-   ベースラインは line box の上端から (LH - 1)/2 + 0.88 em の位置。 */
-const LH = 1.06; // line-height
+     和文の字面 actualBoundingBoxAscent 84.0 / Descent 8.6（W5〜W6）
+   ベースラインは line box の上端から (LH - 1)/2 + 0.88 em。 */
+const LH = 1.06;
 const BASELINE = (LH - 1) / 2 + 0.88; // 0.91em
-const INK_TOP = BASELINE - 0.845; // 字面の上端 0.065em
-const INK_BOT = BASELINE + 0.09; // 字面の下端 1.000em
+/* 手本のグラデは字面よりわずかに上にずれている（実測で 0.027em ぶん）ので、
+   その分だけ帯を持ち上げて重ねる */
+const INK_TOP = BASELINE - 0.867; // 0.043em
+const INK_BOT = BASELINE + 0.059; // 0.969em
 /* 背景ボックスは 2em ぶん確保して -0.5em からはじめる。こうすると欧文の
    下に出る部分（p, g, y）まで塗りが届き、no-repeat でも欠けない。 */
 const BOX_TOP = -0.5;
@@ -135,18 +186,24 @@ function buildFill(stops: readonly Stop[]): string {
   return `linear-gradient(180deg,${body})`;
 }
 
-/* ── 縁のリング ──────────────────────────────────────────────────────
-   16 方向。横方向だけ 1/scaleX しておくので、あとで横に引き伸ばしても
-   縁の太さは一周ぶん均一になる。 */
+/* ── 傾き ──────────────────────────────────────────────────────────── */
+const FONT_SLANT = 0.25; // Chrome の合成イタリック（14.0°）。固定
+const TARGET_SLANT = 0.2126; // 手本の傾き（12.0°）
+/** 要素の transform 行列。scaleX(sx) のあと、足りない分だけ逆せん断する */
+const skewOf = (sx: number) => FONT_SLANT * sx - TARGET_SLANT;
+
+/* ── 縁のリング ────────────────────────────────────────────────────────
+   ほしいのは変換後に半径 r の真円。要素には matrix(sx,0,c,1,0,0) が
+   かかるので、その逆写像 ((qx - c*qy)/sx, qy) を text-shadow に入れる。
+     --wa-rx = r / sx      --wa-rc = r * c / sx      --wa-ry = r        */
 const RING = Array.from({ length: 16 }, (_, i) => {
   const a = (i * Math.PI * 2) / 16;
   const cx = Number(Math.cos(a).toFixed(4));
-  const cy = Number(Math.sin(a).toFixed(4));
-  return `calc(var(--wa-rx) * ${cx}) calc(var(--wa-ry) * ${cy}) 0 var(--wa-line)`;
+  const sy = Number(Math.sin(a).toFixed(4));
+  const x = `calc(var(--wa-rx) * ${cx} - var(--wa-rc) * ${sy})`;
+  const y = `calc(var(--wa-ry) * ${sy})`;
+  return `${x} ${y} 0 var(--wa-line)`;
 }).join(",");
-
-/* shadow を明示的に付けたいと言われたときの影。ttl.gif から借りる */
-const FALLBACK_SHADOW = SPECS.gold.shadow!;
 
 const FONT =
   '"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","MS PGothic","MS Gothic",sans-serif';
@@ -162,17 +219,19 @@ const CSS = `
   line-height:${LH};
   letter-spacing:var(--wa-ls);
   white-space:pre-wrap;
-  transform:scaleX(var(--wa-sx));
-  transform-origin:0 50%;
+  transform:matrix(var(--wa-sx),0,var(--wa-skew),1,0,0);
+  /* せん断の基点は 1 行目のベースライン。伸び縮みの基点は origin で選ぶ */
+  transform-origin:var(--wa-origin) ${BASELINE}em;
   /* globals.css が body に font-smoothing:none を敷いているので打ち消す。
      手本はアンチエイリアスが効いていて、切ると縁がガタガタになる */
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  font-smooth:always;
   --wa-rx:calc(var(--wa-line-w) / var(--wa-sx));
+  --wa-rc:calc(var(--wa-line-w) * var(--wa-skew) / var(--wa-sx));
   --wa-ry:var(--wa-line-w);
 }
-/* 縁と落ち影の層。字は下の .wa__face が本物なので、こちらは読み上げも選択もさせない */
+/* 縁と落ち影の層。本物の字は下の .wa__face なので、こちらは選択も読み上げもさせない。
+   影は縁を描いたあとの絵にかける（手本の影も「縁まで含めた形」の影） */
 .wa__ink{
   position:absolute;
   left:0; top:0; width:100%;
@@ -183,7 +242,7 @@ const CSS = `
   -webkit-user-select:none;
   user-select:none;
 }
-/* 本物の文字。選択もできるし検索にも当たる */
+/* 本物の文字 */
 .wa__face{
   position:relative;
   color:var(--wa-fill-color);
@@ -202,11 +261,11 @@ const CSS = `
 
 export type WordArtProps = {
   children: ReactNode;
-  /** gold / lime / cyan / green。手本の 4 種 */
+  /** gold / lime / cyan / green。手本の 4 枚に対応 */
   variant?: WordArtVariant;
   /** font-size（px）。縁の太さと影のずれはこれに比例する */
   size?: number;
-  /** 落ち影を出すか。省略すると手本どおり（gold だけ出る） */
+  /** 落ち影。省略すると手本どおり（gold だけ出る）。true で足す / false で消す */
   shadow?: boolean;
   /** 縁の太さの倍率。手本より太く／細くしたいときだけ */
   strokeScale?: number;
@@ -214,8 +273,10 @@ export type WordArtProps = {
   weight?: number;
   /** 字送り（em）。詰めたいときは負の値 */
   tracking?: number;
-  /** 横への引き伸ばし。省略すると variant ごとの手本の縦横比 */
+  /** 横への伸ばし。省略すると variant ごとの手本の縦横比。1 で素の字面 */
   wide?: number;
+  /** wide の伸び縮みの基点。左寄せで左端をそろえたいときは "left" */
+  origin?: "left" | "center" | "right";
   /** 出力するタグ。見出しなら "h1" / "h2" を渡す */
   as?: ElementType;
   className?: string;
@@ -231,14 +292,16 @@ export default function WordArt({
   tracking = 0,
   wide,
   weight,
+  origin = "center",
   as: Tag = "span",
   className,
   style,
 }: WordArtProps) {
   const spec = SPECS[variant];
   const grad = typeof spec.fill !== "string";
-  const sh = (shadow ?? spec.shadow !== null) ? (spec.shadow ?? FALLBACK_SHADOW) : null;
+  const sh = (shadow ?? spec.shadow !== null) ? (spec.shadow ?? GOLD_SHADOW) : null;
   const sx = wide ?? spec.wide;
+  const skew = skewOf(sx);
 
   const vars = {
     "--wa-size": `${size}px`,
@@ -247,20 +310,19 @@ export default function WordArt({
     "--wa-line-w": `${(spec.lineEm * strokeScale).toFixed(4)}em`,
     "--wa-ls": `${tracking}em`,
     "--wa-sx": sx,
+    "--wa-origin": origin === "center" ? "50%" : origin === "right" ? "100%" : "0",
+    "--wa-skew": skew.toFixed(4),
     "--wa-fill-color": grad ? "transparent" : (spec.fill as string),
     "--wa-fill-image": grad ? buildFill(spec.fill as readonly Stop[]) : "none",
+    // 影も transform のあとで狙った向きに出したいので、あらかじめ逆写像しておく
     "--wa-filter": sh
-      ? `drop-shadow(${(sh.x / sx).toFixed(4)}em ${sh.y}em ${sh.blur}em ${sh.color})`
+      ? `drop-shadow(${((sh.x - skew * sh.y) / sx).toFixed(4)}em ${sh.y}em ${sh.blur}em ${sh.color})`
       : "none",
     ...style,
   } as CSSProperties;
 
   return (
-    <Tag
-      className={className ? `wa ${className}` : "wa"}
-      style={vars}
-      data-wa={variant}
-    >
+    <Tag className={className ? `wa ${className}` : "wa"} style={vars} data-wa={variant}>
       <style href="retro-wordart" precedence="default">
         {CSS}
       </style>
