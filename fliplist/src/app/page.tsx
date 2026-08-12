@@ -207,6 +207,8 @@ export default function Page() {
             <tbody>
               <tr>
                 <td>
+                  {/* 見出し語の前に置く1行。何の仲間なのかを先に言う */}
+                  <p className="def-lead">{FLIP_DEFINITION.lead}</p>
                   <p className="def-word">
                     {FLIP_DEFINITION.word}
                     <span className="def-pos">{FLIP_DEFINITION.pos}</span>

@@ -145,6 +145,82 @@ a {
   background-image: url(/hp/bg_hai.gif);
 }
 
+
+/* ── 見出しの色 ──────────────────────────────────
+   ページ名と節の見出しの色は、壁紙にそろえて変わる。
+   壁紙は淡い地色なので、見出しはその系統の**原色**を、
+   白い縁のまま読める濃さで置く。
+
+   WordArt.tsx は色を要素の style に直接書いているので、
+   上書きするには !important が要る（custom property でも同じ）。
+   縁の色（黒／白）と字の組みには触らない。塗りの色だけ差し替える。 */
+/* クリーム（黄の地）→ みどり（会社HPの見出しと同じ組み）。
+   #2fae1f だとクリームとのコントラストが2.63しかなく、大きな字の目安3.0に届かない。
+   一段濃くして3.23にしてある */
+#home {
+  --flip-ttl: #279c17;
+}
+/* わかば（黄緑の地）→ ふかみどり */
+#home[data-fl-bg="wakaba"] {
+  --flip-ttl: #3f9c00;
+}
+/* ミント（青緑の地）→ あおみどり */
+#home[data-fl-bg="mint"] {
+  --flip-ttl: #00958c;
+}
+/* みずいろ（水の地）→ あお */
+#home[data-fl-bg="mizu"] {
+  --flip-ttl: #0b5fd0;
+}
+/* ふじ色（青紫の地）→ あおむらさき */
+#home[data-fl-bg="sky"] {
+  --flip-ttl: #4436cc;
+}
+/* すみれ（紫の地）→ むらさき */
+#home[data-fl-bg="sumire"] {
+  --flip-ttl: #9a17b5;
+}
+/* さくら（桃の地）→ べにむらさき */
+#home[data-fl-bg="sakura"] {
+  --flip-ttl: #d2136f;
+}
+/* もも色（橙桃の地）→ しゅ */
+#home[data-fl-bg="peach"] {
+  --flip-ttl: #d93a1c;
+}
+/* あんず（橙の地）→ だいだい。#d97000 は2.88で足りないので一段濃く（3.30） */
+#home[data-fl-bg="anzu"] {
+  --flip-ttl: #cc6600;
+}
+/* はいいろ（灰の地）→ すみ */
+#home[data-fl-bg="hai"] {
+  --flip-ttl: #3f3f3f;
+}
+
+/* ページ名は1色べた塗り（heading-company と同じ組み）。塗りだけ差し替える */
+#home .pagettl .wa {
+  --wa-fill-color: var(--flip-ttl) !important;
+}
+/* 節の見出しは上が明るく下が暗い縦グラデ（ttl_news.gif の組み）。
+   手本の緑は上 #2aaf20 → 下 #0a6404 で、下端が上端の56%の暗さ。
+   その落ち方だけもらって、色は --flip-ttl から作る。
+
+   @supports で囲ってあるのは、節の見出しの字が
+   「透明にして background-clip:text で塗る」作りだから。
+   color-mix を知らないブラウザだと --wa-fill-image が丸ごと無効になり、
+   塗るものが無くなって**字が消える**。囲っておけば、その場合は
+   WordArt.tsx が書いた元の緑のグラデがそのまま残る。 */
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  #home .sec .wa {
+    --wa-fill-image: linear-gradient(
+      180deg,
+      var(--flip-ttl) 0%,
+      color-mix(in srgb, var(--flip-ttl) 78%, #000000) 50%,
+      color-mix(in srgb, var(--flip-ttl) 56%, #000000) 100%
+    ) !important;
+  }
+}
+
 /* 本文の幅。本物の #container・.cont01 が1000px、表が800pxなので、そのあいだ */
 #home main {
   padding-bottom: 10px;
@@ -468,6 +544,14 @@ a {
   text-align: left;
   padding: 20px 26px 22px;
   font-size: 17px;
+}
+/* 見出し語の前の1行。辞書でいう「分類」にあたるので、
+   見出し語より小さく、下に細い罫を引いて頭書きだと分かるようにする */
+#home .def-lead {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: dotted 1px #b5b5b5;
+  font-weight: bold;
 }
 #home .def-word {
   font-size: 22px;

@@ -245,6 +245,8 @@ export const FLIPS: Flip[] = [
 
 /** ふりっぷの定義。こす.くま本人の言葉なので一字も変えない。 */
 export const FLIP_DEFINITION = {
+  /** 見出し語の前に置く1行。何の仲間なのかを先に言う */
+  lead: "ふりっぷとは、FLIPの一種です。",
   word: "ふりっぷ",
   pos: "【名】",
   gloss: "日常を、ほんの少しひっくり返すきっかけ。",
