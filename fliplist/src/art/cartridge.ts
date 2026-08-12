@@ -24,6 +24,15 @@ export type CartridgeOptions = {
   blank?: boolean;
   /** 影を描くか */
   shadow?: boolean;
+  /**
+   * 立体感を抜く。形と輪郭とラベルだけを残し、
+   * 面の陰影・指がかりの当たり・ラベルの落ち込み・落ち影を全部やめる。
+   *
+   * 昔のホームページに置く絵は、GIF に落ちる程度の色数で
+   * 「べた塗り＋1pxの輪郭」で描かれていた。抜き勾配の陰影を付けると
+   * 当時の絵に見えず、いまのレンダリングに見えてしまう。
+   */
+  flat?: boolean;
 };
 
 /** 本体（広い面）が占める高さ。これより下は差込口側の細い段になる。 */
@@ -158,6 +167,11 @@ export function drawCartridge(g: PixelGfx, o: CartridgeOptions) {
   const { W, H, LABEL_X, LABEL_Y, LABEL_W, LABEL_H } = CART;
   const D = edgeDist();
 
+  if (o.flat) {
+    drawCartridgeFlat(g, o, s, t);
+    return;
+  }
+
   if (o.shadow !== false) drawShadow(g, D);
 
   // ── 樹脂の面 ───────────────────────────────────────────────
@@ -205,6 +219,45 @@ export function drawCartridge(g: PixelGfx, o: CartridgeOptions) {
   g.text3x5(LABEL_X + 1, embossY, o.code, t.emboss);
   const maker = "KOSU.KUMA";
   g.text3x5(LABEL_X + LABEL_W - 2 - g.text3x5Width(maker), embossY, maker, t.emboss);
+}
+
+/**
+ * 立体感を抜いたカセット。形はまったく同じものを使う。
+ *
+ * 抜いたもの: 落ち影／面の6段の陰影／指がかりの当たり／ラベルの落ち込みの
+ * 明暗2色の返し／型番の彫りの濃淡。
+ * 残したもの: 輪郭1px（これが無いと壁紙の上で形が溶ける）、ラベルの絵、型番の字。
+ *
+ * ラベルのまわりは、落ち込みの代わりに輪郭と同じ色の1pxの枠を1本引く。
+ * ここを何も引かないとラベルが宙に浮き、明暗2色にすると立体に戻ってしまう。
+ */
+function drawCartridgeFlat(g: PixelGfx, o: CartridgeOptions, s: ShellColors, t: Tones) {
+  const { W, H, LABEL_X, LABEL_Y, LABEL_W, LABEL_H } = CART;
+  const D = edgeDist();
+
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (!D.solid[i]) continue;
+      const onEdge = D.up[i] === 0 || D.down[i] === 0 || D.left[i] === 0 || D.right[i] === 0;
+      g.px(x, y, onEdge ? t.edge : t.face);
+    }
+
+  // 段の付け根に横線は引かない。並べて見比べると、線を1本入れた途端に
+  // 「画面 ＋ 台」の2つの箱に見えてブラウン管テレビになる。
+  // 下の両隅の切り欠きだけで、実機と同じに読める。
+
+  g.frame(LABEL_X - 1, LABEL_Y - 1, LABEL_W + 2, LABEL_H + 2, t.edge);
+
+  if (o.blank) g.rect(LABEL_X, LABEL_Y, LABEL_W, LABEL_H, mix(s.face, s.dark, 0.2));
+
+  // 型番。彫りではなく刷りものにする。濃くすると字が主役になってしまうので、
+  // 寄れば読める・離れれば模様に落ちるくらいに留める。
+  const embossY = 53;
+  const ink = mix(s.face, s.edge, 0.3);
+  g.text3x5(LABEL_X + 1, embossY, o.code, ink);
+  const maker = "KOSU.KUMA";
+  g.text3x5(LABEL_X + LABEL_W - 2 - g.text3x5Width(maker), embossY, maker, ink);
 }
 
 /** ラベルの貼られていない外装。凹みの底が見えている状態にする。 */

@@ -52,15 +52,10 @@ export default function Page() {
       <Marquee />
 
       {/* ── 天 ───────────────────────────────────
-          会社のどのページにも同じロゴが乗っている。そこは同じにする。
-          本物のトップはこの下に点滅する訪問者カウンターがあるが、
-          こちらは「いまどこを見ているか」の1行にしてある。 */}
+          会社のロゴ（ttl.gif）はここに置かない。
+          このページはトップから降りてきた先で、題は「ふりっぷ一覧」のほうだから。
+          代わりに「いまどこを見ているか」の1行だけを置く。 */}
       <header className="header" id="top">
-        <h1>
-          <a href={HOME}>
-            <img src="/hp/ttl.gif" alt="株式会社こす.くま" width={773} height={117} />
-          </a>
-        </h1>
         <p className="crumb">
           <a href={HOME}>トップページ</a>　＞　ふりっぷ一覧
         </p>
@@ -76,7 +71,8 @@ export default function Page() {
             querySelectorAll("[data-flip-index]") でちょうど4つ。
             「一覧」の2字には付けないので、仕掛けに巻き込まれない。
         */}
-        <h2 className="pagettl">
+        {/* ロゴを外したので、このページで一番上の見出しはここ。h1 にする */}
+        <h1 className="pagettl">
           {"ふりっぷ".split("").map((c, i) => (
             <span className="ttl-c" data-flip-index={i} key={i}>
               <Heading variant="lime" size={72} weight={500}>
@@ -91,7 +87,7 @@ export default function Page() {
               </Heading>
             </span>
           ))}
-        </h2>
+        </h1>
 
         <p className="lead">
           こす.くまがつくった、小さなあそびと実験のもくじです。

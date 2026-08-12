@@ -14,6 +14,8 @@ type Props = {
   animate?: boolean;
   /** まだ遊べない。カセットに封の札を貼る */
   soon?: boolean;
+  /** 立体感を抜く。昔のホームページに置く絵はこちら */
+  flat?: boolean;
 };
 
 /**
@@ -24,7 +26,7 @@ type Props = {
  * が一目でわかる。地は紙色・字は墨なので、外装の彩度を落とす CSS の
  * フィルタをかけても札だけは読める。
  */
-function drawSoonSeal(g: PixelGfx) {
+function drawSoonSeal(g: PixelGfx, flat = false) {
   const text = "COMING SOON";
   const tw = g.text3x5Width(text);
   const w = tw + 10;
@@ -32,8 +34,9 @@ function drawSoonSeal(g: PixelGfx) {
   const y = CART.LABEL_Y + CART.LABEL_H - 16;
   const h = 11;
 
-  // 札の落ち影。カセットの面から浮いていることを示す1px
-  g.rect(x + 1, y + 1, w, h, "#00000030");
+  // 札の落ち影。カセットの面から浮いていることを示す1px。
+  // 立体感を抜く指定のときは、これも落とす（札だけが浮いて残ってしまう）
+  if (!flat) g.rect(x + 1, y + 1, w, h, "#00000030");
   g.rect(x, y, w, h, "#f2eddd");
   g.frame(x, y, w, h, "#1b1a17");
   // 紙の目。べた塗りだと札に見えない
@@ -42,26 +45,34 @@ function drawSoonSeal(g: PixelGfx) {
 }
 
 /** 外装にラベルを貼った状態のカセット1本。 */
-export default function Cartridge({ flip, scale, animate = false, soon = false }: Props) {
+export default function Cartridge({
+  flip,
+  scale,
+  animate = false,
+  soon = false,
+  flat = false,
+}: Props) {
   const draw = useCallback(
     (g: PixelGfx, t: number) => {
       // ラベルは16本すべてに貼る。外装だけの無地は「作り忘れ」に見えるので使わない。
-      drawCartridge(g, { shellName: flip.shell, code: flip.code });
+      drawCartridge(g, { shellName: flip.shell, code: flip.code, flat });
       const art = LABELS[flip.slug];
       if (art) {
         const label = new PixelGfx(CART.LABEL_W, CART.LABEL_H);
         art.draw(label, t);
         g.paste(label, CART.LABEL_X, CART.LABEL_Y);
       }
-      if (soon) drawSoonSeal(g);
+      if (soon) drawSoonSeal(g, flat);
     },
-    [flip.shell, flip.code, flip.slug, soon],
+    [flip.shell, flip.code, flip.slug, soon, flat],
   );
 
+  // 影を描かないなら、影のぶんの余白も要らない。
+  // 余白を残すと右と下に4pxの透明が付き、表のマスの中で中央が寄る。
   return (
     <PixelCanvas
-      w={CART_BUFFER.W}
-      h={CART_BUFFER.H}
+      w={flat ? CART.W : CART_BUFFER.W}
+      h={flat ? CART.H : CART_BUFFER.H}
       scale={scale}
       draw={draw}
       animate={animate}

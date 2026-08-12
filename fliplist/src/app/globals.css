@@ -131,20 +131,13 @@ a {
 }
 
 /* ── 天 ────────────────────────────────────────
-   ロゴは 773×117 の等倍。会社のどのページにも同じものが同じ大きさで乗っている。
-   本物のトップはこの下が点滅する訪問者カウンターだが、
-   こちらは「いまどこにいるか」の1行。カウンターは奥付に置いてある。 */
+   会社のロゴは置かない。このページの題は「ふりっぷ一覧」のほうなので、
+   ここは「いまどこにいるか」の1行だけ。訪問者カウンターは奥付に置いてある。 */
 #home .header {
-  margin: 44px auto 0;
-}
-#home .header h1 {
-  line-height: 1;
-}
-#home .header h1 img {
-  height: auto;
+  margin: 20px auto 0;
 }
 #home .crumb {
-  margin-top: 22px;
+  margin-top: 0;
   font-size: 13px;
 }
 
@@ -311,8 +304,10 @@ a {
 #home .cont02 {
   margin: 0 auto;
 }
+/* カセットの絵（176px）が1列ふえたぶんだけ、他の節（900px）より広い。
+   900px のままだと「どんなもの」が3行に折れて、行が絵より背高くなる */
 #home .cont02 table {
-  width: 900px;
+  width: 1100px;
   max-width: 100%;
   margin: auto;
 }
@@ -322,12 +317,14 @@ a {
   background: #ffffff;
   text-align: center;
 }
+/* 行の背が絵の高さ（128px）で決まるので、字は上ではなくまんなかに置く。
+   上寄せにすると、字だけが天井に貼り付いて絵と関係が切れて見える */
 #home .cont02 table td {
   border: solid 2px yellowgreen;
   border-style: inset;
   background: #ffffff;
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
 }
 #home .cont02 table th.head {
   font-weight: bold;
@@ -337,8 +334,41 @@ a {
   text-align: center !important;
   font-weight: bold;
 }
+
+/* ── カセットの絵の列 ───────────────────────────
+   当時のリンク集が行の頭にバナーGIFを並べていたのと同じ役。
+   絵は 88x64 のドット絵を2倍にしたもの（176x128）。
+   image-rendering: pixelated を入れておくのは、
+   拡大は canvas の中で済ませてあるので効かないはずでも、
+   ブラウザが勝手に滲ませたときの保険。 */
+.t-cart {
+  width: 186px;
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 3px 0 !important;
+}
+.cartlink {
+  display: inline-block;
+  line-height: 0;
+}
+/* 絵のリンクには下線が要らない（字のリンクには付いたまま） */
+#home .cont02 table td.t-cart a {
+  text-decoration: none;
+}
+#home .cont02 table td.t-cart canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+/* まだ公開していないもの。彩度と明るさを落として、棚の奥に置いた感じにする。
+   カセットに貼ってある「COMING SOON」の札は紙色と墨なので、落としても読める */
+.cartlink.soon canvas {
+  filter: grayscale(0.55) brightness(1.06) contrast(0.92);
+}
+
+/* 「ともだちジェネレーター」が1行で収まる幅。
+   ここより狭いと、10字の名前が軒並み2行に折れる */
 .t-ttl {
-  width: 208px;
+  width: 200px;
 }
 #home .cont02 table td.t-ttl a,
 #home .cont02 table td.t-ttl .nolink {
@@ -635,6 +665,15 @@ a {
   }
   .t-no {
     width: 26px;
+  }
+  /* 絵はちょうど半分（176x128 → 88x64）に落とす。
+     整数で割り切れる大きさなので、縮めても1ドットが滲まない */
+  .t-cart {
+    width: 94px;
+  }
+  #home .cont02 table td.t-cart canvas {
+    width: 88px !important;
+    height: 64px !important;
   }
   .t-ttl {
     width: auto;
