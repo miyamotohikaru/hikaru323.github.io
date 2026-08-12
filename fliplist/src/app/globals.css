@@ -304,10 +304,12 @@ a {
 #home .cont02 {
   margin: 0 auto;
 }
-/* カセットの絵（176px）が1列ふえたぶんだけ、他の節（900px）より広い。
-   900px のままだと「どんなもの」が3行に折れて、行が絵より背高くなる */
+/* 列は No.／カセット／名前／どんなもの／ぐあい の5つ。
+   公開日と担当は出さない（公開日は更新履歴のほうに出ている）。
+   幅は他の節（注記・ならび順・更新履歴）と同じ900px。
+   ここを広げると、表の上にある注記の左右の端と合わなくなる */
 #home .cont02 table {
-  width: 1100px;
+  width: 900px;
   max-width: 100%;
   margin: auto;
 }
@@ -377,17 +379,6 @@ a {
 /* 行き先のないもの。押せないので灰色にしておく */
 #home .cont02 table td.t-ttl .nolink {
   color: #666666;
-}
-.t-date {
-  width: 108px;
-  text-align: center !important;
-  white-space: nowrap;
-}
-/* 担当は人の名前なので折らない */
-.t-own {
-  width: 70px;
-  text-align: center !important;
-  white-space: nowrap;
 }
 .t-state {
   width: 74px;
@@ -615,11 +606,10 @@ a {
   display: block;
 }
 
-/* ── 狭い窓のとき ───────────────────────────────
+/* ── 狭い窓・携帯のとき ──────────────────────────
    本物のHPも @media screen and (max-width:480px) を持っていて、
    そこでは箱を width:100% にして、50pxの題を30pxに落としている。
-   なお携帯では viewport が1200px固定なので、ここは通らない。
-   通るのは窓を細くしたときだけ（本物のHPと同じ挙動）。 */
+   viewport を device-width にしたので（layout.tsx）、ここが携帯でも通る。 */
 @media screen and (max-width: 1000px) {
   #home .pagettl,
   #home .note,
@@ -630,6 +620,64 @@ a {
   }
   #home .def {
     width: 100%;
+  }
+}
+
+/* ── 表を畳む ───────────────────────────────────
+   列を固定幅で持つと No.＋カセット＋名前＋ぐあいだけで500px要るので、
+   携帯の幅では横に並べきれない。そこで1行ぶんを縦に積み、
+   1本のふりっぷを1枚の枠にする。
+
+   カセットの絵は縮めない。**ここが要点。**
+   縮めると（前は88x64に落としていた）ラベルの字が1ミリ以下になって読めない。
+   176x128 の等倍のまま出せば、ラベルの和文は13ドット×2倍＝26px相当で読める。
+   枠の罫は表のときと同じ solid 2px yellowgreen ＋ inset のまま使う。 */
+@media screen and (max-width: 620px) {
+  #home .cont02 table,
+  #home .cont02 tbody,
+  #home .cont02 tr,
+  #home .cont02 td {
+    display: block;
+    width: auto !important;
+  }
+  /* 見出しの行は、畳んだら意味がない。
+     （字は残るので tools/tricks.mjs の並び順の検分はそのまま通る） */
+  #home .cont02 tr:first-child {
+    display: none;
+  }
+  #home .cont02 tr {
+    border: solid 2px yellowgreen;
+    border-style: inset;
+    background: #ffffff;
+    margin-bottom: 12px;
+    padding: 10px 8px 12px;
+  }
+  #home .cont02 table td {
+    border: 0;
+    text-align: center !important;
+    padding: 0 !important;
+  }
+  /* 番号は名前の前に置きたいので、絵より上へ回す */
+  #home .cont02 td.t-no {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  #home .cont02 td.t-no::before {
+    content: "No.";
+  }
+  #home .cont02 td.t-cart canvas {
+    margin: 0 auto;
+  }
+  #home .cont02 td.t-ttl {
+    margin-top: 8px;
+    font-size: 17px;
+  }
+  #home .cont02 td:not([class]) {
+    margin-top: 4px;
+    font-size: 14px;
+  }
+  #home .cont02 td.t-state {
+    margin-top: 8px;
   }
 }
 @media screen and (max-width: 480px) {
@@ -663,27 +711,8 @@ a {
   #home .cont02 table td {
     font-size: 12px;
   }
-  .t-no {
-    width: 26px;
-  }
-  /* 絵はちょうど半分（176x128 → 88x64）に落とす。
-     整数で割り切れる大きさなので、縮めても1ドットが滲まない */
-  .t-cart {
-    width: 94px;
-  }
-  #home .cont02 table td.t-cart canvas {
-    width: 88px !important;
-    height: 64px !important;
-  }
   .t-ttl {
     width: auto;
-  }
-  .t-date {
-    width: 78px;
-    white-space: normal;
-  }
-  .t-own {
-    width: 46px;
   }
   .t-state {
     width: 48px;

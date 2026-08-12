@@ -1,6 +1,6 @@
 import { FLIPS, type Flip } from "@/data/flips";
 import Cartridge from "@/components/Cartridge";
-import { canOpen, isOpen, jpDate } from "./util";
+import { canOpen, isOpen } from "./util";
 
 /**
  * カセットの絵の倍率。88x64 のドット絵なので、2倍で 176x128。
@@ -38,8 +38,6 @@ export default function FlipTable() {
           <th className="head t-cart">カセット</th>
           <th className="head t-ttl">ふりっぷの名前</th>
           <th className="head">どんなもの</th>
-          <th className="head t-date">公開日</th>
-          <th className="head t-own">担当</th>
           <th className="head t-state">ぐあい</th>
         </tr>
         {FLIPS.map((flip, i) => (
@@ -99,8 +97,6 @@ function Row({ flip, n }: { flip: Flip; n: number }) {
       </td>
       {/* 内容はシートの言葉のまま。空のものは昔の表と同じで「―」 */}
       <td>{flip.desc ? flip.desc : "―"}</td>
-      <td className="t-date">{jpDate(flip.date)}</td>
-      <td className="t-own">{flip.owner}</td>
       <td className="t-state">
         {open ? <span className="open">公開中</span> : <span className="kouji">工事中</span>}
       </td>

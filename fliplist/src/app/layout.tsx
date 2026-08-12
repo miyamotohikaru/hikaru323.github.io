@@ -14,12 +14,22 @@ export const metadata: Metadata = {
 };
 
 /**
- * 会社HPは <meta name="viewport" content="width=1200"> の固定幅。
- * 畳まないのが本物の作法なので、こちらも同じにする。
- * 狭い画面では全体が縮んで入る（会社HPを携帯で見たときと同じ見え方）。
+ * 会社HPは viewport の指定を2つ持っている。
+ *   <meta name="viewport" content="width=device-width, initial-scale=1">
+ *   <meta name="viewport" content="width=1200">
+ * 後から書いたほうが勝つので、実際は1200pxの固定幅で出ている。
+ * ところが本物の style.css には @media screen and (max-width:480px) が
+ * いくつも書いてあり、それが1つも効かない状態になっている。
+ * つまり本物は「畳む指定を書いたのに、畳まない指定で塞いでいる」。
+ *
+ * ここでは前のほう（device-width）を採る。
+ * 1200px固定のままだと、携帯では版面が1/3ほどに縮んで表示され、
+ * カセットのラベルの字が1ミリ以下になって読めなかった。
+ * 畳めば本物が書いた 480px の指定も本来の役に戻る。
  */
 export const viewport: Viewport = {
-  width: 1200,
+  width: "device-width",
+  initialScale: 1,
 };
 
 /**
