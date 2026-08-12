@@ -31,17 +31,25 @@ function drawSoonSeal(g: PixelGfx, flat = false) {
   const tw = g.text3x5Width(text);
   const w = tw + 10;
   const x = Math.round((CART.W - w) / 2);
-  const y = CART.LABEL_Y + CART.LABEL_H - 16;
-  const h = 11;
+  // ラベルの外、下の帯（型番を刻んであるところ）に貼る。
+  //
+  // 前はラベルの真ん中あたりに置いていて、そこはどのラベルも
+  // ふりっぷの名前を書いているところだった。「こすくまくん危機一髪」は題が丸ごと、
+  // 「価値観一覧図鑑」「精神病図鑑」は2行目が隠れていた。
+  // ラベルの下端へ寄せても「一髪」だけは3行目が下端まで届いていて隠れる。
+  //
+  // ラベルの中には安全な場所が無い。だから札はラベルの外へ出した。
+  // 中古の店が本体に貼る値札と同じ位置で、これならどのラベルも1ドットも隠れない。
+  // 型番の刻印はこの札に譲る（drawCartridge の noEmboss）。
+  const h = 8;
+  const y = CART.LABEL_Y + CART.LABEL_H + 1;
 
   // 札の落ち影。カセットの面から浮いていることを示す1px。
   // 立体感を抜く指定のときは、これも落とす（札だけが浮いて残ってしまう）
   if (!flat) g.rect(x + 1, y + 1, w, h, "#00000030");
   g.rect(x, y, w, h, "#f2eddd");
   g.frame(x, y, w, h, "#1b1a17");
-  // 紙の目。べた塗りだと札に見えない
-  g.hline(x + 1, y + 1, w - 2, "#fdfaf0");
-  g.text3x5(x + 5, y + 3, text, "#1b1a17");
+  g.text3x5(x + 5, y + 2, text, "#1b1a17");
 }
 
 /** 外装にラベルを貼った状態のカセット1本。 */
@@ -55,7 +63,7 @@ export default function Cartridge({
   const draw = useCallback(
     (g: PixelGfx, t: number) => {
       // ラベルは16本すべてに貼る。外装だけの無地は「作り忘れ」に見えるので使わない。
-      drawCartridge(g, { shellName: flip.shell, code: flip.code, flat });
+      drawCartridge(g, { shellName: flip.shell, code: flip.code, flat, noEmboss: soon });
       const art = LABELS[flip.slug];
       if (art) {
         const label = new PixelGfx(CART.LABEL_W, CART.LABEL_H);

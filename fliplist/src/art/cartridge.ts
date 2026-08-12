@@ -25,6 +25,11 @@ export type CartridgeOptions = {
   /** 影を描くか */
   shadow?: boolean;
   /**
+   * 下の帯の型番を刻まない。
+   * まだ公開していないカセットは、そこに「COMING SOON」の札を貼るので場所を空ける。
+   */
+  noEmboss?: boolean;
+  /**
    * 立体感を抜く。形と輪郭とラベルだけを残し、
    * 面の陰影・指がかりの当たり・ラベルの落ち込み・落ち影を全部やめる。
    *
@@ -215,10 +220,12 @@ export function drawCartridge(g: PixelGfx, o: CartridgeOptions) {
 
   // ── 刻印 ───────────────────────────────────────────────────
   // 実機は下の帯に型番が浅く彫ってある。読めるか読めないかの濃さで置く。
-  const embossY = 53;
-  g.text3x5(LABEL_X + 1, embossY, o.code, t.emboss);
-  const maker = "KOSU.KUMA";
-  g.text3x5(LABEL_X + LABEL_W - 2 - g.text3x5Width(maker), embossY, maker, t.emboss);
+  if (!o.noEmboss) {
+    const embossY = 53;
+    g.text3x5(LABEL_X + 1, embossY, o.code, t.emboss);
+    const maker = "KOSU.KUMA";
+    g.text3x5(LABEL_X + LABEL_W - 2 - g.text3x5Width(maker), embossY, maker, t.emboss);
+  }
 }
 
 /**
@@ -253,6 +260,7 @@ function drawCartridgeFlat(g: PixelGfx, o: CartridgeOptions, s: ShellColors, t: 
 
   // 型番。彫りではなく刷りものにする。濃くすると字が主役になってしまうので、
   // 寄れば読める・離れれば模様に落ちるくらいに留める。
+  if (o.noEmboss) return;
   const embossY = 53;
   const ink = mix(s.face, s.edge, 0.3);
   g.text3x5(LABEL_X + 1, embossY, o.code, ink);
