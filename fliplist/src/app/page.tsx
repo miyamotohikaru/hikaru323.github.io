@@ -3,35 +3,47 @@ import Marquee from "@/components/retro/Marquee";
 import Counter from "@/components/retro/Counter";
 import FlipTable from "@/components/retro/FlipTable";
 import NoRightClick from "@/components/retro/NoRightClick";
+import Tricks from "@/components/retro/Tricks";
 import { jpDate, NEW_SLUGS, OPENED } from "@/components/retro/util";
 import { FLIP_DEFINITION } from "@/data/flips";
 
 const HOME = "https://kosukuma.com/home.html";
+const CONTACT = "https://kosukuma.com/contact/";
 
 /**
  * ふりっぷ一覧。
  * 株式会社こす.くまのホームページの1ページとして組んでいるので、
- * 並びも本物の home.html と同じ順にしてある。
+ * 並びも中身も本物の home.html をそのまま写している。
  *
- *   header（ロゴ／ページ名／訪問者カウンター）
- *   marquee（電光掲示板）
- *   cont01_news（最新情報＝新着ふりっぷ）
- *   goods_plane（空の帯。何かが横断していく）
- *   add_page（見出し画像＋本文＝ふりっぷとは）
- *   cont02（表＝ふりっぷ一覧表）
- *   btn（もどるボタン）
- *   footer（無断転載禁止／Copyright）
+ *   header      h1にロゴ（ttl.gif を等倍）＋点滅する訪問者カウンター1行。それだけ
+ *   pagettl     ページ名。本物の下位ページ（/contact/）と同じで本文の頭に中央で置く
+ *   marquee     電光掲示板
+ *   cont01_news 最新情報＝新着ふりっぷ
+ *   goods       空の帯。本物と同じで帯の中身は飛行機だけ（文字は入れない）
+ *   cont02      add_page の節（節見出しは .inner の左端）＋一覧表
+ *   btn_contact 本物の同じ位置にある紫の丸ボタン
+ *   footer      無断転載の1行と Copyright の1行だけ
  */
 export default function Page() {
   return (
     <>
       <NoRightClick />
+      {/*
+        隠してある仕掛け3つ。どれも「ひっくり返す」で通してある。
+        ページ名を1字ずつ押す／flip と打つ／電光掲示板を掴んで引っぱる。
+        版面には何も出さない（この部品は何も描かない）。
+      */}
+      <Tricks />
 
-      {/* ── 天 ───────────────────────────────── */}
+      {/* ── 天 ───────────────────────────────────
+          本物の home.html の天はこの2つだけ。
+            <h1><img ttl.gif></h1>
+            <p class="blink">あなたは <img 訪問者数> 人目の訪問者です。</p>
+          ロゴは幅を指定せず 773×117 の等倍で置く。ここを縮めると
+          くまの頭が縦長になって、それだけで作り物に見える。 */}
       <header className="header">
-        <p className="sitelogo">
+        <h1>
           <a href={HOME}>
-            {/* 本物のHPの天と同じロゴ画像。押すと会社のトップへもどる */}
             <img
               src="/hp/ttl.gif"
               alt="株式会社こす.くま"
@@ -39,39 +51,8 @@ export default function Page() {
               height={117}
             />
           </a>
-        </p>
-
-        {/*
-          ページ名。「ふりっぷ」の4文字は1文字ずつ別の要素にしてある。
-          ★あとから1文字ずつひっくり返せるように、
-            回す対象は .ttl-c（data-flip-index 付き）にしてある。
-        */}
-        {/*
-          塗りと縁は本物の「FLIP事業について」（heading-flip.png）と同じ組。
-          FLIPの話をする見出しはこの色、というのが本物の使い分け。
-
-          ★1文字ずつ別の要素にしてある。字送りをそろえるため「一覧」も1字ずつ。
-            ひっくり返す仕掛けの対象は data-flip-index が付いた「ふりっぷ」の4字。
-            つまり querySelectorAll("[data-flip-index]") でちょうど4つ取れる。
-        */}
-        <h1>
-          {"ふりっぷ".split("").map((c, i) => (
-            <span className="ttl-c" data-flip-index={i} key={i}>
-              <Heading variant="cyan" size={80}>
-                {c}
-              </Heading>
-            </span>
-          ))}
-          {"一覧".split("").map((c) => (
-            <span className="ttl-c" key={c}>
-              <Heading variant="cyan" size={80}>
-                {c}
-              </Heading>
-            </span>
-          ))}
         </h1>
-
-        <p className="visits blink">
+        <p className="blink">
           あなたは
           <Counter />
           人目の訪問者です。
@@ -79,13 +60,39 @@ export default function Page() {
       </header>
 
       <main>
+        {/*
+          ページ名。本物の下位ページ（/contact/）は本文の頭に中央でページ名を置くので、
+          同じ役どころに同じ置き方でならべる。塗りは heading-flip.png と同じ組
+          （FLIPの話をする見出しはこの色、というのが本物の使い分け）。
+
+          ★1文字ずつ別の要素にしてある。字送りをそろえるため「一覧」も1字ずつ。
+            ひっくり返す仕掛けの対象は data-flip-index が付いた「ふりっぷ」の4字。
+            つまり querySelectorAll("[data-flip-index]") でちょうど4つ取れる。
+        */}
+        <h2 className="pagettl">
+          {"ふりっぷ".split("").map((c, i) => (
+            <span className="ttl-c" data-flip-index={i} key={i}>
+              <Heading variant="cyan" size={84}>
+                {c}
+              </Heading>
+            </span>
+          ))}
+          {"一覧".split("").map((c) => (
+            <span className="ttl-c" key={c}>
+              <Heading variant="cyan" size={84}>
+                {c}
+              </Heading>
+            </span>
+          ))}
+        </h2>
+
         <Marquee />
 
         {/* ── 最新情報 ─────────────────────────── */}
         <div className="cont01">
           <div className="cont01_news">
             <h2>
-              <Heading variant="green" size={40}>
+              <Heading variant="green" size={42}>
                 新着ふりっぷ
               </Heading>
             </h2>
@@ -114,13 +121,14 @@ export default function Page() {
           </div>
         </div>
 
-        {/* ── 空の帯。本物は飛行機が横断している ───────── */}
+        {/* ── 空の帯 ───────────────────────────
+            本物と同じ組み。帯の中身は飛行機のGIF1枚だけで、文字は乗せない。
+            padding 80px＋中身135px＝295px。帯がタイル(267px)より高いので、
+            継ぎ目が横に1本出る。その継ぎ目が本物の顔なので、詰めない。 */}
         <div className="goods">
           <div className="goods_plane">
             <div className="goods_plane_body">
-              <Heading variant="gold" size={64}>
-                ふりっぷ
-              </Heading>
+              <img src="/hp/img_plane.gif" alt="" width={600} height={338} />
             </div>
           </div>
         </div>
@@ -130,17 +138,19 @@ export default function Page() {
           <section>
             <div className="inner">
               <div className="common_heading">
-                <Heading variant="lime" size={62}>
+                <Heading variant="lime" size={87}>
                   ふりっぷとは
                 </Heading>
               </div>
 
-              {/* 立体ベベルの箱。中の4行はこす.くまの言葉なので一字も変えない */}
-              <div className="defbox">
-                <p className="word">
+              {/* 本物の節の中身は .common_text の見出し1行＋段落。
+                  箱で囲ったり立体の額縁を描いたりはしない。
+                  中の4行はこす.くまの言葉なので一字も変えない */}
+              <div className="common_text">
+                <h3 className="common_title">
                   {FLIP_DEFINITION.word}
                   <span className="pos">{FLIP_DEFINITION.pos}</span>
-                </p>
+                </h3>
                 <p className="gloss">{FLIP_DEFINITION.gloss}</p>
                 {FLIP_DEFINITION.body.map((line) => (
                   <p key={line}>{line}</p>
@@ -151,12 +161,16 @@ export default function Page() {
 
           {/* ── 一覧表 ─────────────────────────── */}
           <section>
-            <h2 className="listttl">
-              <Heading variant="gold" size={66}>
-                ふりっぷ一覧表
-              </Heading>
-            </h2>
+            <div className="inner">
+              <div className="common_heading">
+                <Heading variant="gold" size={87}>
+                  ふりっぷ一覧表
+                </Heading>
+              </div>
+            </div>
 
+            {/* 表と、その前後の注記。本物の会社概要の表と同じで800pxの中央寄せ。
+                注記も同じ幅にそろえてあるので、左端が表とぴったり合う */}
             <p className="tablenote">
               ※上から公開順にならべています。番号は随時ふえていきます。
             </p>
@@ -170,29 +184,34 @@ export default function Page() {
             </p>
           </section>
 
+          {/* 巨大な黄色い矢印。本物の事業モデル図（business-img.png）の矢印と同じで、
+              縁は描かず、右下にやわらかい影だけを落とす */}
           <div className="yarrow" aria-hidden>
             <i />
-            <em />
           </div>
-          <p className="shout blink">ふりっぷは随時ふえていきます！</p>
         </div>
 
-        <div className="btn_back">
-          <a href={HOME}>株式会社こす.くま トップページへもどる</a>
+        {/* 本物の home.html はここに紫の丸ボタンが1つあるだけ */}
+        <div className="btn_contact">
+          <a href={CONTACT}>
+            <img
+              src="/hp/btn_contact.gif"
+              alt="お問い合わせ"
+              width={100}
+              height={119}
+            />
+          </a>
         </div>
+        <p className="backlink">
+          <a href={HOME}>株式会社こす.くま トップページへもどる</a>
+        </p>
       </main>
 
-      {/* ── 奥付 ───────────────────────────────── */}
+      {/* ── 奥付 ───────────────────────────────
+          本物の奥付は2行だけ。罫線も更新日も下の余白も無い */}
       <footer className="footer">
-        <hr />
         <p className="caution">無断転載・コピー等を禁止いたします。</p>
         <span className="copy">Copyright © kosukuma, Inc.</span>
-        <p className="updated">
-          このページは随時更新しています。
-          <br />
-          累計訪問者数
-          <Counter />
-        </p>
       </footer>
     </>
   );

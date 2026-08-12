@@ -89,6 +89,12 @@ type Spec = {
   readonly weight: number;
   /** 横への伸び（scaleX） */
   readonly wide: number;
+  /**
+   * 傾き。手本4枚のうち **ttl_news.gif（最新情報）と ttl_overview.gif（会社概要）は直立**で、
+   * 傾いているのは ttl.gif・heading-company・heading-flip の3枚だけ。
+   * 直立の役を斜体で出すと、本物の隣に置いたとき別物に見える。
+   */
+  readonly upright?: boolean;
 };
 
 /* ttl.gif の落ち影。ほぼ真下に落ちていて（右へは 6px ほどしか出ない）、
@@ -153,6 +159,8 @@ const SPECS: Record<WordArtVariant, Spec> = {
     line: "#ffffff",
     lineEm: 0.043,
     shadow: null,
+    // ttl_news.gif は直立。傾けない
+    upright: true,
     weight: 700,
     // 4 枚でいちばん縦長。手本が 150x40 に「緑の内側まで」切り詰められていて
     // 縁がどこも残っていないので、字送りから出した推定値（0.835〜0.883 の真ん中）
@@ -189,8 +197,11 @@ function buildFill(stops: readonly Stop[]): string {
 /* ── 傾き ──────────────────────────────────────────────────────────── */
 const FONT_SLANT = 0.25; // Chrome の合成イタリック（14.0°）。固定
 const TARGET_SLANT = 0.2126; // 手本の傾き（12.0°）
-/** 要素の transform 行列。scaleX(sx) のあと、足りない分だけ逆せん断する */
-const skewOf = (sx: number) => FONT_SLANT * sx - TARGET_SLANT;
+/**
+ * 要素の transform 行列。scaleX(sx) のあと、足りない分だけ逆せん断する。
+ * 直立の役（upright）は狙いの傾きが 0 なので、合成イタリックを丸ごと打ち消す。
+ */
+const skewOf = (sx: number, target = TARGET_SLANT) => FONT_SLANT * sx - target;
 
 /* ── 縁のリング ────────────────────────────────────────────────────────
    ほしいのは変換後に半径 r の真円。要素には matrix(sx,0,c,1,0,0) が
@@ -301,7 +312,7 @@ export default function WordArt({
   const grad = typeof spec.fill !== "string";
   const sh = (shadow ?? spec.shadow !== null) ? (spec.shadow ?? GOLD_SHADOW) : null;
   const sx = wide ?? spec.wide;
-  const skew = skewOf(sx);
+  const skew = skewOf(sx, spec.upright ? 0 : TARGET_SLANT);
 
   const vars = {
     "--wa-size": `${size}px`,
