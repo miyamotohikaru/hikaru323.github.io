@@ -1,209 +1,199 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import Cartridge from "@/components/Cartridge";
-import Wordmark, { WORDMARK } from "@/components/Wordmark";
-import Definition from "@/components/Definition";
-import Colophon from "@/components/Colophon";
-import { FLIPS, type Flip } from "@/data/flips";
-import { LABELS } from "@/art/labels";
-import { CART_BUFFER } from "@/art/spec";
+import Heading from "@/components/retro/Heading";
+import Marquee from "@/components/retro/Marquee";
+import Counter from "@/components/retro/Counter";
+import FlipTable from "@/components/retro/FlipTable";
+import NoRightClick from "@/components/retro/NoRightClick";
+import { jpDate, NEW_SLUGS, OPENED } from "@/components/retro/util";
+import { FLIP_DEFINITION } from "@/data/flips";
 
 const HOME = "https://kosukuma.com/home.html";
 
 /**
- * 版面はドット絵の整数倍でしか組めない。
- * だから幅から段数と倍率を先に決め、紙の幅はその結果として出す。
- * こうすると天地の帯も奥付もカセットの段とぴったり揃う。
+ * ふりっぷ一覧。
+ * 株式会社こす.くまのホームページの1ページとして組んでいるので、
+ * 並びも本物の home.html と同じ順にしてある。
+ *
+ *   header（ロゴ／ページ名／訪問者カウンター）
+ *   marquee（電光掲示板）
+ *   cont01_news（最新情報＝新着ふりっぷ）
+ *   goods_plane（空の帯。何かが横断していく）
+ *   add_page（見出し画像＋本文＝ふりっぷとは）
+ *   cont02（表＝ふりっぷ一覧表）
+ *   btn（もどるボタン）
+ *   footer（無断転載禁止／Copyright）
  */
-type Tier = { cols: number; scale: number; pad: number; gutter: number };
-type Layout = Tier & { logo: number; sheet: number };
-
-const TIERS: Array<[number, Tier]> = [
-  // 段間はカセット幅の15%弱。ここを詰めると16本が「表」に見えてしまう。
-  // しきい値は「紙の幅＋机が見える余白」で決める（紙が画面いっぱいだと図録に見えない）
-  [1344, { cols: 4, scale: 3, pad: 28, gutter: 40 }],
-  [1024, { cols: 3, scale: 3, pad: 28, gutter: 40 }],
-  // 2段のときは段間を広めに取る。こうすると見出しロゴが2倍で入る
-  [672, { cols: 2, scale: 3, pad: 24, gutter: 72 }],
-  [624, { cols: 2, scale: 3, pad: 24, gutter: 24 }],
-  [0, { cols: 2, scale: 2, pad: 8, gutter: 6 }],
-];
-
-function measure(w: number): Layout {
-  const t = (TIERS.find(([min]) => w >= min) ?? TIERS[TIERS.length - 1])[1];
-  const cart = CART_BUFFER.W * t.scale;
-  const inner = t.cols * cart + (t.cols - 1) * t.gutter;
-  const logo = inner >= WORDMARK.W * 3 ? 3 : inner >= WORDMARK.W * 2 ? 2 : 1;
-  return { ...t, logo, sheet: inner + t.pad * 2 };
-}
-
-function useLayout(): Layout {
-  const [layout, setLayout] = useState<Layout>(() => measure(1440));
-  useEffect(() => {
-    const calc = () => {
-      const next = measure(window.innerWidth);
-      setLayout((p) => (p.cols === next.cols && p.scale === next.scale ? p : next));
-    };
-    calc();
-    window.addEventListener("resize", calc);
-    return () => window.removeEventListener("resize", calc);
-  }, []);
-  return layout;
-}
-
 export default function Page() {
-  const { cols, scale, logo, pad, gutter, sheet } = useLayout();
-  const cartW = CART_BUFFER.W * scale;
-
   return (
-    <main
-      className="sheet"
-      data-cols={cols}
-      data-scale={scale}
-      style={
-        {
-          maxWidth: `min(${sheet}px, 100%)`,
-          "--pad": `${pad}px`,
-          "--gutter": `${gutter}px`,
-        } as React.CSSProperties
-      }
-    >
-      <span className="reg reg-tl" aria-hidden />
-      <span className="reg reg-tr" aria-hidden />
+    <>
+      <NoRightClick />
 
-      {/* ── 天の帯 ─────────────────────────────── */}
-      <div className="bar">
-        <a className="bar-l" href={HOME}>
-          <span className="k12">株式会社こす.くま</span>
-          <span className="k8 en">KOSU.KUMA CO.,LTD.</span>
-        </a>
-        <span className="bar-fill" aria-hidden />
-        <span className="bar-r">
-          <span className="k8 en">CATALOGUE OF FLIPS</span>
-          <span className="k12">随時更新</span>
-        </span>
-      </div>
+      {/* ── 天 ───────────────────────────────── */}
+      <header className="header">
+        <p className="sitelogo">
+          <a href={HOME}>
+            {/* 本物のHPの天と同じロゴ画像。押すと会社のトップへもどる */}
+            <img
+              src="/hp/ttl.gif"
+              alt="株式会社こす.くま"
+              width={773}
+              height={117}
+            />
+          </a>
+        </p>
 
-      {/* ── 見出し ─────────────────────────────── */}
-      <header className="masthead">
-        <div className="mast-logo">
-          <h1 className="vh">ふりっぷ 一覧 — 株式会社こす.くま</h1>
-          <Wordmark scale={logo} />
-          <p className="mast-sub">
-            {/* 「ふりっぷ」は FLIP の一種、という言い切り。
-                FLIP だけ欧文のドット書体にして、外来の語だと見せる。 */}
-            <span className="mast-sub-jp">ふりっぷとは</span>
-            <span className="en">FLIP</span>
-            <span className="mast-sub-jp">の一種。</span>
-          </p>
-        </div>
+        {/*
+          ページ名。「ふりっぷ」の4文字は1文字ずつ別の要素にしてある。
+          ★あとから1文字ずつひっくり返せるように、
+            回す対象は .ttl-c（data-flip-index 付き）にしてある。
+        */}
+        {/*
+          塗りと縁は本物の「FLIP事業について」（heading-flip.png）と同じ組。
+          FLIPの話をする見出しはこの色、というのが本物の使い分け。
 
+          ★1文字ずつ別の要素にしてある。字送りをそろえるため「一覧」も1字ずつ。
+            ひっくり返す仕掛けの対象は data-flip-index が付いた「ふりっぷ」の4字。
+            つまり querySelectorAll("[data-flip-index]") でちょうど4つ取れる。
+        */}
+        <h1>
+          {"ふりっぷ".split("").map((c, i) => (
+            <span className="ttl-c" data-flip-index={i} key={i}>
+              <Heading variant="cyan" size={80}>
+                {c}
+              </Heading>
+            </span>
+          ))}
+          {"一覧".split("").map((c) => (
+            <span className="ttl-c" key={c}>
+              <Heading variant="cyan" size={80}>
+                {c}
+              </Heading>
+            </span>
+          ))}
+        </h1>
+
+        <p className="visits blink">
+          あなたは
+          <Counter />
+          人目の訪問者です。
+        </p>
       </header>
 
-      <Definition />
+      <main>
+        <Marquee />
 
-      {/* ── 目次 ───────────────────────────────── */}
-      <section className="toc">
-        <div className="band">
-          <span className="band-en en">CONTENTS</span>
-          <span className="band-n en">
-            001 &ndash; {String(FLIPS.length).padStart(3, "0")}
-          </span>
+        {/* ── 最新情報 ─────────────────────────── */}
+        <div className="cont01">
+          <div className="cont01_news">
+            <h2>
+              <Heading variant="green" size={40}>
+                新着ふりっぷ
+              </Heading>
+            </h2>
+            <ul>
+              {OPENED.slice(0, 3).map((f) => (
+                <li key={f.slug}>
+                  <a href={f.url} target="_blank" rel="noopener noreferrer">
+                    {jpDate(f.date)}　{f.title}
+                    {NEW_SLUGS.includes(f.slug) ? (
+                      <span className="new">
+                        <img
+                          src="/hp/new.gif"
+                          alt="new"
+                          width={29}
+                          height={17}
+                        />
+                      </span>
+                    ) : null}
+                  </a>
+                </li>
+              ))}
+              <li>
+                ふりっぷは随時ふえていきます。できたらここに書いていきます。
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <ol
-          className="grid"
-          style={
-            {
-              gridTemplateColumns: `repeat(${cols}, minmax(0, ${cartW}px))`,
-              "--cart-w": `${cartW}px`,
-            } as React.CSSProperties
-          }
-        >
-          {FLIPS.map((flip, i) => (
-            <Item
-              key={flip.slug}
-              flip={flip}
-              n={i + 1}
-              scale={scale}
-            />
-          ))}
-        </ol>
-      </section>
-
-      <Colophon />
-      <span className="reg reg-bl" aria-hidden />
-      <span className="reg reg-br" aria-hidden />
-      <a className="vh" href={HOME}>
-        株式会社こす.くま へもどる
-      </a>
-    </main>
-  );
-}
-
-function Item({
-  flip,
-  n,
-  scale,
-}: {
-  flip: Flip;
-  n: number;
-  scale: number;
-}) {
-  const swatch = LABELS[flip.slug]?.swatch ?? [];
-  // 見せ方は「いま遊べるか」の二択だけにする。
-  // 完成／制作中／構想の区別は棚の上では意味を持たないので、まとめて COMING SOON。
-  const live = flip.status === "released" && Boolean(flip.url);
-
-  /**
-   * 図版がまず来て、そのあとに札（キャプション）が続く。
-   * 札はぜんぶ薄い墨で組み、和名だけを本墨にする。
-   * カセットの上には何も置かない。上の余白はカセットのためのもの。
-   */
-  const body = (
-    <>
-      <div className="cell-cart">
-        <Cartridge flip={flip} scale={scale} animate soon={!live} />
-      </div>
-
-      {/* 色玉は図版の直下・左そろえ。カセットの持ち色をそのまま拾う */}
-      <div className="dots" aria-hidden>
-        {swatch.slice(0, 5).map((c, k) => (
-          <span className="dot" key={k} style={{ background: c }} />
-        ))}
-      </div>
-
-      <div className="cap">
-        <div className="cell-head">
-          <span className="cell-no en">{String(n).padStart(2, "0")}</span>
-          <span className="cell-code en">{flip.code}</span>
+        {/* ── 空の帯。本物は飛行機が横断している ───────── */}
+        <div className="goods">
+          <div className="goods_plane">
+            <div className="goods_plane_body">
+              <Heading variant="gold" size={64}>
+                ふりっぷ
+              </Heading>
+            </div>
+          </div>
         </div>
 
-        <h3 className="ttl">{flip.title}</h3>
-        <p className="romaji">{flip.romaji}</p>
-        {flip.desc ? (
-          <p className="dsc">{flip.desc}</p>
-        ) : (
-          <p className="dsc dsc-blank" aria-label="内容は未記入" />
-        )}
-      </div>
+        <div className="cont02 add_page">
+          {/* ── ふりっぷとは ─────────────────────── */}
+          <section>
+            <div className="inner">
+              <div className="common_heading">
+                <Heading variant="lime" size={62}>
+                  ふりっぷとは
+                </Heading>
+              </div>
+
+              {/* 立体ベベルの箱。中の4行はこす.くまの言葉なので一字も変えない */}
+              <div className="defbox">
+                <p className="word">
+                  {FLIP_DEFINITION.word}
+                  <span className="pos">{FLIP_DEFINITION.pos}</span>
+                </p>
+                <p className="gloss">{FLIP_DEFINITION.gloss}</p>
+                {FLIP_DEFINITION.body.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── 一覧表 ─────────────────────────── */}
+          <section>
+            <h2 className="listttl">
+              <Heading variant="gold" size={66}>
+                ふりっぷ一覧表
+              </Heading>
+            </h2>
+
+            <p className="tablenote">
+              ※上から公開順にならべています。番号は随時ふえていきます。
+            </p>
+
+            <FlipTable />
+
+            <p className="tablefoot">
+              ※「準備中」のふりっぷは、まだできていません。公開までしばらくお待ちください。
+              <br />
+              ※行き先のないふりっぷは押せません。
+            </p>
+          </section>
+
+          <div className="yarrow" aria-hidden>
+            <i />
+            <em />
+          </div>
+          <p className="shout blink">ふりっぷは随時ふえていきます！</p>
+        </div>
+
+        <div className="btn_back">
+          <a href={HOME}>株式会社こす.くま トップページへもどる</a>
+        </div>
+      </main>
+
+      {/* ── 奥付 ───────────────────────────────── */}
+      <footer className="footer">
+        <hr />
+        <p className="caution">無断転載・コピー等を禁止いたします。</p>
+        <span className="copy">Copyright © kosukuma, Inc.</span>
+        <p className="updated">
+          このページは随時更新しています。
+          <br />
+          累計訪問者数
+          <Counter />
+        </p>
+      </footer>
     </>
-  );
-
-  return (
-    <li
-      className={`cell${live ? "" : " is-soon"}`}
-    >
-      {live ? (
-        <a className="cell-in" href={flip.url} target="_blank" rel="noopener noreferrer">
-          {body}
-        </a>
-      ) : (
-        <div className="cell-in" aria-disabled="true">
-          {body}
-        </div>
-      )}
-    </li>
   );
 }
