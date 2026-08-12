@@ -142,6 +142,84 @@ body {
   color: var(--vja-cream);
 }
 
+
+/* ============================================================
+   束のときのヒーロー
+   ============================================================
+   束を出しているあいだは、カードが1枚まるごと画面に入ることを優先する。
+   実測（1440x900）では、束の上に ヘッダ56 + ヒーロー373 + 2本のバー132 が積まれ、
+   残り339pxにカード597px＋操作系121pxを入れようとして、289pxはみ出していた。
+
+   ヒーローは消さずに畳む。名乗り（ISSUE 02・題・惹句）は残し、
+   ローマ字の副題・説明の1行・数字3つの帯を伏せて、余白も詰める。
+   一覧に切り替えれば元のヒーローが戻る。 */
+html[data-vja-view="deck"] .vja-hero {
+  padding-top: 1.25rem;
+  padding-bottom: 0.75rem;
+}
+html[data-vja-view="deck"] .vja-hero h1 {
+  margin-top: 0.5rem;
+  font-size: 1.75rem;
+}
+/* ローマ字の副題・説明の1行・数字の帯を伏せる */
+html[data-vja-view="deck"] .vja-hero > p:nth-of-type(2),
+html[data-vja-view="deck"] .vja-hero > p:nth-of-type(4),
+html[data-vja-view="deck"] .vja-hero > div:last-child {
+  display: none;
+}
+html[data-vja-view="deck"] .vja-hero > p:nth-of-type(3) {
+  margin-top: 0.5rem;
+}
+@media (min-width: 768px) {
+  html[data-vja-view="deck"] .vja-hero {
+    padding-top: 1.75rem;
+  }
+  html[data-vja-view="deck"] .vja-hero h1 {
+    font-size: 2.25rem;
+  }
+}
+/* めくり方のバーも、束のときだけ出ているものなので薄く詰める */
+html[data-vja-view="deck"] .vja-flips {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+
+/* 背の低い画面（iPhone SE など 720px 以下）で束を出しているとき。
+   実測 375x667 では ヘッダ60＋ヒーロー114＋バー2本96＋束200＋操作系109＋タブ41＝675 で
+   19pxはみ出していた。名乗りをさらに削り、案内文を伏せ、めくり方を1行に収める。 */
+@media (max-height: 720px) {
+  html[data-vja-view="deck"] .vja-hero {
+    padding-top: 0.6rem;
+    padding-bottom: 0.4rem;
+  }
+  /* ISSUE 02 の1行と惹句を伏せる。題だけ残す */
+  html[data-vja-view="deck"] .vja-hero > p:nth-of-type(1),
+  html[data-vja-view="deck"] .vja-hero > p:nth-of-type(3) {
+    display: none;
+  }
+  html[data-vja-view="deck"] .vja-hero h1 {
+    margin-top: 0;
+    font-size: 1.5rem;
+  }
+  /* めくり方は折り返さず、あふれたら横に流す（2行になると54px使う） */
+  html[data-vja-view="deck"] .vja-flips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  html[data-vja-view="deck"] .vja-flips::-webkit-scrollbar {
+    display: none;
+  }
+  html[data-vja-view="deck"] .vja-flips button {
+    flex: 0 0 auto;
+  }
+  /* 束の下の案内文。狭いところでは場所をカードに譲る */
+  html[data-vja-view="deck"] .vja-deck-rail + p {
+    display: none;
+  }
+}
+
 /* ============================================================
    デッキ表示（カードの束）
    ============================================================ */
@@ -156,9 +234,13 @@ body {
   --deck-fit: 1.522;
   --deck-vw: 72;
   --deck-vw-wide: 30;
+  /* 束の上に何が積まれているかは DeckView.tsx が実測して --deck-avail に入れる。
+     まだ測れていない一瞬のために、svh からの引き算を控えの値として残しておく。
+     310px = ヘッダ59 + タブバー41 + カード下の操作系123 + 余白87 */
+  --deck-avail: calc(100svh - 310px);
   --deck-w: min(
     calc(var(--deck-vw) * 1vw),
-    calc((100svh - 310px) / var(--deck-fit)),
+    calc(var(--deck-avail) / var(--deck-fit)),
     330px
   );
   /* カード面の角丸と必ず一致させる。6cqw はここでは自分自身がコンテナになってしまい
@@ -187,11 +269,12 @@ body {
   cursor: grabbing;
 }
 @media (min-width: 768px) {
-  /* 310px はスマホのツールバーぶんの見込み。PCではそこまで要らないので取り戻す */
+  /* 190px はPCでの控えの見込み。実際は --deck-avail が上書きする */
   .vja-deck {
+    --deck-avail: calc(100svh - 190px);
     --deck-w: min(
       calc(var(--deck-vw-wide) * 1vw),
-      calc((100svh - 190px) / var(--deck-fit)),
+      calc(var(--deck-avail) / var(--deck-fit)),
       440px
     );
   }

@@ -6,7 +6,9 @@ export default function Home() {
   return (
     <div>
       {/* ヒーロー(携帯は左寄せ・PCは中央) */}
-      <section className="px-4 pb-8 pt-10 text-left md:pt-16 md:text-center">
+      {/* 束のときは vja-hero の指定（globals.css）で全体を詰める。
+          カードを1枚まるごと画面に入れるための場所を、ここから譲る */}
+      <section className="vja-hero px-4 pb-8 pt-10 text-left md:pt-16 md:text-center">
         <p className="font-mono-label text-[10px] tracking-[0.5em] text-vja-ink-soft">
           ISSUE 02
         </p>

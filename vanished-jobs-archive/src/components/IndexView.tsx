@@ -72,8 +72,13 @@ export default function IndexView() {
   const [region, setRegion] = useState<string[]>([]);
   const [cause, setCause] = useState<number[]>([]);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
-  /** 一覧(グリッド) か 束(デッキ) か。選んだ表示は次回も引き継ぐ */
-  const [mode, setMode] = useState<"grid" | "deck">("grid");
+  /**
+   * 一覧(グリッド) か 束(デッキ) か。
+   * **開いた直後は束。** この図鑑の入口はカードを1枚ずつめくるところなので、
+   * 何もしていない人にはまず束を見せる。一覧は自分で押したときだけ。
+   * いちど選んだ表示は次回も引き継ぐ（localStorage の vja-view）。
+   */
+  const [mode, setMode] = useState<"grid" | "deck">("deck");
 
   /** 束のときのめくり方 */
   const [flip, setFlip] = useState<FlipId>("stack");
@@ -86,6 +91,13 @@ export default function IndexView() {
   }, []);
   useEffect(() => {
     localStorage.setItem("vja-view", mode);
+    // ヒーローは page.tsx 側にあってここからは触れないので、
+    // いまの表示を html に貼っておいて、詰めるのは CSS にやらせる。
+    // 束のときは版面を詰めないと、カードが一画面に収まらない
+    document.documentElement.dataset.vjaView = mode;
+    return () => {
+      delete document.documentElement.dataset.vjaView;
+    };
   }, [mode]);
   useEffect(() => {
     localStorage.setItem("vja-flip", flip);

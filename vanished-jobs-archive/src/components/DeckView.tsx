@@ -501,6 +501,48 @@ export default function DeckView({
   }, []);
 
   /**
+   * 開いたときにカードが1枚まるごと見えるようにする。
+   *
+   * カードの大きさは globals.css が画面の高さから決めているが、CSS には
+   * 「束の上に何が何px 積まれているか」が分からない。ヒーローの高さは
+   * 言語でも画面幅でも変わるので、決め打ちの引き算では必ずどこかで外れる。
+   * （実測: 1440x900 で束の上端が561px、下の操作系が121px。
+   *   引き算を 190px 固定にしていたので、カードが289pxはみ出していた）
+   *
+   * なので、束の上端と下の操作系の高さを実際に測って、
+   * 「使える高さ」を --deck-avail としてCSSに渡す。
+   * カードの幅を変えても上端と操作系の高さは動かないので、1回測れば足りる。
+   */
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const fit = () => {
+      const box = el.getBoundingClientRect();
+      // ページの上端から束の上端まで（巻き上げていても同じ値になるように scrollY を足す）
+      const top = box.top + window.scrollY;
+      const wrap = el.parentElement;
+      const ctrl = wrap ? wrap.getBoundingClientRect().bottom - box.bottom : 0;
+      // 携帯は下端にタブバーが浮いていて、そのぶん画面は使えない。
+      // 高さを決め打ちにすると畳んだときにずれるので、あるものを測る
+      const bar = document.querySelector("nav.fixed.bottom-0");
+      const barH = bar ? bar.getBoundingClientRect().height : 0;
+      // 8px は下のふちに貼り付かせないための余白
+      const avail = window.innerHeight - top - ctrl - barH - 8;
+      el.style.setProperty("--deck-avail", `${Math.max(200, Math.round(avail))}px`);
+    };
+    fit();
+    // ヒーローの畳み方や書体の読み込みで上端が動くので、落ち着いてからもう一度測る。
+    // ResizeObserver は使わない。束が縮むと版面も縮むので、観測が自分を呼び戻す形になる。
+    const t = setTimeout(fit, 250);
+    document.fonts?.ready.then(fit);
+    window.addEventListener("resize", fit);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", fit);
+    };
+  }, []);
+
+  /**
    * 束の見え方をすべて posRef から描く。React を通さず直接 style を書く。
    * withFilter=false のときは ぼかし/セピア を触らない。
    * ぼかしは値が変わるたびに描き直しが起きるので、指で追従している最中は固定する。
