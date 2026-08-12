@@ -1,10 +1,11 @@
-import Heading from "@/components/retro/Heading";
-import Marquee from "@/components/retro/Marquee";
+import BgPicker from "@/components/retro/BgPicker";
 import Counter from "@/components/retro/Counter";
 import FlipTable from "@/components/retro/FlipTable";
+import Heading from "@/components/retro/Heading";
+import Marquee from "@/components/retro/Marquee";
 import NoRightClick from "@/components/retro/NoRightClick";
 import Tricks from "@/components/retro/Tricks";
-import { jpDate, NEW_SLUGS, OPENED } from "@/components/retro/util";
+import { HISTORY, jpDate, OPENED, PAGE_MADE } from "@/components/retro/util";
 import { FLIP_DEFINITION } from "@/data/flips";
 
 const HOME = "https://kosukuma.com/home.html";
@@ -12,17 +13,26 @@ const CONTACT = "https://kosukuma.com/contact/";
 
 /**
  * ふりっぷ一覧。
- * 株式会社こす.くまのホームページの1ページとして組んでいるので、
- * 並びも中身も本物の home.html をそのまま写している。
  *
- *   header      h1にロゴ（ttl.gif を等倍）＋点滅する訪問者カウンター1行。それだけ
- *   pagettl     ページ名。本物の下位ページ（/contact/）と同じで本文の頭に中央で置く
- *   marquee     電光掲示板
- *   cont01_news 最新情報＝新着ふりっぷ
- *   goods       空の帯。本物と同じで帯の中身は飛行機だけ（文字は入れない）
- *   cont02      add_page の節（節見出しは .inner の左端）＋一覧表
- *   btn_contact 本物の同じ位置にある紫の丸ボタン
- *   footer      無断転載の1行と Copyright の1行だけ
+ * 株式会社こす.くまのホームページの中の1ページ。ただしトップページではなく、
+ * 「もくじ／リンク集」の役のページ。当時この役のページに置かれていたものでできている。
+ *
+ *   掲示板    電光掲示板。紺地に黄。ページのいちばん上
+ *   天        ロゴ（会社のどのページにも同じものが乗っている）＋どこにいるかの1行
+ *   ページ名  ふりっぷ一覧。下に朱の罫（会社HPの下位ページの題の作り）
+ *   もくじ    このページの中の行き先。トップページには無い節
+ *   一覧表    このページの用。だから他より先に置く
+ *   更新履歴  日付＋一行。<dl> を float でくずしてならべる
+ *   ふりっぷとは  用語のせつめい。表を1マスだけ使って囲う
+ *   背景をかえる  小さな壁紙の見本を4つ
+ *   奥付      カウンター・リンクフリー・相互リンク・もどり道
+ *
+ * トップページと同じにしていないところ:
+ *   ・青空と飛行機の帯は無い。写真のスライダーも無い。事業モデルの図も無い
+ *   ・帯（掲示板）は天より上。トップが青空の帯を置いている高さは空けてある
+ *   ・カウンターは天ではなく奥付にある（当時の個人ページはたいていそこ）
+ *   ・節の順が違う。表がいちばん最後ではなく先に来る
+ *   ・節の見出しは金・水色の大見出しを使わず、深緑の一種で大小だけ変えている
  */
 export default function Page() {
   return (
@@ -35,180 +45,220 @@ export default function Page() {
       */}
       <Tricks />
 
+      {/* ── 電光掲示板 ─────────────────────────────
+          ページのいちばん上。当時は <body> を開けてすぐ流れる字を置くページが多かった。
+          会社トップは同じ高さのところに青空の帯があるので、こちらはそこを空けて、
+          帯そのものを天のさらに上へ持ってきてある。 */}
+      <Marquee />
+
       {/* ── 天 ───────────────────────────────────
-          本物の home.html の天はこの2つだけ。
-            <h1><img ttl.gif></h1>
-            <p class="blink">あなたは <img 訪問者数> 人目の訪問者です。</p>
-          ロゴは幅を指定せず 773×117 の等倍で置く。ここを縮めると
-          くまの頭が縦長になって、それだけで作り物に見える。 */}
-      <header className="header">
+          会社のどのページにも同じロゴが乗っている。そこは同じにする。
+          本物のトップはこの下に点滅する訪問者カウンターがあるが、
+          こちらは「いまどこを見ているか」の1行にしてある。 */}
+      <header className="header" id="top">
         <h1>
           <a href={HOME}>
-            <img
-              src="/hp/ttl.gif"
-              alt="株式会社こす.くま"
-              width={773}
-              height={117}
-            />
+            <img src="/hp/ttl.gif" alt="株式会社こす.くま" width={773} height={117} />
           </a>
         </h1>
-        <p className="blink">
-          あなたは
-          <Counter />
-          人目の訪問者です。
+        <p className="crumb">
+          <a href={HOME}>トップページ</a>　＞　ふりっぷ一覧
         </p>
       </header>
 
       <main>
         {/*
-          ページ名。本物の下位ページ（/contact/）は本文の頭に中央でページ名を置くので、
-          同じ役どころに同じ置き方でならべる。塗りは heading-flip.png と同じ組
-          （FLIPの話をする見出しはこの色、というのが本物の使い分け）。
+          ページ名。会社HPの下位ページ（/contact/）は本文の頭に題を1つ置いて、
+          その下に朱の3pxの罫を引いている（本物 style.css の #contact #container h1）。
+          同じ作りにして、字だけ見出し画像の組み（WordArt）で出す。
 
-          ★1文字ずつ別の要素にしてある。字送りをそろえるため「一覧」も1字ずつ。
-            ひっくり返す仕掛けの対象は data-flip-index が付いた「ふりっぷ」の4字。
-            つまり querySelectorAll("[data-flip-index]") でちょうど4つ取れる。
+          ★「ふりっぷ」の4字には data-flip-index を付けてある。
+            querySelectorAll("[data-flip-index]") でちょうど4つ。
+            「一覧」の2字には付けないので、仕掛けに巻き込まれない。
         */}
         <h2 className="pagettl">
           {"ふりっぷ".split("").map((c, i) => (
             <span className="ttl-c" data-flip-index={i} key={i}>
-              <Heading variant="cyan" size={84}>
+              <Heading variant="lime" size={72} weight={500}>
                 {c}
               </Heading>
             </span>
           ))}
           {"一覧".split("").map((c) => (
             <span className="ttl-c" key={c}>
-              <Heading variant="cyan" size={84}>
+              <Heading variant="lime" size={72} weight={500}>
                 {c}
               </Heading>
             </span>
           ))}
         </h2>
 
-        <Marquee />
-
-        {/* ── 最新情報 ─────────────────────────── */}
-        <div className="cont01">
-          <div className="cont01_news">
-            <h2>
-              <Heading variant="green" size={42}>
-                新着ふりっぷ
-              </Heading>
-            </h2>
-            <ul>
-              {OPENED.slice(0, 3).map((f) => (
-                <li key={f.slug}>
-                  <a href={f.url} target="_blank" rel="noopener noreferrer">
-                    {jpDate(f.date)}　{f.title}
-                    {NEW_SLUGS.includes(f.slug) ? (
-                      <span className="new">
-                        <img
-                          src="/hp/new.gif"
-                          alt="new"
-                          width={29}
-                          height={17}
-                        />
-                      </span>
-                    ) : null}
-                  </a>
-                </li>
-              ))}
-              <li>
-                ふりっぷは随時ふえていきます。できたらここに書いていきます。
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* ── 空の帯 ───────────────────────────
-            本物と同じ組み。帯の中身は飛行機のGIF1枚だけで、文字は乗せない。
-            padding 80px＋中身135px＝295px。帯がタイル(267px)より高いので、
-            継ぎ目が横に1本出る。その継ぎ目が本物の顔なので、詰めない。 */}
-        <div className="goods">
-          <div className="goods_plane">
-            <div className="goods_plane_body">
-              <img src="/hp/img_plane.gif" alt="" width={600} height={338} />
-            </div>
-          </div>
-        </div>
-
-        <div className="cont02 add_page">
-          {/* ── ふりっぷとは ─────────────────────── */}
-          <section>
-            <div className="inner">
-              <div className="common_heading">
-                <Heading variant="lime" size={87}>
-                  ふりっぷとは
-                </Heading>
-              </div>
-
-              {/* 本物の節の中身は .common_text の見出し1行＋段落。
-                  箱で囲ったり立体の額縁を描いたりはしない。
-                  中の4行はこす.くまの言葉なので一字も変えない */}
-              <div className="common_text">
-                <h3 className="common_title">
-                  {FLIP_DEFINITION.word}
-                  <span className="pos">{FLIP_DEFINITION.pos}</span>
-                </h3>
-                <p className="gloss">{FLIP_DEFINITION.gloss}</p>
-                {FLIP_DEFINITION.body.map((line) => (
-                  <p key={line}>{line}</p>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── 一覧表 ─────────────────────────── */}
-          <section>
-            <div className="inner">
-              <div className="common_heading">
-                <Heading variant="gold" size={87}>
-                  ふりっぷ一覧表
-                </Heading>
-              </div>
-            </div>
-
-            {/* 表と、その前後の注記。本物の会社概要の表と同じで800pxの中央寄せ。
-                注記も同じ幅にそろえてあるので、左端が表とぴったり合う */}
-            <p className="tablenote">
-              ※上から公開順にならべています。番号は随時ふえていきます。
-            </p>
-
-            <FlipTable />
-
-            <p className="tablefoot">
-              ※「準備中」のふりっぷは、まだできていません。公開までしばらくお待ちください。
-              <br />
-              ※行き先のないふりっぷは押せません。
-            </p>
-          </section>
-
-          {/* 巨大な黄色い矢印。本物の事業モデル図（business-img.png）の矢印と同じで、
-              縁は描かず、右下にやわらかい影だけを落とす */}
-          <div className="yarrow" aria-hidden>
-            <i />
-          </div>
-        </div>
-
-        {/* 本物の home.html はここに紫の丸ボタンが1つあるだけ */}
-        <div className="btn_contact">
-          <a href={CONTACT}>
-            <img
-              src="/hp/btn_contact.gif"
-              alt="お問い合わせ"
-              width={100}
-              height={119}
-            />
-          </a>
-        </div>
-        <p className="backlink">
-          <a href={HOME}>株式会社こす.くま トップページへもどる</a>
+        <p className="lead">
+          こす.くまがつくった、小さなあそびと実験のもくじです。
+          <br />
+          <span className="blink">★ふりっぷは随時ふえていきます★</span>
         </p>
+        <p className="lastmod">最終更新：{jpDate(PAGE_MADE)}</p>
+
+        {/* ── もくじ ───────────────────────────────
+            当時のこの役のページには、たいてい頭に「もくじ」があった。
+            箱の罫は会社HPの表と同じ組み（solid 2px yellowgreen ＋ inset）。 */}
+        <nav className="moku">
+          <p className="moku-h">― も く じ ―</p>
+          <ul>
+            <li>
+              <a href="#list">ふりっぷ一覧表</a>（ぜんぶ）
+            </li>
+            <li>
+              <a href="#rireki">更新履歴</a>
+            </li>
+            <li>
+              <a href="#toha">ふりっぷとは</a>
+            </li>
+            <li>
+              <a href="#bg">背景をかえる</a>（4色）
+            </li>
+            <li>
+              <a href="#okuduke">このページについて</a>
+            </li>
+          </ul>
+        </nav>
+
+        {/* ── 一覧表 ───────────────────────────────
+            このページの用はこれなので、いちばん先に置く。 */}
+        <section id="list">
+          {/* このページの用なので、節の見出しはここだけ大きい。
+              色は他の節と同じ深緑（白い縁が付いているので、壁紙を4色どれにかえても読める）。
+              金と水色は薄い壁紙の上で弱くなるので、このページでは使わない */}
+          <h3 className="sec sec--main">
+            <Heading variant="green" size={50}>
+              ふりっぷ一覧表
+            </Heading>
+          </h3>
+
+          <p className="note">
+            ※いまあそべるのは{OPENED.length}本です。これからできるものも、できた順にならべてあります。
+            <br />
+            ※ふりっぷは随時ふえていきますので、番号も下へふえていきます。
+          </p>
+          {/* ならび順のしるし。表がひっくり返ると▼が▲になって、
+              言い方のほうも入れかわる（どちらもここに書いてあって、CSSで出し入れする）。
+              初見では「ふるい順」だけが出ている。 */}
+          <p className="order">
+            ならび<span className="yarrow">▼</span>
+            <span className="order-a">公開日のふるい順</span>
+            <span className="order-b">公開日のあたらしい順</span>
+          </p>
+
+          {/* 表そのもの。cont02 という名前は会社HPの表と同じ役だから合わせてある */}
+          <div className="cont02">
+            <FlipTable />
+          </div>
+
+          <p className="note note--foot">
+            ※<span className="kouji">工事中</span>
+            のふりっぷは、まだできていません。公開までしばらくお待ちください。
+            <br />
+            ※行き先のないふりっぷは押せません（3本あります）。
+            <br />
+            ※あそべるふりっぷは、押すとあたらしい窓でひらきます。
+          </p>
+          {/* 表が長いので、当時の作法どおり節の終わりにもどり道を1つ置く */}
+          <p className="uphere">
+            <a href="#top">▲先頭へ</a>
+          </p>
+        </section>
+
+        {/* ── 更新履歴 ─────────────────────────────
+            日付＋一行。会社HPの最新情報は <ul> だが、こちらは <dl> でならべる。
+            日付の頭の点は会社HPと同じ矢印のGIF。 */}
+        <section id="rireki">
+          <h3 className="sec">
+            <Heading variant="green" size={36}>
+              更新履歴
+            </Heading>
+          </h3>
+
+          <dl className="rireki">
+            {HISTORY.map((log, i) => (
+              <div className="rireki-row" key={`${log.date}-${i}`}>
+                <dt>{jpDate(log.date)}</dt>
+                <dd>
+                  {log.text}
+                  {i < 2 ? (
+                    <span className="new">
+                      <img src="/hp/new.gif" alt="new" width={29} height={17} />
+                    </span>
+                  ) : null}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="note">※あたらしいものが上です。古い分もぜんぶ残しています。</p>
+        </section>
+
+        {/* ── ふりっぷとは ───────────────────────────
+            用語のせつめい。当時は表を1マスだけ使って本文を囲うのがふつうだった。
+            中の4行はこす.くまの言葉なので一字も変えない。 */}
+        <section id="toha">
+          <h3 className="sec">
+            <Heading variant="green" size={36}>
+              ふりっぷとは
+            </Heading>
+          </h3>
+
+          <table className="def">
+            <tbody>
+              <tr>
+                <td>
+                  <p className="def-word">
+                    {FLIP_DEFINITION.word}
+                    <span className="def-pos">{FLIP_DEFINITION.pos}</span>
+                  </p>
+                  <p className="def-gloss">{FLIP_DEFINITION.gloss}</p>
+                  {FLIP_DEFINITION.body.map((line) => (
+                    <p key={line}>{line}</p>
+                  ))}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        {/* ── 背景をかえる ───────────────────────── */}
+        <section id="bg">
+          <h3 className="sec">
+            <Heading variant="green" size={36}>
+              背景をかえる
+            </Heading>
+          </h3>
+          <BgPicker />
+        </section>
+
+        {/* ── 奥付 ─────────────────────────────── */}
+        <div className="okuduke" id="okuduke">
+          <p className="okuduke-h">― このページについて ―</p>
+
+          <Counter />
+
+          <p>
+            このページはリンクフリーです。ご自由にはってください。
+            <br />
+            <span className="mutual">相互リンク募集中！</span>
+            ご感想は
+            <a href={CONTACT}>お問い合わせ</a>
+            からどうぞ。
+          </p>
+
+          <p className="back">
+            <a href="#top">▲このページの先頭へもどる</a>
+          </p>
+          <p className="back">
+            <a href={HOME}>▲株式会社こす.くま トップページへもどる</a>
+          </p>
+        </div>
       </main>
 
-      {/* ── 奥付 ───────────────────────────────
-          本物の奥付は2行だけ。罫線も更新日も下の余白も無い */}
       <footer className="footer">
         <p className="caution">無断転載・コピー等を禁止いたします。</p>
         <span className="copy">Copyright © kosukuma, Inc.</span>

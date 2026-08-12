@@ -1,15 +1,21 @@
 /* ふりっぷ一覧
- * ---------------------------------------------------------------
- * これは株式会社こす.くまのホームページ（kosukuma.com）の1ページ。
- * だから見た目は本物の /assets/css/style.css と /assets/css/home.css から
- * そのまま採っている。セレクタの名前も本物に合わせてあるので、
- * 本物のCSSと並べて読めば、どこを写したのかがそのまま分かる。
+ * ================================================================
+ * 株式会社こす.くまのホームページ（kosukuma.com）の中の1ページ。
+ * ただしトップページの写しではなく、「もくじ／リンク集」の役のページ。
  *
- *   本物 style.css   … 壁紙 / GIFのカーソル / 青いリンク / .blink
- *   本物 home.css    … #home の中身・.marquee・.cont01_news・.cont02 の表
+ * ── 同じ会社のページである印（本物の /assets/css/style.css・home.css から採ったもの）
+ *     壁紙 bg.gif ／ GIFのカーソル2枚 ／ a{color:blue} の下線リンク ／ .blink の点滅
+ *     text-align:center の版面 ／ 表の罫 solid 2px yellowgreen ＋ border-style:inset
+ *     箇条書きの点 arrow_list.gif ／ 下位ページの題に引く朱の3pxの罫
+ *     書体は指定しない（本物も body に font-family を1つも書いていない）
+ *     余白は詰めない。空きすぎているのが本物の顔
  *
- * 書体は特別なものを使わない。OSのゴシックと -webkit-font-smoothing:none。
- * そこが「昔のホームページ」の顔なので、Webフォントは1つも読み込まない。
+ * ── このページだけのもの
+ *     もくじの箱 ／ 黒地に山吹の電光掲示板 ／ 更新履歴の <dl>
+ *     用語を1マスの表で囲うせつめい ／ 壁紙の見本 ／ 奥付のカウンター
+ *
+ * 立体はCSSで描かない。本物にその発想が1つも無い（立体はぜんぶGIF）。
+ * ここで使っている枠は、本物と同じ border-style:inset だけ。
  */
 
 /* ── リセット（本物 style.css の頭と同じ） ───────────────── */
@@ -22,6 +28,7 @@ blockquote,
 body,
 dd,
 dl,
+dt,
 figure,
 h1,
 h2,
@@ -32,6 +39,9 @@ p,
 table,
 ul {
   margin: 0;
+}
+html {
+  scroll-behavior: smooth;
 }
 img {
   max-width: 100%;
@@ -62,10 +72,9 @@ body {
   /* 字を滑らかにしない。ここが2003年の顔 */
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: none;
-  /* 書体は指定しない。本物 style.css も body に font-family を1つも書いていないので、
+  /* 書体は書かない。本物 style.css も body に font-family を1つも書いていないので、
      ブラウザの既定（macOSの和文なら Hiragino Kaku Gothic ProN）がそのまま出る。
-     ここに "Hiragino Sans" と書くと今どきの細い顔になり、本物と別の書体になる。
-     本文の段落だけは本物が Hiragino Sans W1 を明示しているので、そこは下で指定する。 */
+     ここに今どきの書体名を書くと、それだけで2020年代のページになる。 */
   font-size: 16px;
   color: #000;
 }
@@ -93,9 +102,9 @@ a {
   }
 }
 
-/* ── 本物 home.css の #home ──────────────────────────
-   壁紙は本物と同じ bg.gif（150pxのタイルにこすくまが薄く入っている）。
-   そして全部まんなか寄せ。ここが効いていて、何を置いても本物に見える。 */
+/* ── 版面 ──────────────────────────────────────
+   壁紙は会社HPと同じ bg.gif（150pxのタイルにこすくまが薄く入っている）。
+   そして全部まんなか寄せ。ここが効いていて、何を置いても同じ会社に見える。 */
 #home {
   background: url(/hp/bg.gif);
   text-align: center;
@@ -103,28 +112,30 @@ a {
 #home img {
   margin: auto;
 }
-/* 本物 home.html の中に直書きされている .inner。width ではなく max-width */
-.inner {
-  max-width: 1000px;
-  margin: 0 auto;
-  text-align: left;
+
+/* 壁紙をかえる。既定（クリーム）は上の bg.gif のまま。
+   えらんだ色は body の data-fl-bg に入る（BgPicker.tsx） */
+#home[data-fl-bg="mint"] {
+  background-image: url(/hp/bg_mint.gif);
+}
+#home[data-fl-bg="sky"] {
+  background-image: url(/hp/bg_sky.gif);
+}
+#home[data-fl-bg="peach"] {
+  background-image: url(/hp/bg_peach.gif);
 }
 
-/* ── 見出し ─────────────────────────────────────
- * 見出しの作画は src/components/retro/WordArt.tsx が持っている
- * （本物の見出し画像4枚を画素で測って組んだもの。.wa というクラスを出す）。
- * ここに書くのは、その見出しをページのどこに何px で置くか、だけ。
- */
+/* 本文の幅。本物の #container・.cont01 が1000px、表が800pxなので、そのあいだ */
+#home main {
+  padding-bottom: 10px;
+}
 
 /* ── 天 ────────────────────────────────────────
-   本物 home.css の header をそのまま。
-     #home .header{margin:50px auto 0}
-     #home .header p{margin-top:40px;font-weight:bold}
-   中身は h1 のロゴ1枚と、点滅する訪問者カウンターの1行だけ。他には何も無い。
-   ロゴは 773×117 の等倍。幅を切ると縦横比がくずれるので、
-   狭い窓で max-width が効いたときのために height:auto を添えておく。 */
+   ロゴは 773×117 の等倍。会社のどのページにも同じものが同じ大きさで乗っている。
+   本物のトップはこの下が点滅する訪問者カウンターだが、
+   こちらは「いまどこにいるか」の1行。カウンターは奥付に置いてある。 */
 #home .header {
-  margin: 50px auto 0;
+  margin: 44px auto 0;
 }
 #home .header h1 {
   line-height: 1;
@@ -132,81 +143,76 @@ a {
 #home .header h1 img {
   height: auto;
 }
-#home .header p {
-  margin-top: 40px;
-  font-weight: bold;
+#home .crumb {
+  margin-top: 22px;
+  font-size: 13px;
 }
 
-/* ページ名。本物の下位ページ（本物 style.css の #contact #container h1）と同じ役で、
-   本文のいちばん上に中央で置く。1文字ずつ別の要素にしてあるのは、
-   あとで1字ずつひっくり返せるようにするため */
+/* ── ページ名 ───────────────────────────────────
+   本物の下位ページ（本物 style.css の #contact #container h1）は、
+   題の下に朱の3pxの罫を引いている。その作りをそのままもらう。
+   字は見出し画像の組み（WordArt.tsx）で出す。
+   1字ずつ別の要素にしてあるのは、あとで1字ずつひっくり返せるようにするため。 */
 #home .pagettl {
-  margin: 80px 0 0;
+  width: 900px;
+  max-width: 100%;
+  margin: 56px auto 0;
+  padding-bottom: 10px;
+  border-bottom: solid 3px orangered;
   line-height: 1;
 }
+/* 1字ずつ別の要素。WordArt は字面を横に1.093倍しているので、
+   そのままならべると隣とくっつく。2pxずつ逃がしておく */
 #home .pagettl .ttl-c {
   display: inline-block;
+  margin: 0 3px;
 }
 
-/* CGIのカウンター。本物は /count/npc.cgi が返す 80×16 の5桁のGIFを
-   height:30px・青の3px枠で出している（本物 home.css の #home .header p img）。
-   つまり16pxの絵を24pxに1.5倍している。だから数字は箱いっぱいで、太くて、ぼけている。
-   枠と桁数はそのまま写し、1.5倍のにじみは横に伸ばしてわずかにぼかして作る。 */
-.count {
-  display: inline-block;
-  vertical-align: middle;
-  height: 30px;
-  border: solid 3px blue;
-  background: #000;
-  margin: 0 4px;
-  line-height: 0;
-  white-space: nowrap;
-}
-.count b {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
-  font-family: "Osaka-Mono", "MS Gothic", monospace;
-  /* 16pxの絵を24pxに引き伸ばした太さ。字が箱いっぱいになる級数にして、
-     引き伸ばしのにじみをわずかなぼかしで作る */
-  font-size: 31px;
+#home .lead {
+  margin-top: 22px;
   font-weight: bold;
-  color: #fff;
-  text-align: center;
-  filter: blur(0.4px);
 }
-/* 本物のGIFにも桁の区切りの細い縦線が入っている */
-.count b + b {
-  border-left: 1px solid #555;
+#home .lead .blink {
+  color: #c00000;
+}
+#home .lastmod {
+  margin-top: 8px;
+  font-size: 13px;
 }
 
-/* ── 電光掲示板（本物 home.css の .marquee をそのまま） ─────── */
+/* ── 電光掲示板 ──────────────────────────────────
+   ページのいちばん上。会社トップは同じ高さのところに青空の帯があるので、
+   こちらはそこを空けて、帯を天のさらに上へ持ってきてある。
+   本物の .marquee からもらっているのは「帯の中を字が右から左へ流れる」ことと、
+   「中の <span> だけ色をかえて下線を引く」ところと、点線の枠を使うところだけ。
+   面は紺地に黄で、当時の <marquee bgcolor=navy> のいちばんありふれた組み合わせ。
+   掴んで引っぱると裏返る（下の「仕掛け」の節）。 */
 #home .marquee {
-  /* 本物は幅の指定がない＝窓いっぱい。同じにする */
-  margin: 30px 0 0;
-  font-weight: bold;
-  font-size: 50px;
-  color: green;
-  background: yellow;
-  font-style: italic;
-  border: dotted 3px orangered;
+  height: 56px;
   overflow: hidden;
   position: relative;
-  height: 80px;
+  background: #000080;
+  border-bottom: dotted 4px #ffff00;
+  font-weight: bold;
+  font-size: 28px;
+  color: #ffff00;
+  letter-spacing: 2px;
 }
 #home .marquee p {
   white-space: nowrap;
   width: fit-content;
   position: absolute;
   left: 0;
-  /* 本物は jQuery で流している。ここはCSSで同じ動きにした。
+  top: 0;
+  height: 52px;
+  line-height: 52px;
+  /* 昔は jQuery や <marquee> で流していた。ここはCSSで同じ動きにする。
      負の delay を入れてあるのは、開いた瞬間から流れている途中に見せるため */
-  animation: marquee 15s linear infinite;
-  animation-delay: -6.6s;
+  animation: marquee 26s linear infinite;
+  animation-delay: -11s;
 }
 #home .marquee span {
-  color: blue;
+  color: #ffffff;
   text-decoration: underline;
 }
 @keyframes marquee {
@@ -218,182 +224,111 @@ a {
   }
 }
 
-/* ── 最新情報（本物 home.css の .cont01_news をそのまま） ──────
-   本物の .cont01 は下に100pxあける。この「間の空きすぎ」が本物の顔なので詰めない。 */
-#home .cont01 {
-  width: 1000px;
-  margin: 50px auto 100px;
+/* ── もくじ ─────────────────────────────────────
+   当時のリンク集・もくじのページには、たいてい頭にこれがあった。
+   箱の罫は本物の表と同じ組み（solid 2px yellowgreen を inset にする）。 */
+#home .moku {
+  width: 440px;
+  max-width: 100%;
+  margin: 50px auto 0;
+  padding: 12px 22px 16px;
+  background: #ffffff;
+  border: solid 2px yellowgreen;
+  border-style: inset;
   text-align: left;
 }
-@media screen and (max-width: 1000px) {
-  #home .cont01 {
-    width: 100%;
-  }
+#home .moku-h {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 8px;
 }
-#home .cont01_news ul {
-  margin: 20px 0 0;
-  text-align: left;
-}
-/* 箇条書きの点が矢印GIF。本物の指定は padding と矢印の位置だけで、
-   級数も太さも行送りも指定が無い（＝body ゆずりの16px・通常・1.5）。
-   矢印の top 10px はその行箱に合わせた数字なので、級数はいじらない */
-#home .cont01_news ul li {
+/* 箇条書きの点は本物と同じ矢印のGIF。padding と位置の数字も本物のまま
+   （本物 home.css の #home .cont01_news ul li） */
+#home .moku li {
   padding-left: 20px;
   background: url(/hp/arrow_list.gif) no-repeat;
   background-position: left top 10px;
 }
-#home .cont01_news ul li .new img {
-  display: inline;
-  margin: 0 0 0 4px;
-  vertical-align: middle;
-}
 
-/* ── 空の帯（本物 home.css の .goods / .goods_plane をそのまま） ────
-   #home .goods{padding:100px 0} / .goods_plane{padding:80px 0}
-   .goods_plane_body{width:240px;height:auto;animation:airplane 2.5s linear infinite}
-   飛行機は 600×338 を240pxで出すので135px。帯は 80+135+80＝295px になり、
-   タイル（bg03.png は267px）より高いので、帯の中に横の継ぎ目が1本出る。
-   その継ぎ目が本物の顔なので、高さを詰めて隠したりしない。 */
-#home .goods {
-  padding-top: 100px;
-  padding-bottom: 100px;
-}
-#home .goods_plane {
-  background: url(/hp/bg03.png);
-  padding-top: 80px;
-  padding-bottom: 80px;
-  overflow: hidden;
-}
-/* 本物は飛行機のGIFが10段跳びで横断していく。同じ keyframes・同じ速さ */
-#home .goods_plane_body {
-  width: 240px;
-  height: auto;
-  animation: airplane 2.5s linear infinite;
-  animation-delay: -0.6s;
-}
-#home .goods_plane_body img {
-  height: auto;
-}
-@keyframes airplane {
-  0%,
-  10% {
-    transform: translateX(0%);
-  }
-  10.1%,
-  20% {
-    transform: translateX(10vw);
-  }
-  20.1%,
-  30% {
-    transform: translateX(20vw);
-  }
-  30.1%,
-  40% {
-    transform: translateX(30vw);
-  }
-  40.1%,
-  50% {
-    transform: translateX(40vw);
-  }
-  50.1%,
-  60% {
-    transform: translateX(50vw);
-  }
-  60.1%,
-  70% {
-    transform: translateX(60vw);
-  }
-  70.1%,
-  80% {
-    transform: translateX(70vw);
-  }
-  80.1%,
-  90% {
-    transform: translateX(80vw);
-  }
-  90.1%,
-  to {
-    transform: translateX(90vw);
-  }
-}
-
-/* ── 本文（本物 home.html に直書きされている .add_page / .common_* ）─────
-   section{padding:64px 16px} / .common_heading{max-width:720px;width:100%;margin:0 0 48px}
-   見出しの塗りの高さは、本物では .common_heading の 720px が決めている。
-   heading-company.png は 80px、heading-flip.png は 75px（実測）。
-   ここは画像ではなく字で組んでいるので、同じ塗りの高さになる級数を渡している。 */
+/* ── 節 ────────────────────────────────────────
+   本物の section は padding:64px 16px。余白は詰めない。 */
 #home section {
-  padding: 64px 16px;
+  padding: 64px 16px 0;
 }
-#home .common_heading {
-  max-width: 720px;
-  width: 100%;
-  margin: 0 0 48px;
-  display: block;
+/* 節の見出し。本物のトップは4色の見出しを大小使い分けているが、
+   こちらは小さい緑（最新情報のGIFと同じ組み）の一種でそろえてある。
+   まんなか寄せなのも、左端にそろえる本物の .common_heading とは別。 */
+#home .sec {
+  margin: 0 0 24px;
   line-height: 1;
 }
-#home .add_page p {
-  /* 本文の書体・大きさ・行間は本物の指定をそのまま写した */
-  font-family: "Hiragino Sans W1", "Hiragino Sans", "Hiragino Kaku Gothic ProN",
-    "Hiragino Kaku Gothic Pro", "MS PGothic", sans-serif;
-  font-size: 20px;
-  margin-bottom: 32px;
-}
-#home .common_text p:last-child {
-  margin-bottom: 0;
-}
-#home .common_title {
-  font-size: 28px;
-  margin-bottom: 20px;
-}
-/* 見出し行のうしろに付く品詞。本物の .common_title と同じ28pxの行の中に置く */
-#home .common_title .pos {
-  font-size: 18px;
-  font-weight: normal;
-  margin-left: 4px;
-}
-/* 語釈の1行。#home を頭に付けているのは #home .add_page p の指定に勝たせるため */
-#home .add_page p.gloss {
-  color: #c00000;
-  font-weight: bold;
+/* 一覧表の見出しだけ大きい。ページの用がそれだから */
+#home .sec--main {
+  margin-bottom: 30px;
 }
 
-/* ── 一覧の表（本物 home.css の .cont02 table をそのまま） ──────
-   #home .cont02{margin:30px auto 0;padding:20px 0 10px 0}
-   table{width:800px;margin:auto} / th,td{border:solid 2px yellowgreen;border-style:inset;
-   background:#fff} th は中央・td は左。それだけ。
-   ・色を敷いた見出し行は本物の表に無い（あのオレンジはお問い合わせの項目名の色）
-   ・セルの余白の指定も無い（＝UA既定の1px）
-   罫だけは本物と1ずつも違わないので、ここは触らない。 */
+/* 注記・ならび順の1行。表と同じ幅にそろえてあるので左端がぴったり合う */
+#home .note {
+  width: 900px;
+  max-width: 100%;
+  margin: 0 auto 10px;
+  text-align: left;
+  font-size: 13px;
+}
+#home .note--foot {
+  margin: 12px auto 0;
+}
+#home .order {
+  width: 900px;
+  max-width: 100%;
+  margin: 0 auto 6px;
+  text-align: right;
+  font-size: 13px;
+}
+/* 長い節の終わりに置くもどり道。当時の作法 */
+#home .uphere {
+  width: 900px;
+  max-width: 100%;
+  margin: 14px auto 0;
+  text-align: right;
+  font-size: 13px;
+}
+/* ならび順のしるし。flip と打つと上を向く（下の「仕掛け」の節）。
+   ※ class の名前は tools/tricks.mjs が見ているので変えない */
+#home .yarrow {
+  display: inline-block;
+  margin: 0 3px;
+  color: #c00000;
+  font-size: 15px;
+}
+
+/* ── 一覧表 ─────────────────────────────────────
+   罫は本物の表そのまま（本物 home.css の #home .cont02 table）。
+     border: solid 2px yellowgreen / border-style: inset / background: #fff
+     th はまんなか・td は左、border-collapse は指定しない
+     セルの余白の指定も無い（＝UA既定の1px）。だから字が罫にくっつく
+   ここは同じ会社のページである印なので1つも変えない。 */
 #home .cont02 {
-  margin: 30px auto 0;
-  padding: 20px 0 10px;
+  margin: 0 auto;
 }
 #home .cont02 table {
-  width: 800px;
+  width: 900px;
+  max-width: 100%;
   margin: auto;
-  /* border-collapse は本物と同じで指定しない。
-     セルが1つずつ立体の枠を持つ、あの見え方になる */
-}
-@media screen and (max-width: 1000px) {
-  #home .cont02 table {
-    width: 100%;
-  }
 }
 #home .cont02 table th {
   border: solid 2px yellowgreen;
   border-style: inset;
-  background: #fff;
+  background: #ffffff;
   text-align: center;
 }
 #home .cont02 table td {
   border: solid 2px yellowgreen;
   border-style: inset;
-  background: #fff;
+  background: #ffffff;
   text-align: left;
   vertical-align: top;
 }
-/* 見出しの行。白地に黒の太字で中央（本物の th と同じ） */
 #home .cont02 table th.head {
   font-weight: bold;
 }
@@ -403,104 +338,242 @@ a {
   font-weight: bold;
 }
 .t-ttl {
-  width: 196px;
+  width: 208px;
+}
+#home .cont02 table td.t-ttl a,
+#home .cont02 table td.t-ttl .nolink {
+  font-weight: bold;
+}
+/* 行き先のないもの。押せないので灰色にしておく */
+#home .cont02 table td.t-ttl .nolink {
+  color: #666666;
 }
 .t-date {
-  width: 106px;
+  width: 108px;
   text-align: center !important;
   white-space: nowrap;
 }
 /* 担当は人の名前なので折らない */
 .t-own {
-  width: 74px;
+  width: 70px;
   text-align: center !important;
   white-space: nowrap;
 }
 .t-state {
-  width: 62px;
+  width: 74px;
   text-align: center !important;
+}
+.t-state .open {
+  font-weight: bold;
+  color: green;
+}
+
+/* 工事中の札。当時はGIFのマークを貼っていたが手元に無いので、
+   字と罫だけで作る。黄色地に黒枠、それだけ */
+.kouji {
+  display: inline-block;
+  border: solid 2px #000000;
+  background: #ffff00;
+  color: #000000;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 15px;
+  padding: 0 3px;
+  white-space: nowrap;
+}
+
+/* ── 更新履歴 ────────────────────────────────────
+   日付＋一行。本物の最新情報は <ul> だが、こちらは <dl> を float でならべる。
+   日付の頭の点は本物と同じ矢印のGIF。 */
+#home .rireki {
+  width: 900px;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: left;
+}
+#home .rireki-row {
+  overflow: hidden;
+}
+#home .rireki dt {
+  float: left;
+  clear: left;
+  width: 200px;
+  padding-left: 20px;
+  background: url(/hp/arrow_list.gif) no-repeat;
+  background-position: left top 10px;
   font-weight: bold;
 }
-#home .cont02 table td.t-ttl a,
-#home .cont02 table td.t-ttl span.soon {
-  font-weight: bold;
+#home .rireki dd {
+  margin: 0 0 2px 200px;
 }
-#home .cont02 table td.t-ttl span.soon {
-  color: #555;
-}
-#home .cont02 table td .new img {
+#home .rireki dd .new img {
   display: inline;
   margin-left: 4px;
   vertical-align: middle;
 }
-.state-open {
-  color: green;
+
+/* ── ふりっぷとは ──────────────────────────────
+   当時は本文を囲うのに表を1マスだけ使った。罫は本物の表と同じ組み。
+   中の4行はこす.くまの言葉なので、字も並びもいっさい触っていない。 */
+#home .def {
+  width: 760px;
+  max-width: 100%;
+  margin: 0 auto;
 }
-.state-soon {
+#home .def td {
+  border: solid 2px yellowgreen;
+  border-style: inset;
+  background: #ffffff;
+  text-align: left;
+  padding: 20px 26px 22px;
+  font-size: 17px;
+}
+#home .def-word {
+  font-size: 22px;
+  font-weight: bold;
+}
+#home .def-pos {
+  font-size: 14px;
+  font-weight: normal;
+  margin-left: 4px;
+}
+#home .def-gloss {
+  color: #c00000;
+  font-weight: bold;
+  margin: 10px 0 16px;
+}
+#home .def td p {
+  margin-bottom: 4px;
+}
+#home .def td p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── 背景をかえる ────────────────────────────────
+   小さな見本を字と同じ行にならべる。色を塗った四角ではなく、
+   壁紙そのもの（150pxのタイル）を小さな窓から覗かせている。
+   当時の「背景色をかえる」はこの形（小さな四角＋色の名前が1行）だった。 */
+#home .bgpick-lead {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+#home .bgpick-row {
+  line-height: 2;
+}
+#home .bgpick-one {
+  white-space: nowrap;
+  text-decoration: none;
+}
+#home .bgpick-one i {
+  display: inline-block;
+  width: 40px;
+  height: 26px;
+  margin-right: 5px;
+  vertical-align: -8px;
+  border: solid 2px #000000;
+}
+#home .bgpick-one b {
+  font-weight: normal;
+  text-decoration: underline;
+}
+/* 見本と見本のあいだの区切り。当時のリンク集の作法 */
+#home .bgpick-bar {
+  margin: 0 12px;
+  color: #666666;
+}
+/* ★の場所。いつも取ってあって、いまの色のときだけ見える。
+   （出し入れすると押すたびに行の幅がかわってずれる） */
+#home .bgpick-star {
+  font-style: normal;
+  color: #c00000;
+  visibility: hidden;
+}
+/* いまの色。枠を朱にして、名前の頭に★が付く。
+   太さは変えない（太くすると字幅がかわって、やはり行がずれる） */
+#home .bgpick-one.is-now i {
+  border-color: orangered;
+}
+#home .bgpick-one.is-now .bgpick-star {
+  visibility: visible;
+}
+#home .bgpick-one.is-now b {
   color: #c00000;
 }
-/* 表の前後の注記。表と同じ800pxにそろえてあるので、左端が表とぴったり合う。
-   セレクタを長くしてあるのは #home .add_page p の20pxに勝たせるため */
-#home .add_page p.tablenote {
-  width: 800px;
-  max-width: 100%;
-  margin: 0 auto 12px;
-  text-align: left;
-  font-size: 16px;
-}
-#home .add_page p.tablefoot {
-  width: 800px;
-  max-width: 100%;
-  margin: 14px auto 0;
-  text-align: left;
-  font-size: 16px;
+#home .bgpick-note {
+  margin-top: 16px;
+  font-size: 13px;
 }
 
-/* ── 巨大な黄色い矢印 ─────────────────────────────
-   本物の事業モデル図（business-img.png）の矢印は、縁を持たない塗りだけの形で、
-   右下にやわらかい影が落ちている。同じ作りにする（縁は描かない） */
-.yarrow {
-  width: 150px;
-  height: 116px;
-  position: relative;
-  margin: 34px auto 10px;
+/* ── 奥付 ──────────────────────────────────────
+   カウンター・リンクフリー・相互リンク・もどり道。
+   当時の個人ページのカウンターはたいていここにあった。 */
+#home .okuduke {
+  margin-top: 84px;
 }
-.yarrow i {
-  position: absolute;
-  display: block;
-  inset: 0;
-  background: #ffff00;
-  clip-path: polygon(
-    33% 0,
-    67% 0,
-    67% 50%,
-    100% 50%,
-    50% 100%,
-    0 50%,
-    33% 50%
-  );
-  filter: drop-shadow(5px 6px 4px rgba(86, 84, 76, 0.45));
+#home .okuduke-h {
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+#home .okuduke p {
+  margin-bottom: 12px;
+}
+#home .mutual {
+  font-weight: bold;
+  color: #c00000;
+}
+#home .back {
+  margin-top: 18px;
+  margin-bottom: 0;
+  font-size: 14px;
 }
 
-/* ── ボタン（本物 home.css の .btn_contact をそのまま） ────────
-   本物の同じ位置にあるのは btn_contact.gif（紫の丸ボタン）1枚だけ。
-   立体はCSSで描かない。本物は立体が必要なところは全部GIF。 */
-#home .btn_contact {
-  margin-top: 30px;
-  text-align: center;
+/* カウンター。会社HPのトップは天に1つ、黒地に白い数字・青の3px枠・5桁の
+   CGI画像（本物 home.css の #home .header p img）。
+   こちらは桁を1枚ずつの絵で返すCGIのほうに寄せて、白地・黒枠の小さな箱を
+   6つならべる。桁も6桁にした。 */
+#home .hit {
+  font-weight: bold;
 }
-#home .btn_contact a {
+.count {
   display: inline-block;
+  vertical-align: middle;
+  margin: 0 6px;
+  line-height: 0;
+  white-space: nowrap;
 }
-/* もどり道は昔のHPと同じ、ただの青い下線リンク1行 */
-#home .backlink {
-  margin-top: 24px;
+.count b {
+  display: inline-block;
+  width: 20px;
+  height: 26px;
+  line-height: 24px;
+  margin-right: 1px;
+  border: solid 1px #000000;
+  background: #ffffff;
+  font-family: "Osaka-Mono", "MS Gothic", monospace;
+  font-size: 19px;
+  font-weight: bold;
+  color: #000000;
   text-align: center;
 }
+.count b:last-child {
+  margin-right: 0;
+}
+#home .hit-sub {
+  font-size: 13px;
+}
+#home .hit-sub .count {
+  margin: 0 3px;
+}
+.count--s b {
+  width: 15px;
+  height: 20px;
+  line-height: 18px;
+  font-size: 14px;
+}
 
-/* ── 奥付（本物 style.css の .footer をそのまま） ─────────────
-   .footer{padding-top:100px;text-align:center} と .footer p.caution{margin-bottom:10px}
-   だけ。本物の奥付は2行しか無い（罫線も更新日も下の余白も無い）。 */
+/* ── ページのいちばん下（本物 style.css の .footer をそのまま） ─────
+   .footer{padding-top:100px;text-align:center} と
+   .footer p.caution{margin-bottom:10px} だけ。罫線も下の余白も無い。 */
 .footer {
   padding-top: 100px;
   text-align: center;
@@ -514,38 +587,47 @@ a {
 
 /* ── 狭い窓のとき ───────────────────────────────
    本物のHPも @media screen and (max-width:480px) を持っていて、
-   そこでは箱を width:100% にして、50pxの見出しを30pxに落としている
-   （本物 style.css の #contact #container h1）。同じことをする。
-   なお携帯では viewport が 1200px 固定なので、ここは通らない。
-   通るのは窓を細くした場合だけ（本物のHPと同じ挙動）。 */
-@media screen and (max-width: 480px) {
-  .inner,
-  #home .cont01,
+   そこでは箱を width:100% にして、50pxの題を30pxに落としている。
+   なお携帯では viewport が1200px固定なので、ここは通らない。
+   通るのは窓を細くしたときだけ（本物のHPと同じ挙動）。 */
+@media screen and (max-width: 1000px) {
+  #home .pagettl,
+  #home .note,
+  #home .order,
+  #home .rireki,
   #home .cont02 table {
     width: 100%;
   }
+  #home .def {
+    width: 100%;
+  }
+}
+@media screen and (max-width: 480px) {
   #home .header {
     margin-top: 20px;
   }
   #home .pagettl {
-    margin-top: 40px;
+    margin-top: 30px;
   }
   #home .pagettl .wa {
-    font-size: 34px !important;
+    font-size: 30px !important;
   }
   #home .marquee {
-    font-size: 26px;
-    height: 46px;
+    height: 38px;
+    font-size: 18px;
+  }
+  #home .marquee p {
+    height: 30px;
+    line-height: 30px;
   }
   #home section {
-    padding: 32px 16px;
+    padding: 34px 12px 0;
   }
-  #home .add_page p {
-    font-size: 17px;
-    margin-bottom: 22px;
+  #home .sec .wa {
+    font-size: 26px !important;
   }
-  #home .common_title {
-    font-size: 18px;
+  #home .moku {
+    width: 100%;
   }
   #home .cont02 table th,
   #home .cont02 table td {
@@ -562,46 +644,55 @@ a {
     white-space: normal;
   }
   .t-own {
-    width: 48px;
-  }
-  .t-state {
     width: 46px;
   }
-  .common_heading .wa {
-    font-size: 34px !important;
+  .t-state {
+    width: 48px;
   }
-  #home .add_page p.tablenote,
-  #home .add_page p.tablefoot {
-    width: 100%;
-    font-size: 13px;
+  #home .rireki dt {
+    float: none;
+    width: auto;
+  }
+  #home .rireki dd {
+    margin-left: 20px;
+  }
+  #home .def td {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+  #home .bgpick-one {
+    width: 74px;
+    margin: 0 2px;
+  }
+  #home .bgpick-one i {
+    width: 62px;
+    height: 40px;
   }
 }
 
 /* ── 仕掛け ─────────────────────────────────────
- * このページには「ひっくり返す」しかけが3つ隠してある（src/components/retro/Tricks.tsx）。
+ * このページには「ひっくり返す」しかけが3つ隠してある
+ * （src/components/retro/Tricks.tsx。あちらは class を足し引きするだけ）。
  *
  *   1 ページ名「ふりっぷ」を1字ずつ押す   → 4字そろうとページごと天地が逆さ
  *   2 キーボードで flip と打つ             → 一覧表が上下ひっくり返る
- *   3 電光掲示板を掴んで引っぱる           → 看板が裏返って逆から流れる
+ *   3 電光掲示板を掴んで引っぱる           → 掲示板が裏返って逆から流れる
  *
  * 起こることは3つとも scaleY(-1) だけ。ほかの手は使っていない。
  * どれも body にクラスが付いてから効くので、見つけていない人の版面は動かない。
- * 間は補間しない（昔のHPはGIFを差し替えるだけで、途中の絵を持たない）。
- * 一瞬だけ補間しているのは、1字が返るときと表が閉じるときで、
- * それも「動きを減らす」設定では切る。
  */
 
 /* ── 仕掛け1 ──────────────────────────────────── */
 
 /* 押せる気配。リンクと同じGIFのカーソルに変わるだけ。説明は出さない */
-#home .ttl-c[data-flip-index] {
+#home .pagettl .ttl-c[data-flip-index] {
   cursor: url(/hp/cursor_on.gif), pointer;
   /* 何度も押すところなので、字が選ばれて青くならないようにしておく */
   -webkit-user-select: none;
   user-select: none;
   transition: transform 0.18s linear;
 }
-#home .ttl-c[data-flip-index].is-upsidedown {
+#home .pagettl .ttl-c[data-flip-index].is-upsidedown {
   transform: scaleY(-1);
 }
 
@@ -610,8 +701,8 @@ a {
   transform: scaleY(-1);
   transform-origin: 50% 50%;
 }
-/* 壁紙も別シリーズの色に変わる。#home を頭に付けているのは、
-   上の #home{background:url(/hp/bg.gif)} に勝たせるため */
+/* 壁紙も次の色に回る。#home に class と属性を重ねてあるので、
+   上の #home{background:url(bg.gif)} にも #home[data-fl-bg] にも勝つ */
 #home.fl-upside[data-fl-wall="mint"] {
   background-image: url(/hp/bg_mint.gif);
 }
@@ -625,7 +716,7 @@ a {
 /* ── 仕掛け2 ──────────────────────────────────── */
 
 /* 行の入れ替えはJSがやる。ここは「ぺたんと閉じて、また開く」ひと呼吸と、
-   表の下にある巨大な黄色い矢印の向きだけ */
+   ならび順のしるし（▼）の向きだけ */
 #home .cont02 table,
 #home .yarrow {
   transition: transform 0.22s linear;
@@ -635,6 +726,16 @@ a {
 }
 #home.fl-order .yarrow {
   transform: scaleY(-1);
+}
+/* ならび順の言い方も入れかわる。初見では「ふるい順」だけが出ている */
+#home .order-b {
+  display: none;
+}
+#home.fl-order .order-a {
+  display: none;
+}
+#home.fl-order .order-b {
+  display: inline;
 }
 
 /* ── 仕掛け3 ──────────────────────────────────── */
@@ -665,7 +766,7 @@ a {
 /* ── 動きを減らす設定のとき ───────────────────────
    間を補間しない。起きること（返る・裏返る・並びが逆になる）は同じまま残す。 */
 @media (prefers-reduced-motion: reduce) {
-  #home .ttl-c[data-flip-index],
+  #home .pagettl .ttl-c[data-flip-index],
   #home .cont02 table,
   #home .yarrow,
   #home .marquee {

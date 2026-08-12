@@ -21,6 +21,12 @@ export type HeadingProps = {
   variant?: HeadingVariant;
   /** 字の高さ(px) */
   size?: number;
+  /**
+   * 字の太さ。省略すると手本の画像どおり。
+   * 手本の cyan は 300（heading-flip.png の実測）で、あれは 75px の大きな見出し用。
+   * それより小さく出すと線が細くて弱いので、このページでは太さを渡して使う。
+   */
+  weight?: number;
   children: string;
   className?: string;
 };
@@ -28,11 +34,12 @@ export type HeadingProps = {
 export default function Heading({
   variant = "gold",
   size = 56,
+  weight,
   children,
   className,
 }: HeadingProps) {
   return (
-    <WordArt variant={variant} size={size} className={className}>
+    <WordArt variant={variant} size={size} weight={weight} className={className}>
       {children}
     </WordArt>
   );

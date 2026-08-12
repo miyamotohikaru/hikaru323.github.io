@@ -1,6 +1,6 @@
 import { FLIPS, type Flip } from "@/data/flips";
 
-/** 「2026-08-02」→「2026年08月02日」。本物のHPの最新情報と同じ書き方 */
+/** 「2026-08-02」→「2026年08月02日」。会社HPの最新情報と同じ書き方 */
 export function jpDate(iso: string): string {
   const [y, m, d] = iso.split("-");
   return `${y}年${m}月${d}日`;
@@ -21,8 +21,30 @@ export const OPENED: Flip[] = FLIPS.filter(isOpen)
   .slice()
   .sort((a, b) => (a.date < b.date ? 1 : -1));
 
-/**
- * new.gif を付けるもの。公開中のうち新しい2件。
- * 本物のHPも最新情報のいちばん新しい行にだけ new.gif を付けている。
- */
+/** new.gif を付けるもの。更新履歴のあたらしい2行だけ */
 export const NEW_SLUGS: string[] = OPENED.slice(0, 2).map((f) => f.slug);
+
+/**
+ * 更新履歴。
+ * 当時のホームページの「更新履歴」は、そのページ自身に何をしたかの記録だった。
+ * ここも同じで、日付は flips.ts の公開日をそのまま使い、
+ * 「そのふりっぷをこの一覧にくわえた日」として書く（データは読むだけ）。
+ */
+export type LogLine = {
+  date: string;
+  text: string;
+  /** その行が指すふりっぷ。ページ自身の記録には無い */
+  slug?: string;
+};
+
+/** このページをつくった日 */
+export const PAGE_MADE = "2026-08-12";
+
+export const HISTORY: LogLine[] = [
+  { date: PAGE_MADE, text: "このページ「ふりっぷ一覧」をつくりました。" },
+  ...OPENED.map((f) => ({
+    date: f.date,
+    text: `「${f.title}」をくわえました。`,
+    slug: f.slug,
+  })),
+];

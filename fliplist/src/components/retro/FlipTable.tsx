@@ -1,13 +1,20 @@
 import { FLIPS, type Flip } from "@/data/flips";
-import { canOpen, isOpen, jpDate, NEW_SLUGS } from "./util";
+import { canOpen, isOpen, jpDate } from "./util";
 
 /**
- * ふりっぷの一覧。
- * 本物のHPの会社概要の表と同じ組み（home.css の #home .cont02 table）。
+ * ふりっぷ一覧表。
+ *
+ * 罫は会社HPの表と同じ（本物 home.css の #home .cont02 table）。
  *   border: solid 2px yellowgreen / border-style: inset / background: #fff
- *   th はまんなか寄せ、td は左寄せ
- * border-collapse を指定しないので、セルが1つずつ立体の枠を持つ。
- * 行の頭には昔のリンク集と同じ arrow_list.gif を置く。
+ *   th はまんなか寄せ、td は左寄せ、border-collapse は指定しない
+ * ここは同じ会社のページである印なので1つも変えない。
+ *
+ * 中身のほうは「リンク集」の作り。まだできていないものには当時の言い方で「工事中」を出す。
+ * GIFの工事中マークが手元に無いので、黄色地に黒枠の札を字と罫だけで作る。
+ *
+ * 見出しの行を <thead> ではなく <tbody> の1行目に置いてあるのは、
+ * flip と打つと表がまるごとひっくり返る仕掛け（Tricks.tsx）が
+ * tBodies[0].rows を裏返すため。ここを thead にすると見出しが回らない。
  */
 export default function FlipTable() {
   return (
@@ -16,10 +23,10 @@ export default function FlipTable() {
         <tr>
           <th className="head t-no">No.</th>
           <th className="head t-ttl">ふりっぷの名前</th>
-          <th className="head">内容</th>
+          <th className="head">どんなもの</th>
           <th className="head t-date">公開日</th>
           <th className="head t-own">担当</th>
-          <th className="head t-state">状態</th>
+          <th className="head t-state">ぐあい</th>
         </tr>
         {FLIPS.map((flip, i) => (
           <Row key={flip.slug} flip={flip} n={i + 1} />
@@ -32,7 +39,6 @@ export default function FlipTable() {
 function Row({ flip, n }: { flip: Flip; n: number }) {
   const open = isOpen(flip);
   const press = canOpen(flip);
-  const isNew = NEW_SLUGS.includes(flip.slug);
 
   return (
     <tr>
@@ -41,22 +47,18 @@ function Row({ flip, n }: { flip: Flip; n: number }) {
         {press ? (
           <a href={flip.url} target="_blank" rel="noopener noreferrer">
             {flip.title}
-            {isNew ? (
-              <span className="new">
-                <img src="/hp/new.gif" alt="new" width={29} height={17} />
-              </span>
-            ) : null}
           </a>
         ) : (
-          <span className="soon">{flip.title}</span>
+          /* 行き先が空の3件。押せないので、字だけ置いて灰色にしておく */
+          <span className="nolink">{flip.title}</span>
         )}
       </td>
       {/* 内容はシートの言葉のまま。空のものは昔の表と同じで「―」 */}
       <td>{flip.desc ? flip.desc : "―"}</td>
       <td className="t-date">{jpDate(flip.date)}</td>
       <td className="t-own">{flip.owner}</td>
-      <td className={`t-state ${open ? "state-open" : "state-soon"}`}>
-        {open ? "公開中" : "準備中"}
+      <td className="t-state">
+        {open ? <span className="open">公開中</span> : <span className="kouji">工事中</span>}
       </td>
     </tr>
   );
