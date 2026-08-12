@@ -6,7 +6,7 @@ import JobCard from "@/components/JobCard";
 import TiltCard from "@/components/TiltCard";
 import { Job } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
-import { saveReturn } from "@/lib/returnNav";
+import { readDeckAt, saveDeckAt, saveReturn } from "@/lib/returnNav";
 import { primeTick, setTickEnabled, tick } from "@/lib/tick";
 
 /**
@@ -556,6 +556,22 @@ export default function DeckView({
     }
   }, []);
 
+  /**
+   * 索引に戻ってきたとき、最後に開いたカードから始める。
+   * 描く前に位置を決めたいので layout の段階で行う（1コマだけ1番が見えるのを防ぐ）。
+   */
+  useLayoutEffect(() => {
+    const no = readDeckAt();
+    if (!no) return;
+    const i = jobs.findIndex((j) => j.no === no);
+    if (i <= 0) return;
+    posRef.current = i;
+    targetRef.current = i;
+    anchorRef.current = i;
+    setAnchor(i);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /** 幅を測っておく（毎フレーム測らない）。送りに要る距離も画面の大きさに比例させる */
   useLayoutEffect(() => {
     const measure = () => {
@@ -846,6 +862,9 @@ export default function DeckView({
         }}
         onPointerDown={(e) => {
           primeTick();
+          // ドラッグ後はクリックが発生しないことがあり、抑止したままだと
+          // 次の1タップが効かなくなる。触り始めに必ず解除しておく
+          suppress.current = false;
           if (reducedRef.current) return;
           cancelAnimationFrame(springRef.current);
           springRef.current = 0;
@@ -967,6 +986,7 @@ export default function DeckView({
                       }
                       navigator.vibrate?.([0, 12]);
                       saveReturn();
+                      saveDeckAt(job.no);
                     }}
                   >
                     {/* 指で触る端末では傾き効果を止める（ドラッグと取り合いになる） */}

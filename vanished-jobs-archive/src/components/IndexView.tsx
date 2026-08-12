@@ -16,7 +16,7 @@ import {
   JobStatus,
 } from "@/data/jobs";
 import { useLang, dict } from "@/lib/lang";
-import { saveReturn } from "@/lib/returnNav";
+import { saveDeckAt, saveReturn } from "@/lib/returnNav";
 
 function Chip({
   active,
@@ -296,7 +296,11 @@ export default function IndexView() {
               <Link
                 key={j.no}
                 href={`/jobs/${j.no}`}
-                onClick={() => saveReturn()}
+                onClick={() => {
+                  saveReturn();
+                  // 一覧から開いた場合も覚えておき、束に切り替えたときに揃える
+                  saveDeckAt(j.no);
+                }}
                 // 1枚ずつ配られるように少しずつ遅らせる。
                 // 151枚すべてを動かすとレイヤーが増えるので最初の12枚だけにする
                 className={i < 12 ? "vja-rise block" : "block"}

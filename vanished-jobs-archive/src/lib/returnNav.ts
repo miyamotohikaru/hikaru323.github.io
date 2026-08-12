@@ -6,6 +6,8 @@
  */
 
 const KEY = "vja-return";
+/** 束(デッキ)で最後に前に出していたカード番号 */
+const AT_KEY = "vja-deck-at";
 const LIST_PATHS = ["/", "/timeline", "/lineage"];
 
 export type ReturnInfo = { path: string; y: number };
@@ -31,4 +33,27 @@ export function readReturn(): ReturnInfo | null {
 
 export function clearReturn() {
   sessionStorage.removeItem(KEY);
+}
+
+/**
+ * 束で開いたカードを覚えておく。
+ * 一覧のスクロール位置とは別に持つ（戻り先の復帰処理が先に走って
+ * 消してしまうと、束の位置だけ失われるため）。
+ */
+export function saveDeckAt(no: string) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(AT_KEY, no);
+  } catch {
+    /* 保存できなくても操作は続けられる */
+  }
+}
+
+export function readDeckAt(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return sessionStorage.getItem(AT_KEY);
+  } catch {
+    return null;
+  }
 }
