@@ -73,10 +73,17 @@ export default function PixelCanvas({
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    const dpr = Math.max(1, Math.min(3, Math.round(window.devicePixelRatio || 1)));
-    const zoom = scale * dpr;
-    canvas.width = w * zoom;
-    canvas.height = h * zoom;
+    // dpr は丸めない。ページ側の CSS 幅(w*scale)は dpr に関係なく固定なので、
+    // ここを整数に丸めてしまうと、実機の実際の dpr(Android に多い 2.625 や 2.75 など、
+    // iOS の「拡大表示」設定時も同様)とバックバッファの画素数がずれる。
+    // すると、せっかく最近傍で仕上げた絵を、ブラウザがさらに非整数倍率で
+    // 引き伸ばして画面に貼ることになり、1px単位で組んである和文ドットの列が
+    // 欠けたり潰れたりして字が変わって見える（携帯だけで再現し、開発機のRetina
+    // ＝整数dprでは起きない）。バックバッファを実dpr×論理サイズちょうどに
+    // 合わせておけば、ブラウザ側の貼り付けは等倍で済み、この二重拡大が起きない。
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(w * scale * dpr);
+    canvas.height = Math.round(h * scale * dpr);
     canvas.style.width = `${w * scale}px`;
     canvas.style.height = `${h * scale}px`;
 

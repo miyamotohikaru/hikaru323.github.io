@@ -764,9 +764,12 @@ a {
     font-weight: normal;
     color: #000000;
   }
+  /* 20pxだと2桁(10〜16番)の太字数字が幅に入りきらず、"1"と"6"が
+     縦に2段へ折り返っていた（携帯だけで起こる改行崩れ）。実測で
+     "16" は17px要る（12px太字）ので、枠の余白ぶんを足して確保する */
   #home .cont02 td.t-no,
   #home .cont02 th.t-no {
-    width: 20px;
+    width: 26px;
   }
   #home .cont02 td.t-cart,
   #home .cont02 th.t-cart {
