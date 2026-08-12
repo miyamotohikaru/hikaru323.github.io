@@ -112,7 +112,7 @@ export default function Page() {
               <a href="#toha">ふりっぷとは</a>
             </li>
             <li>
-              <a href="#bg">背景をかえる</a>（4色）
+              <a href="#bg">背景をかえる</a>（10色）
             </li>
             <li>
               <a href="#okuduke">このページについて</a>
@@ -124,7 +124,7 @@ export default function Page() {
             このページの用はこれなので、いちばん先に置く。 */}
         <section id="list">
           {/* このページの用なので、節の見出しはここだけ大きい。
-              色は他の節と同じ深緑（白い縁が付いているので、壁紙を4色どれにかえても読める）。
+              色は他の節と同じ深緑（白い縁が付いているので、壁紙を10色どれにかえても読める）。
               金と水色は薄い壁紙の上で弱くなるので、このページでは使わない */}
           <h3 className="sec sec--main">
             <Heading variant="green" size={50}>

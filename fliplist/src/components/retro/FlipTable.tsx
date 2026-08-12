@@ -37,7 +37,7 @@ export default function FlipTable() {
           <th className="head t-no">No.</th>
           <th className="head t-cart">カセット</th>
           <th className="head t-ttl">ふりっぷの名前</th>
-          <th className="head">どんなもの</th>
+          <th className="head t-desc">どんなもの</th>
           <th className="head t-state">ぐあい</th>
         </tr>
         {FLIPS.map((flip, i) => (
@@ -94,9 +94,17 @@ function Row({ flip, n }: { flip: Flip; n: number }) {
           /* 行き先が空の3件。押せないので、字だけ置いて灰色にしておく */
           <span className="nolink">{flip.title}</span>
         )}
+        {/*
+          携帯のときだけ、名前の下に「どんなもの」を出す（CSSで出し入れする）。
+          携帯の幅では5列を並べると「どんなもの」が1行4文字になってしまう。
+          この1つを名前と同じマスに入れれば、カセットの絵を等倍のまま置ける。
+          ラベルの字が読めるかどうかが要点なので、絵の大きさを譲らない。
+          表の列としては消えるが、字はここに残る。
+        */}
+        <span className="t-sub">{flip.desc ? flip.desc : "―"}</span>
       </td>
       {/* 内容はシートの言葉のまま。空のものは昔の表と同じで「―」 */}
-      <td>{flip.desc ? flip.desc : "―"}</td>
+      <td className="t-desc">{flip.desc ? flip.desc : "―"}</td>
       <td className="t-state">
         {open ? <span className="open">公開中</span> : <span className="kouji">工事中</span>}
       </td>

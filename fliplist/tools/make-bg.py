@@ -31,11 +31,42 @@ SRC = "public/hp/bg.gif"
 
 # Lab の色相角（度）。もとのミント／ふじ色／もも色から測った向き。色そのものは変えない。
 # クリームの地色 #fff3cb は 96.0 度（黄）。
+# 色相の順は色相環をひとまわりする向き。名前は当時の色見本の言い方で。
+# クリーム（96.0度）はもとの bg.gif そのままなので、ここには入れない。
 HUE = {
-    "mint": 191.6,  # 青みの緑
+    "wakaba": 135.0,  # わかば（黄緑）
+    "mint": 191.6,  # ミント（青みの緑）
+    "mizu": 245.0,  # みずいろ
     "sky": 288.6,  # ふじ色（青紫）
+    "sumire": 320.0,  # すみれ（紫）
+    "sakura": 355.0,  # さくら
     "peach": 32.4,  # もも色（赤橙）
+    "anzu": 62.0,  # あんず（橙）
+    "hai": None,  # はいいろ。色みを抜くだけなので色相は無い
 }
+
+# ── こす.くまの字だけは色を回さない
+# タイルには「こすくまの輪郭」と「kosukuma の字」の2つが描かれている。
+# 輪郭は地色と同じ色相で、明るさだけが違う（地色との色相差 -0.6〜+2.0度）。
+# 字のほうは地色より32度ぶん赤い＝こす.くまの桃色（色相差 -12〜-32度）。
+#
+# 全部いっしょに回すと、ミントでは字が抹茶色に、ふじ色では青灰に、
+# もも色では薄茶に濁った。字はブランドの桃色なので、どの色でも桃色のまま置く。
+# 見分けは地色との色相差だけで足りる（輪郭は2度以内、字は12度以上。間が空いている）。
+WORDMARK_MIN_HUE_GAP = 8.0
+
+# 字を桃色に留めるときの、絶対の色相。cream の #ffe3cf を測った値
+WORDMARK_HUE = 63.8
+
+# 字の色みだけ、地色よりさらに落とす。
+# 桃色をそのままの濃さで置くと、青や緑の地色の上では補色になって橙に浮いた。
+# 字が見えているのは明るさの差（地色より3.9暗い）のほうなので、
+# 色みを6割にしても読めるし、浮かなくなる。
+WORDMARK_CHROMA = 0.6
+
+# 明るさをここより下げない。下げてよいのは sRGB に色みが乗らないときだけで、
+# それでもここで止める。これより暗いと壁紙が「濃い」と感じられる
+L_FLOOR = 91.5
 
 WHITE = (0.95047, 1.0, 1.08883)
 M_TO_LIN = ((3.2406, -1.5372, -0.4986), (-0.9689, 1.8758, 0.0415), (0.0557, -0.2040, 1.0570))
@@ -83,10 +114,12 @@ def in_gamut(L: float, c: float, hue_deg: float) -> bool:
 
 
 def highest_L(target_c: float, hue_deg: float, top: float) -> float:
-    """狙った色みの強さが sRGB に入る、いちばん明るい L*。top より上げはしない。"""
+    """狙った色みの強さが sRGB に入る、いちばん明るい L*。top より上げず、L_FLOOR より下げない。"""
     if in_gamut(top, target_c, hue_deg):
         return top
-    lo, hi = 0.0, top
+    lo, hi = L_FLOOR, top
+    if not in_gamut(lo, target_c, hue_deg):
+        return L_FLOOR  # そこまで下げても乗らない。色みのほうを削る（下の fit_c）
     for _ in range(40):
         mid = (lo + hi) / 2
         if in_gamut(mid, target_c, hue_deg):
@@ -96,25 +129,52 @@ def highest_L(target_c: float, hue_deg: float, top: float) -> float:
     return lo
 
 
-def repalette(src: Image.Image, hue_deg: float, k: float) -> tuple[Image.Image, dict]:
+def fit_c(L: float, hue_deg: float, want: float) -> float:
+    """その明るさで sRGB に乗る色みの強さ。乗らなければ乗るところまで削る。"""
+    if in_gamut(L, want, hue_deg):
+        return want
+    lo, hi = 0.0, want
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        if in_gamut(L, mid, hue_deg):
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+def repalette(src: Image.Image, hue_deg: float | None, k: float) -> Image.Image:
     pal = src.getpalette()
     base = to_lab(pal[45:48])  # 15番＝地色。いちばん面積が大きい
     base_c = math.hypot(base[1], base[2])
     base_h = math.degrees(math.atan2(base[2], base[1]))
 
-    target_c = base_c * k
-    L_new = highest_L(target_c, hue_deg, base[0])
+    # 灰いろは色みを抜くだけ。明るさは1つも動かさない
+    if hue_deg is None:
+        out: list[int] = []
+        for i in range(0, len(pal), 3):
+            out += list(to_rgb((to_lab(pal[i : i + 3])[0], 0.0, 0.0)))
+        im = src.copy()
+        im.putpalette(out)
+        return im
+
+    L_new = highest_L(base_c * k, hue_deg, base[0])
+    target_c = fit_c(L_new, hue_deg, base_c * k)
     dL = L_new - base[0]  # 全16色を同じだけ動かす。差は変えないので模様の濃さは残る
 
-    out: list[int] = []
+    out = []
     for i in range(0, len(pal), 3):
         L, a, b = to_lab(pal[i : i + 3])
-        c = math.hypot(a, b) * k
-        h = math.radians(hue_deg + (math.degrees(math.atan2(b, a)) - base_h))
+        gap = (math.degrees(math.atan2(b, a)) - base_h + 180) % 360 - 180
+        # こす.くまの字は、どの色でも桃色のまま置く（上の説明）
+        word = abs(gap) >= WORDMARK_MIN_HUE_GAP
+        h_deg = WORDMARK_HUE if word else hue_deg + gap
+        h = math.radians(h_deg)
+        c = fit_c(L + dL, h_deg, math.hypot(a, b) * k * (WORDMARK_CHROMA if word else 1.0))
         out += list(to_rgb((L + dL, math.cos(h) * c, math.sin(h) * c)))
     im = src.copy()
     im.putpalette(out)
-    return im, {"L": L_new, "dL": dL, "C": target_c}
+    return im
 
 
 def main() -> None:
@@ -126,16 +186,21 @@ def main() -> None:
     cc = math.hypot(ca, cb)
     print(f"クリーム  地色 明るさ{cl:.1f}  色みの強さ{cc:.1f}  色相{math.degrees(math.atan2(cb, ca)):.1f}度")
     for name, hue in HUE.items():
-        im, info = repalette(src, hue, k)
+        im = repalette(src, hue, k)
         path = f"shots/bg_{name}.gif" if dry else f"public/hp/bg_{name}.gif"
         im.save(path)
         p = im.getpalette()[45:48]
         L, a, b = to_lab(p)
         c = math.hypot(a, b)
+        # 13番＝こす.くまの字の芯。桃色のまま残っているかを見る
+        w = im.getpalette()[39:42]
+        wl, wa, wb = to_lab(w)
         print(
-            f"{name:6}  地色 #{p[0]:02x}{p[1]:02x}{p[2]:02x}"
-            f"  明るさ{L:.1f}（クリーム比{L - cl:+.1f}）"
-            f"  色みの強さ{c:.1f}（クリームの{c / cc:.2f}倍）  → {path}"
+            f"{name:7} 地色 #{p[0]:02x}{p[1]:02x}{p[2]:02x}"
+            f"  明るさ{L:5.1f}（クリーム比{L - cl:+5.1f}）"
+            f"  色み{c:5.1f}（{c / cc:.2f}倍）"
+            f"  ／ こす.くまの字 #{w[0]:02x}{w[1]:02x}{w[2]:02x}"
+            f" 色相{math.degrees(math.atan2(wb, wa)):5.1f}度"
         )
 
 

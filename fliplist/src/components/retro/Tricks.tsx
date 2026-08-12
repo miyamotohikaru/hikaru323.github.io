@@ -27,8 +27,21 @@ import { useEffect } from "react";
  * 見え方の指定は全部 globals.css の「仕掛け」の節にある。
  */
 
-/** 天地が逆さになったときの壁紙。返すたびに次の色へ回る（public/hp に置いてある3枚） */
-const WALLS = ["mint", "sky", "peach"] as const;
+/**
+ * 天地が逆さになったときの壁紙。返すたびに次の色へ回る。
+ * 「背景をかえる」で選べる9色（クリーム以外）と同じならび（BgPicker.tsx）。
+ */
+const WALLS = [
+  "wakaba",
+  "mint",
+  "mizu",
+  "sky",
+  "sumire",
+  "sakura",
+  "peach",
+  "anzu",
+  "hai",
+] as const;
 
 /** 掲示板がめくれる引っぱりの量(px)。うっかり触ったぐらいでは届かない */
 const PULL = 36;

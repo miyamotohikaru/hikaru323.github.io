@@ -19,14 +19,29 @@ import { useEffect, useState } from "react";
 
 const KEY = "fl-bg";
 
+/**
+ * ならびは色相環をひとまわりする順。クリームが会社HPと同じ地の色なので先頭。
+ * 灰いろは色みが無いので最後に置く。
+ * どれも tools/make-bg.py が bg.gif から起こしたもので、
+ * 明るさと模様の濃さはクリームとそろえてある。
+ */
 const WALLS = [
   { id: "cream", label: "クリーム", file: "bg.gif" },
+  { id: "wakaba", label: "わかば", file: "bg_wakaba.gif" },
   { id: "mint", label: "ミント", file: "bg_mint.gif" },
+  { id: "mizu", label: "みずいろ", file: "bg_mizu.gif" },
   { id: "sky", label: "ふじ色", file: "bg_sky.gif" },
+  { id: "sumire", label: "すみれ", file: "bg_sumire.gif" },
+  { id: "sakura", label: "さくら", file: "bg_sakura.gif" },
   { id: "peach", label: "もも色", file: "bg_peach.gif" },
+  { id: "anzu", label: "あんず", file: "bg_anzu.gif" },
+  { id: "hai", label: "はいいろ", file: "bg_hai.gif" },
 ] as const;
 
 type WallId = (typeof WALLS)[number]["id"];
+
+/** 見本のならび。5つずつ2行 */
+const ROWS = [WALLS.slice(0, 5), WALLS.slice(5)];
 
 /** 既定はクリーム。会社HPと同じ地の色なので、これだけ data-fl-bg を付けない */
 const DEFAULT: WallId = "cream";
@@ -76,33 +91,37 @@ export default function BgPicker() {
         <br />
         えらんだ色はおぼえておきますので、次にいらしたときも同じ色で出ます。
       </p>
-      <p className="bgpick-row">
-        {WALLS.map((w, i) => {
-          const on = w.id === now;
-          return (
-            <span key={w.id}>
-              {i > 0 ? <span className="bgpick-bar">｜</span> : null}
-              <a
-                href="#bg"
-                className={on ? "bgpick-one is-now" : "bgpick-one"}
-                aria-current={on ? true : undefined}
-                onClick={(e) => {
-                  e.preventDefault();
-                  pick(w.id);
-                }}
-              >
-                <i style={{ backgroundImage: `url(/hp/${w.file})` }} aria-hidden />
-                {/* ★はいつも書いておいて、いまの色でないときは見えなくするだけ。
-                    出し入れすると押すたびに行がずれるので、場所は先に取っておく */}
-                <em className="bgpick-star" aria-hidden>
-                  ★
-                </em>
-                <b>{w.label}</b>
-              </a>
-            </span>
-          );
-        })}
-      </p>
+      {/* 10色を1行に並べると1500pxを超えるので、5つずつ2行にする。
+          折り返しに任せると「｜」が行の頭に来てしまうので、行は自分で切る */}
+      {ROWS.map((row, r) => (
+        <p className="bgpick-row" key={r}>
+          {row.map((w, i) => {
+            const on = w.id === now;
+            return (
+              <span key={w.id}>
+                {i > 0 ? <span className="bgpick-bar">｜</span> : null}
+                <a
+                  href="#bg"
+                  className={on ? "bgpick-one is-now" : "bgpick-one"}
+                  aria-current={on ? true : undefined}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    pick(w.id);
+                  }}
+                >
+                  <i style={{ backgroundImage: `url(/hp/${w.file})` }} aria-hidden />
+                  {/* ★はいつも書いておいて、いまの色でないときは見えなくするだけ。
+                      出し入れすると押すたびに行がずれるので、場所は先に取っておく */}
+                  <em className="bgpick-star" aria-hidden>
+                    ★
+                  </em>
+                  <b>{w.label}</b>
+                </a>
+              </span>
+            );
+          })}
+        </p>
+      ))}
       <p className="bgpick-note">※いまの色は★の付いているほうです。</p>
     </div>
   );

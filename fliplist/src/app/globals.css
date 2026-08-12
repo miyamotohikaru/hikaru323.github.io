@@ -114,15 +114,35 @@ a {
 }
 
 /* 壁紙をかえる。既定（クリーム）は上の bg.gif のまま。
-   えらんだ色は body の data-fl-bg に入る（BgPicker.tsx） */
+   えらんだ色は body の data-fl-bg に入る（BgPicker.tsx）。
+   9枚とも tools/make-bg.py が bg.gif から起こしたもの。
+   色相の順にならべてある（黄緑→青緑→水→青紫→紫→桜→桃→橙、最後に灰） */
+#home[data-fl-bg="wakaba"] {
+  background-image: url(/hp/bg_wakaba.gif);
+}
 #home[data-fl-bg="mint"] {
   background-image: url(/hp/bg_mint.gif);
+}
+#home[data-fl-bg="mizu"] {
+  background-image: url(/hp/bg_mizu.gif);
 }
 #home[data-fl-bg="sky"] {
   background-image: url(/hp/bg_sky.gif);
 }
+#home[data-fl-bg="sumire"] {
+  background-image: url(/hp/bg_sumire.gif);
+}
+#home[data-fl-bg="sakura"] {
+  background-image: url(/hp/bg_sakura.gif);
+}
 #home[data-fl-bg="peach"] {
   background-image: url(/hp/bg_peach.gif);
+}
+#home[data-fl-bg="anzu"] {
+  background-image: url(/hp/bg_anzu.gif);
+}
+#home[data-fl-bg="hai"] {
+  background-image: url(/hp/bg_hai.gif);
 }
 
 /* 本文の幅。本物の #container・.cont01 が1000px、表が800pxなので、そのあいだ */
@@ -623,61 +643,60 @@ a {
   }
 }
 
-/* ── 表を畳む ───────────────────────────────────
-   列を固定幅で持つと No.＋カセット＋名前＋ぐあいだけで500px要るので、
-   携帯の幅では横に並べきれない。そこで1行ぶんを縦に積み、
-   1本のふりっぷを1枚の枠にする。
+/* 「どんなもの」を名前のマスの中に出すのは携帯のときだけ。
+   パソコンでは列のほうに出ているので、こちらは伏せておく */
+.t-sub {
+  display: none;
+}
 
-   カセットの絵は縮めない。**ここが要点。**
-   縮めると（前は88x64に落としていた）ラベルの字が1ミリ以下になって読めない。
-   176x128 の等倍のまま出せば、ラベルの和文は13ドット×2倍＝26px相当で読める。
-   枠の罫は表のときと同じ solid 2px yellowgreen ＋ inset のまま使う。 */
+/* ── 携帯でも表のまま ────────────────────────────
+   畳んで1本1枚の札にはしない。パソコンと同じ「表」で見せる。
+
+   ただし5列を並べると、393pxの版面では「どんなもの」が1行4文字になる。
+   そこでその1列だけ伏せて、字は名前と同じマスへ移す（FlipTable.tsx の .t-sub）。
+   **カセットの絵は 176x128 の等倍から動かさない。** ここが要点で、
+   絵を半分にするとラベルの和文が13px相当まで落ちて読みにくい。
+   等倍なら26px相当で出る。
+
+   絵を縮めずに済むのは viewport を device-width にしたから（layout.tsx）。
+   1200px固定のままだと版面ごと1/3に縮み、等倍の絵でも8px相当だった。 */
 @media screen and (max-width: 620px) {
-  #home .cont02 table,
-  #home .cont02 tbody,
-  #home .cont02 tr,
-  #home .cont02 td {
-    display: block;
-    width: auto !important;
+  #home .cont02 table th,
+  #home .cont02 table td {
+    font-size: 12px;
   }
-  /* 見出しの行は、畳んだら意味がない。
-     （字は残るので tools/tricks.mjs の並び順の検分はそのまま通る） */
-  #home .cont02 tr:first-child {
+  /* 「どんなもの」の列は伏せる。字は名前のマスの中に出す */
+  #home .cont02 .t-desc {
     display: none;
   }
-  #home .cont02 tr {
-    border: solid 2px yellowgreen;
-    border-style: inset;
-    background: #ffffff;
-    margin-bottom: 12px;
-    padding: 10px 8px 12px;
+  #home .cont02 td.t-ttl .t-sub {
+    display: block;
+    margin-top: 3px;
+    font-weight: normal;
+    color: #000000;
   }
-  #home .cont02 table td {
-    border: 0;
-    text-align: center !important;
-    padding: 0 !important;
+  #home .cont02 td.t-no,
+  #home .cont02 th.t-no {
+    width: 20px;
   }
-  /* 番号は名前の前に置きたいので、絵より上へ回す */
-  #home .cont02 td.t-no {
-    font-size: 13px;
-    margin-bottom: 4px;
+  #home .cont02 td.t-cart,
+  #home .cont02 th.t-cart {
+    width: 180px;
   }
-  #home .cont02 td.t-no::before {
-    content: "No.";
+  #home .cont02 td.t-ttl,
+  #home .cont02 th.t-ttl {
+    width: auto;
   }
-  #home .cont02 td.t-cart canvas {
-    margin: 0 auto;
+  #home .cont02 td.t-state,
+  #home .cont02 th.t-state {
+    width: 42px;
   }
-  #home .cont02 td.t-ttl {
-    margin-top: 8px;
-    font-size: 17px;
-  }
-  #home .cont02 td:not([class]) {
-    margin-top: 4px;
-    font-size: 14px;
-  }
-  #home .cont02 td.t-state {
-    margin-top: 8px;
+  /* 「工事中」の札は12pxの行に入れるので、ひとまわり小さくする */
+  #home .cont02 .kouji {
+    font-size: 9px;
+    border-width: 1px;
+    line-height: 13px;
+    padding: 0 1px;
   }
 }
 @media screen and (max-width: 480px) {
@@ -728,13 +747,33 @@ a {
     padding: 14px 16px;
     font-size: 15px;
   }
+  /* 10個を細い版面に並べると「｜」が行の端に落ちる。
+     狭いときは区切りをやめて、2つずつ同じ幅でならべる */
+  #home .bgpick-bar {
+    display: none;
+  }
+  /* 2行に切ってあるのを、狭いときは1つの流れに戻す。
+     display:contents で <p> の箱を消すと、10個が続けてならんで
+     5行目まで隙間なく2列に入る（行のままだと5個目が1つで残る） */
+  #home .bgpick-row {
+    display: contents;
+  }
+  #home .bgpick {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+  #home .bgpick-row > span {
+    display: inline-block;
+    width: 50%;
+    text-align: left;
+  }
   #home .bgpick-one {
-    width: 74px;
-    margin: 0 2px;
+    display: inline-block;
+    margin: 5px 0;
   }
   #home .bgpick-one i {
-    width: 62px;
-    height: 40px;
+    width: 44px;
+    height: 28px;
   }
 }
 
@@ -770,15 +809,34 @@ a {
   transform-origin: 50% 50%;
 }
 /* 壁紙も次の色に回る。#home に class と属性を重ねてあるので、
-   上の #home{background:url(bg.gif)} にも #home[data-fl-bg] にも勝つ */
+   上の #home{background:url(bg.gif)} にも #home[data-fl-bg] にも勝つ。
+   回る色は「背景をかえる」の9色ぜんぶ（Tricks.tsx の WALLS と同じならび） */
+#home.fl-upside[data-fl-wall="wakaba"] {
+  background-image: url(/hp/bg_wakaba.gif);
+}
 #home.fl-upside[data-fl-wall="mint"] {
   background-image: url(/hp/bg_mint.gif);
+}
+#home.fl-upside[data-fl-wall="mizu"] {
+  background-image: url(/hp/bg_mizu.gif);
 }
 #home.fl-upside[data-fl-wall="sky"] {
   background-image: url(/hp/bg_sky.gif);
 }
+#home.fl-upside[data-fl-wall="sumire"] {
+  background-image: url(/hp/bg_sumire.gif);
+}
+#home.fl-upside[data-fl-wall="sakura"] {
+  background-image: url(/hp/bg_sakura.gif);
+}
 #home.fl-upside[data-fl-wall="peach"] {
   background-image: url(/hp/bg_peach.gif);
+}
+#home.fl-upside[data-fl-wall="anzu"] {
+  background-image: url(/hp/bg_anzu.gif);
+}
+#home.fl-upside[data-fl-wall="hai"] {
+  background-image: url(/hp/bg_hai.gif);
 }
 
 /* ── 仕掛け2 ──────────────────────────────────── */
