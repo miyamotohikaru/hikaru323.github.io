@@ -1,5 +1,6 @@
 import { FLIPS, type Flip } from "@/data/flips";
 import Cartridge from "@/components/Cartridge";
+import BreakText from "./BreakText";
 import { canOpen, isOpen } from "./util";
 
 /**
@@ -101,10 +102,10 @@ function Row({ flip, n }: { flip: Flip; n: number }) {
           ラベルの字が読めるかどうかが要点なので、絵の大きさを譲らない。
           表の列としては消えるが、字はここに残る。
         */}
-        <span className="t-sub">{flip.desc ? flip.desc : "―"}</span>
+        <span className="t-sub">{flip.desc ? <BreakText text={flip.desc} /> : "―"}</span>
       </td>
       {/* 内容はシートの言葉のまま。空のものは昔の表と同じで「―」 */}
-      <td className="t-desc">{flip.desc ? flip.desc : "―"}</td>
+      <td className="t-desc">{flip.desc ? <BreakText text={flip.desc} /> : "―"}</td>
       <td className="t-state">
         {open ? <span className="open">公開中</span> : <span className="kouji">工事中</span>}
       </td>
