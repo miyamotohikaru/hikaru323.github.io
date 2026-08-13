@@ -202,6 +202,9 @@ export const art: LabelArt = {
       const x = 1 + Math.floor(rs() * 66);
       const y = 1 + Math.floor(rs() * 36);
       const k = rs();
+      // (22,8) だけ「す」と「く」の隙間にちょうど落ちて、題字の「.」に見えていた。
+      // その1個だけ間引く（星の並び自体はそのまま、種も変えない）。
+      if (x === 22 && y === 8) continue;
       if (k < 0.14) g.px(x, y, "#ffffff");
       else if (k < 0.42) g.px(x, y, "#b9c6f0");
       else g.px(x, y, "#5c68a0");
