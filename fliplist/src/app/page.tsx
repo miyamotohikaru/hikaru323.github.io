@@ -1,4 +1,5 @@
 import BgPicker from "@/components/retro/BgPicker";
+import BreakText from "@/components/retro/BreakText";
 import Counter from "@/components/retro/Counter";
 import FlipTable from "@/components/retro/FlipTable";
 import Heading from "@/components/retro/Heading";
@@ -90,7 +91,7 @@ export default function Page() {
         </h1>
 
         <p className="lead">
-          こす.くまがつくった、小さなあそびと実験のもくじです。
+          <BreakText text="こす.くまがつくった、◆小さなあそびと実験のもくじです。" />
           <br />
           <span className="blink">★ふりっぷは随時ふえていきます★</span>
         </p>
