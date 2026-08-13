@@ -819,6 +819,19 @@ a {
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* ── 携帯だけの強制改行 ────────────────────────────
+   src/components/retro/MobileBreak.tsx が置く br。パソコンでは
+   消しておき（display:none）、携帯幅になったら普通の br として効かせる。
+   ※ class名はコンポーネント側と対で決めているので、変えるなら両方直す。 */
+.mobile-break {
+  display: none;
+}
+@media screen and (max-width: 620px) {
+  .mobile-break {
+    display: inline;
+  }
+}
 @media screen and (max-width: 480px) {
   #home .header {
     margin-top: 20px;
