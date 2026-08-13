@@ -806,6 +806,19 @@ a {
     padding: 0 1px;
   }
 }
+
+/* ── 携帯では字のなめらかさを戻す ─────────────────────
+   body の -webkit-font-smoothing:none（2003年の顔）は、パソコンの
+   低密度な画面では効いても、携帯の高密度な画面では逆効果になる。
+   画数の細い字（更新履歴などの地の文）が、なめらかにしないぶん
+   ところどころ欠けて見える（実機報告あり）。
+   デザインの芯は動かさず、携帯幅のときだけなめらかさを戻す。 */
+@media screen and (max-width: 620px) {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
 @media screen and (max-width: 480px) {
   #home .header {
     margin-top: 20px;
