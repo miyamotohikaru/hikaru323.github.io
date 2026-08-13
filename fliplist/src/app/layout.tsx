@@ -45,9 +45,31 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ja">
+      <head>
+        {/* カセットのラベルは canvas の fillText で和文を描くので、
+            CSS 上はどの要素にも DotGothic16 を使っていない。
+            preload と、下の隠し字（body内）の2本立てで読み込みを急がせる。
+            iOS の LINE アプリ内ブラウザ（WKWebView）で、canvas 側の
+            document.fonts.load() 呼び出しだけでは間に合わない／
+            反映されないことがあった実機確認あり。 */}
+        <link
+          rel="preload"
+          href="/fonts/DotGothic16-Regular.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
+      </head>
       {/* id="home" は会社HPと同じ。CSSのセレクタも本物に合わせてある */}
       <body id="home">
         <script dangerouslySetInnerHTML={{ __html: RESTORE_BG }} />
+        {/* 実際に画面には出さないが、本物の文字としてこのフォントを
+            使わせておく。canvas への fillText だけに頼るより、
+            ブラウザ標準の「使われている書体を読み込む」経路のほうが
+            実装差に振り回されにくい。 */}
+        <span aria-hidden style={{ position: "absolute", left: -9999, top: 0, fontFamily: '"DotGothic16"' }}>
+          存
+        </span>
         {children}
       </body>
     </html>

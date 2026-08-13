@@ -449,15 +449,21 @@ export function jpFontReady(): Promise<void> {
   if (typeof document === "undefined") return Promise.resolve();
   const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
   if (!fonts) return Promise.resolve();
+  // load() 自体が失敗（タイムアウト等）しても、@font-face 経由の読み込みが
+  // 裏で進んでいれば fonts.ready はいずれ解決する。ここで拾って握り潰さないと、
+  // 以降 catch のぶんだけ「彫り直し」が一生走らず、最初の1回（代替書体）が
+  // 焼き付いたままになる。
   return fonts
     .load('16px "DotGothic16"')
+    .catch(() => {})
     .then(() => fonts.ready)
     .then(() => {
       if (!jpFontSettled) {
         jpFontSettled = true;
         glyphCache.clear();
       }
-    });
+    })
+    .catch(() => {});
 }
 
 function jpGlyph(ch: string, size: number, threshold: number): Glyph | null {
@@ -472,6 +478,14 @@ function jpGlyph(ch: string, size: number, threshold: number): Glyph | null {
     jpCanvas = document.createElement("canvas");
     jpCanvas.width = 64;
     jpCanvas.height = 64;
+    // DOM に一度も繋がない canvas だと、Safari 系（WebKit）が fillText に
+    // web フォントを反映しないことがある（iOS の LINE アプリ内ブラウザ等の
+    // WKWebView で実機確認）。見た目には出さないまま body に繋いでおく。
+    jpCanvas.style.position = "absolute";
+    jpCanvas.style.left = "-9999px";
+    jpCanvas.style.top = "0";
+    jpCanvas.setAttribute("aria-hidden", "true");
+    document.body.appendChild(jpCanvas);
     jpCtx = jpCanvas.getContext("2d", { willReadFrequently: true });
   }
   const ctx = jpCtx;
