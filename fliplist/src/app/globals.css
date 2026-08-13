@@ -18,6 +18,21 @@
  * ここで使っている枠は、本物と同じ border-style:inset だけ。
  */
 
+/* ── 和文ドット書体 ────────────────────────────────
+   カセットのラベル（src/art/gfx.ts の textJP）が canvas に描くときの
+   フォント。ファイルは public/fonts/ に前から置いてあったが、
+   ここで @font-face を書いていなかったため実際には読み込まれておらず、
+   たまたま同名の書体がシステムに入っている端末でだけ正しく見えていた
+   （それ以外の端末では代替書体にフォールバックし、13px+高い閾値という
+   ぎりぎりの設定と噛み合わずラベルの字が砂嵐状に崩れていた）。 */
+@font-face {
+  font-family: "DotGothic16";
+  src: url("/fonts/DotGothic16-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
 /* ── リセット（本物 style.css の頭と同じ） ───────────────── */
 *,
 :after,
