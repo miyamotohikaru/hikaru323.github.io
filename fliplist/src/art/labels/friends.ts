@@ -24,16 +24,18 @@ const PRINT = "#f4f2ea"; // 印画紙
 const EDGE = "#20242c";
 
 // ── 和文の題字 ──────────────────────────────────────────
-// 「ともだちジェネレーター」11文字。ぜんぶ仮名なので 11px まで落とせる
-// （11px x 6 = 66px＝ラベルの内寸ちょうど）。6字＋5字の2行で20行。
-// 13px では1行5字が限界で 11文字は3行になり、3行 x 12 = 38行で絵が消える。
-// 行の割れ目が語の途中に来るのは実機の長い題名と同じ作法（ドラゴンクエ／スト）。
+// 「ともだち」「ジェネレーター」の2語で割る（語の途中で割らない）。
+// 「ジェネレーター」7字は11pxだと77px要ってラベル幅(68px)に入らないので、
+// 長いほうだけ9pxへ落とす（9px x 7 = 63px）。「ともだち」4字は11pxのまま
+// （9pxにそろえる必要が無い＝44px<66pxで既に余裕がある）。
+// ぜんぶ仮名なので、9pxまで落としても画が繋がって潰れることは無い。
 //
 // 題字の裾が前列の髪にかかるので、白のふちを8方向に回してから濃紺で塗る。
 // 仮名は画が開いているので、ふちを回しても中は潰れない。
-const T_A = "ともだちジェ";
-const T_B = "ネレーター";
-const T_SIZE = 11;
+const T_A = "ともだち";
+const T_B = "ジェネレーター";
+const T_SIZE_A = 11;
+const T_SIZE_B = 9;
 const RED = "#d82800";
 const GRASS = "#3aa03c";
 const GRASS_DK = "#1f7030";
@@ -206,10 +208,12 @@ export const art: LabelArt = {
     // 白の影を1px敷くのも駄目で、空のディザを白が食って字が二重に見える。
     // 濃紺と水色の差だけで足りる。裾が前列の髪に1行かかるが、
     // 髪はどれも頭頂が3pxしかないので、字が切れて見えるほどにはならない。
-    const asc = ascent(T_A + T_B, T_SIZE, JP_TH);
-    const to = { size: T_SIZE, ascent: asc };
-    // 濃紺のまま空に置くと、11pxの1px幅の画が水色に沈んで「引っかき傷」に見えた。
-    // 8方向のふちは駄目（11pxでは字間の1pxがふちで埋まり、行が一枚の板になる）。
+    // T_A・T_B は級数が違う（下の題字コメント参照）ので ascent も別々に測る。
+    // 混ぜて測ると、小さいほうの行の天地がずれる。
+    const toA = { size: T_SIZE_A, ascent: ascent(T_A, T_SIZE_A, JP_TH) };
+    const toB = { size: T_SIZE_B, ascent: ascent(T_B, T_SIZE_B, JP_TH) };
+    // 濃紺のまま空に置くと、細い画が水色に沈んで「引っかき傷」に見えた。
+    // 8方向のふちは駄目（字間の1pxがふちで埋まり、行が一枚の板になる）。
     // **右下の1方向だけに白を敷く。** 字間は埋まらず、画の下側だけが空から離れる。
     const halo = "#eaf6ff";
     for (const [dx, dy] of [
@@ -218,12 +222,12 @@ export const art: LabelArt = {
       [0, 1],
     ] as const) {
       const prev = g.pushOrigin(dx, dy);
-      jpRow(g, 1, T_A, halo, to);
-      jpRow(g, 11, T_B, halo, to);
+      jpRow(g, 1, T_A, halo, toA);
+      jpRow(g, 12, T_B, halo, toB);
       g.popOrigin(prev);
     }
-    jpRow(g, 1, T_A, EDGE, to);
-    jpRow(g, 11, T_B, EDGE, to);
+    jpRow(g, 1, T_A, EDGE, toA);
+    jpRow(g, 12, T_B, EDGE, toB);
 
     // ── 下の白場 ─────────────────────────────────────────
     // 題字が和文になったので、ここは欧文の従属表記と実数だけ。
