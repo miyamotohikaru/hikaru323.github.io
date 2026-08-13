@@ -4,6 +4,8 @@
 // アンチエイリアスも半端な座標も入り込まない。1ピクセルは必ず1ピクセル。
 // 表示側は CSS の image-rendering: pixelated で整数倍に拡大する。
 
+import { JP_GLYPHS } from "./jpGlyphs.generated";
+
 export type RGBA = [number, number, number, number];
 
 const colorCache = new Map<string, RGBA>();
@@ -433,6 +435,22 @@ export class PixelGfx {
 
 type Glyph = { w: number; h: number; adv: number; on: Uint8Array };
 
+/**
+ * いま glyphCache に載っている字母を書き出す。
+ * `jpGlyphs.generated.ts`（実機に依存しない事前計算テーブル）を
+ * 作り直すときに使う道具。`tools/dump-jp-glyphs.mjs` から呼ばれる。
+ */
+export function dumpGlyphCache(): Record<
+  string,
+  { w: number; h: number; adv: number; on: number[] } | null
+> {
+  const out: Record<string, { w: number; h: number; adv: number; on: number[] } | null> = {};
+  for (const [key, g] of glyphCache) {
+    out[key] = g ? { w: g.w, h: g.h, adv: g.adv, on: Array.from(g.on) } : null;
+  }
+  return out;
+}
+
 const glyphCache = new Map<string, Glyph | null>();
 let jpCanvas: HTMLCanvasElement | null = null;
 let jpCtx: CanvasRenderingContext2D | null = null;
@@ -470,6 +488,20 @@ function jpGlyph(ch: string, size: number, threshold: number): Glyph | null {
   const key = `${ch}|${size}|${threshold}`;
   const hit = glyphCache.get(key);
   if (hit !== undefined) return hit;
+
+  // 事前計算テーブルにあればそれを使う。ブラウザの fillText を一切通らないので、
+  // devicePixelRatio・@font-face・WebKitのアンチエイリアス差など実行時の
+  // 事情に一切左右されない――今回の一連の不具合はぜんぶここが理由だった。
+  // 新しいラベルで新しい字を使うとここに無いので、その場合だけ下の
+  // 実行時ラスタライズにフォールバックする（node tools/dump-jp-glyphs.mjs で
+  // テーブルを作り直せば、次回からはそちらも事前計算に乗る）。
+  const baked = JP_GLYPHS[key];
+  if (baked) {
+    const g: Glyph = { w: baked.w, h: baked.h, adv: baked.adv, on: new Uint8Array(baked.on) };
+    glyphCache.set(key, g);
+    return g;
+  }
+
   if (typeof document === "undefined") {
     glyphCache.set(key, null);
     return null;
