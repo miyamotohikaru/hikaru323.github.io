@@ -4,6 +4,7 @@ import Counter from "@/components/retro/Counter";
 import FlipTable from "@/components/retro/FlipTable";
 import Heading from "@/components/retro/Heading";
 import Marquee from "@/components/retro/Marquee";
+import MobileBreak from "@/components/retro/MobileBreak";
 import NoRightClick from "@/components/retro/NoRightClick";
 import Tricks from "@/components/retro/Tricks";
 import { HISTORY, jpDate, OPENED, PAGE_MADE } from "@/components/retro/util";
@@ -243,9 +244,10 @@ export default function Page() {
           <Counter />
 
           <p>
-            このページはリンクフリーです。ご自由にはってください。
+            <BreakText text="このページはリンクフリーです。◆ご自由にはってください。" />
             <br />
             <span className="mutual">相互リンク募集中！</span>
+            <MobileBreak />
             ご感想は
             <a href={CONTACT}>お問い合わせ</a>
             からどうぞ。
