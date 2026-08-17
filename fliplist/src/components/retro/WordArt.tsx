@@ -242,10 +242,15 @@ const CSS = `
   --wa-ry:var(--wa-line-w);
 }
 /* 縁と落ち影の層。本物の字は下の .wa__face なので、こちらは選択も読み上げもさせない。
-   影は縁を描いたあとの絵にかける（手本の影も「縁まで含めた形」の影） */
+   影は縁を描いたあとの絵にかける（手本の影も「縁まで含めた形」の影）。
+   幅ちょうど(100%)の箱に対して text-shadow で縁を外側へ足すと、特に斜体の
+   せん断とかけ合わさったときに、最後の字の右側だけ縁が斜めに薄く欠けた
+   （はみ出す量をブラウザが正しく確保しない）。中の文字は text-align:center を
+   継承しているので、左右対称に箱を広げれば見た目の位置は動かない。 */
 .wa__ink{
   position:absolute;
-  left:0; top:0; width:100%;
+  left:calc(var(--wa-line-w) * -1.5); top:0;
+  width:calc(100% + var(--wa-line-w) * 3);
   color:var(--wa-line);
   text-shadow:${RING};
   filter:var(--wa-filter);
