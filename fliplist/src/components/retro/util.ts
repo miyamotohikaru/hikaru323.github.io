@@ -6,20 +6,35 @@ export function jpDate(iso: string): string {
   return `${y}年${m}月${d}日`;
 }
 
+/**
+ * 一時的な総スイッチ。true のあいだは status や url に関係なく全16本を
+ * 「工事中」扱いにし、カセットの絵も名前も押せなくする（データ自体は
+ * 変えない）。公開できる状態になったら false に戻す。
+ */
+const ALL_UNDER_CONSTRUCTION = true;
+
 /** いま遊べるもの。公開済みで行き先があるものだけ */
 export function isOpen(f: Flip): boolean {
+  if (ALL_UNDER_CONSTRUCTION) return false;
   return f.status === "released" && Boolean(f.url);
 }
 
-/** 押せるもの。行き先が空の3件は押せない */
+/**
+ * 押せるもの。以前は行き先(url)があるだけで押せてしまい、「工事中」の
+ * 札が付いた実験（例: 消えた職業図鑑）が実は押せる、という食い違いが
+ * あった。押せる条件は isOpen と揃える。
+ */
 export function canOpen(f: Flip): boolean {
-  return Boolean(f.url);
+  return isOpen(f);
 }
 
 /** 公開中のもの、新しい順 */
 export const OPENED: Flip[] = FLIPS.filter(isOpen)
   .slice()
   .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+/** 押せないもの（＝工事中）の本数。注記の文言をここから出す */
+export const CLOSED_COUNT = FLIPS.length - OPENED.length;
 
 /** new.gif を付けるもの。更新履歴のあたらしい2行だけ */
 export const NEW_SLUGS: string[] = OPENED.slice(0, 2).map((f) => f.slug);

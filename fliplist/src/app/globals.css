@@ -662,6 +662,11 @@ a {
 #home .okuduke p {
   margin-bottom: 12px;
 }
+/* カウンターの本日／昨日の行と、次の「リンクフリーです」の段落のあいだだけ
+   1行ぶん余計にあける（他の段落間隔は詰めたまま） */
+#home .okuduke .hit-sub {
+  margin-bottom: 36px;
+}
 #home .mutual {
   font-weight: bold;
   color: #c00000;

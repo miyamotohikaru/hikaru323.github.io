@@ -7,7 +7,7 @@ import Marquee from "@/components/retro/Marquee";
 import MobileBreak from "@/components/retro/MobileBreak";
 import NoRightClick from "@/components/retro/NoRightClick";
 import Tricks from "@/components/retro/Tricks";
-import { HISTORY, jpDate, OPENED, PAGE_MADE } from "@/components/retro/util";
+import { CLOSED_COUNT, HISTORY, jpDate, OPENED, PAGE_MADE } from "@/components/retro/util";
 import { FLIP_DEFINITION } from "@/data/flips";
 
 const HOME = "https://kosukuma.com/home.html";
@@ -159,7 +159,7 @@ export default function Page() {
             ※<span className="kouji">工事中</span>
             のふりっぷは、まだできていません。公開までしばらくお待ちください。
             <br />
-            ※行き先のないふりっぷは押せません（3本あります）。
+            ※<span className="kouji">工事中</span>のふりっぷは押せません（{CLOSED_COUNT}本あります）。
             <br />
             ※あそべるふりっぷは、押すとあたらしい窓でひらきます。
           </p>
