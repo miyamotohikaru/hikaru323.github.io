@@ -837,9 +837,9 @@ a {
 
 /* ── 携帯だけ文字を小さくする箇所 ─────────────────── */
 @media screen and (max-width: 620px) {
-  /* 「ふりっぷとは」の本文2行 */
+  /* 「ふりっぷとは」の本文2行。さらに3px小さく(14px→11px) */
   #home .def-body {
-    font-size: 14px;
+    font-size: 11px;
   }
   /* 「背景をかえる」のリード文 */
   #home .bgpick-lead {

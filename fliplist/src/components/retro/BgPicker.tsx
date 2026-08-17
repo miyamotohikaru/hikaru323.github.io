@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import MobileBreak from "./MobileBreak";
 
 /**
  * 背景をかえる。
@@ -89,7 +90,9 @@ export default function BgPicker() {
       <p className="bgpick-lead">
         このページの背景は、お好きな色にかえられます。
         <br />
-        えらんだ色はおぼえておきますので、次にいらしたときも同じ色で出ます。
+        えらんだ色はおぼえておきますので、
+        <MobileBreak />
+        次にいらしたときも同じ色で出ます。
       </p>
       {/* 10色を1行に並べると1500pxを超えるので、5つずつ2行にする。
           折り返しに任せると「｜」が行の頭に来てしまうので、行は自分で切る */}

@@ -159,7 +159,7 @@ export default function Page() {
             ※<span className="kouji">工事中</span>
             のふりっぷは、まだできていません。
             <MobileBreak />
-            公開までしばらくお待ちください。
+            　公開までしばらくお待ちください。
             <br />
             ※<span className="kouji">工事中</span>のふりっぷは押せません（{CLOSED_COUNT}本あります）。
             <br />
@@ -188,9 +188,14 @@ export default function Page() {
                 <dd>
                   {log.text}
                   {i < 2 ? (
-                    <span className="new">
-                      <img src="/hp/new.gif" alt="new" width={29} height={17} />
-                    </span>
+                    <>
+                      {/* WORD JOINER(幅ゼロ、U+2060)。無いと携帯の狭い版面で
+                          NEW札だけ次の行へ落ちることがあった */}
+                      {"⁠"}
+                      <span className="new">
+                        <img src="/hp/new.gif" alt="new" width={29} height={17} />
+                      </span>
+                    </>
                   ) : null}
                 </dd>
               </div>
