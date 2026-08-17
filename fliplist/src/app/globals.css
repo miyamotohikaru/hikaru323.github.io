@@ -676,6 +676,10 @@ a {
   margin-bottom: 0;
   font-size: 14px;
 }
+/* 1本目(先頭へもどる)の上だけ、もう少しあける。2本目との間隔(18px)はそのまま */
+#home .okuduke .back:first-of-type {
+  margin-top: 32px;
+}
 
 /* カウンター。会社HPのトップは天に1つ、黒地に白い数字・青の3px枠・5桁の
    CGI画像（本物 home.css の #home .header p img）。
@@ -837,9 +841,9 @@ a {
 
 /* ── 携帯だけ文字を小さくする箇所 ─────────────────── */
 @media screen and (max-width: 620px) {
-  /* 「ふりっぷとは」の本文2行。さらに3px小さく(14px→11px) */
+  /* 「ふりっぷとは」の本文2行。さらに2px小さく(11px→9px) */
   #home .def-body {
-    font-size: 11px;
+    font-size: 9px;
   }
   /* 「背景をかえる」のリード文 */
   #home .bgpick-lead {

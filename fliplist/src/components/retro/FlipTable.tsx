@@ -11,6 +11,17 @@ import { canOpen, isOpen } from "./util";
 const CART_SCALE = 2;
 
 /**
+ * 名前の携帯だけの改行位置。flip.title 自体には記号を混ぜない
+ * （aria-label や更新履歴でも同じ文字列をそのまま使っているため）。
+ * ここに無い slug は flip.title をそのまま出す。
+ */
+const TITLE_BREAKS: Record<string, string> = {
+  friends: "ともだち◆ジェネレーター",
+  osyaberi: "元も子もない◆こすくまくん",
+  ads: "世界一◆広告の多いゲーム",
+};
+
+/**
  * ふりっぷ一覧表。
  *
  * 罫は会社HPの表と同じ（本物 home.css の #home .cont02 table）。
@@ -61,6 +72,7 @@ function cartClass(open: boolean): string {
 function Row({ flip, n }: { flip: Flip; n: number }) {
   const open = isOpen(flip);
   const press = canOpen(flip);
+  const titleNode = <BreakText text={TITLE_BREAKS[flip.slug] ?? flip.title} />;
 
   return (
     <tr>
@@ -89,11 +101,11 @@ function Row({ flip, n }: { flip: Flip; n: number }) {
       <td className="t-ttl">
         {press ? (
           <a href={flip.url} target="_blank" rel="noopener noreferrer">
-            {flip.title}
+            {titleNode}
           </a>
         ) : (
           /* 行き先が空の3件。押せないので、字だけ置いて灰色にしておく */
-          <span className="nolink">{flip.title}</span>
+          <span className="nolink">{titleNode}</span>
         )}
         {/*
           携帯のときだけ、名前の下に「どんなもの」を出す（CSSで出し入れする）。

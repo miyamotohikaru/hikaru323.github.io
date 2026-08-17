@@ -193,7 +193,7 @@ export default function Page() {
                           NEW札だけ次の行へ落ちることがあった */}
                       {"⁠"}
                       <span className="new">
-                        <img src="/hp/new.gif" alt="new" width={29} height={17} />
+                        <img src="/hp/new.gif" alt="new" width={24} height={14} />
                       </span>
                     </>
                   ) : null}
