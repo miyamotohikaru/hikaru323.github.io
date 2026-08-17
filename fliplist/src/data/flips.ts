@@ -234,7 +234,7 @@ export const FLIPS: Flip[] = [
     title: "精神病図鑑",
     kana: "せいしんびょうずかん",
     romaji: "DIAGNOSIS ARCHIVE",
-    desc: "診断名がいつ生まれどう変わったかを◇記録しています",
+    desc: "診断名がいつ生まれ◆どう変わったかを記録しています",
     url: "https://diagnosis-archive-001.vercel.app/",
     status: "wip",
     date: "2026-11-14",
