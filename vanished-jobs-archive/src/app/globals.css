@@ -375,9 +375,12 @@ html[data-vja-view="deck"] .vja-flips {
   -webkit-user-drag: none;
   -webkit-touch-callout: none;
 }
+/* 左右のカードは押すとそこまで送るので、指の形も押せる形にする */
+.vja-deck-card {
+  cursor: pointer;
+}
 /* 動かすのは前面カードだけ。全枚数を常時レイヤー化しない */
 .vja-deck-card.is-front {
-  cursor: pointer;
   will-change: transform;
   /* 影は box-shadow で焼く。drag/ジャイロで変形するたび再フィルタされる
      drop-shadow はここでは使わない */

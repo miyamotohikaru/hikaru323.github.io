@@ -432,7 +432,9 @@ const wrap = (n: number, total: number) => ((n % total) + total) % total;
 
 export default function DeckView({
   jobs,
-  flip: flipId = "stack",
+  // めくり方は横送りひとつに決めた（選ばせるのはやめた）。
+  // 他の作りも FLIPS に残してあるので、変えたくなったらここを差し替える
+  flip: flipId = "rail",
 }: {
   jobs: Job[];
   flip?: FlipId;
@@ -957,11 +959,19 @@ export default function DeckView({
 
           if (!engaged.current) {
             // 動いていなければタップ。遷移そのものは前面カードのリンクに任せる
-            suppress.current = !(
-              Math.abs(dx) < TAP_SLOP &&
-              Math.abs(dy) < TAP_SLOP &&
-              dt < TAP_MS
-            );
+            const isTap =
+              Math.abs(dx) < TAP_SLOP && Math.abs(dy) < TAP_SLOP && dt < TAP_MS;
+            suppress.current = !isTap;
+            // 前面より右のカードを触れば右へ、左のカードを触れば左へ送る。
+            // 触ったカードそのものを前に出すので、2枚先を触れば2枚進む
+            if (isTap) {
+              const hit = (e.target as HTMLElement | null)?.closest?.(
+                ".vja-deck-card"
+              ) as HTMLElement | null;
+              const k = Number(hit?.dataset.slot ?? 0);
+              // 音は送られたときに syncAnchor が鳴らすので、ここでは鳴らさない
+              if (k) goTo(Math.round(posRef.current) + k);
+            }
             return;
           }
           suppress.current = true;
@@ -996,6 +1006,7 @@ export default function DeckView({
                 key={k}
                 ref={(el) => void nodes.current.set(k, el)}
                 className="vja-deck-card"
+                data-slot={k}
               >
                 <div className="vja-deck-face" />
               </div>
@@ -1010,6 +1021,7 @@ export default function DeckView({
               className={`vja-deck-card ${k === 0 ? "is-front" : ""} ${
                 k < 0 && flip.nearDark ? "is-near" : ""
               } ${back ? "is-back" : ""}`}
+              data-slot={k}
               aria-hidden={k !== 0}
             >
               {/* 絵柄はこの中。ぼかしとセピアはここにだけ掛け、膜(::after)は素のまま残す */}
@@ -1099,7 +1111,9 @@ export default function DeckView({
         </div>
 
         <p className="mt-4 font-mono-label text-[9.5px] tracking-[0.3em] text-vja-ink-soft opacity-50">
-          {en ? "DRAG TO FLIP · TAP TO OPEN" : "ドラッグでめくる ・ タップでひらく"}
+          {en
+            ? "DRAG OR TAP SIDES · TAP CENTER TO OPEN"
+            : "ドラッグ／左右タップで送る ・ 中央でひらく"}
         </p>
       </div>
     </div>
