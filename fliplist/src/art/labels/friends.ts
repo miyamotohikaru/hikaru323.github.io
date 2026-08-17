@@ -167,15 +167,23 @@ export const art: LabelArt = {
     // 題字に20行ゆずったぶん、後列の頭は落とした。
     // 20人の群れは前列だけでも成り立つが、題字が無いと「ファミコン」に見えない。
     const PY = 20; // 前列の天
-    for (let i = 0; i < FRONT.length; i++) person(1 + i * 6, PY, FRONT[i], BODY);
+    const REAL_INDEX = 3; // 本物はこの1人だけ（下の鉤の位置と対応）
+    // 本物以外は点滅させる。「アップロードされた写真に増える友達」が
+    // 生成されたものだと絵でも伝わるように。人ごとに位相をずらして、
+    // 一斉にではなくばらばらに明滅させる（0.173 は同期を避けるための半端な値）。
+    const blinkVisible = (seed: number) => (t + seed) % 1 < 0.7;
+    for (let i = 0; i < FRONT.length; i++) {
+      if (i === REAL_INDEX || blinkVisible(i * 0.173)) person(1 + i * 6, PY, FRONT[i], BODY);
+    }
 
     // ── 動くもの: 右端からもう1人フレームインする ───────
+    // フレームインする人も「その他」の1人なので、同じく点滅させる
     const joined = t >= 0.5;
-    if (joined) person(60, PY, NEWCOMER, BODY);
+    if (joined && blinkVisible(0.7)) person(60, PY, NEWCOMER, BODY);
 
     // ── 本物はこの1人だけ。顔検出のような四隅の鉤で囲う ──
     // 群衆は赤い服だらけなので、鉤は白＋影にして必ず抜けるようにする
-    const rx = 1 + 3 * 6 + 3; // 前列4人目の頭の中心
+    const rx = 1 + REAL_INDEX * 6 + 3; // 前列4人目の頭の中心
     const bracket = (c: string, o: number) => {
       for (const [sx, sy] of [
         [-1, -1],
