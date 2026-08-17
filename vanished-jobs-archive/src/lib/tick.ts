@@ -26,6 +26,10 @@ const MIN_GAP = 14;
 /** 振動はもっと間引く。速い送りで鳴らし続けると唸りになる */
 const MIN_BUZZ_GAP = 120;
 
+/**
+ * 鳴らすかどうか。いまは切り替えを置いていないので誰も呼ばない。
+ * （既定で鳴る側にしてある）
+ */
 export function setTickEnabled(on: boolean) {
   enabled = on;
 }

@@ -7,7 +7,7 @@ import TiltCard from "@/components/TiltCard";
 import { Job } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
 import { readDeckAt, saveDeckAt, saveReturn } from "@/lib/returnNav";
-import { primeTick, setTickEnabled, tapSound, tick } from "@/lib/tick";
+import { primeTick, tapSound, tick } from "@/lib/tick";
 
 /**
  * デッキ表示。151枚を「束」として見せ、指で送る。
@@ -455,8 +455,6 @@ export default function DeckView({
   /** 描画に使う整数の基準。pos の四捨五入 */
   const [anchor, setAnchor] = useState(0);
   const [dragging, setDragging] = useState(false);
-  /** 送るたびの「カチッ」を鳴らすか */
-  const [sound, setSound] = useState(true);
 
   const posRef = useRef(0);
   const anchorRef = useRef(0);
@@ -484,14 +482,10 @@ export default function DeckView({
   const nodes = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const shadow = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("vja-tick");
-    if (saved === "off") setSound(false);
-  }, []);
-  useEffect(() => {
-    setTickEnabled(sound);
-    localStorage.setItem("vja-tick", sound ? "on" : "off");
-  }, [sound]);
+  // 送りの「カチッ」は最初から鳴らす（切り替えは置かない）。
+  // 音そのものは tick.ts の既定で鳴る側に倒してある。
+  // ただし WebAudio は操作の中でしか用意できないので、
+  // 最初に触ったとき（onPointerDown の primeTick）に組み立てる。
 
   useEffect(() => {
     setTouch(matchMedia("(hover: none)").matches);
@@ -1109,17 +1103,6 @@ export default function DeckView({
             className="vja-deck-nav"
           >
             <i className="vja-chev is-next" aria-hidden />
-          </button>
-          <button
-            onClick={() => {
-              primeTick();
-              setSound((v) => !v);
-            }}
-            aria-pressed={sound}
-            aria-label={en ? "sound" : "送る音"}
-            className={`vja-deck-nav vja-deck-sound ${sound ? "is-on" : ""}`}
-          >
-            <i aria-hidden />
           </button>
         </div>
 
