@@ -783,6 +783,8 @@ a {
     margin-top: 3px;
     font-weight: normal;
     color: #000000;
+    /* 地の文(12px)より3px小さく */
+    font-size: 9px;
   }
   /* 20pxだと2桁(10〜16番)の太字数字が幅に入りきらず、"1"と"6"が
      縦に2段へ折り返っていた（携帯だけで起こる改行崩れ）。実測で
@@ -791,9 +793,17 @@ a {
   #home .cont02 th.t-no {
     width: 26px;
   }
+  /* カセットの絵を少しだけ縮め(176x128→154x112・7/8倍)、浮いた分を
+     ふりっぷの名前のマスへまわす。字母は事前計算ビットマップになった
+     （jpGlyphs.generated.ts）ので、以前ほど整数倍率にこだわらなくても
+     字が砂嵐状に崩れる心配は無い。 */
   #home .cont02 td.t-cart,
   #home .cont02 th.t-cart {
-    width: 180px;
+    width: 162px;
+  }
+  #home .cont02 td.t-cart canvas {
+    width: 154px !important;
+    height: 112px !important;
   }
   #home .cont02 td.t-ttl,
   #home .cont02 th.t-ttl {
@@ -822,6 +832,22 @@ a {
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ── 携帯だけ文字を小さくする箇所 ─────────────────── */
+@media screen and (max-width: 620px) {
+  /* 「ふりっぷとは」の本文2行 */
+  #home .def-body {
+    font-size: 14px;
+  }
+  /* 「背景をかえる」のリード文 */
+  #home .bgpick-lead {
+    font-size: 12px;
+  }
+  /* リード文の点滅（★ふりっぷは随時ふえていきます★） */
+  #home .lead .blink {
+    font-size: 14px;
   }
 }
 

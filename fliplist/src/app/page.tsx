@@ -157,7 +157,9 @@ export default function Page() {
 
           <p className="note note--foot">
             ※<span className="kouji">工事中</span>
-            のふりっぷは、まだできていません。公開までしばらくお待ちください。
+            のふりっぷは、まだできていません。
+            <MobileBreak />
+            公開までしばらくお待ちください。
             <br />
             ※<span className="kouji">工事中</span>のふりっぷは押せません（{CLOSED_COUNT}本あります）。
             <br />
@@ -219,7 +221,9 @@ export default function Page() {
                   </p>
                   <p className="def-gloss">{FLIP_DEFINITION.gloss}</p>
                   {FLIP_DEFINITION.body.map((line) => (
-                    <p key={line}>{line}</p>
+                    <p className="def-body" key={line}>
+                      {line}
+                    </p>
                   ))}
                 </td>
               </tr>
