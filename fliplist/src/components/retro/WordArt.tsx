@@ -246,11 +246,14 @@ const CSS = `
    幅ちょうど(100%)の箱に対して text-shadow で縁を外側へ足すと、特に斜体の
    せん断とかけ合わさったときに、最後の字の右側だけ縁が斜めに薄く欠けた
    （はみ出す量をブラウザが正しく確保しない）。中の文字は text-align:center を
-   継承しているので、左右対称に箱を広げれば見た目の位置は動かない。 */
+   継承しているので、左右対称に箱を広げれば見た目の位置は動かない。
+   最初は縁の太さの1.5倍ぶんだけ広げたが、それでも欠けが残るとの報告があった
+   ので、実害の無い(箱を広げるだけで見た目は動かない)余白なのを踏まえて
+   5倍まで広げ、かなり余裕を持たせてある。 */
 .wa__ink{
   position:absolute;
-  left:calc(var(--wa-line-w) * -1.5); top:0;
-  width:calc(100% + var(--wa-line-w) * 3);
+  left:calc(var(--wa-line-w) * -5); top:0;
+  width:calc(100% + var(--wa-line-w) * 10);
   color:var(--wa-line);
   text-shadow:${RING};
   filter:var(--wa-filter);
