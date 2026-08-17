@@ -160,9 +160,6 @@ export default function IndexView() {
               </button>
             </div>
           </div>
-          <div className="vja-bar-cell vja-bar-count">
-            {filtered.length}/{stats.total}
-          </div>
         </div>
 
         {open && (

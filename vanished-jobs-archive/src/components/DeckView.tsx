@@ -574,7 +574,10 @@ export default function DeckView({
       el.style.zIndex = String(
         Math.round(100 - Math.abs(rel) * 3) * 2 + (rel < 0 ? 1 : 0)
       );
-      el.style.pointerEvents = Math.abs(rel) < 0.5 ? "auto" : "none";
+      // どのカードも指で拾えるようにしておく。
+      // 前面以外を none にすると、左右のカードを押しても当たりが束の地に抜けてしまい、
+      // 「押したカードまで送る」が効かない
+      el.style.pointerEvents = "auto";
 
       if (!withFilter) return;
       // ぼかしとセピアはカードの絵柄だけに掛ける。
@@ -755,6 +758,19 @@ export default function DeckView({
     (dir: 1 | -1) => goTo(Math.round(posRef.current) + dir),
     [goTo]
   );
+
+  /**
+   * カードの外（束の地）を押したときの向き。
+   * 前面カードの右を押したら右、左を押したら左。中にいるときは動かさない。
+   */
+  const sideOfCenter = useCallback((clientX: number) => {
+    const el = nodes.current.get(0);
+    if (!el) return 0;
+    const b = el.getBoundingClientRect();
+    if (clientX > b.right) return 1;
+    if (clientX < b.left) return -1;
+    return 0;
+  }, []);
 
   /** 直近だけを見た瞬間の速度。ゆっくり引いてから弾く操作も拾える */
   const releaseV = useCallback(() => {
@@ -958,17 +974,20 @@ export default function DeckView({
           const dt = performance.now() - s.t;
 
           if (!engaged.current) {
-            // 動いていなければタップ。遷移そのものは前面カードのリンクに任せる
-            const isTap =
-              Math.abs(dx) < TAP_SLOP && Math.abs(dy) < TAP_SLOP && dt < TAP_MS;
-            suppress.current = !isTap;
+            // 指が動いていなければタップ。遷移そのものは前面カードのリンクに任せる
+            const still = Math.abs(dx) < TAP_SLOP && Math.abs(dy) < TAP_SLOP;
+            suppress.current = !(still && dt < TAP_MS);
             // 前面より右のカードを触れば右へ、左のカードを触れば左へ送る。
-            // 触ったカードそのものを前に出すので、2枚先を触れば2枚進む
-            if (isTap) {
+            // 触ったカードそのものを前に出すので、2枚先を触れば2枚進む。
+            // 長押し気味でも送りたいので、こちらは時間を見ない
+            if (still) {
               const hit = (e.target as HTMLElement | null)?.closest?.(
                 ".vja-deck-card"
               ) as HTMLElement | null;
-              const k = Number(hit?.dataset.slot ?? 0);
+              // カードの外（束の地）を押したときは、前面の左右どちら側かで決める
+              const k = hit
+                ? Number(hit.dataset.slot ?? 0)
+                : sideOfCenter(e.clientX);
               // 音は送られたときに syncAnchor が鳴らすので、ここでは鳴らさない
               if (k) goTo(Math.round(posRef.current) + k);
             }

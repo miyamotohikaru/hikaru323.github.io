@@ -180,23 +180,13 @@ body {
   font-size: 10px;
   color: var(--vja-cream);
 }
-/* 幅の狭い端末では枡の余白を先に譲る。3つの枡が横に並ぶのを崩さない
-   （実測 393px で 141+145+74=360 とほぼ一杯） */
+/* 幅の狭い端末では枡の余白を先に譲る */
 @media (max-width: 380px) {
   .vja-bar-cell {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
   }
 }
-.vja-bar-count {
-  flex: none;
-  font-family: var(--font-plex-mono), monospace;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--vja-ink-soft);
-  white-space: nowrap;
-}
-
 .vja-modes {
   display: inline-flex;
   border: 1px solid var(--vja-line);
@@ -261,16 +251,19 @@ html[data-vja-view="deck"] .vja-flips {
 
 /* 背の低い画面（iPhone SE など 720px 以下）で束を出しているとき。
    実測 375x667 では ヘッダ60＋ヒーロー114＋バー2本96＋束200＋操作系109＋タブ41＝675 で
-   19pxはみ出していた。惹句を伏せて題だけ残し、案内文を伏せ、
-   絞り込みバーの枡目を薄くし、めくり方を1行に収める。 */
+   19pxはみ出していた。題と惹句は残したまま、余白と字を詰め、
+   絞り込みバーの枡目を薄くし、束の下の案内文を伏せる。 */
 @media (max-height: 720px) {
   html[data-vja-view="deck"] .vja-hero {
     padding-top: 0.6rem;
     padding-bottom: 0.4rem;
   }
-  /* 惹句も伏せる。題だけ残す */
+  /* 惹句（「コンピュータ」は…）はカードのときも出したままにする。
+     この一行が図鑑の入口なので、狭いからといって伏せない。
+     詰めるのは余白と枡目の高さで足りている */
   html[data-vja-view="deck"] .vja-hero-lead {
-    display: none;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
   }
   /* 枡目の高さも譲る。押せる範囲は残したいので詰めるだけ */
   html[data-vja-view="deck"] .vja-bar-cell {
