@@ -69,7 +69,7 @@ export default function AboutPage() {
           </div>
 
           <p className="font-mono-label mt-12 text-center text-[10px] tracking-[0.5em] text-vja-ink-soft">
-            死因 7分類
+            消えた理由 7分類
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             {[1, 2, 3, 4, 5, 6, 7].map((n) => (

@@ -7,7 +7,7 @@ import TiltCard from "@/components/TiltCard";
 import { Job } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
 import { readDeckAt, saveDeckAt, saveReturn } from "@/lib/returnNav";
-import { primeTick, setTickEnabled, tick } from "@/lib/tick";
+import { primeTick, setTickEnabled, tapSound, tick } from "@/lib/tick";
 
 /**
  * デッキ表示。151枚を「束」として見せ、指で送る。
@@ -112,11 +112,11 @@ type Flip = {
   nearDark: boolean;
 };
 
-/** 横ながしで前後に並べる枚数 */
+/** 横送りで前後に並べる枚数 */
 const RAIL_REACH = 5;
 
 /**
- * 横ながしの並びをつくる。
+ * 横送りの並びをつくる。
  *
  * 隠れているカードも中身が読めるように、全部を本物のカードで描く。
  * 重なりの幅（＝1枚が覗く量）は画面の広さで変える。狭い画面で広く取ると
@@ -237,7 +237,7 @@ export const FLIPS: Flip[] = [
   {
     // 奥へ重なっていく束。手前に一枚外れることで被写界深度になる
     id: "stack",
-    ja: "束",
+    ja: "重ね",
     en: "STACK",
     min: -2,
     max: 5,
@@ -264,7 +264,7 @@ export const FLIPS: Flip[] = [
   {
     // 平らな一列。前後のカードが両脇に重なって並び、どれも中身が読める
     id: "rail",
-    ja: "横ながし",
+    ja: "横送り",
     en: "RAIL",
     min: -1,
     max: 1,
@@ -1026,7 +1026,7 @@ export default function DeckView({
                         ev.preventDefault();
                         return;
                       }
-                      navigator.vibrate?.([0, 12]);
+                      tapSound();
                       saveReturn();
                       saveDeckAt(job.no);
                     }}

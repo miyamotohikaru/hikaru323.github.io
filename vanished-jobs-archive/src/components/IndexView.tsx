@@ -81,7 +81,7 @@ export default function IndexView() {
   const [mode, setMode] = useState<"grid" | "deck">("deck");
 
   /** 束のときのめくり方 */
-  const [flip, setFlip] = useState<FlipId>("stack");
+  const [flip, setFlip] = useState<FlipId>("rail");
 
   useEffect(() => {
     const saved = localStorage.getItem("vja-view");
@@ -165,7 +165,7 @@ export default function IndexView() {
                 aria-pressed={mode === "deck"}
                 className={mode === "deck" ? "is-on" : ""}
               >
-                {en ? "DECK" : "束"}
+                {en ? "CARDS" : "カード"}
               </button>
             </div>
             <span className="font-mono-label text-xs tracking-[0.25em] text-vja-ink-soft">
@@ -253,7 +253,7 @@ export default function IndexView() {
                   </Chip>
                 ))}
               </Group>
-              <Group label={en ? "Cause of death" : "死因"}>
+              <Group label={en ? "Why it vanished" : "消えた理由"}>
                 <Chip active={cause.length === 0} onClick={() => setCause([])}>
                   {ALL}
                 </Chip>

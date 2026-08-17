@@ -45,7 +45,7 @@ export function statusBadge(j: Job): string {
   return j.endLabel ? `${m.mark}${m.label} ${j.endLabel}` : `${m.mark}${m.label}`;
 }
 
-/* ---- 死因 7分類 ---- */
+/* ---- 消えた理由 7分類 ---- */
 
 export const causeLabels: Record<number, string> = {
   1: "電化・機械化",

@@ -1,5 +1,4 @@
 import IndexView from "@/components/IndexView";
-import { stats } from "@/data/jobs";
 import { T } from "@/lib/lang";
 
 export default function Home() {
@@ -9,47 +8,27 @@ export default function Home() {
       {/* 束のときは vja-hero の指定（globals.css）で全体を詰める。
           カードを1枚まるごと画面に入れるための場所を、ここから譲る */}
       <section className="vja-hero px-4 pb-8 pt-10 text-left md:pt-16 md:text-center">
-        <p className="font-mono-label text-[10px] tracking-[0.5em] text-vja-ink-soft">
-          ISSUE 02
-        </p>
-        <h1 className="mt-4 text-4xl font-bold tracking-wide md:text-6xl">
+        <h1 className="text-4xl font-bold tracking-wide md:text-6xl">
           <T
             ja="消滅職業図鑑"
             en={<span className="font-logo">Vanished Jobs Archive.</span>}
           />
         </h1>
-        <p className="font-mono-label mt-3 text-[10px] tracking-[0.4em] text-vja-ink-soft">
+        <p className="vja-hero-sub font-mono-label mt-3 text-[10px] tracking-[0.4em] text-vja-ink-soft">
           <T ja="VANISHED JOBS ARCHIVE." en="消滅職業図鑑" />
         </p>
-        <p className="mt-5 text-sm font-semibold tracking-wider md:text-base">
+        <p className="vja-hero-lead mt-5 text-sm font-semibold tracking-wider md:text-base">
           <T
             ja="「コンピュータ」は、かつて人間の職業だった。"
             en={"“Computer” was once a human job."}
           />
         </p>
-        <p className="mt-2 text-xs tracking-wider text-vja-ink-soft">
+        <p className="vja-hero-note mt-2 text-xs tracking-wider text-vja-ink-soft">
           <T
-            ja={`消えた職業${stats.total}件を、こすくまくんと記録する図鑑。`}
-            en={`An archive of ${stats.total} vanished jobs, recorded with Kosukuma-kun.`}
+            ja="時代とともに消えた職業を記録する図鑑"
+            en="An archive of jobs that vanished with the times."
           />
         </p>
-        <div className="mt-8 flex max-w-md items-stretch md:mx-auto md:justify-center">
-          {[
-            { n: String(stats.total), ja: "項目", en: "ENTRIES" },
-            { n: String(stats.regions), ja: "地域", en: "REGIONS" },
-            { n: String(stats.lineages), ja: "系譜", en: "LINEAGES" },
-          ].map((s, i) => (
-            <div
-              key={s.ja}
-              className={`flex-1 px-6 first:pl-0 md:first:pl-6 ${i > 0 ? "border-l border-vja-line" : ""}`}
-            >
-              <p className="font-logo text-3xl font-bold md:text-4xl">{s.n}</p>
-              <p className="font-mono-label mt-1 text-[10px] tracking-[0.3em] text-vja-ink-soft">
-                <T ja={s.ja} en={s.en} />
-              </p>
-            </div>
-          ))}
-        </div>
       </section>
 
       <IndexView />

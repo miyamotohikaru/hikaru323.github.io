@@ -150,9 +150,9 @@ body {
    実測（1440x900）では、束の上に ヘッダ56 + ヒーロー373 + 2本のバー132 が積まれ、
    残り339pxにカード597px＋操作系121pxを入れようとして、289pxはみ出していた。
 
-   ヒーローは消さずに畳む。名乗り（ISSUE 02・題・惹句）は残し、
-   ローマ字の副題・説明の1行・数字3つの帯を伏せて、余白も詰める。
-   一覧に切り替えれば元のヒーローが戻る。 */
+   ヒーローは消さずに畳む。題・惹句・説明は残し、ローマ字の副題だけ伏せて
+   余白を詰める。一覧に切り替えれば元のヒーローが戻る。
+   伏せる相手は順番ではなく名前で指す（行が増減しても取り違えない）。 */
 html[data-vja-view="deck"] .vja-hero {
   padding-top: 1.25rem;
   padding-bottom: 0.75rem;
@@ -161,13 +161,11 @@ html[data-vja-view="deck"] .vja-hero h1 {
   margin-top: 0.5rem;
   font-size: 1.75rem;
 }
-/* ローマ字の副題・説明の1行・数字の帯を伏せる */
-html[data-vja-view="deck"] .vja-hero > p:nth-of-type(2),
-html[data-vja-view="deck"] .vja-hero > p:nth-of-type(4),
-html[data-vja-view="deck"] .vja-hero > div:last-child {
+/* ローマ字の副題だけ伏せる */
+html[data-vja-view="deck"] .vja-hero-sub {
   display: none;
 }
-html[data-vja-view="deck"] .vja-hero > p:nth-of-type(3) {
+html[data-vja-view="deck"] .vja-hero-lead {
   margin-top: 0.5rem;
 }
 @media (min-width: 768px) {
@@ -187,15 +185,15 @@ html[data-vja-view="deck"] .vja-flips {
 
 /* 背の低い画面（iPhone SE など 720px 以下）で束を出しているとき。
    実測 375x667 では ヘッダ60＋ヒーロー114＋バー2本96＋束200＋操作系109＋タブ41＝675 で
-   19pxはみ出していた。名乗りをさらに削り、案内文を伏せ、めくり方を1行に収める。 */
+   19pxはみ出していた。惹句を伏せて題と説明だけ残し、案内文を伏せ、
+   めくり方を1行に収める。 */
 @media (max-height: 720px) {
   html[data-vja-view="deck"] .vja-hero {
     padding-top: 0.6rem;
     padding-bottom: 0.4rem;
   }
-  /* ISSUE 02 の1行と惹句を伏せる。題だけ残す */
-  html[data-vja-view="deck"] .vja-hero > p:nth-of-type(1),
-  html[data-vja-view="deck"] .vja-hero > p:nth-of-type(3) {
+  /* 惹句も伏せる。題だけ残す */
+  html[data-vja-view="deck"] .vja-hero-lead {
     display: none;
   }
   html[data-vja-view="deck"] .vja-hero h1 {
