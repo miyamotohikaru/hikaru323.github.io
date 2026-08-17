@@ -671,14 +671,17 @@ a {
   font-weight: bold;
   color: #c00000;
 }
+/* 1本目(先頭へもどる)の上を5行ぶんあける（16px×1.5行送り=24px×5）。
+   Counter が .hit/.hit-sub という p を先に出しているので :first-of-type は
+   そちらに取られて効かない。2本目にだけ効く隣接セレクタで上書きする作り。 */
 #home .back {
-  margin-top: 18px;
+  margin-top: 120px;
   margin-bottom: 0;
   font-size: 14px;
 }
-/* 1本目(先頭へもどる)の上だけ、もう少しあける。2本目との間隔(18px)はそのまま */
-#home .okuduke .back:first-of-type {
-  margin-top: 32px;
+/* 2本目(トップページへもどる)は1本目とすぐ続ける。間隔は元の18pxのまま */
+#home .okuduke .back + .back {
+  margin-top: 18px;
 }
 
 /* カウンター。会社HPのトップは天に1つ、黒地に白い数字・青の3px枠・5桁の
@@ -787,8 +790,8 @@ a {
     margin-top: 3px;
     font-weight: normal;
     color: #000000;
-    /* 地の文(12px)より5px小さく */
-    font-size: 7px;
+    /* 地の文(12px)より3px小さく */
+    font-size: 9px;
   }
   /* 20pxだと2桁(10〜16番)の太字数字が幅に入りきらず、"1"と"6"が
      縦に2段へ折り返っていた（携帯だけで起こる改行崩れ）。実測で
