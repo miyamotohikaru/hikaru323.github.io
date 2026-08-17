@@ -131,35 +131,27 @@ export default function IndexView() {
 
   return (
     <>
-      {/* 絞り込みバー */}
+      {/* 絞り込みバー
+          罫線で区切った枡目にする。枡目にすると押せる範囲が枡ぜんたいに広がり、
+          どこを押すのかが分かる（文字だけだと当たりが見えない）。 */}
       <div className="mx-auto max-w-6xl px-4 md:px-8">
-        <div className="flex items-center justify-between border-y border-vja-line py-3">
+        <div className="vja-bar">
           <button
             onClick={() => setOpen((o) => !o)}
-            className="flex items-center gap-3"
+            aria-expanded={open}
+            className="vja-bar-cell vja-bar-sort"
           >
-            <span className="font-mono-label text-[10px] tracking-[0.35em] text-vja-ink-soft">
-              SORT
-            </span>
-            <span className="text-sm font-semibold tracking-[0.2em]">
-              {en ? "Filter" : "絞り込み"} {open ? "∧" : "∨"}
+            <span className="vja-bar-label">SORT</span>
+            <span className="vja-bar-mark" aria-hidden>
+              {open ? "∧" : "∨"}
             </span>
             {activeCount > 0 && (
-              <span className="rounded-full bg-vja-accent px-2 py-0.5 font-mono-label text-[10px] text-vja-cream">
-                {activeCount}
-              </span>
+              <span className="vja-bar-badge">{activeCount}</span>
             )}
           </button>
-          <div className="flex items-center gap-4">
-            {/* 表示の切り替え（索引グリッドはそのまま残し、束表示を足す） */}
+          {/* 表示の切り替え（索引グリッドはそのまま残し、カード表示を足す） */}
+          <div className="vja-bar-cell">
             <div className="vja-modes" role="group" aria-label={en ? "view" : "表示"}>
-              <button
-                onClick={() => setMode("grid")}
-                aria-pressed={mode === "grid"}
-                className={mode === "grid" ? "is-on" : ""}
-              >
-                {en ? "GRID" : "一覧"}
-              </button>
               <button
                 onClick={() => setMode("deck")}
                 aria-pressed={mode === "deck"}
@@ -167,10 +159,17 @@ export default function IndexView() {
               >
                 {en ? "CARDS" : "カード"}
               </button>
+              <button
+                onClick={() => setMode("grid")}
+                aria-pressed={mode === "grid"}
+                className={mode === "grid" ? "is-on" : ""}
+              >
+                {en ? "GRID" : "一覧"}
+              </button>
             </div>
-            <span className="font-mono-label text-xs tracking-[0.25em] text-vja-ink-soft">
-              {filtered.length} / {stats.total}
-            </span>
+          </div>
+          <div className="vja-bar-cell vja-bar-count">
+            {filtered.length}/{stats.total}
           </div>
         </div>
 

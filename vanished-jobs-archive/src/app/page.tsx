@@ -23,12 +23,6 @@ export default function Home() {
             en={"“Computer” was once a human job."}
           />
         </p>
-        <p className="vja-hero-note mt-2 text-xs tracking-wider text-vja-ink-soft">
-          <T
-            ja="時代とともに消えた職業を記録する図鑑"
-            en="An archive of jobs that vanished with the times."
-          />
-        </p>
       </section>
 
       <IndexView />
