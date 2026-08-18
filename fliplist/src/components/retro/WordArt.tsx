@@ -265,12 +265,26 @@ const CSS = `
 .wa__face{
   position:relative;
   color:var(--wa-fill-color);
+  /* 塗る場所を字の四方へ広げておく。**ここが無いと字が欠ける。**
+     background-clip:text は「背景を字型に抜く」指定だが、抜く前の背景は
+     この要素の箱の中にしか塗られない。字は italic のせん断と字面のはみ出しで
+     箱の外へ数px出ているので、その外側だけ塗るものが無く、透けていた
+     （最後の字の右上が斜めに切り落とされる）。
+     横の padding は行の送りに効くので、同じだけ margin で戻す。
+     縦の padding は行の高さに効かないので、戻さなくてよい。 */
+  padding:0.6em 0.4em;
+  margin-left:-0.4em;
+  margin-right:-0.4em;
 }
 .wa__face.wa--grad{
   color:transparent;
   -webkit-text-fill-color:transparent;
   background-image:var(--wa-fill-image);
   background-repeat:no-repeat;
+  /* 位置と大きさの基準は、広げる前の箱（content-box）のまま。
+     既定の padding-box にすると、上で足した padding のぶんグラデが縦にずれて、
+     字がグラデの外へ出てしまう */
+  background-origin:content-box;
   /* 横は要素の幅より 1em ずつ広く敷く。**ここを 100% にすると字が欠ける。**
      字は italic のせん断で上が右へ、下が左へ 7〜9px ずり出していて、
      要素の外に出たぶんには塗る背景が無く、
