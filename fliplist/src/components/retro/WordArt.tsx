@@ -271,8 +271,14 @@ const CSS = `
   -webkit-text-fill-color:transparent;
   background-image:var(--wa-fill-image);
   background-repeat:no-repeat;
-  background-size:100% ${BOX_H}em;
-  background-position:0 ${BOX_TOP}em;
+  /* 横は要素の幅より 1em ずつ広く敷く。**ここを 100% にすると字が欠ける。**
+     字は italic のせん断で上が右へ、下が左へ 7〜9px ずり出していて、
+     要素の外に出たぶんには塗る背景が無く、
+     background-clip:text で抜いたときにそこだけ透けていた
+     （最後の字の右上と、最初の字の左下が削れて見える）。
+     グラデは 180deg の縦方向なので、横に広げても色の出方は1つも変わらない。 */
+  background-size:calc(100% + 2em) ${BOX_H}em;
+  background-position:-1em ${BOX_TOP}em;
   -webkit-background-clip:text;
   background-clip:text;
 }

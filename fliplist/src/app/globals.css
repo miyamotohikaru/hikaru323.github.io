@@ -98,9 +98,11 @@ a {
   color: blue;
 }
 
-/* 本物 style.css の点滅。0.5秒で、4割の時間は消えている */
+/* 点滅。消えている割合（4割）は本物 style.css のまま。
+   速さだけ本物の0.5秒から3倍ゆっくりにしてある。
+   0.5秒は当時の作法そのものだが、この版面では字が大きいので目にうるさかった。 */
 .blink {
-  animation: 0.5s linear infinite blink_effect;
+  animation: 1.5s linear infinite blink_effect;
 }
 @keyframes blink_effect {
   0% {
