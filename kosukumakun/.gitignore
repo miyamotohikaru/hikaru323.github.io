@@ -1,0 +1,15 @@
+# 依存とビルド生成物
+node_modules/
+.next/
+out/
+.vercel
+
+# Macアプリのビルド成果物（配布ZIPは public/download/ に置いたものを配る）
+mac/build/
+
+# 素材を焼くときの中間ファイル
+tools/.work/
+tools/__pycache__/
+
+.DS_Store
+*.log

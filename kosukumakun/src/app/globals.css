@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────
+   こすくまくん 説明サイト
+   版面の考え方: 海外の新聞・雑誌の一面。
+     - 生成りの紙に黒インキ。色は差し色の赤だけ
+     - 見出しは明朝／セリフ、本文は小さめ、行間は詰め気味
+     - 罫線で区切る。影やグラデーションは使わない
+     - 画像は1枚も置かない（こすくまくんは公式ベクターから inline SVG）
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  --paper: #f3f0e8;
+  --paper-2: #ebe7dc;
+  --ink: #16130f;
+  --ink-60: #5c564c;
+  --ink-30: #a29b8e;
+  --rule: #c9c2b3;
+  --accent: #b0402c;
+  --cream: #fafad3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14120f;
+    --paper-2: #1c1915;
+    --ink: #efe9dc;
+    --ink-60: #a49c8c;
+    --ink-30: #6b6458;
+    --rule: #3a352d;
+    --accent: #d4674f;
+  }
+}
+
+html, body { background: var(--paper); color: var(--ink); }
+
+body {
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "Times New Roman", serif;
+  font-feature-settings: "palt" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sans {
+  font-family: "Helvetica Neue", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+}
+
+/* 小見出しのラベル（新聞のセクション名） */
+.eyebrow {
+  font-family: "Helvetica Neue", "Hiragino Sans", system-ui, sans-serif;
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+}
+
+.rule       { border-top: 1px solid var(--rule); }
+.rule-thick { border-top: 3px solid var(--ink); }
+.rule-l     { border-left: 1px solid var(--rule); }
+
+.drop::first-letter {
+  float: left;
+  font-size: 3.1em;
+  line-height: .84;
+  padding: .06em .1em 0 0;
+  font-weight: 700;
+}
+
+/* 呼吸。prefers-reduced-motion では止める */
+@keyframes breathe { 0%,100% { transform: scaleY(1) } 50% { transform: scaleY(1.018) } }
+.breathe { animation: breathe 4.2s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes blink { 0%,96%,100% { transform: scaleY(1) } 98% { transform: scaleY(.1) } }
+.blink { animation: blink 6s steps(1,end) infinite; transform-origin: 50% 50%; }
+@media (prefers-reduced-motion: reduce) {
+  .breathe, .blink { animation: none; }
+}
