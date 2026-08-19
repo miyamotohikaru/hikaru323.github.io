@@ -88,8 +88,8 @@ enum Snapshot {
             f.peekCols = Int(CGFloat(SpriteBank.sprite("turn").w) * 0.70)
             f.peekSide = 1; f.faceRight = false
         },
-        Scene(name: "43_sp_bl", label: "左下から斜めに") { f in
-            f.sprite = "turn"; f.faceRight = true
+        Scene(name: "43_sp_bottom", label: "下から ひょこっと") { f in
+            f.sprite = "idle"; f.peekRows = 24; f.shadow = 0
         },
         Scene(name: "14_peek_l",  label: "左の縁からひょこっと") { f in
             f.sprite = "lying"; f.shadow = 0

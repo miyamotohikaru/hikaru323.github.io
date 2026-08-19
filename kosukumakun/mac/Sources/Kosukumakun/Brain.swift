@@ -32,7 +32,7 @@ final class Brain {
         case top        // 上から さかさまに ぶらさがって のぞく
         case right      // 右のはしから 横向きで のぞく
         case left       // 左のはしから 横向きで のぞく
-        case bottomLeft // 左下から 斜めに 見上げる
+        case bottom     // 下から 頭だけ 出して のぞく
     }
 
     // MARK: 出力
@@ -207,7 +207,7 @@ final class Brain {
     ///
     /// 動画を見ているときのように「使ってはいるが打ってはいない」あいだ、
     /// 画面の真ん中に居ると邪魔なので、はしに移って顔だけ出す。
-    /// 上は **さかさま**、左右はウィンドウの横のぞきと同じ形、左下は斜めに見上げる形。
+    /// 上は **さかさま**、左右はウィンドウの横のぞきと同じ形、下は頭だけ出す形。
     func enterScreenPeek(_ kind: ScreenPeek) {
         if kind != screenPeek { peekAlong = -1 }   // 場所を変えたら、その縁の真ん中から
         screenPeek = kind
@@ -263,8 +263,8 @@ final class Brain {
         guard state == .screenPeek else { return }
         let g = peekGrab ?? 0
         switch screenPeek {
-        case .top, .bottomLeft: peekAlong = p.x + g
-        case .right, .left:     peekAlong = p.y + g
+        case .top, .bottom: peekAlong = p.x + g
+        case .right, .left: peekAlong = p.y + g
         }
         placeScreenPeek()
     }
@@ -286,9 +286,10 @@ final class Brain {
             pos = CGPoint(x: s.maxX, y: along(s.minY + m, s.maxY - m, s.midY))
         case .left:
             pos = CGPoint(x: s.minX, y: along(s.minY + m, s.maxY - m, s.midY))
-        case .bottomLeft:
-            pos = CGPoint(x: along(s.minX + h * 0.34, s.maxX - m, s.minX + h * 0.34),
-                          y: s.minY + 6)
+        case .bottom:
+            // 画面の下のふちから頭だけ出す。足元をふちに置くと、
+            // 体は画面の外（下）に隠れて、頭だけが出ている形になる。
+            pos = CGPoint(x: along(s.minX + m, s.maxX - m, s.midX), y: s.minY)
         }
         ground = s.minY + 6
     }
@@ -826,11 +827,10 @@ final class Brain {
             f.peekCols = max(6, Int(CGFloat(SpriteBank.sprite("turn").w) * peekColsRatio))
             f.peekSide = 1
             f.faceRight = false
-        case .bottomLeft:
-            // 左下から斜めに見上げる。ふりむきの姿はもともと顔が斜めを向いている
-            f.sprite = "turn"
-            f.faceRight = true
-            f.shadow = 0.13
+        case .bottom:
+            // 下のふちから頭だけ。窓の上端に乗るときと同じ「ひょこっと」の形
+            f.sprite = closed ? "blink" : "idle"
+            f.peekRows = peekRows
         }
     }
 

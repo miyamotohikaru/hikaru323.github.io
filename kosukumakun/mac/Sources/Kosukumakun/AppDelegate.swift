@@ -232,7 +232,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         for (kind, title) in [(Brain.ScreenPeek.top, "　上から さかさま"),
                               (.right, "　右のはしから"),
                               (.left, "　左のはしから"),
-                              (.bottomLeft, "　左下から 斜めに")] {
+                              (.bottom, "　下から ひょこっと")] {
             let it = NSMenuItem(title: title, action: #selector(pickPeek(_:)), keyEquivalent: "")
             it.target = self
             it.tag = kind.rawValue
