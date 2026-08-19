@@ -81,6 +81,9 @@ final class Brain {
     private var peekAlong: CGFloat = -1
     private var peekGrab: CGFloat?
     private var lastScreen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+    /// メニューバーやDockも含む、画面まるごとの矩形。
+    /// 下のふちからのぞくときは **Dockの下＝いちばん下** に置きたいので必要。
+    private var lastFullScreen = NSRect(x: 0, y: 0, width: 1440, height: 900)
     /// 会議モードで出している言葉の番号
     private(set) var meetingLine = 0
     /// カーソルのスクリーン座標（矢印を向ける先）
@@ -195,7 +198,10 @@ final class Brain {
     func isVisible(on screens: [NSScreen]) -> Bool {
         let m = displayHeight * 0.35
         return screens.contains { s in
-            let f = s.visibleFrame
+            // Dock の下やメニューバーの脇にも立てるので、**画面まるごと** で見る。
+            // 使える枠だけで見ると、いちばん下でのぞいている子が
+            // 「画面の外に出た」と判定されて呼び戻されてしまう。
+            let f = s.frame
             return pos.x > f.minX - m && pos.x < f.maxX + m
                 && pos.y > f.minY - m && pos.y < f.maxY + displayHeight
         }
@@ -289,7 +295,8 @@ final class Brain {
         case .bottom:
             // 画面の下のふちから頭だけ出す。足元をふちに置くと、
             // 体は画面の外（下）に隠れて、頭だけが出ている形になる。
-            pos = CGPoint(x: along(s.minX + m, s.maxX - m, s.midX), y: s.minY)
+            // **いちばん下** に置きたいので、ここだけは Dock を除いた枠ではなく画面まるごとを見る。
+            pos = CGPoint(x: along(s.minX + m, s.maxX - m, s.midX), y: lastFullScreen.minY)
         }
         ground = s.minY + 6
     }
@@ -497,10 +504,11 @@ final class Brain {
 
     // MARK: - 毎フレーム
 
-    func update(dt: CGFloat, activity: Activity, screen: NSRect) {
+    func update(dt: CGFloat, activity: Activity, screen: NSRect, full: NSRect? = nil) {
         stateTime += dt
         ground = screen.minY + 6
         lastScreen = screen
+        lastFullScreen = full ?? screen
         pointer = activity.pointer
 
         // 打鍵に合わせて足踏みする。速く打つほど速く踏む（Comnyang の「ふみふみ」相当）。
@@ -959,6 +967,10 @@ final class Brain {
         let air = max(0, pos.y - ground)
         f.shadow = (state == .drag || air > 1) ? max(0.0, 0.13 - air / 900) : 0.13
         if state == .sleep { f.shadow = 0.10 }
+        // のぞいている間は影を出さない。**足が地面に着いていない** ので、
+        // 足元の帯を描くと、床の上に頭だけ置いてあるように見える。
+        // switch の中で 0 にしても この行で上書きされてしまうので、最後に消す。
+        if state == .peek || state == .screenPeek { f.shadow = 0 }
 
         // 画面の縁を伝っている間は、その面に立った姿にする。
         if rollSide != 0, state == .idle {

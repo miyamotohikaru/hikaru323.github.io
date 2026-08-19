@@ -79,8 +79,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         activity.update(dt: dt, now: now)
 
-        let screen = screenFor(brain.pos).visibleFrame
-        brain.update(dt: dt, activity: activity, screen: screen)
+        let sc = screenFor(brain.pos)
+        brain.update(dt: dt, activity: activity, screen: sc.visibleFrame, full: sc.frame)
 
         // 画面の外へ出てしまったら黙って呼び戻す。
         // 転がりすぎ・投げすぎ・乗っていた窓が画面外へ移動、どれでも見失わないように。
@@ -156,6 +156,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - マウス
 
     private func mouseDown(_ p: CGPoint) {
+        // **はしからのぞいている間は、押しても何も起きない。**
+        // ただ のぞいているだけの時間なので、豆知識も場所替えも出さない。
+        // 動かしたいときだけ つかんで、その縁の上をすべらせる。
+        if brain.state == .screenPeek {
+            peekTapFrom = p
+            peekMoved = false
+            dragging = true
+            brain.beginScreenPeekMove(at: p)
+            return
+        }
         // 2回続けてタップされたら、その場で豆知識を出す
         let now = CACurrentMediaTime()
         if now - lastTapAt < 0.45 {
@@ -163,16 +173,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             thought.showTipNow(brain)
         } else {
             lastTapAt = now
-        }
-        // はしからのぞいている間は「タップで次の場所へ」。
-        // ただし つまんで動かせないと逃げ場が無くなるので、**動かしたら** つまみに変わる。
-        // 押した瞬間につまんでしまうと、タップのたびに一瞬 伸びた姿が見えてしまう。
-        if brain.state == .screenPeek {
-            peekTapFrom = p
-            peekMoved = false
-            dragging = true
-            brain.beginScreenPeekMove(at: p)
-            return
         }
         // 会議モードも同じで、タップは「次の言葉へ」
         if brain.isMeeting {
@@ -206,11 +206,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dragging = false
         if peekTapFrom != nil {
             peekTapFrom = nil
-            brain.endScreenPeekMove()
-            // 動かさずに離した＝次ののぞき場所へ。動かしたなら、その場所のまま。
-            if !peekMoved { brain.cycleScreenPeek() }
             peekMoved = false
-            return
+            brain.endScreenPeekMove()
+            return                   // 押しただけでは何も起きない
         }
         if meetTapFrom != nil {
             meetTapFrom = nil

@@ -28,7 +28,10 @@ final class PetWindow: NSPanel {
         isOpaque = false
         backgroundColor = .clear
         hasShadow = false
-        level = .floating
+        // Dock のすぐ上。画面のいちばん下のふちから顔を出せるようにするため。
+        // 既定の .floating だと Dock の方が手前で、下からのぞく姿が隠れてしまう。
+        // メニューバー（24以上）より下なので、上のふちは今までどおり その下に出る。
+        level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.dockWindow)) + 1)
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         isMovableByWindowBackground = false
         ignoresMouseEvents = true

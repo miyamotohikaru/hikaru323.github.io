@@ -117,7 +117,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTe
                      note: "手が止まってしばらくすると、画面のはしへどいて顔だけ出します。"
                          + "一度その形になったら、やめると言うまで そのまま。"
                          + "こすくまくんを右クリック →「のぞくのをやめる」で降ります。"
-                         + "タップで4か所を順に、つかむと その縁に沿って動かせます。",
+                         + "4か所は右クリックから選べます。つかむと その縁に沿って動かせます。",
                      get: { Settings.shared.autoScreenPeek },
                      set: { Settings.shared.autoScreenPeek = $0 })
         addNameRow()
