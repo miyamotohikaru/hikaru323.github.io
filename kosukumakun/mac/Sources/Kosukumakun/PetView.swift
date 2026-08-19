@@ -41,6 +41,10 @@ struct PetFrame: Equatable {
     /// peekSide が -1 なら左の縁（体は右に隠れる）、+1 なら右の縁。
     var peekCols: Int = 0
     var peekSide: Int = 0
+    /// どの縁に立っているか。0=下(ふつう) 1=右の壁 2=天井 3=左の壁。
+    /// 反時計回りに90度ずつ回した姿になり、`foot` は **壁と接している面の中心**。
+    /// `offsetX` と `lift` は回した後の体を基準に効く（前へ／壁から離れる向き）。
+    var turn: Int = 0
 
     /// 表示身長(pt)
     var height: CGFloat {
@@ -70,10 +74,13 @@ final class PetView: NSView, EffectHost {
     var onMouseDown: ((CGPoint) -> Void)?
     var onMouseDragged: ((CGPoint) -> Void)?
     var onMouseUp: ((CGPoint) -> Void)?
+    /// 右クリック。こすくまくんの上でだけ出すメニュー。
+    var onRightMouseDown: ((NSEvent) -> Void)?
 
     override func mouseDown(with e: NSEvent) { onMouseDown?(NSEvent.mouseLocation) }
     override func mouseDragged(with e: NSEvent) { onMouseDragged?(NSEvent.mouseLocation) }
     override func mouseUp(with e: NSEvent) { onMouseUp?(NSEvent.mouseLocation) }
+    override func rightMouseDown(with e: NSEvent) { onRightMouseDown?(e) }
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -127,25 +134,34 @@ final class PetView: NSView, EffectHost {
         let scale = max(1, f.pixelScale)
         let rows = f.peekRows > 0 ? min(f.peekRows, sp.h) : sp.h
         let cols = f.peekCols > 0 ? min(f.peekCols, sp.w) : sp.w
-        let w = CGFloat(cols * scale)
-        let h = CGFloat(rows * scale)
+        // 90度回すと縦横が入れ替わる
+        let turn = ((f.turn % 4) + 4) % 4
+        let w = CGFloat((turn % 2 == 1 ? rows : cols) * scale)
+        let h = CGFloat((turn % 2 == 1 ? cols : rows) * scale)
 
         // ドットの目に合わせて位置も整数に丸める。半端な位置に置くと、
         // 静止しているのにドットの境目がちらついて安っぽく見える。
         let dx = (f.offsetX / CGFloat(scale)).rounded() * CGFloat(scale)
-        // 横の縁に付いているときは、見えている端が縁にぴったり合うように置く。
-        // 左の縁なら見えている右端が縁、右の縁なら見えている左端が縁。
-        let x: CGFloat
-        if f.peekSide < 0 {
-            x = (f.foot.x + dx - w).rounded()
-        } else if f.peekSide > 0 {
-            x = (f.foot.x + dx).rounded()
-        } else {
-            x = (f.foot.x + dx - w / 2).rounded()
-        }
         // 持ち上げもドットの粒に丸める。半端に持ち上げるとキーとの接地が1px浮いて見える。
         let lift = (f.lift / CGFloat(scale)).rounded() * CGFloat(scale)
-        let y = (f.foot.y + lift).rounded()
+        // 体を基準にした「前へ(dx)／壁から離れる(lift)」を、立っている面に合わせて画面へ移す
+        let a = PetView.toScreen(dx, lift, turn)
+        let fx = f.foot.x + a.x, fy = f.foot.y + a.y
+
+        // レイヤの左下を決める。`foot` は壁と接している面の中心。
+        var x: CGFloat, y: CGFloat
+        switch turn {
+        case 1:  x = fx - w;     y = fy - h / 2   // 右の壁（足は右）
+        case 2:  x = fx - w / 2; y = fy - h       // 天井（足は上）
+        case 3:  x = fx;         y = fy - h / 2   // 左の壁（足は左）
+        default: x = fx - w / 2; y = fy           // ふつう（足は下）
+        }
+        // 横の縁に付いているときは、見えている端が縁にぴったり合うように置く。
+        // 左の縁なら見えている右端が縁、右の縁なら見えている左端が縁。
+        if turn == 0 {
+            if f.peekSide < 0 { x = fx - w } else if f.peekSide > 0 { x = fx }
+        }
+        x.round(); y.round()
 
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -154,17 +170,24 @@ final class PetView: NSView, EffectHost {
             f.sprite, look: f.look, flip: !f.faceRight,
             topRows: f.peekRows, cols: f.peekCols,
             // 右の縁に付くときは、スプライトを反転したうえで右端側を残す
-            colsFromRight: f.peekSide > 0)
+            colsFromRight: f.peekSide > 0, turn: turn)
         spriteLayer.bounds = CGRect(x: 0, y: 0, width: w, height: h)
         spriteLayer.position = CGPoint(x: x, y: y)
         spriteLayer.opacity = Float(f.alpha)
 
         if f.shadow > 0 {
             // 影もドットの粒に合わせる（丸い影を置くと本体だけドット絵で浮くため）
-            let sw = (w * 0.66 / CGFloat(scale)).rounded() * CGFloat(scale)
-            let sh = CGFloat(scale)
-            let r = CGRect(x: (f.foot.x - sw / 2).rounded(), y: y - sh, width: sw, height: sh)
-            shadowLayer.path = CGPath(rect: r, transform: nil)
+            // 壁や天井に居るときは、その面に沿った細い帯にする。
+            let along = ((turn % 2 == 1 ? h : w) * 0.66 / CGFloat(scale)).rounded() * CGFloat(scale)
+            let t = CGFloat(scale)
+            let r: CGRect
+            switch turn {
+            case 1:  r = CGRect(x: fx, y: fy - along / 2, width: t, height: along)
+            case 2:  r = CGRect(x: fx - along / 2, y: fy, width: along, height: t)
+            case 3:  r = CGRect(x: fx - t, y: fy - along / 2, width: t, height: along)
+            default: r = CGRect(x: f.foot.x - along / 2, y: y - t, width: along, height: t)
+            }
+            shadowLayer.path = CGPath(rect: r.integral, transform: nil)
             shadowLayer.opacity = Float(f.shadow * f.alpha)
             shadowLayer.isHidden = false
         } else {
@@ -172,6 +195,17 @@ final class PetView: NSView, EffectHost {
         }
 
         CATransaction.commit()
+    }
+
+    /// 体を基準にした (前へ, 壁から離れる) を、立っている面に合わせて画面のずれに直す。
+    /// 金平糖やZの置き場所でも同じ計算がいるので、ここに1つだけ置く。
+    static func toScreen(_ ahead: CGFloat, _ up: CGFloat, _ turn: Int) -> CGPoint {
+        switch ((turn % 4) + 4) % 4 {
+        case 1:  return CGPoint(x: -up, y: ahead)
+        case 2:  return CGPoint(x: -ahead, y: -up)
+        case 3:  return CGPoint(x: up, y: -ahead)
+        default: return CGPoint(x: ahead, y: up)
+        }
     }
 
     // MARK: - 演出の置き場（EffectHost）

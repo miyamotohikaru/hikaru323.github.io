@@ -86,12 +86,17 @@ enum SpriteBank {
     ///   `colsFromRight` が true なら右端側を残す。
     /// - Parameter tint: 面の色を差し替える（金平糖を色ちがいで出すのに使う）。
     ///   輪郭の黒は変えない。世界の線の色はひとつに保つ。
+    /// - Parameter turn: 反時計回りに90度ずつ回す回数（0〜3）。画面の縁を伝って
+    ///   壁や天井を歩くときに使う。**CALayer の回転ではなくドットごと回す。**
+    ///   レイヤを回すと、90度でも縁に半端な画素ができてドットが濁る。
     static func image(_ name: String, look: Int = 0, flip: Bool = false,
                       topRows: Int = 0, cols: Int = 0,
-                      colsFromRight: Bool = false, tint: [UInt8]? = nil) -> CGImage? {
+                      colsFromRight: Bool = false, tint: [UInt8]? = nil,
+                      turn: Int = 0) -> CGImage? {
         loadIfNeeded()
         let tk = tint.map { "\($0[0]),\($0[1]),\($0[2])" } ?? "-"
-        let key = "\(name)|\(look)|\(flip ? 1 : 0)|\(topRows)|\(cols)|\(colsFromRight ? 1 : 0)|\(tk)"
+        let tn = ((turn % 4) + 4) % 4
+        let key = "\(name)|\(look)|\(flip ? 1 : 0)|\(topRows)|\(cols)|\(colsFromRight ? 1 : 0)|\(tk)|\(tn)"
         if let c = cache[key] { return c }
         guard let sp = sprites[name] else { return nil }
 
@@ -125,10 +130,35 @@ enum SpriteBank {
                 buf[o] = c[0]; buf[o + 1] = c[1]; buf[o + 2] = c[2]; buf[o + 3] = c[3]
             }
         }
+        // 90度ずつ回す。dst(R,C) がどの src を指すかだけの話。
+        //   反時計回り … 下の辺が右の辺に来る（右の壁に立たせるのに使う）
+        //   180度      … 下の辺が上に来る（天井にぶら下がる）
+        //   時計回り   … 下の辺が左の辺に来る（左の壁）
+        var ow = cw, oh = rows
+        if tn != 0 {
+            let sw = cw, sh = rows
+            (ow, oh) = (tn % 2 == 1) ? (sh, sw) : (sw, sh)
+            var rot = [UInt8](repeating: 0, count: ow * oh * 4)
+            for r in 0..<oh {
+                for c in 0..<ow {
+                    let sr: Int, sc: Int
+                    switch tn {
+                    case 1:  sr = c;          sc = sw - 1 - r
+                    case 2:  sr = sh - 1 - r; sc = sw - 1 - c
+                    default: sr = sh - 1 - c; sc = r
+                    }
+                    let s = (sr * sw + sc) * 4, d = (r * ow + c) * 4
+                    rot[d] = buf[s]; rot[d + 1] = buf[s + 1]
+                    rot[d + 2] = buf[s + 2]; rot[d + 3] = buf[s + 3]
+                }
+            }
+            buf = rot
+        }
+
         guard let provider = CGDataProvider(data: Data(buf) as CFData) else { return nil }
-        let img = CGImage(width: cw, height: rows,
+        let img = CGImage(width: ow, height: oh,
                           bitsPerComponent: 8, bitsPerPixel: 32,
-                          bytesPerRow: cw * 4,
+                          bytesPerRow: ow * 4,
                           space: CGColorSpaceCreateDeviceRGB(),
                           bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
                           provider: provider, decode: nil,

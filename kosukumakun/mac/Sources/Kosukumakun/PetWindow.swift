@@ -10,9 +10,12 @@ final class PetWindow: NSPanel {
 
     /// もちのように伸びた姿（身長の2倍）と、頭の上の吹き出しが収まる大きさ。
     /// 透明なので見た目には影響しない。触れるのはこすくまくんの上だけ。
-    static let stage = CGSize(width: 420, height: 540)
+    ///
+    /// 足元より **下と横にも** 場所がいる。画面の縁を伝って壁や天井に立つと、
+    /// 体は足元から横へ／下へ伸びるため（身長は最大240pt）。
+    static let stage = CGSize(width: 560, height: 720)
     /// ステージ内で「足元」に当たる点
-    static let anchor = CGPoint(x: stage.width / 2, y: 120)
+    static let anchor = CGPoint(x: stage.width / 2, y: 240)
 
     let petView: PetView
 
@@ -38,6 +41,17 @@ final class PetWindow: NSPanel {
 
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+
+    /// **窓を画面の中に押し戻させない。**
+    ///
+    /// この窓は こすくまくんより ずっと大きい透明な板で、足元は板の真ん中あたりにある。
+    /// 天井や画面のはしに立たせると、板の上や横が画面からはみ出す。
+    /// 既定のふるまいだと macOS がそれを画面内へ押し戻すので、
+    /// **こすくまくんだけが指定した場所からずれて、画面の半分あたりに現れる**
+    /// （天井を伝わせたとき、実際にそうなった）。板の位置は言ったとおりに置かせる。
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        frameRect
+    }
 
     /// 足元のスクリーン座標を指定して窓を置く
     func place(footScreen p: CGPoint) {

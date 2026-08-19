@@ -43,7 +43,7 @@ final class Settings {
         static let wanders         = "kosu.wanders"
         static let sleepAfter      = "kosu.sleepAfter"
         static let thoughtsEnabled = "kosu.thoughtsEnabled"
-        static let konpeitoEnabled = "kosu.konpeitoEnabled"
+        static let autoScreenPeek  = "kosu.autoScreenPeek"
         static let pomodoroEnabled = "kosu.pomodoroEnabled"
         static let pomodoroFocus   = "kosu.pomodoroFocus"
         static let pomodoroBreak   = "kosu.pomodoroBreak"
@@ -97,11 +97,12 @@ final class Settings {
         }
     }
 
-    /// 金平糖を出すか
-    var konpeitoEnabled = true {
+    /// 手が止まったら自分で画面のはしへどくか。
+    /// **一度のぞく形になったら、やめると言うまで そのまま。** ここは「自分から行くか」だけ。
+    var autoScreenPeek = true {
         didSet {
-            guard konpeitoEnabled != oldValue else { return }
-            save(K.konpeitoEnabled, konpeitoEnabled)
+            guard autoScreenPeek != oldValue else { return }
+            save(K.autoScreenPeek, autoScreenPeek)
         }
     }
 
@@ -245,7 +246,7 @@ final class Settings {
             K.wanders: true,
             K.sleepAfter: 3.0,
             K.thoughtsEnabled: true,
-            K.konpeitoEnabled: true,
+            K.autoScreenPeek: true,
             K.pomodoroEnabled: false,
             K.pomodoroFocus: 25,
             K.pomodoroBreak: 5,
@@ -262,7 +263,7 @@ final class Settings {
         sleepAfter      = Settings.clamp(CGFloat(store.double(forKey: K.sleepAfter)),
                                          Settings.sleepRange)
         thoughtsEnabled = store.bool(forKey: K.thoughtsEnabled)
-        konpeitoEnabled = store.bool(forKey: K.konpeitoEnabled)
+        autoScreenPeek  = store.bool(forKey: K.autoScreenPeek)
         pomodoroEnabled = store.bool(forKey: K.pomodoroEnabled)
         pomodoroFocus   = Settings.clamp(store.integer(forKey: K.pomodoroFocus), Settings.focusRange)
         pomodoroBreak   = Settings.clamp(store.integer(forKey: K.pomodoroBreak), Settings.breakRange)

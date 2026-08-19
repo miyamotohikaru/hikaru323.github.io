@@ -66,6 +66,15 @@ def recolor_kon(im, to):
     return im
 
 
+def display(dst, box=(144, 34, 616, 426)):
+    """画面そのものの見立て。はしからのぞいているのを見せるための外枠。
+
+    のぞきの絵は **コマの四角がそのまま画面** なので、
+    枠は絵の外側にぴったり回す（内側に描くと、はしに立っているのがずれて見える）。
+    """
+    ImageDraw.Draw(dst).rounded_rectangle(box, radius=10, outline=INK, width=3)
+
+
 def window(dst, box=(90, 245, 671, 431)):
     """ふつうのウィンドウの見立て。縁に乗っているのを見せるためだけの枠。"""
     d = ImageDraw.Draw(dst)
@@ -132,6 +141,9 @@ def gif_scene(mo, name, marks):
     # 足元の線（コマの下から56px）が窓の上端に重なると「縁に立っている」に見える。
     if name == "edge":
         off = (150, 245 - (FRAME_H - 56))
+    elif name == "edgepeek":
+        # コマの四角がそのまま画面。紙の真ん中に置いて、その外に画面の枠を回す。
+        off = ((W - FRAME_W) // 2, (H - FRAME_H) // 2)
     else:
         box = None
         for a, b in zip(raw, over):
@@ -150,6 +162,8 @@ def gif_scene(mo, name, marks):
         c.alpha_composite(b, off)
         if name == "edge":
             window(c)           # 枠は **こすくまくんより手前**。縁から出てくるように見える
+        if name == "edgepeek":
+            display(c)
         out.append(c.convert("RGB"))
     return out
 

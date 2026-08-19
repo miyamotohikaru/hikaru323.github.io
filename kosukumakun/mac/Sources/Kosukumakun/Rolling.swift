@@ -52,13 +52,18 @@ final class RollingBehavior: PetBehavior {
 
         let w = CGFloat(img.width * scale)
         let h = CGFloat(img.height * scale)
-        // こすくまくんの進む先に置く。体に少し重ねると「押している」に見える
+        // こすくまくんの進む先に置く。体に少し重ねると「押している」に見える。
+        // 壁や天井を伝っているときも「進む先・接している面の上」は同じ意味なので、
+        // 体を基準にした (前へ, 面から離れる) で決めて、そこから画面の向きに直す。
         let ahead = CGFloat(brain.rollDir) * (host.petHeight * 0.46)
-        let x = ((host.footInStage.x + ahead - w / 2) / CGFloat(scale)).rounded() * CGFloat(scale)
+        let o = PetView.toScreen(ahead, h / 2, host.currentFrame.turn)
+        let c = CGPoint(x: host.footInStage.x + o.x, y: host.footInStage.y + o.y)
+        let x = ((c.x - w / 2) / CGFloat(scale)).rounded() * CGFloat(scale)
+        let y = ((c.y - h / 2) / CGFloat(scale)).rounded() * CGFloat(scale)
 
         l.contents = img
         l.bounds = CGRect(x: 0, y: 0, width: w, height: h)
-        l.position = CGPoint(x: x, y: host.footInStage.y.rounded())
+        l.position = CGPoint(x: x, y: y)
     }
 
     private func rebuild(_ host: EffectHost, scale: Int) {

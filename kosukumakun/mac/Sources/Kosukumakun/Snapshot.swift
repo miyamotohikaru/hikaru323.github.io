@@ -61,6 +61,36 @@ enum Snapshot {
             f.peekSide = 1; f.faceRight = false
         },
         Scene(name: "26_turn_full", label: "ふりむき全身") { f in f.sprite = "turn" },
+        // 画面の縁を伝うときの4つの向き。足がどの面に着いているかを見る。
+        Scene(name: "30_side0_bottom", label: "下の縁（ふつう）") { f in
+            f.sprite = "turn"; f.turn = 0; f.faceRight = false
+        },
+        Scene(name: "31_side1_right", label: "右の壁（上へ）") { f in
+            f.sprite = "turn"; f.turn = 1; f.faceRight = false
+        },
+        Scene(name: "32_side2_top", label: "天井（左へ）") { f in
+            f.sprite = "turn"; f.turn = 2; f.faceRight = false
+        },
+        Scene(name: "33_side3_left", label: "左の壁（下へ）") { f in
+            f.sprite = "turn"; f.turn = 3; f.faceRight = false
+        },
+        // 画面のはしからのぞく4通り（動画を見ているときの姿）
+        Scene(name: "40_sp_top", label: "画面の上から さかさま") { f in
+            f.sprite = "idle"; f.turn = 2; f.peekRows = 24; f.shadow = 0
+        },
+        Scene(name: "41_sp_right", label: "画面の右のはしから") { f in
+            f.sprite = "turn"; f.shadow = 0
+            f.peekCols = Int(CGFloat(SpriteBank.sprite("turn").w) * 0.70)
+            f.peekSide = -1; f.faceRight = true
+        },
+        Scene(name: "42_sp_left", label: "画面の左のはしから") { f in
+            f.sprite = "turn"; f.shadow = 0
+            f.peekCols = Int(CGFloat(SpriteBank.sprite("turn").w) * 0.70)
+            f.peekSide = 1; f.faceRight = false
+        },
+        Scene(name: "43_sp_bl", label: "左下から斜めに") { f in
+            f.sprite = "turn"; f.faceRight = true
+        },
         Scene(name: "14_peek_l",  label: "左の縁からひょこっと") { f in
             f.sprite = "lying"; f.shadow = 0
             f.peekCols = Int(CGFloat(SpriteBank.sprite("lying").w) * 0.55)
@@ -354,20 +384,22 @@ enum Snapshot {
         // --- スクロールで 金平糖を転がす -------------------------------------
         // 前半は下スクロール（右へ）、後半は上スクロール（左へ）。
         // 1本で両方向を見せられるし、元の位置に戻るので繰り返しがつながる。
-        // 行って戻るぶんだけ、はじめは中央より左に立たせる（1コマ 2.3pt × 40 で 93pt）
+        // 角を曲がるところを見せたいので、右下の角のすこし手前から始める。
+        // 前へ48コマ進むと角を越えて右の壁を登り、戻り48コマで元に帰る。
         let rolling = RollingBehavior()
-        run("roll", caps: 40, behaviors: [rolling], startX: cx - 46, setup: { brain, activity in
+        run("roll", caps: 48, behaviors: [rolling], startX: 313, setup: { brain, activity in
             // 金平糖が出るところまで空回しし、**位置だけ戻す**。
             // 空回しのぶん進んだままだと、行って戻ったとき元の場所に帰らず、
             // 繰り返しの継ぎ目で絵が飛ぶ。
             activity.debugOverride(typingRate: 0, idle: 3, scrolling: true, scrollDir: -1)
             for _ in 0..<10 { brain.update(dt: dt, activity: activity, screen: screen) }
-            brain.setStart(CGPoint(x: cx - 46, y: 6))
+            brain.setStart(CGPoint(x: 313, y: 6))
         }, step: { _, activity, i in
             activity.debugOverride(typingRate: 0, idle: 3, scrolling: true,
-                                   scrollDir: i < 43 ? -1 : 1)   // 43で折り返すと元の位置に戻る
+                                   scrollDir: i < 48 ? -1 : 1)
         }, footAt: { brain in
-            CGPoint(x: brain.pos.x, y: footY)
+            // 縁を伝うので、位置も姿勢も Brain の言うとおりに置く
+            CGPoint(x: brain.pos.x, y: brain.pos.y + footY - 6)
         })
 
         // --- ときどき 心の声がもれる ----------------------------------------
@@ -377,6 +409,41 @@ enum Snapshot {
         }, step: { _, activity, _ in
             activity.debugOverride(typingRate: 0, idle: 3)
         }, footAt: { _ in CGPoint(x: cx, y: 34) })
+
+        // --- 画面のはしからのぞく（4か所を順に）--------------------------------
+        // ここだけは絵の四角を **画面そのもの** として使う。
+        // 足元をそのまま置くので、上端・左右端・左下がコマの縁に一致する。
+        run("edgepeek", caps: 48, behaviors: [], setup: { brain, activity in
+            activity.debugOverride(typingRate: 0, idle: 60)
+            brain.update(dt: dt, activity: activity, screen: screen)   // 画面の大きさを覚えさせる
+            brain.enterScreenPeek(.top)
+        }, step: { brain, activity, i in
+            activity.debugOverride(typingRate: 0, idle: 60, pointer: CGPoint(x: cx, y: 170))
+            let want = Brain.ScreenPeek(rawValue: (i / 24) % 4) ?? .top
+            if brain.screenPeek != want { brain.enterScreenPeek(want) }
+        }, footAt: { brain in brain.pos })
+
+        // --- 会議モード（カーソルを指して言葉を見せる）------------------------
+        let pointing = PointingBehavior()
+        let thought2 = ThoughtBehavior()
+        let meetOrbit: (Int) -> CGPoint = { i in
+            let t = CGFloat(i) / 80.0 * 2 * .pi
+            return CGPoint(x: cx + 130 * sin(t), y: 250 + 40 * cos(t))
+        }
+        run("meeting", caps: 40, behaviors: [thought2, pointing], setup: { brain, activity in
+            brain.toggleMeeting()
+            for i in 0..<40 {
+                activity.debugOverride(typingRate: 0, idle: 3, pointer: meetOrbit(i))
+                brain.update(dt: dt, activity: activity, screen: screen)
+            }
+        }, step: { _, activity, i in
+            activity.debugOverride(typingRate: 0, idle: 3, pointer: meetOrbit(i))
+        }, footAt: { brain in
+            CGPoint(x: brain.pos.x, y: brain.pos.y + footY - 6)
+        }, mark: { _, n in
+            let p = meetOrbit(n * every)
+            return ["cursor": [p.x, p.y + footY - 6]]
+        })
 
         // --- 放っておくと 寝る ----------------------------------------------
         let zzz = ZzzBehavior()

@@ -113,10 +113,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTe
                      note: "こすくまくんに口はありません。ときどき、頭の上に思っていることが浮かびます。",
                      get: { Settings.shared.thoughtsEnabled },
                      set: { Settings.shared.thoughtsEnabled = $0 })
-        addSwitchRow("金平糖",
-                     note: "たまに金平糖を両手で抱えます。体にじんわり染み込んで、ぽわっと光ります。",
-                     get: { Settings.shared.konpeitoEnabled },
-                     set: { Settings.shared.konpeitoEnabled = $0 })
+        addSwitchRow("画面のはしからのぞく",
+                     note: "手が止まってしばらくすると、画面のはしへどいて顔だけ出します。"
+                         + "一度その形になったら、やめると言うまで そのまま。"
+                         + "こすくまくんを右クリック →「のぞくのをやめる」で降ります。"
+                         + "タップで4か所を順に、つかむと その縁に沿って動かせます。",
+                     get: { Settings.shared.autoScreenPeek },
+                     set: { Settings.shared.autoScreenPeek = $0 })
         addNameRow()
 
         // ── 休み方 ────────────────────────────────

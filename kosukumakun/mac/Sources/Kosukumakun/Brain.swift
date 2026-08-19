@@ -23,6 +23,16 @@ final class Brain {
         case dozing        // うとうと
         case sleep         // 丸まって寝ている
         case peek          // ウィンドウの縁に乗って顔だけ出している
+        case screenPeek    // 画面のはしから のぞいている（動画を見ているときなど）
+        case meeting       // 会議モード。カーソルのそばで指して、言葉を見せる
+    }
+
+    /// 画面のはしからのぞく4通り。タップするたびにこの順で移る。
+    enum ScreenPeek: Int, CaseIterable {
+        case top        // 上から さかさまに ぶらさがって のぞく
+        case right      // 右のはしから 横向きで のぞく
+        case left       // 左のはしから 横向きで のぞく
+        case bottomLeft // 左下から 斜めに 見上げる
     }
 
     // MARK: 出力
@@ -56,9 +66,25 @@ final class Brain {
     private var scrollT: CGFloat = 0        // 反応が続く残り時間
     private var scrollDir = 0
     private var scrollBob: CGFloat = 0
-    /// 金平糖を転がしている向き（-1 左 / +1 右 / 0 転がしていない）と、転がりの位相
+    /// 金平糖を転がしている向き（-1 うしろ / +1 前 / 0 転がしていない）と、転がりの位相
     private(set) var rollDir = 0
     private(set) var rollPhase: CGFloat = 0
+    /// いま画面のどの縁を伝っているか。0=下 1=右 2=上 3=左（反時計回り）。
+    /// 端まで行くと次の縁に移り、こすくまくんも90度回った姿になる。
+    private(set) var rollSide = 0
+    /// その縁のはじまりからの距離(pt)
+    private var rollAlong: CGFloat = 0
+    /// 画面のはしからのぞくとき
+    private(set) var screenPeek: ScreenPeek = .top
+    /// のぞいている縁に沿った位置。マイナスなら「まだ動かしていない＝真ん中」。
+    /// 縁に貼り付いたまま、その縁の上だけを動かせるようにするために持つ。
+    private var peekAlong: CGFloat = -1
+    private var peekGrab: CGFloat?
+    private var lastScreen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+    /// 会議モードで出している言葉の番号
+    private(set) var meetingLine = 0
+    /// カーソルのスクリーン座標（矢印を向ける先）
+    private(set) var pointer = CGPoint.zero
     private var tapHold: CGFloat = 0       // 叩いて沈んでいる残り時間
     private var tapDir = 1                 // 次にどちらを叩くか
     private var lift: CGFloat = 0          // キーボードの上に立つときの持ち上げ(pt)
@@ -100,6 +126,12 @@ final class Brain {
     var displayHeight: CGFloat = 140
     var sleepAfter: CGFloat = 180           // 放置何秒で寝るか
     var wanders = true                      // 勝手に動き回るか
+    /// 打つのをやめて何秒で、画面のはしに移ってのぞく形になるか。
+    /// 動画を見ているあいだ ずっと画面の真ん中に居られると邪魔なので、
+    /// 寝るより前に いったん はしへ どく。
+    var screenPeekAfter: CGFloat = 45
+    /// 手が止まったら自分で はしへ どくか。切ると、こちらから言ったときだけ のぞく。
+    var autoScreenPeek = true
 
     // MARK: - 外から呼ぶ操作
 
@@ -151,6 +183,7 @@ final class Brain {
         ground = p.y
         peekWindow = 0
         rollDir = 0
+        rollSide = 0
         scrollT = 0
         dragPull = 0
         lift = 0
@@ -166,6 +199,153 @@ final class Brain {
             return pos.x > f.minX - m && pos.x < f.maxX + m
                 && pos.y > f.minY - m && pos.y < f.maxY + displayHeight
         }
+    }
+
+    // MARK: - 画面のはしからのぞく
+
+    /// 画面のはしへ どいて のぞく形になる。
+    ///
+    /// 動画を見ているときのように「使ってはいるが打ってはいない」あいだ、
+    /// 画面の真ん中に居ると邪魔なので、はしに移って顔だけ出す。
+    /// 上は **さかさま**、左右はウィンドウの横のぞきと同じ形、左下は斜めに見上げる形。
+    func enterScreenPeek(_ kind: ScreenPeek) {
+        if kind != screenPeek { peekAlong = -1 }   // 場所を変えたら、その縁の真ん中から
+        screenPeek = kind
+        state = .screenPeek
+        stateTime = 0
+        vel = .zero
+        rollSide = 0
+        rollDir = 0
+        scrollT = 0
+        peekWindow = 0
+        placeScreenPeek()
+        express(.wide, seconds: 0.6)
+    }
+
+    /// タップするたびに次の場所へ。**4通りを順に回る。**
+    func cycleScreenPeek() {
+        let all = ScreenPeek.allCases
+        let i = (all.firstIndex(of: screenPeek).map { $0 + 1 } ?? 0) % all.count
+        enterScreenPeek(all[i])
+    }
+
+    /// メニューから出し入れする
+    func toggleScreenPeek() {
+        if state == .screenPeek {
+            leaveScreenPeek()
+        } else {
+            enterScreenPeek(.top)
+        }
+    }
+
+    /// のぞくのをやめて、いつもの場所へ落ちる
+    func leaveScreenPeek() {
+        guard state == .screenPeek else { return }
+        state = .thrown
+        stateTime = 0
+        vel = CGVector(dx: 0, dy: -20)
+        // さかさまや横向きのまま落ちないように、姿勢はここで戻す
+        express(.wide, seconds: 0.6)
+    }
+
+    /// のぞいたまま、その縁に沿って動かす。
+    /// **縁から剥がさない。** 上でのぞいているなら左右だけ、
+    /// 横でのぞいているなら上下だけ動く。
+    ///
+    /// つかんだ場所とのズレを覚えておく。覚えないと、つかんだ瞬間に
+    /// カーソルの真下へ飛んでしまって、掴んだ感じがしない。
+    func beginScreenPeekMove(at p: CGPoint) {
+        guard state == .screenPeek else { return }
+        peekGrab = (screenPeek == .right || screenPeek == .left) ? pos.y - p.y : pos.x - p.x
+    }
+
+    func moveScreenPeek(to p: CGPoint) {
+        guard state == .screenPeek else { return }
+        let g = peekGrab ?? 0
+        switch screenPeek {
+        case .top, .bottomLeft: peekAlong = p.x + g
+        case .right, .left:     peekAlong = p.y + g
+        }
+        placeScreenPeek()
+    }
+
+    func endScreenPeekMove() { peekGrab = nil }
+
+    /// のぞく場所を画面に合わせて置き直す。画面の大きさが変わっても付いていく。
+    private func placeScreenPeek() {
+        let s = lastScreen
+        let h = displayHeight
+        let m = h * 0.55                       // 角からはみ出さないための余白
+        func along(_ lo: CGFloat, _ hi: CGFloat, _ mid: CGFloat) -> CGFloat {
+            peekAlong < 0 ? mid : max(lo, min(hi, peekAlong))
+        }
+        switch screenPeek {
+        case .top:
+            pos = CGPoint(x: along(s.minX + m, s.maxX - m, s.midX), y: s.maxY)
+        case .right:
+            pos = CGPoint(x: s.maxX, y: along(s.minY + m, s.maxY - m, s.midY))
+        case .left:
+            pos = CGPoint(x: s.minX, y: along(s.minY + m, s.maxY - m, s.midY))
+        case .bottomLeft:
+            pos = CGPoint(x: along(s.minX + h * 0.34, s.maxX - m, s.minX + h * 0.34),
+                          y: s.minY + 6)
+        }
+        ground = s.minY + 6
+    }
+
+    // MARK: - 会議モード
+
+    var isMeeting: Bool { state == .meeting }
+
+    /// カーソルの位置をステージ座標で返す（矢印の向き先に使う）
+    var pointerInStage: CGPoint {
+        guard let h = host else { return .zero }
+        return CGPoint(x: h.footInStage.x + (pointer.x - pos.x),
+                       y: h.footInStage.y + (pointer.y - pos.y))
+    }
+
+    /// 会議モードに入る／出る。
+    ///
+    /// 画面を共有しているあいだの姿。カーソルのそばに付いていって、
+    /// そちらを指し、short い言葉を出す。寝ないし、勝手にも動かない。
+    func toggleMeeting() {
+        if state == .meeting {
+            state = .idle
+            stateTime = 0
+            thought = nil
+            thoughtLeft = 0
+            jellyT = 0
+        } else {
+            state = .meeting
+            stateTime = 0
+            vel = .zero
+            rollSide = 0
+            rollDir = 0
+            scrollT = 0
+            peekWindow = 0
+            express(.happy, seconds: 1.2)
+        }
+    }
+
+    /// タップで次の言葉へ
+    func nextMeetingLine() {
+        guard state == .meeting else { return }
+        meetingLine += 1
+        express(.happy, seconds: 0.8)
+    }
+
+    /// カーソルのそばに付いていく。カーソルの **左下** に、少し離れて立つ。
+    /// 真下だと指す先が自分の頭で隠れる。
+    private func updateMeeting(_ dt: CGFloat, _ a: Activity, screen: NSRect) {
+        let h = displayHeight
+        // 体1つぶん離れて立つ。近すぎると、指す矢印が自分の耳に重なって読めない。
+        var target = CGPoint(x: a.pointer.x - h * 0.95, y: a.pointer.y - h * 1.25)
+        target.x = max(screen.minX + h * 0.45, min(screen.maxX - h * 0.45, target.x))
+        target.y = max(screen.minY + 6, min(screen.maxY - h * 1.45, target.y))
+        pos = approach(pos, target, rate: 6, dt: dt)
+        facingRight = a.pointer.x >= pos.x
+        // 言葉は出しっぱなし。会議のあいだ ずっと読めるように毎コマ入れ直す。
+        think(MeetingLines.line(meetingLine), seconds: 1, big: true)
     }
 
     /// メニューから寝かせる
@@ -201,6 +381,9 @@ final class Brain {
         // .peek をここに入れてはいけない。フレームレートが落ちると
         // マウス判定の更新も遅くなり、つかもうとしたクリックが素通りする（実際にそうなった）。
         if state == .sleep { return true }
+        // はしからのぞいている間も、まばたき以外は止まっている。
+        // 掴めなくなる心配は、カーソルが近いと60fpsに戻る仕組みが見ているので無い。
+        if state == .screenPeek { return true }
         return state == .idle && !typing && jellyT > 1.0
     }
 
@@ -210,6 +393,9 @@ final class Brain {
         // 縁に乗っていてもつかめる。つかんだ瞬間に縁から手を離して、
         // いつも通り「つままれて伸びる → 放すと落ちる」に戻る。
         peekWindow = 0
+        rollSide = 0
+        rollDir = 0
+        scrollT = 0
         state = .drag
         stateTime = 0
         dragPull = 0
@@ -313,6 +499,8 @@ final class Brain {
     func update(dt: CGFloat, activity: Activity, screen: NSRect) {
         stateTime += dt
         ground = screen.minY + 6
+        lastScreen = screen
+        pointer = activity.pointer
 
         // 打鍵に合わせて足踏みする。速く打つほど速く踏む（Comnyang の「ふみふみ」相当）。
         // キーの中身は見ていない。打っているかどうかしか分からないので、それで十分。
@@ -338,6 +526,9 @@ final class Brain {
         // ちょっとスクロールしただけで遠くまで行ってしまう。
         let moved = activity.consumeScroll()
         if activity.scrolledRecently, !isAsleep, state == .idle {
+            // 床から転がし始めるときだけ、いまの立ち位置を一周の起点として覚え直す。
+            // 壁の途中なら、そこから続きを転がす。
+            if rollDir == 0, rollSide == 0 { resetRollTrack(screen) }
             scrollT = 0.10                       // 手を止めたらすぐ終わる
             if activity.scrollDir != 0 {
                 rollDir = activity.scrollDir == -1 ? 1 : -1
@@ -360,15 +551,33 @@ final class Brain {
             scrollBob += step / max(1, displayHeight) * 5
             // 回転はゆっくり。速く回すと転がるより「回転している」だけに見える
             rollPhase += step / max(1, displayHeight) * 2.2
-            pos.x += CGFloat(rollDir) * step
-            let halfW = displayHeight * 0.38
-            pos.x = max(screen.minX + halfW, min(screen.maxX - halfW, pos.x))
+            advanceRoll(CGFloat(rollDir) * step, screen: screen)
             if scrollT <= 0 { rollDir = 0; scrollBob = 0 }
         }
 
-        // 放置で寝る / 触られて起きる
+        // 放置で寝る / 触られて起きる。
+        // **壁や天井では寝ない。** 逆さまのまま寝ると、寝そべりの絵が
+        // 天井に貼り付いたようになって何をしているのか読めない。先に降りる。
         if activity.idle < 0.4 { wake() }
-        if state == .idle, activity.idle > sleepAfter { state = .dozing; stateTime = 0 }
+        if state == .idle, activity.idle > sleepAfter {
+            if rollSide != 0 {
+                dropFromWall()
+            } else {
+                state = .dozing
+                stateTime = 0
+            }
+        }
+        // 打つのをやめてしばらく経ったら、寝る前にいったん画面のはしへどく。
+        // 「使ってはいるが打っていない」＝動画を見ているような時間のための姿。
+        if autoScreenPeek, state == .idle, rollSide == 0, !typing,
+           activity.idle > screenPeekAfter, activity.idle < sleepAfter {
+            enterScreenPeek(.top)
+        }
+        // **一度のぞく形になったら、やめると言うまで そのまま。**
+        // 打ち始めただけで降りてくると、動画とメモを行き来するたびに
+        // 画面の真ん中へ戻ってきてしまう。降ろすのは
+        // 右クリックの「のぞくのをやめる」／メニューバー／設定／つかんで放り出す、のどれか。
+        if state == .screenPeek { placeScreenPeek() }
 
         switch state {
         case .idle:    updateIdle(dt, activity)
@@ -379,6 +588,8 @@ final class Brain {
         case .dozing:  if stateTime > 2.2 { state = .sleep; stateTime = 0 }
         case .sleep:   break
         case .peek:    updatePeek(dt)
+        case .screenPeek: break
+        case .meeting: updateMeeting(dt, activity, screen: screen)
         }
 
         for b in behaviors.sorted(by: { $0.priority > $1.priority }) {
@@ -399,8 +610,9 @@ final class Brain {
         // 呼吸
         breath += dt * (a.isTyping ? 1.9 : 1.05)
 
-        // タイピング中は端に寄って邪魔しない
-        guard wanders, !a.isTyping else { return }
+        // タイピング中は端に寄って邪魔しない。
+        // 壁や天井に居るときも跳ねない（跳ねると壁から剥がれて宙に浮く）。
+        guard wanders, !a.isTyping, rollSide == 0 else { return }
         nextHop -= dt
         if nextHop <= 0 {
             nextHop = CGFloat.random(in: 7...16)
@@ -410,6 +622,64 @@ final class Brain {
                 hop(towards: pos.x + CGFloat.random(in: -150...150))
             }
         }
+    }
+
+    // MARK: - 画面のまわりを一周する
+
+    /// 金平糖を押しながら画面の縁を伝って進む。
+    ///
+    /// 端まで来たら止まるのではなく **角で90度まがって次の縁へ移る**。
+    /// 下→右→上→左 の反時計回りで、こすくまくんも同じだけ回った姿になる
+    /// （回す向きを揃えてあるので、姿勢は `turn = rollSide` だけで決まる）。
+    ///
+    /// 角では体が画面からはみ出すので、各辺は身長ぶん内側で折り返す。
+    private func advanceRoll(_ d: CGFloat, screen: NSRect) {
+        let m = displayHeight * 0.62               // 角のとりしろ
+        func length(_ side: Int) -> CGFloat {
+            let l = (side % 2 == 0) ? screen.width - m * 2 : screen.height - m * 2
+            return max(1, l)
+        }
+        rollAlong += d
+        // 何周してもいいように while で送る（一気に大きく動いても破綻しない）
+        var guardCount = 0
+        while rollAlong > length(rollSide), guardCount < 8 {
+            rollAlong -= length(rollSide)
+            rollSide = (rollSide + 1) % 4
+            guardCount += 1
+        }
+        while rollAlong < 0, guardCount < 16 {
+            rollSide = (rollSide + 3) % 4
+            rollAlong += length(rollSide)
+            guardCount += 1
+        }
+        rollAlong = max(0, min(length(rollSide), rollAlong))
+
+        // 縁のはじまりは、その辺を反時計回りに進むときの入口の角
+        switch rollSide {
+        case 0: pos = CGPoint(x: screen.minX + m + rollAlong, y: screen.minY + 6)
+        case 1: pos = CGPoint(x: screen.maxX - 6, y: screen.minY + m + rollAlong)
+        case 2: pos = CGPoint(x: screen.maxX - m - rollAlong, y: screen.maxY - 6)
+        default: pos = CGPoint(x: screen.minX + 6, y: screen.maxY - m - rollAlong)
+        }
+    }
+
+    /// いまの位置を「下の縁のどこか」として覚え直す。
+    /// 転がし始める前と、床に降りたときに呼ぶ。
+    private func resetRollTrack(_ screen: NSRect) {
+        rollSide = 0
+        rollAlong = max(0, pos.x - (screen.minX + displayHeight * 0.62))
+    }
+
+    /// 壁や天井から手をはなして落ちる
+    private func dropFromWall() {
+        guard rollSide != 0 else { return }
+        rollSide = 0
+        rollDir = 0
+        scrollT = 0
+        state = .thrown
+        stateTime = 0
+        vel = CGVector(dx: 0, dy: -20)
+        express(.wide, seconds: 0.7)
     }
 
     private func updatePhysics(_ dt: CGFloat, screen: NSRect, restitution: CGFloat) {
@@ -523,6 +793,47 @@ final class Brain {
 
     // MARK: - 見た目を組み立てる
 
+    /// 画面のどの縁に居るかを、のぞく形に読みかえる
+    static func peekKindForSide(_ side: Int) -> ScreenPeek {
+        switch side {
+        case 1:  return .right
+        case 2:  return .top
+        default: return .left
+        }
+    }
+
+    /// 画面のはしから のぞいている姿。
+    ///
+    /// 窓の縁のぞきと違って **隠れているのは画面の外側** なので、
+    /// 左右は窓のときと逆になる（画面の右のはしなら、見えているのは体の左半分）。
+    /// のぞきモードと、金平糖を壁で止めたときの両方から呼ぶ。
+    private func edgeLook(_ f: inout PetFrame, _ kind: ScreenPeek, closed: Bool) {
+        f.shadow = 0
+        switch kind {
+        case .top:
+            // さかさまにぶら下がって、上から見おろす
+            f.sprite = closed ? "blink" : "idle"
+            f.turn = 2
+            f.peekRows = peekRows
+            f.look = -f.look          // 180度回すと画面上の左右が入れかわる
+        case .right:
+            f.sprite = "turn"
+            f.peekCols = max(6, Int(CGFloat(SpriteBank.sprite("turn").w) * peekColsRatio))
+            f.peekSide = -1
+            f.faceRight = true
+        case .left:
+            f.sprite = "turn"
+            f.peekCols = max(6, Int(CGFloat(SpriteBank.sprite("turn").w) * peekColsRatio))
+            f.peekSide = 1
+            f.faceRight = false
+        case .bottomLeft:
+            // 左下から斜めに見上げる。ふりむきの姿はもともと顔が斜めを向いている
+            f.sprite = "turn"
+            f.faceRight = true
+            f.shadow = 0.13
+        }
+    }
+
     /// 見た目を組み立てる。
     ///
     /// ドット絵なので「なめらかに変形させる」のではなく **コマを選ぶ**。
@@ -568,6 +879,16 @@ final class Brain {
                 f.peekSide = (peekKind == .left) ? -1 : 1
                 f.faceRight = (peekKind == .left)
             }
+
+        case .meeting:
+            // カーソルの方へ体を向ける。指すのは矢印（PointingBehavior）の役目で、
+            // 体は「そちらを見ている」だけにする。腕を描き足すと別のくまになる。
+            f.sprite = closed ? "blink" : "idle"
+            f.look = pointer.x > pos.x + displayHeight * 0.1 ? 1
+                : (pointer.x < pos.x - displayHeight * 0.1 ? -1 : 0)
+
+        case .screenPeek:
+            edgeLook(&f, screenPeek, closed: closed)
 
         case .drag:
             // 引っぱった距離でコマを選ぶ。ドット絵は連続変形できないので、
@@ -638,6 +959,21 @@ final class Brain {
         let air = max(0, pos.y - ground)
         f.shadow = (state == .drag || air > 1) ? max(0.0, 0.13 - air / 900) : 0.13
         if state == .sleep { f.shadow = 0.10 }
+
+        // 画面の縁を伝っている間は、その面に立った姿にする。
+        if rollSide != 0, state == .idle {
+            if scrollT > 0 {
+                // 押している最中。壁に立って金平糖を運んでいる
+                f.turn = rollSide
+                f.shadow = 0.13      // 壁に接している影。air の計算は床むけなので使わない
+            } else {
+                // **止まったら「はしからのぞく」姿に落ち着く。**
+                // ふつうの立ち姿を90度倒したままだと、壁に横向きで立っている
+                // 変な絵になる。手を止めた先は、のぞいている所。
+                f.lift = 0
+                edgeLook(&f, Brain.peekKindForSide(rollSide), closed: closed)
+            }
+        }
 
         frame = f
     }
