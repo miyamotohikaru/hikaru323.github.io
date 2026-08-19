@@ -531,33 +531,41 @@ def bake(pose, h, face=True, mole=True, blink=False, squash=1.0, mole_x=None,
     return ["".join(r) for r in grid], eyes, nose
 
 
-def bake_konpeito(h, frames=6, bumps=15):
+def bake_konpeito(h, frames=6, nubs=10, tick=2):
     """転がる金平糖のコマを作る。
 
-    実物は「丸い玉の表面に、小さな粒がびっしり付いている」形。
-    角を9本だけ大きく出すと 星や氷のかけらに見えるので、
-    **粒を多く・低く** して、輪郭がぷつぷつした丸に見えるようにする。
-    ドット絵は回せないので、角度ちがいを何枚か焼いて順に出す。
+    **輪郭を波打たせる方式はやめた。** 振幅を小さくすると ただの丸に見え、
+    大きくすると星に見えて、どちらも金平糖にならなかった。
+
+    実物は「丸い核のまわりに、粒がぽこぽこ付いている」。
+    そこで **核の円に、小さな円をぐるりと並べて重ねる**。
+    こうすると粒どうしの間にくびれができて、数えられる粒になる＝金平糖に見える。
+
+    粒は 8個で離して置いていたが、それだと粒がとがって「星」に寄る。
+    本物は粒どうしが隣り合っていて、間に短い切れ込みが入る。そこで
+      - 粒を10個にして となりと接するまで太らせ（＝ふちが波打つ）
+      - **谷（粒と粒のあいだ）から中心へ tick ドットの線を引く**
+    の2つを足した。この「間の線」が入ってはじめて、丸ではなく金平糖に読める。
+    19ドットでは10個が限界で、12個にすると谷が1ドットに満たず点になって散る。
     """
     import math as _m
     import numpy as np
     out = []
-    R = h / 2.0
+    R = h / 2.0 * SS
+    core = R * 0.58          # 核（これより大きいと粒のくびれが埋まる）
+    nub = R * 0.30           # 粒ひとつ
+    ring = R * 0.70          # 粒を置く輪の半径（粒の外側が全体の輪郭になる）
     for f in range(frames):
-        rot = 2 * _m.pi * f / frames / bumps
+        rot = 2 * _m.pi * f / frames / nubs
         W = H = h
         img = Image.new("L", (W * SS, H * SS), 0)
         dr = ImageDraw.Draw(img)
         cx = cy = W * SS / 2
-        pts = []
-        steps = bumps * 12
-        for i in range(steps):
-            a = rot + 2 * _m.pi * i / steps
-            # 0.86〜1.0 の間で細かく波打たせる（＝低くて多い粒）
-            k = 0.5 + 0.5 * _m.cos(bumps * (a - rot))
-            r = (0.86 + 0.14 * (k ** 1.3)) * R * SS
-            pts.append((cx + _m.cos(a) * r, cy + _m.sin(a) * r))
-        dr.polygon(pts, fill=1)
+        dr.ellipse([cx - core, cy - core, cx + core, cy + core], fill=1)
+        for i in range(nubs):
+            a = rot + 2 * _m.pi * i / nubs
+            px, py = cx + _m.cos(a) * ring, cy + _m.sin(a) * ring
+            dr.ellipse([px - nub, py - nub, px + nub, py + nub], fill=1)
 
         a = np.array(img, dtype=np.uint8).reshape(H, SS, W, SS)
         cov = (a == 1).mean(axis=(1, 3))
@@ -568,6 +576,31 @@ def bake_konpeito(h, frames=6, bumps=15):
                     grid[y][x] = FILL
         grid = close_outline(grid)
         grid = drop_specks(grid)
+
+        # 間の線。谷の向きに外から内へ進み、面に入った所から tick ドットだけ黒くする。
+        # 半径を割合で刻むと飛び飛びの点になったので、0.5ドットずつ詰めて引く。
+        if tick:
+            c = (h - 1) / 2.0
+            for i in range(nubs):
+                a2 = rot + 2 * _m.pi * (i + 0.5) / nubs
+                r = h / 2.0
+                start = None
+                while r > 0:
+                    x, y = int(round(c + _m.cos(a2) * r)), int(round(c + _m.sin(a2) * r))
+                    if 0 <= x < W and 0 <= y < H and grid[y][x] == FILL:
+                        start = r
+                        break
+                    r -= 0.25
+                if start is None:
+                    continue
+                placed, r = 0, start
+                while placed < tick and r > 0:
+                    x, y = int(round(c + _m.cos(a2) * r)), int(round(c + _m.sin(a2) * r))
+                    if 0 <= x < W and 0 <= y < H and grid[y][x] == FILL:
+                        grid[y][x] = INK
+                        placed += 1
+                    r -= 0.5
+
         out.append(["".join(r) for r in grid])
     return out
 
@@ -650,7 +683,7 @@ def main():
               + (f"  目{sp['eyes']}" if eyes else ""))
 
     # 転がる金平糖（こすくまくんの約半分）
-    for i, rows in enumerate(bake_konpeito(17)):
+    for i, rows in enumerate(bake_konpeito(19)):
         out["sprites"][f"kon{i}"] = {"w": len(rows[0]), "h": len(rows), "rows": rows}
     print(f"  {'kon0..5':9s} {len(out['sprites']['kon0']['rows'][0]):>3}x"
           f"{len(out['sprites']['kon0']['rows']):<3} (転がる金平糖)")

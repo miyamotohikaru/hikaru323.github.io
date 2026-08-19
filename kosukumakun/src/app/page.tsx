@@ -1,275 +1,206 @@
 import { Kosukuma } from "@/components/Kosukuma";
+import { StepZip, StepApps, StepBlocked, StepAllow, StepMenubar } from "@/components/Diagrams";
 
-/* ───────────────────────────────────────────────────────────
-   社内向け 説明ページ。
-   読む人は「こすくまくんを知らない同僚」。知りたいのは3つだけ:
-     1. これは何か  2. 何ができるか  3. どうやって入れるか
-   版面は海外の新聞の一面に寄せてある（生成りの紙・明朝・罫線・段組）。
-   ─────────────────────────────────────────────────────────── */
+/* 案2。案1（白地・角丸カード）の「わかりやすさと余白」は保ったまま、
+   面の切り分けを 枠ではなく 間と罫で行う。色はこすくまくんの2色だけ。 */
 
-const FEATURES: { label: string; title: string; body: string }[] = [
-  {
-    label: "Eyes",
-    title: "目でカーソルを追う",
-    body: "近くにカーソルが来ると、そちらを見ます。目は1ドットしかありませんが、1つ動くだけで見ている方向が伝わります。",
-  },
-  {
-    label: "Touch",
-    title: "つまむと もちのように伸びる",
-    body: "つかんで持ち上げると縦に伸びます。頭の形は変わらず、体だけが伸びる。放すと落ちて、着地でひと潰れします。",
-  },
-  {
-    label: "Keys",
-    title: "打つと キーボードを踏む",
-    body: "文字を打つと足元にキーが現れ、打鍵1回につき1回ずつ踏みます。打ちすぎると頭から湯気が出ます。",
-  },
-  {
-    label: "Edge",
-    title: "ウィンドウの縁に乗る",
-    body: "そっと置くと、いちばん手前のウィンドウの上端や左右の縁にちょこんと乗ります。そのウィンドウを動かすと、ついてきます。",
-  },
-  {
-    label: "Sleep",
-    title: "放っておくと 寝る",
-    body: "しばらく触らないでいると寝そべって、頭の上に Z が浮かびます。何か操作すると起きます。寝ている間は描画も止まります。",
-  },
-  {
-    label: "Voice",
-    title: "ときどき 心の声がもれる",
-    body: "こすくまくんに口はありません。だから しゃべりません。思っていることが、思考の雲になって頭の上に出るだけです。",
-  },
+/* できることの絵は、**アプリ本体の描画をそのまま書き出した動く絵**（GIF）。
+   図に描き起こすのではなく、実際に画面で起きるのと同じ動きを見せる。
+   作り直すときは tools/make_shots.py を走らせる（public/shots/ が丸ごと入れ替わる）。 */
+const FEATURES = [
+  { s: "eyes",    t: "目でカーソルを追う",         b: "近くにカーソルが来ると、そちらを見ます。" },
+  { s: "stretch", t: "つまむと もちのように伸びる", b: "頭の形は変わらず、体だけが伸びます。放すと落ちて弾みます。" },
+  { s: "keys",    t: "打つと キーボードを踏む",     b: "足元にキーが出て、打鍵1回につき1回踏みます。打ちすぎると湯気。" },
+  { s: "roll",    t: "スクロールで 金平糖を転がす", b: "下へ動かすと右、上へ動かすと左。動かした距離だけ転がります。" },
+  { s: "edge",    t: "ウィンドウの縁に乗る",       b: "そっと置くと上端や左右の縁に。その窓を動かすとついてきます。" },
+  { s: "sleep",   t: "放っておくと 寝る",         b: "寝そべって Z が浮かびます。寝ている間は描画も止まります。" },
+  { s: "think",   t: "ときどき 心の声がもれる",    b: "口がないので しゃべりません。豆知識も この形で伝えます。" },
 ];
 
-const TIPS = [
-  ["パソコン", "⌘⇧4 のあと スペースを押すと ウィンドウだけ撮れる"],
-  ["世界", "ハチミツは腐らない。水分が少なくて酸性だから"],
-  ["あそび", "図書館は 本を借りなくても居ていい場所"],
-  ["ひとこと", "いつも がんばってて えらい"],
+/* 豆知識。4種類を順番に回して出す。ここではその内訳と、実際の出方を見せる。 */
+const TIP_KINDS = [
+  { k: "パソコンの豆知識", n: 41, e: "⌘⇧4 のあと スペースを押すと ウィンドウだけ撮れる" },
+  { k: "世界の豆知識",     n: 30, e: "キリンの首の骨の数は 人間と同じ7個" },
+  { k: "あそびの豆知識",   n: 30, e: "図書館は 本を借りなくても居ていい場所" },
+  { k: "ひとこと",         n: 30, e: "いつも がんばってて えらい" },
 ];
 
 const STEPS = [
-  {
-    n: "1",
-    title: "ZIPを ダウンロードする",
-    body: "このページの「ダウンロード」から受け取ります。大きさは1MBもありません。",
-  },
-  {
-    n: "2",
-    title: "解凍して アプリケーションに入れる",
-    body: "ZIPをダブルクリックすると「こすくまくん」が出てきます。それを アプリケーション フォルダへ移してください。",
-  },
-  {
-    n: "3",
-    title: "1回目は 開けません（正常です）",
-    body: "ダブルクリックすると「開けません」と出ます。これは Apple の署名がまだ無いためで、壊れているわけではありません。",
-    warn: true,
-  },
-  {
-    n: "4",
-    title: "システム設定から 許可する",
-    body: "アップルメニュー → システム設定 → プライバシーとセキュリティ を開き、下の方にある「このまま開く」を押します。",
-  },
-  {
-    n: "5",
-    title: "もう一度 ダブルクリック",
-    body: "メニューバーの右側に こすくまくんが出たら成功です。次からは ふつうに起動します。",
-  },
+  { d: StepZip,     n: "1", t: "ZIPをダウンロード",       b: "下のボタンから。1MBもありません。" },
+  { d: StepApps,    n: "2", t: "アプリケーションに入れる", b: "解凍して出てきた「こすくまくん」を移動します。" },
+  { d: StepBlocked, n: "3", t: "1回目は開けません",       b: "「開けません」と出ます。署名がまだ無いだけで、壊れていません。" },
+  { d: StepAllow,   n: "4", t: "システム設定で許可",       b: "プライバシーとセキュリティ →「このまま開く」を押します。" },
+  { d: StepMenubar, n: "5", t: "もう一度ひらく",           b: "メニューバーに出たら成功。次からは ふつうに開きます。" },
 ];
+
+const SPECS = [
+  ["1.4 MB", "アプリの大きさ"],
+  ["30 MB", "メモリ"],
+  ["0.1 %", "ふだんのCPU"],
+  ["しない", "通信"],
+  ["なし", "必要な許可"],
+];
+
+function Download({ label = "ダウンロード" }: { label?: string }) {
+  return (
+    <a
+      href="/download/kosukumakun.zip"
+      className="inline-flex items-baseline gap-3 px-8 py-4 text-[15px]"
+      style={{ background: "var(--ink)", color: "var(--paper)" }}
+    >
+      <span>{label}</span>
+      <span className="text-[12px] opacity-60">700 KB</span>
+    </a>
+  );
+}
 
 export default function Page() {
   return (
-    <main className="mx-auto max-w-[1180px] px-5 pb-24">
-      {/* ── 題字 ───────────────────────────────────── */}
-      <header className="pt-10">
-        <div className="flex items-baseline justify-between text-[11px] sans" style={{ color: "var(--ink-60)" }}>
-          <span>こす.くま</span>
-          <span>デスクトップに住む くま</span>
-          <span>Mac 用・無料</span>
-        </div>
-        <div className="rule-thick mt-2" />
-        <h1
-          className="text-center leading-[0.9] tracking-tight"
-          style={{ fontSize: "clamp(52px, 12vw, 132px)", marginTop: "0.12em" }}
-        >
-          こすくまくん
-        </h1>
-        <div className="mt-3 flex items-center justify-center gap-4 text-[11px] sans" style={{ color: "var(--ink-60)" }}>
-          <span>KOSUKUMA-KUN</span>
-          <span aria-hidden>·</span>
-          <span>いつも そこに いる</span>
-        </div>
-        <div className="rule-thick mt-3" />
-      </header>
-
-      {/* ── リード ─────────────────────────────────── */}
-      <section className="mt-8 grid gap-8 md:grid-cols-[1.55fr_1fr]">
+    <main className="mx-auto max-w-[1000px] px-6">
+      {/* ヒーロー */}
+      <section className="grid items-center gap-10 pt-24 pb-20 md:grid-cols-[1.15fr_1fr]">
         <div>
-          <p className="eyebrow">はじめに</p>
-          <h2 className="mt-2 text-[30px] leading-[1.25] md:text-[38px]">
-            仕事の じゃまを しない、
+          <p className="sec-no">FOR macOS · 無料</p>
+          <h1 className="mt-5 text-[46px] font-bold leading-[1.12] tracking-tight sm:text-[58px]">
+            デスクトップに
             <br />
-            小さな くまです。
-          </h2>
-          <p className="drop mt-4 text-[15px] leading-[1.95]" style={{ color: "var(--ink)" }}>
-            画面のすみに ちょこんと居て、カーソルを目で追ったり、キーボードを踏んだり、
-            ときどき ぽつりと 何かを思ったりします。クリックしても 前面には出てこないので、
-            打っている文字が とられることはありません。何も起きていないときは 描画そのものを止めて、
-            じっとしています。
+            くまが すみつきます
+          </h1>
+          <p className="mt-6 max-w-[420px] text-[15.5px]" style={{ color: "var(--muted)" }}>
+            こすくまくんは 画面のすみで、カーソルを目で追ったり、キーボードを踏んだり、
+            ときどき ぽつりと 何かを思ったりします。仕事の じゃまは しません。
           </p>
-          <p className="mt-3 text-[15px] leading-[1.95]">
-            こすくまくんには <b>口がありません</b>。だから しゃべりません。
-            うれしいとき、ねむいとき、おどろいたとき——ぜんぶ 目と からだの かたちで出ます。
-          </p>
+          <div className="mt-9">
+            <Download />
+          </div>
         </div>
-
-        <aside className="rule-l md:pl-7">
-          <div className="flex items-end justify-center pt-2">
-            <Kosukuma pose="front" breathe blink className="h-[210px] w-auto" label="こすくまくん" />
-          </div>
-          <div className="rule mt-5 pt-3">
-            <p className="eyebrow">かるさ</p>
-            <dl className="mt-2 space-y-1.5 text-[13px] sans">
-              {[
-                ["アプリの大きさ", "0.9 MB"],
-                ["メモリ", "約 30 MB"],
-                ["ふだんのCPU", "0.1 %"],
-                ["通信", "しない"],
-                ["必要な許可", "なし"],
-              ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
-                  <dt style={{ color: "var(--ink-60)" }}>{k}</dt>
-                  <dd className="tabular-nums">{v}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </aside>
+        <div className="flex justify-center md:justify-end">
+          <Kosukuma pose="front" breathe blink className="h-[240px] w-auto" label="こすくまくん" />
+        </div>
       </section>
 
-      {/* ── できること ─────────────────────────────── */}
-      <section className="mt-12">
-        <div className="rule-thick" />
-        <h2 className="mt-3 text-center text-[26px] tracking-wide">できること</h2>
-        <div className="rule mt-3" />
-        <div className="grid gap-x-8 gap-y-7 pt-6 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <article key={f.title}>
-              <p className="eyebrow">{f.label}</p>
-              <h3 className="mt-1.5 text-[19px] leading-snug">{f.title}</h3>
-              <p className="mt-2 text-[13.5px] leading-[1.9]" style={{ color: "var(--ink-60)" }}>
-                {f.body}
-              </p>
+      {/* 数値 */}
+      <section className="hair grid grid-cols-2 gap-y-8 py-10 sm:grid-cols-5">
+        {SPECS.map(([v, k]) => (
+          <div key={k}>
+            <div className="text-[24px] font-semibold tabular-nums">{v}</div>
+            <div className="mt-0.5 text-[11.5px]" style={{ color: "var(--muted)" }}>{k}</div>
+          </div>
+        ))}
+      </section>
+
+      {/* できること */}
+      <section className="hair pt-16 pb-8">
+        <p className="sec-no">01</p>
+        <h2 className="mt-3 text-[30px] font-bold tracking-tight">できること</h2>
+        <p className="mt-2 max-w-[460px] text-[14px]" style={{ color: "var(--muted)" }}>
+          こすくまくんに口はありません。うれしさも ねむさも、目と からだで出ます。
+        </p>
+
+        <div className="mt-12 grid gap-x-10 gap-y-12 sm:grid-cols-2">
+          {FEATURES.map(({ s, t, b }) => (
+            <article key={t}>
+              <img
+                src={`/shots/${s}.gif`}
+                alt=""
+                width={760}
+                height={460}
+                className="w-full rounded-lg"
+                style={{ border: "1px solid var(--line)", imageRendering: "pixelated" }}
+              />
+              <h3 className="mt-4 text-[16px] font-semibold leading-snug">{t}</h3>
+              <p className="mt-1.5 text-[13.5px]" style={{ color: "var(--muted)" }}>{b}</p>
             </article>
           ))}
         </div>
       </section>
 
-      {/* ── 豆知識 ─────────────────────────────────── */}
-      <section className="mt-12">
-        <div className="rule" />
-        <div className="grid gap-8 pt-6 md:grid-cols-[1fr_1.4fr]">
-          <div>
-            <p className="eyebrow">ときどき</p>
-            <h2 className="mt-1.5 text-[24px] leading-snug">
-              豆知識を 教えてくれます
-            </h2>
-            <p className="mt-3 text-[13.5px] leading-[1.9]" style={{ color: "var(--ink-60)" }}>
-              「パソコン」「世界」「あそび」「ひとこと」の4種類を 順番に。
-              15〜25分に1回くらい、手が止まっているときだけ出ます。
-              打っている最中には ぜったいに出しません。
-              こすくまくんを つづけて2回タップすると、その場でも 見られます。
-            </p>
-          </div>
-          <ul className="space-y-3">
-            {TIPS.map(([kind, text]) => (
-              <li key={text} className="rule pt-3">
-                <span className="eyebrow">{kind}</span>
-                <p className="mt-1 text-[15px] leading-[1.8]">{text}</p>
+      {/* 豆知識 */}
+      <section className="hair mt-16 pt-16 pb-8">
+        <p className="sec-no">02</p>
+        <h2 className="mt-3 text-[30px] font-bold tracking-tight">ときどき 教えてくれます</h2>
+        <p className="mt-2 max-w-[520px] text-[14px]" style={{ color: "var(--muted)" }}>
+          4種類を順番に。12〜25分に1回くらい、手が止まっているときだけ出ます。
+          打っている最中には出しません。こすくまくんを つづけて2回タップすると、その場でも見られます。
+        </p>
+
+        <div className="mt-12 grid items-start gap-x-12 gap-y-10 md:grid-cols-[1fr_1fr]">
+          <ul className="space-y-7">
+            {TIP_KINDS.map(({ k, n, e }) => (
+              <li key={k} className="hair pt-5">
+                <div className="flex items-baseline gap-3">
+                  <h3 className="text-[15.5px] font-semibold">{k}</h3>
+                  <span className="text-[11.5px] tabular-nums" style={{ color: "var(--muted)" }}>
+                    {n} 個
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[13.5px]" style={{ color: "var(--muted)" }}>{e}</p>
               </li>
             ))}
           </ul>
+          <img
+            src="/shots/tips.png"
+            alt=""
+            width={760}
+            height={706}
+            className="w-full rounded-lg"
+            style={{ border: "1px solid var(--line)", imageRendering: "pixelated" }}
+          />
         </div>
       </section>
 
-      {/* ── 入れかた ───────────────────────────────── */}
-      <section className="mt-14">
-        <div className="rule-thick" />
-        <h2 className="mt-3 text-center text-[26px] tracking-wide">入れかた</h2>
-        <p className="mt-1 text-center text-[12px] sans" style={{ color: "var(--ink-60)" }}>
-          はじめの1回だけ ひと手間かかります。2回目からは ふつうに開きます
+      {/* 入れかた */}
+      <section className="hair mt-16 pt-16 pb-8">
+        <p className="sec-no">03</p>
+        <h2 className="mt-3 text-[30px] font-bold tracking-tight">入れかた</h2>
+        <p className="mt-2 max-w-[460px] text-[14px]" style={{ color: "var(--muted)" }}>
+          はじめの1回だけ ひと手間かかります。2回目からは ふつうに開きます。
         </p>
-        <div className="rule mt-3" />
 
-        <div className="mt-6 flex justify-center">
-          <a
-            href="/download/kosukumakun.zip"
-            className="sans inline-block px-8 py-3 text-[14px] tracking-wider"
-            style={{ background: "var(--ink)", color: "var(--paper)" }}
-          >
-            こすくまくんを ダウンロード
-          </a>
-        </div>
-
-        <ol className="mt-8 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-          {STEPS.map((s) => (
-            <li key={s.n} className="rule pt-3">
-              <div className="flex items-baseline gap-3">
-                <span
-                  className="text-[34px] leading-none tabular-nums"
-                  style={{ color: s.warn ? "var(--accent)" : "var(--ink-30)" }}
-                >
-                  {s.n}
-                </span>
-                <h3 className="text-[17px] leading-snug">{s.title}</h3>
+        <ol className="mt-12 space-y-12">
+          {STEPS.map(({ d: D, n, t, b }) => (
+            <li key={n} className="grid items-center gap-6 sm:grid-cols-[64px_120px_1fr]">
+              <div className="bignum">{n}</div>
+              <D className="h-[76px] w-[110px]" />
+              <div>
+                <h3 className="text-[17px] font-semibold">{t}</h3>
+                <p className="mt-1.5 max-w-[440px] text-[13.5px]" style={{ color: "var(--muted)" }}>{b}</p>
               </div>
-              <p className="mt-2 text-[13.5px] leading-[1.9]" style={{ color: "var(--ink-60)" }}>
-                {s.body}
-              </p>
             </li>
           ))}
         </ol>
+
+        <div className="mt-14">
+          <Download label="こすくまくんを むかえる" />
+        </div>
       </section>
 
-      {/* ── 安心して使うために ─────────────────────── */}
-      <section className="mt-14">
-        <div className="rule-thick" />
-        <h2 className="mt-3 text-center text-[26px] tracking-wide">安心して使うために</h2>
-        <div className="rule mt-3" />
-        <div className="grid gap-8 pt-6 md:grid-cols-3">
+      {/* 安心 */}
+      <section className="hair mt-16 pt-16 pb-8">
+        <p className="sec-no">04</p>
+        <h2 className="mt-3 text-[30px] font-bold tracking-tight">安心して使うために</h2>
+        <div className="mt-10 grid gap-x-12 gap-y-9 sm:grid-cols-3">
           {[
-            {
-              t: "キーの中身は 読んでいません",
-              b: "使っているのは「最後にキーが押されてから何秒たったか」だけを返す macOS の仕組みです。何のキーを押したかは 原理的に取得できません。だから アクセシビリティの許可も出ません。",
-            },
-            {
-              t: "どこにも 通信しません",
-              b: "ネットワークの接続は1本もありません。豆知識も こすくまくんの絵も、すべてアプリの中に入っています。社外に出ていくものは 何もありません。",
-            },
-            {
-              t: "いつでも 止められます",
-              b: "メニューバーの こすくまくんから「そっとしておく」で隠せます。「終了」で完全に止まります。常駐を切りたいときも ワンクリックです。",
-            },
-          ].map((c) => (
-            <article key={c.t}>
-              <h3 className="text-[17px] leading-snug">{c.t}</h3>
-              <p className="mt-2 text-[13.5px] leading-[1.9]" style={{ color: "var(--ink-60)" }}>
-                {c.b}
-              </p>
+            ["キーの中身は読んでいません",
+             "使うのは「最後にキーが押されてから何秒たったか」だけ。何を押したかは 原理的に取得できません。だから許可も求めません。"],
+            ["どこにも通信しません",
+             "ネットワーク接続は1本もありません。豆知識も絵も、すべてアプリの中に入っています。"],
+            ["いつでも止められます",
+             "メニューバーから「そっとしておく」で隠せます。「終了」で完全に止まります。"],
+          ].map(([t, b]) => (
+            <article key={t}>
+              <h3 className="text-[15.5px] font-semibold">{t}</h3>
+              <p className="mt-2 text-[13.5px]" style={{ color: "var(--muted)" }}>{b}</p>
             </article>
           ))}
         </div>
       </section>
 
-      {/* ── 奥付 ───────────────────────────────────── */}
-      <footer className="mt-16">
-        <div className="rule-thick" />
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 text-[11px] sans" style={{ color: "var(--ink-60)" }}>
-          <span>こす.くま</span>
-          <div className="flex items-center gap-3">
-            <Kosukuma pose="front" silhouette className="h-5 w-auto" />
-            <span>macOS 13 以降 / Apple Silicon・Intel 両対応</span>
-          </div>
-        </div>
+      <footer className="hair mt-16 flex items-center justify-between py-8 text-[12px]"
+              style={{ color: "var(--muted)" }}>
+        <span>こす.くま</span>
+        <Kosukuma pose="front" silhouette className="h-5 w-auto" />
+        <span>macOS 13 以降 · Intel / Apple Silicon</span>
       </footer>
     </main>
   );

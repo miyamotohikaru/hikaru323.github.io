@@ -11,6 +11,8 @@ struct PixelSprite {
     let cells: [UInt8]
     /// 目のドット位置。1ドットしか無い目でも、横に1つずらすと見ている方向が出る。
     let eyes: [(x: Int, y: Int)]
+    /// 鼻のドット位置。**目をずらす時に、鼻とくっつかせないため** に持っている。
+    let nose: (x: Int, y: Int)?
 
     @inline(__always) func at(_ x: Int, _ y: Int) -> UInt8 {
         (x < 0 || y < 0 || x >= w || y >= h) ? 0 : cells[y * w + x]
@@ -63,7 +65,9 @@ enum SpriteBank {
             if let e = d["eyes"] as? [[Int]] {
                 eyes = e.compactMap { $0.count == 2 ? (x: $0[0], y: $0[1]) : nil }
             }
-            out[name] = PixelSprite(w: w, h: h, cells: cells, eyes: eyes)
+            var nose: (x: Int, y: Int)?
+            if let n = d["nose"] as? [Int], n.count == 2 { nose = (x: n[0], y: n[1]) }
+            out[name] = PixelSprite(w: w, h: h, cells: cells, eyes: eyes, nose: nose)
         }
         sprites = out
     }
@@ -99,6 +103,10 @@ enum SpriteBank {
                 guard nx >= 0, nx < sp.w else { continue }
                 // ずらした先が面でなければ（＝顔からはみ出すなら）動かさない
                 guard sp.at(nx, e.y) == 2 else { continue }
+                // **鼻の真上・真横に来る動きはしない。** ふりむきの顔は目と鼻が
+                // 斜めに並んでいて、1ドットずらすと目が鼻の真上に重なり、
+                // 縦2ドットの棒＝潰れた目になる。くっつくくらいなら動かさない。
+                if let n = sp.nose, nx == n.x, abs(e.y - n.y) <= 1 { continue }
                 cells[e.y * sp.w + e.x] = 2
                 cells[e.y * sp.w + nx] = 1
             }

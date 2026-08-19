@@ -81,6 +81,9 @@ enum Snapshot {
         if let i = args.firstIndex(of: "--snapshot-fx"), i + 1 < args.count {
             return effects(URL(fileURLWithPath: args[i + 1]))
         }
+        if let i = args.firstIndex(of: "--frames"), i + 1 < args.count {
+            return motion(URL(fileURLWithPath: args[i + 1]))
+        }
         guard let i = args.firstIndex(of: "--snapshot"), i + 1 < args.count else { return false }
         let dir = URL(fileURLWithPath: args[i + 1])
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -235,6 +238,225 @@ enum Snapshot {
             }
             FileHandle.standardOutput.write("  \(name): 「\(text)」\n".data(using: .utf8)!)
         }
+        return true
+    }
+
+    // MARK: - 動いているところ（説明サイトのGIF用）
+
+    /// `--frames <出力先>` … 「できること」を **コマ送り** で書き出す。
+    ///
+    /// 静止画1枚では伝わらないもの（湯気が上がる・金平糖が回る・もちのように伸びる）を
+    /// 見せるため。ここで出したPNGの束を tools/make_shots.py がGIFにまとめる。
+    ///
+    /// 30コマ/秒で回して2コマに1枚だけ書き出す（＝15コマ/秒のGIF）。
+    /// 中身の動きは本物のまま、枚数だけ半分にするやり方。
+    ///
+    /// カーソルはアプリが描くものではないので、**どこに居たか** を manifest.json に残し、
+    /// 絵の合成側で描き足す。両側で同じ式を書くと、いつか必ずずれる。
+    private static func motion(_ dir: URL) -> Bool {
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        SpriteBank.loadIfNeeded()
+
+        let size = CGSize(width: 460, height: 380)
+        let view = PetView(frame: NSRect(origin: .zero, size: size))
+        view.layoutSubtreeIfNeeded()
+        let screen = NSRect(origin: .zero, size: size)
+        let dt: CGFloat = 1.0 / 30
+        let every = 2
+        let scale = 4
+        let footY: CGFloat = 56
+        let cx = size.width / 2
+
+        var manifest: [String: Any] = [:]
+
+        func save(_ scene: String, _ index: Int) {
+            let sub = dir.appendingPathComponent(scene)
+            try? FileManager.default.createDirectory(at: sub, withIntermediateDirectories: true)
+            if let png = image(of: view, size: size) {
+                try? png.write(to: sub.appendingPathComponent(String(format: "%03d.png", index)))
+            }
+        }
+
+        /// 前の場面の演出（キーボード・金平糖・湯気・Z）を消す。
+        /// ふるまいは自分のレイヤを足すだけで片付けないので、
+        /// 消さないと次の場面に全部写り込む（実際にそうなった）。
+        func clearEffects() {
+            view.effectLayer.sublayers?.forEach { $0.removeFromSuperlayer() }
+        }
+
+        /// Brain を回して撮る。behaviors は brain には積まず、
+        /// **描画のあとに手で1回だけ** 進める（brain 経由だと1コマに2回動いて倍速になる）。
+        func run(_ scene: String, caps: Int, behaviors: [PetBehavior], startX: CGFloat? = nil,
+                 setup: (Brain, Activity) -> Void,
+                 step: (Brain, Activity, Int) -> Void,
+                 footAt: ((Brain) -> CGPoint)? = nil,
+                 mark: ((Brain, Int) -> [String: Any])? = nil) {
+            clearEffects()
+            let brain = Brain()
+            brain.host = view
+            brain.wanders = false          // 勝手に跳ねて画面から出ないように
+            brain.setStart(CGPoint(x: startX ?? cx, y: 6))
+            let activity = Activity()
+            setup(brain, activity)
+            var marks: [[String: Any]] = []
+            for i in 0..<(caps * every) {
+                step(brain, activity, i)
+                brain.update(dt: dt, activity: activity, screen: screen)
+                var f = brain.frame
+                f.pixelScale = scale
+                f.foot = footAt?(brain) ?? CGPoint(x: cx, y: footY)
+                view.render(f)
+                for b in behaviors { b.update(dt: dt, brain: brain, activity: activity) }
+                if i % every == 0 {
+                    let n = i / every
+                    save(scene, n)
+                    marks.append(mark?(brain, n) ?? [:])
+                }
+            }
+            manifest[scene] = ["frames": caps, "fps": 30 / every, "marks": marks]
+            FileHandle.standardOutput.write("  \(scene): \(caps)枚\n".data(using: .utf8)!)
+        }
+
+        // --- 目でカーソルを追う -------------------------------------------
+        // カーソルを左右に往復させる。視線は遅れて付いてくるので、
+        // 1周ぶん空回ししてから撮ると、最初と最後がつながる。
+        let orbit: (Int) -> CGPoint = { i in
+            let t = CGFloat(i) / 60.0 * 2 * .pi
+            // 高さは頭より上。胸の高さで往復させると、真ん中でカーソルが
+            // こすくまくんに重なって「追っている」どころか隠れてしまう。
+            return CGPoint(x: cx + 200 * sin(t), y: 250)
+        }
+        run("eyes", caps: 60, behaviors: [], setup: { brain, activity in
+            for i in 0..<60 {
+                activity.debugOverride(typingRate: 0, idle: 3, pointer: orbit(i))
+                brain.update(dt: dt, activity: activity, screen: screen)
+            }
+        }, step: { _, activity, i in
+            activity.debugOverride(typingRate: 0, idle: 3, pointer: orbit(i))
+        }, mark: { _, n in
+            let p = orbit(n * every)
+            return ["cursor": [p.x, p.y]]
+        })
+
+        // --- 打つと キーボードを踏む ---------------------------------------
+        let keyboard = KeyboardBehavior()
+        run("keys", caps: 60, behaviors: [keyboard], setup: { brain, activity in
+            // 湯気が出るまで打ち続けたところから撮り始める
+            for i in 0..<150 {
+                activity.debugOverride(typingRate: 9, idle: 0, stroke: i % 3 == 0)
+                brain.update(dt: dt, activity: activity, screen: screen)
+                keyboard.update(dt: dt, brain: brain, activity: activity)
+            }
+        }, step: { _, activity, i in
+            activity.debugOverride(typingRate: 9, idle: 0, stroke: i % 3 == 0)
+        })
+
+        // --- スクロールで 金平糖を転がす -------------------------------------
+        // 前半は下スクロール（右へ）、後半は上スクロール（左へ）。
+        // 1本で両方向を見せられるし、元の位置に戻るので繰り返しがつながる。
+        // 行って戻るぶんだけ、はじめは中央より左に立たせる（1コマ 2.3pt × 40 で 93pt）
+        let rolling = RollingBehavior()
+        run("roll", caps: 40, behaviors: [rolling], startX: cx - 46, setup: { brain, activity in
+            // 金平糖が出るところまで空回しし、**位置だけ戻す**。
+            // 空回しのぶん進んだままだと、行って戻ったとき元の場所に帰らず、
+            // 繰り返しの継ぎ目で絵が飛ぶ。
+            activity.debugOverride(typingRate: 0, idle: 3, scrolling: true, scrollDir: -1)
+            for _ in 0..<10 { brain.update(dt: dt, activity: activity, screen: screen) }
+            brain.setStart(CGPoint(x: cx - 46, y: 6))
+        }, step: { _, activity, i in
+            activity.debugOverride(typingRate: 0, idle: 3, scrolling: true,
+                                   scrollDir: i < 43 ? -1 : 1)   // 43で折り返すと元の位置に戻る
+        }, footAt: { brain in
+            CGPoint(x: brain.pos.x, y: footY)
+        })
+
+        // --- ときどき 心の声がもれる ----------------------------------------
+        let thought = ThoughtBehavior()
+        run("think", caps: 60, behaviors: [thought], setup: { brain, _ in
+            brain.think("⌘⇧4 のあと スペースで まどだけ 撮れる", seconds: 3.0, big: true)
+        }, step: { _, activity, _ in
+            activity.debugOverride(typingRate: 0, idle: 3)
+        }, footAt: { _ in CGPoint(x: cx, y: 34) })
+
+        // --- 放っておくと 寝る ----------------------------------------------
+        let zzz = ZzzBehavior()
+        run("sleep", caps: 75, behaviors: [zzz], setup: { brain, activity in
+            activity.debugOverride(typingRate: 0, idle: 999)
+            brain.forceSleep()
+            for _ in 0..<30 {
+                brain.update(dt: dt, activity: activity, screen: screen)
+                zzz.update(dt: dt, brain: brain, activity: activity)
+            }
+        }, step: { _, activity, _ in
+            activity.debugOverride(typingRate: 0, idle: 999)
+        })
+
+        // --- つまむと もちのように伸びる --------------------------------------
+        // ここだけ Brain を使わず手でコマを並べる。endDrag は
+        // 「放した場所に窓の縁があるか」を **本物の画面に** 問い合わせるので、
+        // 絵を焼くだけのときに呼ぶと、その時たまたま開いている窓に結果が左右される。
+        do {
+            clearEffects()
+            let seq: [(String, CGFloat)] = [
+                ("idle", 0), ("idle", 0), ("idle", 0), ("idle", 0),
+                ("pull1", 8), ("pull1", 12), ("pull2", 24), ("pull2", 32),
+                ("pull3", 48), ("pull3", 58), ("pull4", 74), ("pull4", 84),
+                ("pull4", 88), ("pull4", 90), ("pull4", 89), ("pull4", 90),
+                ("pull4", 88), ("pull4", 90), ("pull4", 89), ("pull4", 90),
+                ("pull3", 62), ("pull2", 34), ("pull1", 14),
+                ("squash", 0), ("stretch", 14), ("idle", 6), ("squash", 0),
+                ("stretch", 5), ("idle", 0),
+                ("idle", 0), ("idle", 0), ("idle", 0), ("idle", 0), ("idle", 0),
+            ]
+            var marks: [[String: Any]] = []
+            for (n, s) in seq.enumerated() {
+                // いちばん伸びた姿は 67ドット＝268pt ある。ふだんの足元(56)のままだと
+                // 持ち上げたぶんが画面の上をはみ出して頭が切れるので、低い所に立たせる。
+                var f = PetFrame()
+                f.pixelScale = scale
+                f.foot = CGPoint(x: cx, y: 16 + s.1)
+                f.sprite = s.0
+                f.shadow = max(0.02, 0.13 - s.1 / 900)
+                view.render(f)
+                save("stretch", n)
+                // カーソルは頭のてっぺんをつまんでいる
+                let top = 16 + s.1 + CGFloat(SpriteBank.sprite(s.0).h * scale)
+                marks.append(["cursor": [cx + 2, min(size.height - 8, top + 6)]])
+            }
+            manifest["stretch"] = ["frames": seq.count, "fps": 30 / every, "marks": marks]
+            FileHandle.standardOutput.write("  stretch: \(seq.count)枚\n".data(using: .utf8)!)
+        }
+
+        // --- ウィンドウの縁に乗る ---------------------------------------------
+        // ひょこっと出て、しばらく居て、またひっこむ。窓の枠は絵の合成側で描く。
+        do {
+            clearEffects()
+            let full = 24
+            var rows: [Int] = []
+            for v in [0, 3, 7, 12, 17, 21, 24] { rows.append(v) }
+            rows += Array(repeating: full, count: 26)
+            for v in [21, 16, 10, 5, 0] { rows.append(v) }
+            rows += Array(repeating: 0, count: 6)
+            for (n, r) in rows.enumerated() {
+                var f = PetFrame()
+                f.pixelScale = scale
+                f.foot = CGPoint(x: cx, y: footY)
+                f.sprite = (n % 34 == 20 || n % 34 == 21) ? "blink" : "idle"
+                f.peekRows = max(1, r)
+                f.shadow = 0
+                if r == 0 { f.alpha = 0 }
+                view.render(f)
+                save("edge", n)
+            }
+            manifest["edge"] = ["frames": rows.count, "fps": 30 / every, "marks": []]
+            FileHandle.standardOutput.write("  edge: \(rows.count)枚\n".data(using: .utf8)!)
+        }
+
+        if let data = try? JSONSerialization.data(withJSONObject: manifest,
+                                                  options: [.prettyPrinted, .sortedKeys]) {
+            try? data.write(to: dir.appendingPathComponent("manifest.json"))
+        }
+        FileHandle.standardOutput.write("frames → \(dir.path)\n".data(using: .utf8)!)
         return true
     }
 

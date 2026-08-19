@@ -357,8 +357,9 @@ final class Brain {
                 step = displayHeight * 0.5 * dt
             }
             step = min(step, displayHeight * 0.9)      // 一気に飛ばない上限
-            scrollBob += step / max(1, displayHeight) * 9
-            rollPhase += step / max(1, displayHeight) * 7
+            scrollBob += step / max(1, displayHeight) * 5
+            // 回転はゆっくり。速く回すと転がるより「回転している」だけに見える
+            rollPhase += step / max(1, displayHeight) * 2.2
             pos.x += CGFloat(rollDir) * step
             let halfW = displayHeight * 0.38
             pos.x = max(screen.minX + halfW, min(screen.maxX - halfW, pos.x))
@@ -606,6 +607,10 @@ final class Brain {
                 // 右へ進むときだけ反転する。
                 f.sprite = "turn"
                 f.faceRight = rollDir < 0
+                // 押している間はカーソルではなく金平糖を見ている＝視線は動かさない。
+                // ふりむきの顔は目と鼻が斜めに並んでいるので、ここで目をずらすと
+                // 鼻とくっついて潰れて見える。
+                f.look = 0
                 f.offsetX = CGFloat(-rollDir * pixelScale)   // 少しのけぞって押す
                 f.lift = (Int(scrollBob) % 2 == 0) ? 0 : CGFloat(pixelScale)
             } else if typing {
