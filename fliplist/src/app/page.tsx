@@ -27,7 +27,7 @@ const CONTACT = "https://kosukuma.com/contact/";
  *   更新履歴  日付＋一行。<dl> を float でくずしてならべる
  *   ふりっぷとは  用語のせつめい。表を1マスだけ使って囲う
  *   背景をかえる  小さな壁紙の見本を4つ
- *   奥付      カウンター・リンクフリー・相互リンク・もどり道
+ *   奥付      カウンター・リンクフリー・もどり道
  *
  * トップページと同じにしていないところ:
  *   ・青空と飛行機の帯は無い。写真のスライダーも無い。事業モデルの図も無い
@@ -255,8 +255,6 @@ export default function Page() {
           <p>
             <BreakText text="このページはリンクフリーです。◆ご自由にはってください。" />
             <br />
-            <span className="mutual">相互リンク募集中！</span>
-            <MobileBreak />
             ご感想は
             <a href={CONTACT}>お問い合わせ</a>
             からどうぞ。
