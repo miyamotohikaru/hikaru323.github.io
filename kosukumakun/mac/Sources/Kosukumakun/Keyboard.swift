@@ -59,13 +59,17 @@ final class KeyboardBehavior: PetBehavior {
         let scale = host.pixelScale
         if attached !== host || builtScale != scale { rebuild(host, scale: scale) }
 
-        // 出す条件: 打っていて、起きていて、いじられていないとき
-        // 縁に乗っている間は、打っても一切反応しない（そこはもう「見ている」場面なので）
+        // 出す条件: 打っていて、起きていて、いじられていないとき。
+        // **のぞいている間・会議中は、打っても一切反応しない。**
+        // そこはもう「見ている」場面なので、足元にキーが出ると
+        // のぞいているのか踏んでいるのか分からなくなる。
         let active = activity.isTyping
             && !brain.isAsleep
             && brain.state != .drag
             && brain.state != .thrown
             && brain.state != .peek
+            && brain.state != .screenPeek
+            && brain.state != .meeting
 
         if active != shown {
             shown = active
@@ -76,7 +80,8 @@ final class KeyboardBehavior: PetBehavior {
         if active {
             stepKeys(brain: brain, host: host, scale: scale)
         }
-        updateSteam(dt: dt, brain: brain, activity: activity, host: host, scale: scale)
+        updateSteam(dt: dt, brain: brain, activity: activity, host: host, scale: scale,
+                    active: active)
     }
 
     // MARK: - キーを踏む
@@ -121,9 +126,11 @@ final class KeyboardBehavior: PetBehavior {
     // MARK: - 湯気
 
     private func updateSteam(dt: CGFloat, brain: Brain, activity: Activity,
-                             host: EffectHost, scale: Int) {
-        // 打ちすぎているときだけ。ふつうの速さでは出さない（出しっぱなしだと鬱陶しい）
-        if activity.isHammering && !brain.isAsleep {
+                             host: EffectHost, scale: Int, active: Bool) {
+        // 打ちすぎているときだけ。ふつうの速さでは出さない（出しっぱなしだと鬱陶しい）。
+        // キーを出していない場面（のぞき・会議など）では湯気も出さない。
+        // 出ているぶんはそのまま消えるまで上がる（急に消すと途切れて見える）。
+        if active && activity.isHammering {
             puffTimer -= dt
             if puffTimer <= 0 {
                 puffTimer = CGFloat.random(in: 0.10...0.20)
