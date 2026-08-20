@@ -116,8 +116,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTe
         addSwitchRow("画面のはしからのぞく",
                      note: "手が止まってしばらくすると、画面のはしへどいて顔だけ出します。"
                          + "一度その形になったら、やめると言うまで そのまま。"
-                         + "こすくまくんを右クリック →「のぞくのをやめる」で降ります。"
-                         + "4か所は右クリックから選べます。つかむと その縁に沿って動かせます。",
+                         + "タップで4か所（上・右・左・下）を順に、つかむと その縁に沿って動かせます。"
+                         + "やめるときは、こすくまくんを右クリック →「のぞくのをやめる」。",
                      get: { Settings.shared.autoScreenPeek },
                      set: { Settings.shared.autoScreenPeek = $0 })
         addNameRow()

@@ -1,6 +1,6 @@
 import AppKit
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var window: PetWindow!
     private let brain = Brain()
@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// 会議モードで押し始めた場所。動かさずに離したら次の言葉へ。
     private var meetTapFrom: CGPoint?
     private weak var meetingItem: NSMenuItem?
+    private weak var peekItem: NSMenuItem?
     private var lastPointer = CGPoint.zero
     private var hoverTime: CGFloat = 0
     private var cursorNear = false
@@ -156,9 +157,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - マウス
 
     private func mouseDown(_ p: CGPoint) {
-        // **はしからのぞいている間は、押しても何も起きない。**
-        // ただ のぞいているだけの時間なので、豆知識も場所替えも出さない。
-        // 動かしたいときだけ つかんで、その縁の上をすべらせる。
+        // はしからのぞいている間は、タップで **次ののぞき場所へ**（上→右→左→下）。
+        // 豆知識はここでは出さない。のぞいている時間は、そっとしておく時間なので。
+        // 動かしたいときは つかんで、その縁の上をすべらせる。
         if brain.state == .screenPeek {
             peekTapFrom = p
             peekMoved = false
@@ -206,9 +207,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dragging = false
         if peekTapFrom != nil {
             peekTapFrom = nil
-            peekMoved = false
             brain.endScreenPeekMove()
-            return                   // 押しただけでは何も起きない
+            // 動かさずに離した＝次ののぞき場所へ。動かしたなら、その場所のまま。
+            if !peekMoved { brain.cycleScreenPeek() }
+            peekMoved = false
+            return
         }
         if meetTapFrom != nil {
             meetTapFrom = nil
@@ -248,7 +251,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         meet.target = self
         meet.state = brain.isMeeting ? .on : .off
         m.addItem(meet)
-        let back = NSMenuItem(title: "呼び戻す", action: #selector(recall), keyEquivalent: "")
+        let back = NSMenuItem(title: "定位置にもどす", action: #selector(recall), keyEquivalent: "")
         back.target = self
         m.addItem(back)
         let sleep = NSMenuItem(title: "おやすみ", action: #selector(forceSleep), keyEquivalent: "")
@@ -282,13 +285,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hide = NSMenuItem(title: "そっとしておく", action: #selector(togglePause), keyEquivalent: "")
         hide.target = self
         m.addItem(hide)
-        let back = NSMenuItem(title: "呼び戻す", action: #selector(recall), keyEquivalent: "r")
+        let back = NSMenuItem(title: "定位置にもどす", action: #selector(recall), keyEquivalent: "r")
         back.target = self
         m.addItem(back)
         let peek = NSMenuItem(title: "画面のはしからのぞく", action: #selector(toggleScreenPeek),
                               keyEquivalent: "")
         peek.target = self
         m.addItem(peek)
+        peekItem = peek
         let meet = NSMenuItem(title: "会議モード", action: #selector(toggleMeeting), keyEquivalent: "m")
         meet.target = self
         m.addItem(meet)
@@ -307,7 +311,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         m.addItem(.separator())
         let quit = NSMenuItem(title: "終了", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         m.addItem(quit)
+        m.delegate = self
         statusItem.menu = m
+    }
+
+    /// メニューを開くたびに、いまの状態に合わせて言い方を変える。
+    /// 「のぞく」のままだと、**いま のぞいているのかどうかが分からない**。
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        let peeking = brain.state == .screenPeek
+        peekItem?.title = peeking ? "画面のはしからのぞくのを やめる" : "画面のはしからのぞく"
+        peekItem?.state = peeking ? .on : .off
+        meetingItem?.title = brain.isMeeting ? "会議モードを やめる" : "会議モード"
+        meetingItem?.state = brain.isMeeting ? .on : .off
     }
 
     @objc private func togglePause(_ sender: NSMenuItem) {
