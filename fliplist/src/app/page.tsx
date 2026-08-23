@@ -1,6 +1,5 @@
 import BgPicker from "@/components/retro/BgPicker";
 import BreakText from "@/components/retro/BreakText";
-import Counter from "@/components/retro/Counter";
 import FlipTable from "@/components/retro/FlipTable";
 import Heading from "@/components/retro/Heading";
 import Marquee from "@/components/retro/Marquee";
@@ -249,8 +248,6 @@ export default function Page() {
         {/* ── 奥付 ─────────────────────────────── */}
         <div className="okuduke" id="okuduke">
           <p className="okuduke-h">― このページについて ―</p>
-
-          <Counter />
 
           <p>
             <BreakText text="このページはリンクフリーです。◆ご自由にはってください。" />
