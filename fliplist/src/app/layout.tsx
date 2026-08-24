@@ -36,9 +36,12 @@ export const viewport: Viewport = {
  * 前に来たときにえらんだ壁紙を、描く前に貼っておく。
  * これが無いと、いちどクリーム色が出てから色がかわる（ちらつく）。
  * 実際の絵の指定は globals.css の #home[data-fl-bg] にある。
+ *
+ * 中身に改行を入れないこと。view-source の1行目にこす.くま宣言文を出しているので、
+ * ここで折り返すと宣言文の下に読める行ができてしまう。
  */
-const RESTORE_BG = `try{var v=localStorage.getItem('fl-bg');
-if(v==='mint'||v==='sky'||v==='peach'){document.body.dataset.flBg=v}}catch(e){}`;
+const RESTORE_BG =
+  `try{var v=localStorage.getItem('fl-bg');if(v==='mint'||v==='sky'||v==='peach'){document.body.dataset.flBg=v}}catch(e){}`;
 
 export default function RootLayout({
   children,
