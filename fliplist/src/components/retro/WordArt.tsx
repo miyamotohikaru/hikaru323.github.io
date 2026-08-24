@@ -298,6 +298,19 @@ const CSS = `
 }
 `;
 
+/* view-source の1行目に「こす.くま宣言文」を出しているので、その真下に
+   開発用の注釈つきCSSが何十行も続かないよう、head へ上げる前に1行へ畳む。
+   読むための原文は上の CSS に残る（畳むのは配信するときだけ）。 */
+function squash(css: string) {
+  return css
+    .replace(/\/\*[\s\S]*?\*\//g, "")   // 注釈を落とす
+    .replace(/\s+/g, " ")                // 改行と字下げを空白1つへ
+    .replace(/\s*([{}:;,])\s*/g, "$1")   // 記号のまわりの空白は要らない
+    .trim();
+}
+
+const CSS_MIN = squash(CSS);
+
 export type WordArtProps = {
   children: ReactNode;
   /** gold / lime / cyan / green。手本の 4 枚に対応 */
@@ -363,7 +376,7 @@ export default function WordArt({
   return (
     <Tag className={className ? `wa ${className}` : "wa"} style={vars} data-wa={variant}>
       <style href="retro-wordart" precedence="default">
-        {CSS}
+        {CSS_MIN}
       </style>
       <span className="wa__ink" aria-hidden="true">
         {children}
