@@ -1,14 +1,4 @@
-import {
-  closing,
-  concept,
-  credit,
-  details,
-  faq,
-  forms,
-  legal,
-  site,
-} from "@/lib/lot";
-import { Bracket } from "./Bracket";
+import { concept, details, faq, forms, legal, site } from "@/lib/lot";
 import { Reveal } from "./Reveal";
 
 /* 作品名は途中で折らせない。全角空白5個の真ん中で折れると「」だけが行頭に残る */
@@ -193,42 +183,6 @@ export function Details() {
   );
 }
 
-export function Credit() {
-  return (
-    <section className="bg-sheet">
-      <div className="page pt-[var(--gap-major)] pb-[var(--gap-minor)]">
-        <div className="grid items-start gap-8 md:grid-cols-[minmax(0,7rem)_1fr] md:gap-14">
-          <Reveal>
-            {/* このページで唯一の有彩色にしない。署名の大きさまで落とす */}
-            <img
-              src="/img/kosukuma-900.webp"
-              alt="こす・くまのキャラクター"
-              loading="lazy"
-              decoding="async"
-              className="w-[5rem] opacity-90 grayscale md:w-full"
-            />
-          </Reveal>
-          <Reveal delay={110}>
-            <p className="label-jp">{credit.label}</p>
-            <p className="mt-4 text-[clamp(1.0625rem,0.85rem+0.8vw,1.5rem)] font-light leading-[1.6] tracking-[0.07em]">
-              {credit.names[0]} <span className="mx-1 text-[var(--sep)]">×</span>
-              <br className="hidden sm:block" />
-              {credit.names[1]}
-            </p>
-            <p className="prose-jp mt-7 max-w-[var(--measure)]">
-              {credit.body.map((line) => (
-                <span key={line} className="block">
-                  {withPlaceholders(line)}
-                </span>
-              ))}
-            </p>
-          </Reveal>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export function Faq() {
   return (
     <section id="details" className="bg-sheet">
@@ -254,60 +208,22 @@ export function Faq() {
   );
 }
 
-/**
- * 締め。始まりと同じポスターで閉じる。
- * 文言はキービジュアルに刷られている四行そのまま。
- */
-export function Closing() {
-  return (
-    <section className="relative overflow-hidden border-t border-[var(--rule)]">
-      <div className="page relative flex min-h-[86svh] flex-col justify-center py-[var(--gap-major)]">
-        <Reveal className="relative z-10 max-w-[30rem]">
-          <Bracket gap={8} className="w-[min(21rem,80%)] text-ink" />
-          <div className="prose-jp mt-12 space-y-[0.35em]">
-            {closing.lines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
-        </Reveal>
-
-        <div className="mt-14 flex justify-center md:hidden">
-          <img
-            src="/img/form-close.webp"
-            alt=""
-            aria-hidden
-            loading="lazy"
-            decoding="async"
-            className="cutout w-[62%]"
-          />
-        </div>
-      </div>
-
-      <img
-        src="/img/form-close.webp"
-        alt=""
-        aria-hidden
-        loading="lazy"
-        decoding="async"
-        className="cutout pointer-events-none absolute right-[8%] top-1/2 hidden
-                   w-[min(28vw,23rem)] -translate-y-1/2 md:block"
-      />
-      <p
-        className="vertical font-mincho pointer-events-none absolute hidden lg:block
-                   right-[var(--spacing-gutter)] top-1/2 -translate-y-1/2
-                   text-[0.9375rem] font-light tracking-[0.12em] text-ink/72"
-      >
-        {site.tagline}
-      </p>
-    </section>
-  );
-}
-
 export function SiteFooter() {
   return (
     <footer className="border-t border-[var(--rule)]">
       <div className="page flex flex-col gap-7 py-10 pb-28 md:flex-row md:items-center md:justify-between md:pb-24">
-        <p className="label">{site.copyright}</p>
+        <div className="flex items-center gap-5">
+          <img
+            src="/img/kosukuma-line.webp"
+            alt="こす・くま"
+            width={420}
+            height={288}
+            loading="lazy"
+            decoding="async"
+            className="h-auto w-[4.25rem] shrink-0"
+          />
+          <p className="label">{site.copyright}</p>
+        </div>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
           <nav
             aria-label="規約"

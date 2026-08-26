@@ -57,16 +57,6 @@ export const forms = {
   ],
 };
 
-/** 締め。キービジュアルのポスターに刷られている四行 */
-export const closing = {
-  lines: [
-    "まだ、何でもありません。",
-    "用途も、名前も、値段もありません。",
-    "あるのは、かたちだけ。",
-    "あとは、使う人に委ねます。",
-  ],
-};
-
 export const details = {
   heading: "近くで、見る",
   plates: [
@@ -86,16 +76,6 @@ export const details = {
       alt: "暗がりに浮かぶ、連なった管の稜線",
       tone: "dark" as const,
     },
-  ],
-};
-
-export const credit = {
-  label: "つくり手",
-  names: ["KOSU.KUMA", "GAMO PRODUCT DESIGN STUDIO"],
-  body: [
-    "プロダクトデザインの視点から、「決まっていないもの」の可能性を探るプロジェクト。",
-    "用途を定義しないことで、かたちそのものの価値を問います。",
-    "「　　　　　」は、その最初の一点です。",
   ],
 };
 

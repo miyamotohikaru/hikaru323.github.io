@@ -3,9 +3,7 @@ import { AuctionRoom } from "@/components/AuctionRoom";
 import { Hero } from "@/components/Hero";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
-  Closing,
   Concept,
-  Credit,
   Details,
   Faq,
   Forms,
@@ -49,9 +47,7 @@ export default async function Page() {
         <Concept />
         <Forms />
         <Details />
-        <Credit />
         <Faq />
-        <Closing />
       </main>
       <SiteFooter />
     </>
