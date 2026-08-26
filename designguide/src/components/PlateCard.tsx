@@ -1,6 +1,7 @@
 import Link from "next/link";
 import PlateImage from "./PlateImage";
 import { STYLE_NO } from "@/data/styles";
+import { MOOD_WORDS } from "@/data/moods";
 import { CATEGORY_LABEL, type DesignStyle } from "@/data/types";
 
 /**
@@ -19,7 +20,9 @@ export default function PlateCard({ style }: { style: DesignStyle }) {
       data-hit="1"
       data-cat={style.category}
       data-slug={style.slug}
-      data-q={`${style.ja} ${style.en} ${style.slug} ${style.origin} ${style.era} ${style.tagline}`.toLowerCase()}
+      /* 様式名を知らない人は「サブカル」「レトロ」で探す。
+         気分の語も索引に混ぜておかないと、名前を知る人しか使えない道具になる */
+      data-q={`${style.ja} ${style.en} ${style.slug} ${style.origin} ${style.era} ${style.tagline} ${(MOOD_WORDS[style.slug] ?? []).join(" ")}`.toLowerCase()}
     >
       <div className="plate-frame card__plate">
         <PlateImage slug={style.slug} alt={`${style.ja}様式の図版`} />

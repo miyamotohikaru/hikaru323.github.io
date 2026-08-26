@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CATEGORY_LABEL, type StyleCategory } from "@/data/types";
+import { MOODS } from "@/data/moods";
 
 const CATS: (StyleCategory | "all")[] = ["all", "movement", "print", "screen", "internet", "japan", "world"];
 
@@ -82,6 +83,23 @@ export default function AtlasControls({ total }: { total: number }) {
         <span className="ctl__count" aria-live="polite">
           {hit} / {total}
         </span>
+      </div>
+
+      {/* 気分から探す。様式名を知らない人の入口 */}
+      <div className="ctl__moods">
+        <span className="ctl__moodlabel">気分から</span>
+        {MOODS.map((m) => (
+          <button
+            key={m.key}
+            type="button"
+            className="ctl__mood"
+            data-on={q === m.label || undefined}
+            title={m.note}
+            onClick={() => { setQ(q === m.label ? "" : m.label); setCat("all"); }}
+          >
+            {m.label}
+          </button>
+        ))}
       </div>
 
       {hit === 0 && (
