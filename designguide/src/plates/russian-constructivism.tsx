@@ -20,7 +20,7 @@
  */
 import { ATLAS, rad } from "@/lib/plate";
 
-const P = "rc";
+const P = "rcon";
 const PAPER = "#efe9dc";
 const RED = "#c8102e";
 const INK = "#141414";

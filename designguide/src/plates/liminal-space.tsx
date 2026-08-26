@@ -70,7 +70,7 @@ export default function Plate() {
           <stop offset="1" stopColor="#cfc59a" />
         </linearGradient>
         <linearGradient id={`${P}-floor`} x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0" stopColor="#7d7856" />
+          <stop offset="0" stopColor="#6b6746" />
           <stop offset="0.55" stopColor="#9a9269" />
           <stop offset="1" stopColor={TAN} />
         </linearGradient>
@@ -85,7 +85,7 @@ export default function Plate() {
         </radialGradient>
         <radialGradient id={`${P}-vig`} cx="0.5" cy="0.52">
           <stop offset="0.4" stopColor="#000000" stopOpacity="0" />
-          <stop offset="1" stopColor="#2a2718" stopOpacity="0.45" />
+          <stop offset="1" stopColor="#2a2718" stopOpacity="0.52" />
         </radialGradient>
         <filter id={`${P}-soft`} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="7" />
@@ -111,7 +111,7 @@ export default function Plate() {
           ))}
         </g>
         {/* カーペットの柄。菱形をまばらに置く。全部に置くと模様が煩い */}
-        <g fill={DARK} opacity="0.22">
+        <g fill={DARK} opacity="0.3">
           {ST.slice(0, 9).map((t, i) => {
             const t2 = ST[i + 1];
             const cy = (YB(t) + YB(t2)) / 2;
@@ -126,7 +126,7 @@ export default function Plate() {
         </g>
 
         {/* ── 天井。タイルの目地 ─────────────────────────────── */}
-        <g stroke="#c8c0a0" strokeWidth="1" opacity="0.55">
+        <g stroke="#bab293" strokeWidth="1" opacity="0.7">
           {Array.from({ length: 13 }, (_, i) => {
             const x = NL + (i * (NR - NL)) / 12;
             return <line key={i} x1={x} y1={NT} x2={lerp(FL, FR, i / 12)} y2={FT} />;

@@ -147,7 +147,7 @@ export default function Plate() {
           {/* 風防。骨の色を1点だけ置く。機体の稜線に乗せる */}
           <g transform="translate(0 0)">
             <path d="M150 466 L196 428 L246 402 L270 420 L206 484 Z" fill="#6f787e" stroke={NIGHT} strokeWidth="2.2" />
-            <path d="M162 466 L200 436 L244 414 L256 424 L204 472 Z" fill={BONE} opacity="0.6" />
+            <path d="M162 466 L200 436 L244 414 L256 424 L204 472 Z" fill={BONE} opacity="0.38" />
             <g stroke={NIGHT} strokeWidth="1.8">
               <line x1="199" y1="433" x2="214" y2="478" />
               <line x1="243" y1="409" x2="256" y2="424" />

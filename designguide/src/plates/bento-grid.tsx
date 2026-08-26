@@ -92,7 +92,7 @@ export default function Plate() {
       <g clipPath={`url(#${P}-page)`}>
         <rect width="600" height="800" fill={PAGE} />
 
-        <g filter={`url(#${P}-sh`.concat(")")}>
+        <g filter={`url(#${P}-sh)`}>
           {/* ── A：題字。版面で一番大きい箱に一番大事なものを入れる ── */}
           <Cell b={A} fill={INK} stroke={false} />
           <g clipPath={`url(#${P}-cA)`}>

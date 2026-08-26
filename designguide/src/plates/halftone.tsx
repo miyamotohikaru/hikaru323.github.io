@@ -38,7 +38,7 @@ const PITCH = 13; // 網の目。粗いのは、点そのものを見せる図�
 /** 版面の要所 */
 const FX = 40, FR = 560, FT = 92, FB = 612;
 const TABLE = 520;
-const PX = 250, PY = 316; // 洋梨の中心
+const PX = 250, PY = 314; // 洋梨の中心
 
 /**
  * 網を張る。角度で回した格子の各点で濃さを引き、
@@ -79,8 +79,8 @@ const clamp = (v: number) => Math.max(0, Math.min(1, v));
  * 継ぎ目にわずかな凹みが残る。この凹みが洋梨の首になる。
  */
 function pearW(ly: number) {
-  const wt = Math.sqrt(Math.max(0, 66 * 66 - (ly + 82) * (ly + 82)));
-  const wb = Math.sqrt(Math.max(0, 112 * 112 - (ly - 72) * (ly - 72)));
+  const wt = Math.sqrt(Math.max(0, 74 * 74 - (ly + 92) * (ly + 92)));
+  const wb = Math.sqrt(Math.max(0, 126 * 126 - (ly - 80) * (ly - 80)));
   if (wt <= 0 && wb <= 0) return 0;
   return Math.pow(Math.pow(wt, 2.6) + Math.pow(wb, 2.6), 1 / 2.6);
 }
@@ -89,22 +89,22 @@ const inPear = (lx: number, ly: number) => Math.abs(lx) <= pearW(ly);
 /** 葉。首から右へ伸ばす */
 function inLeaf(lx: number, ly: number) {
   const t = rad(-32);
-  const u = (lx - 66) * Math.cos(t) + (ly + 196) * Math.sin(t);
-  const v = -(lx - 66) * Math.sin(t) + (ly + 196) * Math.cos(t);
-  return (u / 54) ** 2 + (v / 20) ** 2 <= 1;
+  const u = (lx - 74) * Math.cos(t) + (ly + 214) * Math.sin(t);
+  const v = -(lx - 74) * Math.sin(t) + (ly + 214) * Math.cos(t);
+  return (u / 58) ** 2 + (v / 21) ** 2 <= 1;
 }
 /** 軸 */
 function inStem(lx: number, ly: number) {
-  if (ly > -142 || ly < -222) return false;
-  const t = (ly + 222) / 80;
-  return Math.abs(lx - (14 - 20 * t * t)) < 6.6 - t * 1.8;
+  if (ly > -158 || ly < -240) return false;
+  const t = (ly + 240) / 82;
+  return Math.abs(lx - (15 - 21 * t * t)) < 7 - t * 1.9;
 }
 /** 光は左上から。右下には台からの照り返しを少し戻す */
 function lum(lx: number, ly: number) {
-  const d = Math.hypot(lx + 52, (ly - 18) * 0.84) / 196;
-  const rim = Math.max(0, 1 - Math.hypot((lx - 96) * 1.1, (ly - 132) * 0.9) / 116) * 0.32;
+  const d = Math.hypot(lx + 58, (ly - 20) * 0.84) / 214;
+  const rim = Math.max(0, 1 - Math.hypot((lx - 106) * 1.1, (ly - 146) * 0.9) / 124) * 0.32;
   /* 艶。ここだけ点が消えて紙が出る。これが無いと果物が石に見える */
-  const spec = Math.max(0, 1 - Math.hypot((lx + 58) * 1.15, (ly - 4) * 0.95) / 34) * 0.9;
+  const spec = Math.max(0, 1 - Math.hypot((lx + 64) * 1.15, (ly - 4) * 0.95) / 36) * 0.9;
   return clamp((1 - d) * 1.12 + rim + spec);
 }
 
@@ -148,14 +148,14 @@ export default function Plate() {
     /* 壁。上が明るく下へ落ちる。左右の端も落として、面を平らにしない */
     const t = (y - FT) / (TABLE - FT);
     const vig = Math.max(0, Math.abs(x - 300) / 260 - 0.5) * 0.2;
-    return { c: 0.045 + t * 0.17 + vig, m: 0, y: 0, k: t * t * 0.06 }[which];
+    return { c: 0.04 + t * 0.13 + vig * 0.8, m: 0, y: 0, k: t * t * 0.05 }[which];
   };
 
   const FRAME: [number, number, number, number] = [FX, FT, FR, FB];
 
   /* 拡大鏡。網の重なり（ロゼット）を見せるためだけに置く */
   const LX = 476, LY = 202, LR = 74, ZOOM = 4.2;
-  const SRCX = PX + 74, SRCY = PY + 46; // 洋梨の陰の縁を覗く
+  const SRCX = PX + 82, SRCY = PY + 52; // 洋梨の陰の縁を覗く
   const loupe = (which: "c" | "m" | "y" | "k") => (x: number, y: number) =>
     Math.hypot(x - LX, y - LY) > LR - 2 ? 0 : ink(which)(SRCX + (x - LX) / ZOOM, SRCY + (y - LY) / ZOOM);
 

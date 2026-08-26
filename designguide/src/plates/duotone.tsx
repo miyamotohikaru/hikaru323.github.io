@@ -34,38 +34,34 @@ export default function Plate() {
         <clipPath id={`${P}-page`}><rect width="600" height="800" /></clipPath>
         <clipPath id={`${P}-inset`}><rect x="440" y="88" width="116" height="116" /></clipPath>
 
-        {/* 逆光。頭の後ろが白く、四隅へ落ちる */}
-        <radialGradient id={`${P}-bg`} cx="0.5" cy="0.34" r="0.66">
+        {/* 逆光。顔の前が白く、四隅へ落ちる。
+            初稿は中間の灰色ばかりで、明部の色がほとんど出なかった。
+            明るい所と暗い所をはっきり分けないと、2色にならない */}
+        <radialGradient id={`${P}-bg`} cx="0.66" cy="0.33" r="0.56">
           <stop offset="0" stopColor="#ffffff" />
-          <stop offset="0.26" stopColor="#c8c8c8" />
-          <stop offset="0.58" stopColor="#5a5a5a" />
-          <stop offset="1" stopColor="#080808" />
+          <stop offset="0.17" stopColor="#efefef" />
+          <stop offset="0.42" stopColor="#8e8e8e" />
+          <stop offset="0.72" stopColor="#2a2a2a" />
+          <stop offset="1" stopColor="#070707" />
         </radialGradient>
-        {/* 顔に回り込む弱い光。真っ黒だと面が死ぬ */}
-        <radialGradient id={`${P}-face`} cx="0.42" cy="0.36" r="0.72">
-          <stop offset="0" stopColor="#8a8a8a" />
-          <stop offset="0.55" stopColor="#3a3a3a" />
-          <stop offset="1" stopColor="#0e0e0e" />
+        {/* 影の側へわずかに回り込む光。真っ黒だと面が死ぬ */}
+        <radialGradient id={`${P}-face`} cx="0.78" cy="0.34" r="0.7">
+          <stop offset="0" stopColor="#5e5e5e" />
+          <stop offset="0.45" stopColor="#1e1e1e" />
+          <stop offset="1" stopColor="#070707" />
         </radialGradient>
-        {/* 胸元へ向かって落ちる */}
-        <linearGradient id={`${P}-body`} x1="0" y1="0.32" x2="0.2" y2="1">
-          <stop offset="0" stopColor="#2e2e2e" />
-          <stop offset="0.5" stopColor="#141414" />
-          <stop offset="1" stopColor="#060606" />
-        </linearGradient>
-        {/* 縁の光。芯が白く、外へぼける */}
         <filter id={`${P}-soft`} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="5" />
+          <feGaussianBlur stdDeviation="4" />
         </filter>
         <filter id={`${P}-soft2`} x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="14" />
+          <feGaussianBlur stdDeviation="18" />
         </filter>
         {/* 明部の版を締める。線形のままだと全面が明部の色に寄る */}
         <filter id={`${P}-boost`} x="0" y="0" width="100%" height="100%">
           <feComponentTransfer>
-            <feFuncR type="gamma" exponent="2.9" />
-            <feFuncG type="gamma" exponent="2.9" />
-            <feFuncB type="gamma" exponent="2.9" />
+            <feFuncR type="gamma" exponent="2.2" />
+            <feFuncG type="gamma" exponent="2.2" />
+            <feFuncB type="gamma" exponent="2.2" />
             <feFuncA type="linear" slope="1" />
           </feComponentTransfer>
         </filter>
@@ -73,59 +69,74 @@ export default function Plate() {
         {/* ── 明るさだけの絵。ここには灰色しか無い ─────────────── */}
         <g id={`${P}-art`}>
           <rect width="600" height="800" fill={`url(#${P}-bg)`} />
-          {/* 後光。頭のすぐ後ろが強い */}
-          <ellipse cx="300" cy="248" rx="176" ry="196" fill="#ffffff" opacity="0.5" filter={`url(#${P}-soft2)`} />
+          {/* 顔の前の光源。ここがいちばん明るい */}
+          <ellipse cx="430" cy="262" rx="120" ry="132" fill="#ffffff" opacity="0.85" filter={`url(#${P}-soft2)`} />
 
-          {/* 髪と頭。人物は塊としてほぼ黒 */}
+          {/* 逆光の人物。ほぼ黒の一塊。輪郭だけが絵になる */}
           <path
-            d="M 300,112 C 376,112 428,170 428,246 C 428,292 416,330 398,358
-               L 402,430 C 404,452 386,466 356,470 L 244,470 C 214,466 196,452 198,430
-               L 202,358 C 184,330 172,292 172,246 C 172,170 224,112 300,112 Z"
-            fill="#101010"
+            fill="#0a0a0a"
+            d="M 296,152
+               C 330,154 356,174 368,204
+               C 376,226 376,242 371,254
+               C 369,260 367,264 369,270
+               C 373,279 392,296 394,305
+               C 396,314 387,316 378,313
+               C 372,311 374,319 373,325
+               C 372,332 379,334 381,338
+               C 383,344 374,347 372,355
+               C 370,365 377,373 379,380
+               C 374,393 357,404 335,410
+               C 321,414 310,416 300,418
+               L 300,446
+               C 300,466 316,478 340,486
+               L 398,506
+               C 440,522 460,562 466,628
+               L 466,820 L 130,820 L 130,628
+               C 136,564 156,526 194,508
+               L 238,488
+               C 252,480 258,466 258,448
+               C 240,442 231,424 234,404
+               C 220,390 216,362 226,342
+               C 212,322 213,290 227,272
+               C 216,248 221,214 236,194
+               C 246,168 268,152 296,152 Z"
           />
-          {/* 顔。回り込む光 */}
-          <ellipse cx="316" cy="268" rx="62" ry="79" transform="rotate(4 316 268)" fill={`url(#${P}-face)`} />
-          {/* 目・鼻・口。明るさの段差だけで置く */}
-          <g fill="#000000" opacity="0.72">
-            <ellipse cx="292" cy="256" rx="13" ry="6" transform="rotate(-7 292 256)" />
-            <ellipse cx="344" cy="252" rx="12" ry="6" transform="rotate(-7 344 252)" />
-          </g>
-          <path d="M 318,266 C 316,286 312,296 306,300 C 312,304 320,304 326,300" fill="none" stroke="#000" strokeWidth="3" opacity="0.5" />
-          <path d="M 298,318 C 310,313 330,313 342,318 C 330,328 310,328 298,318 Z" fill="#000" opacity="0.55" />
-          <path d="M 300,314 C 312,310 330,310 340,314" fill="none" stroke="#9a9a9a" strokeWidth="2" opacity="0.5" />
-          {/* 頬骨の照り。逆光でも頬の稜線には光が乗る */}
-          <ellipse cx="356" cy="272" rx="18" ry="30" transform="rotate(16 356 272)" fill="#8a8a8a" opacity="0.5" filter={`url(#${P}-soft)`} />
+          {/* 影の側の回り込み。頬骨と顎の稜線だけ */}
+          <ellipse cx="316" cy="286" rx="62" ry="86" transform="rotate(6 316 286)" fill={`url(#${P}-face)`} opacity="0.9" />
+          <ellipse cx="352" cy="300" rx="20" ry="34" transform="rotate(18 352 300)" fill="#6a6a6a" opacity="0.32" filter={`url(#${P}-soft)`} />
+          {/* 目の窪み。ここが暗いと横顔になる */}
+          <ellipse cx="344" cy="252" rx="15" ry="9" transform="rotate(-9 344 252)" fill="#000" opacity="0.6" filter={`url(#${P}-soft)`} />
 
-          {/* 首と胴 */}
-          <path d="M 272,336 L 350,336 L 350,412 L 272,412 Z" fill="#0a0a0a" />
-          <path
-            d="M 300,396 C 254,402 212,424 182,456 C 150,488 136,542 132,612 L 132,820 L 470,820 L 470,612 C 466,542 450,488 418,456 C 388,424 346,402 300,396 Z"
-            fill={`url(#${P}-body)`}
-          />
-          {/* 上げた腕。太い線を1本引いて腕にする */}
-          <path d="M 434,510 C 476,478 492,428 472,394 C 452,360 414,344 386,340"
-            fill="none" stroke="#0d0d0d" strokeWidth="46" strokeLinecap="round" />
-          <ellipse cx="382" cy="336" rx="26" ry="22" transform="rotate(-24 382 336)" fill="#0d0d0d" />
-          {/* マイク。玉と柄 */}
-          <path d="M 392,352 L 352,312" stroke="#0d0d0d" strokeWidth="17" strokeLinecap="round" />
-          <circle cx="342" cy="302" r="25" fill="#121212" />
-          <circle cx="334" cy="294" r="9" fill="#8e8e8e" opacity="0.55" filter={`url(#${P}-soft)`} />
+          {/* マイクと腕。逆光の中に黒く立つ */}
+          <path d="M 448,344 L 508,414" stroke="#080808" strokeWidth="17" strokeLinecap="round" />
+          <circle cx="434" cy="330" r="25" fill="#080808" />
+          <path d="M 470,560 C 512,530 528,472 508,420" fill="none" stroke="#080808" strokeWidth="44" strokeLinecap="round" />
+          <ellipse cx="506" cy="410" rx="27" ry="23" transform="rotate(-32 506 410)" fill="#080808" />
 
           {/* ── 縁の光。逆光の主役はここ ───────────────────────── */}
           <g fill="none" stroke="#ffffff" strokeLinecap="round" filter={`url(#${P}-soft)`}>
-            <path d="M 202,352 C 182,322 172,286 172,246 C 172,178 214,124 278,114" strokeWidth="11" opacity="0.95" />
-            <path d="M 278,114 C 296,111 314,111 332,114" strokeWidth="7" opacity="0.6" />
-            <path d="M 198,432 L 194,466" strokeWidth="8" opacity="0.7" />
-            <path d="M 182,456 C 150,488 136,542 132,612 L 132,780" strokeWidth="9" opacity="0.85" />
-            <path d="M 472,394 C 492,430 476,478 436,508" strokeWidth="7" opacity="0.55" />
-            <path d="M 256,232 C 248,268 254,304 272,328" strokeWidth="4" opacity="0.7" />
+            {/* 額から鼻・唇・顎まで。横顔はこの1本で決まる */}
+            <path
+              d="M 296,152 C 330,154 356,174 368,204 C 376,226 376,242 371,254
+                 C 369,260 367,264 369,270 C 373,279 392,296 394,305
+                 C 396,314 387,316 378,313 C 372,311 374,319 373,325
+                 C 372,332 379,334 381,338 C 383,344 374,347 372,355
+                 C 370,365 377,373 379,380 C 374,393 357,404 335,410"
+              strokeWidth="7.5"
+            />
+            {/* 頭の天。髪の毛先が光る */}
+            <path d="M 236,194 C 246,168 268,152 296,152" strokeWidth="4.5" opacity="0.62" />
+            {/* 首から肩。光は右後ろから来る */}
+            <path d="M 300,420 L 300,446 C 300,466 316,478 340,486 L 398,506 C 440,522 460,562 466,628 L 466,780" strokeWidth="6.5" opacity="0.9" />
+            {/* マイクと腕の縁 */}
+            <path d="M 452,312 C 462,322 462,340 452,350" strokeWidth="4" opacity="0.85" />
+            <path d="M 508,420 C 528,472 512,530 472,558" strokeWidth="5" opacity="0.7" />
           </g>
-          {/* 髪の房。逆光で数本だけ透ける */}
-          <g fill="none" stroke="#e8e8e8" strokeLinecap="round" opacity="0.5" filter={`url(#${P}-soft)`}>
-            <path d="M 214,206 C 226,168 258,140 296,132" strokeWidth="3" />
-            <path d="M 206,268 C 204,232 214,196 234,170" strokeWidth="2.6" />
-            <path d="M 396,214 C 396,178 374,146 344,130" strokeWidth="2.6" opacity="0.6" />
-            <path d="M 204,330 C 198,306 196,286 198,264" strokeWidth="2.4" />
+          {/* 髪の房。数本だけ透ける */}
+          <g fill="none" stroke="#dcdcdc" strokeLinecap="round" opacity="0.4" filter={`url(#${P}-soft)`}>
+            <path d="M 244,246 C 248,214 262,186 284,170" strokeWidth="2.6" />
+            <path d="M 232,320 C 230,290 234,262 244,238" strokeWidth="2.2" />
+            <path d="M 240,404 C 234,382 232,358 236,336" strokeWidth="2" />
           </g>
         </g>
 
@@ -162,7 +173,7 @@ export default function Plate() {
         <g>
           <rect x="436" y="84" width="124" height="124" fill={NAVY} />
           <g clipPath={`url(#${P}-inset)`}>
-            <g transform="translate(498 146) scale(0.42) translate(-300 -272)">
+            <g transform="translate(498 146) scale(0.42) translate(-336 -300)">
               <use href={`#${P}-art`} />
             </g>
           </g>

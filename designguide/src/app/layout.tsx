@@ -38,7 +38,18 @@ export const metadata: Metadata = {
     description:
       "デザインスタイル80種を一枚の図版で見比べて、そのまま画像生成プロンプトにできる図鑑。",
     type: "website",
+    locale: "ja_JP",
+    // /dev/og の版下を撮ったもの。作り直しは tools/shoot.mjs → public/og.png
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "STYLE ATLAS" }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "STYLE ATLAS｜デザインスタイル80と、それを呼び出すプロンプト",
+    description:
+      "デザインスタイル80種を一枚の図版で見比べて、そのまま画像生成プロンプトにできる図鑑。",
+    images: ["/og.png"],
+  },
+  // 確認用URLなので検索には出さない
   robots: { index: false, follow: false },
 };
 

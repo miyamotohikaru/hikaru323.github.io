@@ -77,18 +77,35 @@ export default function Plate() {
     });
   }
 
-  /* 睫毛。上瞼から生える波打つ棘 */
+  /* 睫毛。初稿は勝手な弧の上に並べたので、瞼から浮いた棘になった。
+     上瞼の三次ベジェを実際に刻み、その接線から生やす */
+  const LID: [number, number][] = [[104, 402], [168, 292], [432, 292], [496, 402]];
+  const bez = (t: number): [number, number] => {
+    const u = 1 - t;
+    return [
+      u ** 3 * LID[0][0] + 3 * u * u * t * LID[1][0] + 3 * u * t * t * LID[2][0] + t ** 3 * LID[3][0],
+      u ** 3 * LID[0][1] + 3 * u * u * t * LID[1][1] + 3 * u * t * t * LID[2][1] + t ** 3 * LID[3][1],
+    ];
+  };
   const lash = Array.from({ length: 11 }, (_, i) => {
-    const t = i / 10;
-    const x = 138 + t * 324;
-    const y = 402 - Math.sin(Math.PI * t) * 88 - 4;
-    const a = -Math.PI / 2 + (t - 0.5) * 2.1;
-    const L = 34 + Math.sin(Math.PI * t) * 40;
-    const bx = x + Math.cos(a) * L;
-    const by = y + Math.sin(a) * L;
-    const cx1 = x + Math.cos(a + 0.7) * L * 0.62;
-    const cy1 = y + Math.sin(a + 0.7) * L * 0.62;
-    return `M${(x - 9).toFixed(1)} ${y.toFixed(1)} Q${cx1.toFixed(1)} ${cy1.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)} Q${(cx1 + 12).toFixed(1)} ${(cy1 + 6).toFixed(1)} ${(x + 9).toFixed(1)} ${y.toFixed(1)} Z`;
+    const t = 0.08 + (i / 10) * 0.84;
+    const [x, y] = bez(t);
+    const [xa, ya] = bez(t - 0.02);
+    const [xb, yb] = bez(t + 0.02);
+    const tx = xb - xa;
+    const ty = yb - ya;
+    const L0 = Math.hypot(tx, ty) || 1;
+    // 外向きの法線。上瞼なので上へ
+    const nx = ty / L0;
+    const ny = -tx / L0;
+    const L = 40 + Math.sin(Math.PI * t) * 46;
+    // 先を外へ反らせる
+    const bx2 = x + nx * L + tx / L0 * L * 0.55;
+    const by2 = y + ny * L + ty / L0 * L * 0.55;
+    const c1x = x + nx * L * 0.62;
+    const c1y = y + ny * L * 0.62;
+    const w = 9;
+    return `M${(x - (tx / L0) * w).toFixed(1)} ${(y - (ty / L0) * w).toFixed(1)} Q${c1x.toFixed(1)} ${c1y.toFixed(1)} ${bx2.toFixed(1)} ${by2.toFixed(1)} Q${(c1x + (tx / L0) * w * 1.6).toFixed(1)} ${(c1y + (ty / L0) * w * 1.6).toFixed(1)} ${(x + (tx / L0) * w).toFixed(1)} ${(y + (ty / L0) * w).toFixed(1)} Z`;
   });
 
   const EYE = "M104 402 C 168 292 432 292 496 402 C 432 512 168 512 104 402 Z";
@@ -107,11 +124,11 @@ export default function Plate() {
         </clipPath>
         {/* 文字を流す曲線。縦1.45倍の座標系で描いてあるので、
             ここの y はすべて 1.45 で割った値になっている */}
-        <path id={`${P}-arc1`} d="M6 112 Q 300 34 594 112" fill="none" />
+        <path id={`${P}-arc1`} d="M14 110 Q 300 34 586 110" fill="none" />
         <path id={`${P}-arc2`} d="M20 128 Q 300 82 580 128" fill="none" />
-        <path id={`${P}-wave1`} d="M4 452 Q 108 424 208 448 T 404 446 T 596 460" fill="none" />
-        <path id={`${P}-wave2`} d="M8 496 Q 150 522 300 498 T 592 508" fill="none" />
-        <path id={`${P}-wave3`} d="M10 534 Q 160 512 300 534 T 590 526" fill="none" />
+        <path id={`${P}-wave1`} d="M6 438 Q 110 412 208 434 T 404 432 T 594 446" fill="none" />
+        <path id={`${P}-wave2`} d="M10 492 Q 150 516 300 494 T 590 504" fill="none" />
+        <path id={`${P}-wave3`} d="M10 536 Q 160 516 300 536 T 590 528" fill="none" />
       </defs>
 
       <g clipPath={`url(#${P}-page)`}>
@@ -125,13 +142,13 @@ export default function Plate() {
 
         {/* ── 目。版面の芯。波紋がここから発しているように見せる ────── */}
         <g>
-          {/* 震えの縁。輪郭線ではなく、補色の帯を外へ1枚 */}
-          <path d={EYE} fill="none" stroke={MAGENTA} strokeWidth="26" />
-          <path d={EYE} fill="none" stroke={YELLOW} strokeWidth="12" />
-          <path d={EYE} fill={YELLOW} />
+          {/* 震えの縁。補色を細く外に1本だけ。初稿は26px＋12px の二重輪にしたので
+             土星の環に見えた。輪は細く、白目の黄を必ず残す */}
+          <path d={EYE} fill="none" stroke={ORANGE} strokeWidth="16" />
+          <path d={EYE} fill={YELLOW} stroke={VIOLET} strokeWidth="8" />
           <g clipPath={`url(#${P}-eye)`}>
-            <path d={ripple(300, 402, 170, 5, 22, 1.2)} fill={ORANGE} />
-            <path d={ripple(300, 402, 132, 4, 16, 2.6)} fill={MAGENTA} />
+            <path d={ripple(300, 402, 112, 5, 14, 1.2)} fill={ORANGE} />
+            <path d={ripple(300, 402, 98, 4, 10, 2.6)} fill={MAGENTA} />
           </g>
           {/* 虹彩。中も波紋 */}
           <circle cx={CX} cy={CY} r="82" fill={TEAL} />
@@ -149,7 +166,7 @@ export default function Plate() {
             ))}
           </g>
           {/* 下瞼の彩り */}
-          <path d="M126 424 C 196 496 404 496 474 424 C 404 476 196 476 126 424 Z" fill={ORANGE} />
+          <path d="M120 428 C 186 502 414 502 480 428 C 414 478 186 478 120 428 Z" fill={VIOLET} opacity="0.9" />
         </g>
 
         {/* ── 文字。縦1.45倍の座標系に置き、曲線へ流し込む ─────────── */}
@@ -164,7 +181,7 @@ export default function Plate() {
             fontSize="74"
             fontWeight="800"
           >
-            <textPath href={`#${P}-arc1`} startOffset="0" textLength="600" lengthAdjust="spacingAndGlyphs">
+            <textPath href={`#${P}-arc1`} startOffset="0" textLength="572" lengthAdjust="spacingAndGlyphs">
               THE FILLMORE
             </textPath>
           </text>
@@ -188,7 +205,7 @@ export default function Plate() {
             strokeWidth="6"
             style={{ paintOrder: "stroke" }}
             fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-            fontSize="56"
+            fontSize="48"
             fontWeight="800"
           >
             <textPath href={`#${P}-wave1`} startOffset="0" textLength="596" lengthAdjust="spacingAndGlyphs">
@@ -201,7 +218,7 @@ export default function Plate() {
             strokeWidth="5"
             style={{ paintOrder: "stroke" }}
             fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-            fontSize="44"
+            fontSize="36"
             fontWeight="800"
           >
             <textPath href={`#${P}-wave2`} startOffset="0" textLength="584" lengthAdjust="spacingAndGlyphs">
@@ -214,7 +231,7 @@ export default function Plate() {
             strokeWidth="4"
             style={{ paintOrder: "stroke" }}
             fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-            fontSize="27"
+            fontSize="22"
             fontWeight="800"
           >
             <textPath href={`#${P}-wave3`} startOffset="0" textLength="578" lengthAdjust="spacingAndGlyphs">

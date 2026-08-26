@@ -16,10 +16,16 @@
  *      アグネス・マーティンの格子はこう見える。ここが無いと
  *      「灰色の四角」で終わり、図版として持たない。
  *   4. **赤は 56 の長さの罫が1本だけ。** 面でも点でもなく、長さだけを持つ。
+ *   5. 最大の黒は 17×17 の正方形ひとつ。
+ *
+ * ■ 80枚に並べたときに「描き忘れ」に見えないように
+ *   初稿は薄すぎて、縮小一覧のなかで白紙に見えた。面の濃さ・罫の太さ・
+ *   黒い小口の大きさを、それぞれ一段だけ上げてある。静かさは保つが、
+ *   小さくしても「面と2本の罫と黒い角」という形は必ず読める強さにした。
  *
  * ■ スイス・スタイルと混ざらないように
  *   あちらは太い黒と密な文字組で紙を押さえる。こちらは太い線を一本も使わない。
- *   最大の黒は 14×14 の正方形ひとつ。書体も 9.5px 以上に上げない。
+ *   書体も 9.5px 以上に上げない。
  */
 import { ATLAS, rand } from "@/lib/plate";
 
@@ -77,7 +83,7 @@ export default function Plate() {
         <rect width="600" height="800" fill={PAPER} />
 
         {/* 面の下地。ごく薄い一枚。これが無いと格子が宙に浮く */}
-        <rect x={FX} y={FY} width={FW} height={FH} fill={SOFT} opacity="0.6" />
+        <rect x={FX} y={FY} width={FW} height={FH} fill={SOFT} opacity="0.78" />
 
         {/* ── 手で引いた格子。1本ずつ濃さと端が違う ─────────────
                定規を当てても、鉛筆の線は濃さが揺れ、端は必ずはみ出すか届かない。
@@ -93,7 +99,7 @@ export default function Plate() {
                 x2={FR + r(-2, 3.5)}
                 y2={y + r(-0.35, 0.35)}
                 strokeWidth={r(0.32, 0.62).toFixed(2)}
-                opacity={r(0.26, 0.66).toFixed(2)}
+                opacity={r(0.34, 0.78).toFixed(2)}
               />
             );
           })}
@@ -114,11 +120,11 @@ export default function Plate() {
         </g>
 
         {/* ── 面の右辺と下辺を紙の端まで伸ばした2本 ───────────── */}
-        <line x1={FR} y1="0" x2={FR} y2="800" stroke={INK} strokeWidth="0.7" opacity="0.9" />
-        <line x1="0" y1={FB} x2="600" y2={FB} stroke={INK} strokeWidth="0.7" opacity="0.9" />
+        <line x1={FR} y1="0" x2={FR} y2="800" stroke={INK} strokeWidth="0.9" opacity="0.95" />
+        <line x1="0" y1={FB} x2="600" y2={FB} stroke={INK} strokeWidth="0.9" opacity="0.95" />
 
         {/* 2本の交点に接する黒。版面でいちばん濃いのはこの 14mm 角だけ */}
-        <rect x={FR} y={FB} width="14" height="14" fill={INK} />
+        <rect x={FR} y={FB} width="17" height="17" fill={INK} />
 
         {/* 面の幅の寸法。ごく薄く。図版が自分の寸法を持っている */}
         <g stroke={INK} opacity="0.38" strokeWidth="0.5">

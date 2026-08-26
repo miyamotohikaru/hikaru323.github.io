@@ -22,7 +22,7 @@
  */
 import { ATLAS, rad } from "@/lib/plate";
 
-const P = "sw";
+const P = "swiss";
 const WHITE = "#ffffff";
 const INK = "#000000";
 const RED = "#e2231a";

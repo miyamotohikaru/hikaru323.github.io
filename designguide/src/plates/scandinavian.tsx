@@ -30,11 +30,11 @@ const SAGE = "#7f8a7a";
 const INK = "#2e2b26";
 
 /* 5色から作った中間色。白木は紙とピンクの間の低彩度 */
-const WOOD = "#ddc7ae";
-const WOOD_D = "#bda186";
+const WOOD = "#d8c0a3";
+const WOOD_D = "#ae8f77";
 const WOOD_L = "#ecdcc7";
-const FLOOR = "#eae4d8";
-const WALL = "#f2efe7";
+const FLOOR = "#e3dbcb";
+const WALL = "#f1ede4";
 
 const HORIZON = 526; // 壁と床の境
 const WX0 = 296;

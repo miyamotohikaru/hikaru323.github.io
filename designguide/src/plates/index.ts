@@ -15,12 +15,15 @@ import _brutalism from "./brutalism";
 import _cassette_futurism from "./cassette-futurism";
 import _chicano from "./chicano";
 import _claymorphism from "./claymorphism";
+import _collage from "./collage";
+import _corporate_memphis from "./corporate-memphis";
 import _cottagecore from "./cottagecore";
 import _cubism from "./cubism";
 import _cyberpunk from "./cyberpunk";
 import _dadaism from "./dadaism";
 import _dark_academia from "./dark-academia";
 import _de_stijl from "./de-stijl";
+import _deconstructivism from "./deconstructivism";
 import _dieselpunk from "./dieselpunk";
 import _dreamcore from "./dreamcore";
 import _duotone from "./duotone";
@@ -33,9 +36,12 @@ import _frutiger_aero from "./frutiger-aero";
 import _glassmorphism from "./glassmorphism";
 import _glitch_art from "./glitch-art";
 import _gothic from "./gothic";
+import _gothic_botanical from "./gothic-botanical";
 import _grunge from "./grunge";
 import _halftone from "./halftone";
+import _isometric from "./isometric";
 import _japandi from "./japandi";
+import _japonisme from "./japonisme";
 import _jugendstil from "./jugendstil";
 import _kitsch from "./kitsch";
 import _light_academia from "./light-academia";
@@ -53,6 +59,7 @@ import _new_wave from "./new-wave";
 import _op_art from "./op-art";
 import _pixel_art from "./pixel-art";
 import _pop_art from "./pop-art";
+import _pop_surrealism from "./pop-surrealism";
 import _precisionism from "./precisionism";
 import _psychedelic from "./psychedelic";
 import _punk from "./punk";
@@ -90,12 +97,15 @@ export const PLATES: Record<string, ComponentType<PlateProps>> = {
   "cassette-futurism": _cassette_futurism,
   "chicano": _chicano,
   "claymorphism": _claymorphism,
+  "collage": _collage,
+  "corporate-memphis": _corporate_memphis,
   "cottagecore": _cottagecore,
   "cubism": _cubism,
   "cyberpunk": _cyberpunk,
   "dadaism": _dadaism,
   "dark-academia": _dark_academia,
   "de-stijl": _de_stijl,
+  "deconstructivism": _deconstructivism,
   "dieselpunk": _dieselpunk,
   "dreamcore": _dreamcore,
   "duotone": _duotone,
@@ -108,9 +118,12 @@ export const PLATES: Record<string, ComponentType<PlateProps>> = {
   "glassmorphism": _glassmorphism,
   "glitch-art": _glitch_art,
   "gothic": _gothic,
+  "gothic-botanical": _gothic_botanical,
   "grunge": _grunge,
   "halftone": _halftone,
+  "isometric": _isometric,
   "japandi": _japandi,
+  "japonisme": _japonisme,
   "jugendstil": _jugendstil,
   "kitsch": _kitsch,
   "light-academia": _light_academia,
@@ -128,6 +141,7 @@ export const PLATES: Record<string, ComponentType<PlateProps>> = {
   "op-art": _op_art,
   "pixel-art": _pixel_art,
   "pop-art": _pop_art,
+  "pop-surrealism": _pop_surrealism,
   "precisionism": _precisionism,
   "psychedelic": _psychedelic,
   "punk": _punk,
