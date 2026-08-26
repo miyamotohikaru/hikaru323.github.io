@@ -118,9 +118,6 @@ export default function Home() {
             ))}
           </div>
 
-          <p className="grid__empty" aria-live="polite">
-            該当なし。<button type="button" data-clear>すべて表示</button>
-          </p>
         </div>
       </section>
 

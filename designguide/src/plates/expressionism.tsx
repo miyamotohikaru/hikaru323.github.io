@@ -14,6 +14,14 @@
  *   3. 輪郭は「折れる」。曲線を使わず、短い直線を角で継ぐ（jag）。
  *      版木を刃で切った線の硬さがそのまま絵の硬さになる。
  *   4. 影は溶けない。鋭い平行線で刻む。グラデーションを一切使わない。
+ *
+ * ■ 初稿の失敗
+ *   ・人が寸胴だった。裾を280px も広げたので、巨大なテントに小さな頭が
+ *     乗った絵になった。キルヒナーの人は「引き伸ばされた棒」で、
+ *     全高は頭8つぶん、裾は肩幅の1.4倍までしか広がらない。
+ *   ・道が白い空地だった。人物が黒、道が紙色では、画面の6割が虚無になる。
+ *     道を斜めに割り、片側を灯りの橙、片側を影の青にして、面に明度を与えた。
+ *   ・奥の人影に頭を描かなかったので、ズボンが立っているように見えた。
  */
 import { ATLAS, rand } from "@/lib/plate";
 
@@ -88,59 +96,76 @@ function hatch(r: Rnd, box: [number, number, number, number], deg: number, gap: 
 export default function Plate() {
   const r = rand(19130317);
 
-  /* 版面の骨。道が消える点は中心から右上へ外す */
-  const VPX = 356;
-  const VPY = 300;
+  /* 版面の骨。道が消える点は中心から右へ外す */
+  const VPX = 352;
+  const VPY = 366;
 
   /* 左の壁・右の壁・空の楔。どれも内側へ倒す */
-  const wallL: Pt[] = [[-40, -20], [204, -20], [252, 286], [-40, 344]];
-  const wallR: Pt[] = [[448, -20], [640, -20], [640, 274], [412, 296]];
-  const sky: Pt[] = [[204, -20], [448, -20], [412, 296], [252, 286]];
-  const road: Pt[] = [[252, 288], [412, 296], [680, 820], [-80, 820]];
+  const wallL: Pt[] = [[-40, -20], [196, -20], [258, 352], [-40, 414]];
+  const wallR: Pt[] = [[452, -20], [640, -20], [640, 338], [420, 364]];
+  const sky: Pt[] = [[196, -20], [452, -20], [420, 364], [258, 352]];
+  const road: Pt[] = [[-60, 418], [258, 352], [420, 364], [660, 342], [1180, 824], [-580, 824]];
+  /* 道を斜めに割る。奥＝街灯の橙、手前＝影の青 */
+  const roadLit: Pt[] = [[258, 352], [420, 364], [712, 824], [-186, 646], [-60, 470]];
 
-  /* 壁の窓。壁の傾きに沿って並べる。灯りは3つだけ点ける */
+  /* 壁の窓。壁の傾きに沿って並べ、灯りは数個だけ点ける */
   const winL: { p: Pt[]; lit: boolean }[] = [];
-  for (let row = 0; row < 5; row++) {
+  for (let row = 0; row < 6; row++) {
     for (let col = 0; col < 4; col++) {
-      const x = 6 + col * 52 - row * 4;
-      const y = 24 + row * 58;
-      const sk = 0.16; // 壁の倒れ
-      const p: Pt[] = [
-        [x, y], [x + 30, y + 30 * sk * -1 + 3], [x + 30, y + 40], [x, y + 44],
-      ];
+      const x = 4 + col * 50 - row * 3;
+      const y = 18 + row * 60;
+      const p: Pt[] = [[x, y], [x + 28, y + 2], [x + 29, y + 42], [x, y + 44]];
       winL.push({ p, lit: (row * 4 + col) % 7 === 2 });
     }
   }
   const winR: { p: Pt[]; lit: boolean }[] = [];
-  for (let row = 0; row < 4; row++) {
+  for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 3; col++) {
-      const x = 474 + col * 54 + row * 3;
-      const y = 18 + row * 62;
-      const p: Pt[] = [[x, y], [x + 32, y - 4], [x + 32, y + 38], [x, y + 44]];
+      const x = 476 + col * 52 + row * 2;
+      const y = 14 + row * 64;
+      const p: Pt[] = [[x, y], [x + 30, y - 4], [x + 31, y + 38], [x, y + 44]];
       winR.push({ p, lit: (row * 3 + col) % 5 === 1 });
     }
   }
 
-  /* 舗道の影。手前ほど強く、右上へ流す */
-  const roadHatch = hatch(r, [-40, 420, 680, 400], -66, 17, 2.4, 300);
-  const wallLHatch = hatch(r, [-30, 40, 260, 300], 74, 15, 2.2, 240);
-  const wallRHatch = hatch(r, [430, 20, 210, 280], 104, 14, 2, 230);
+  const wallLHatch = hatch(r, [-30, 40, 260, 340], 74, 15, 2.2, 260);
+  const wallRHatch = hatch(r, [430, 20, 210, 320], 104, 14, 2, 250);
+  const roadHatch = hatch(r, [-60, 380, 720, 440], -58, 19, 2.6, 340);
 
-  /* 女の顔。角で折れた仮面。目は斜めの隙間、口は一の字 */
-  const face: Pt[] = [[396, 318], [438, 314], [450, 352], [444, 396], [424, 420], [400, 404], [388, 360]];
-  /* 帽子。羽根を尖らせる */
-  const hat: Pt[] = [
-    [352, 330], [340, 300], [362, 276], [400, 258], [376, 218], [406, 246], [438, 232],
-    [430, 252], [468, 250], [478, 286], [496, 318], [456, 330], [412, 322],
+  /* ── 手前の女 ────────────────────────────────────────────────
+     全高500px に対し頭は60px、裾は肩幅の1.6倍まで。棒のように立たせる */
+  const hatBrim: Pt[] = [[344, 306], [372, 296], [430, 292], [462, 300], [452, 314], [400, 320], [354, 318]];
+  const hatCrown: Pt[] = [[370, 300], [376, 258], [402, 248], [430, 252], [436, 296]];
+  const feathers: Pt[][] = [
+    [[426, 262], [474, 240], [514, 222], [498, 248], [452, 272], [434, 274]],
+    [[418, 252], [462, 224], [496, 202], [486, 228], [446, 254], [428, 262]],
   ];
-  /* 外套。肩から裾へ広がる楔。画面の下で切る */
-  const coat: Pt[] = [[380, 408], [452, 400], [498, 520], [556, 820], [268, 820], [312, 560]];
+  const face: Pt[] = [[380, 312], [428, 310], [432, 350], [424, 378], [404, 390], [386, 372], [376, 340]];
+  const coat: Pt[] = [[376, 392], [434, 388], [452, 470], [462, 600], [478, 824], [326, 824], [340, 610], [352, 470]];
+  const armR: Pt[] = [[444, 402], [468, 470], [478, 560], [456, 566], [440, 476], [428, 414]];
 
-  /* 奥の人影。輪郭だけ。群衆の気配 */
-  const crowd: Pt[][] = [
-    [[236, 336], [258, 330], [268, 366], [284, 500], [222, 502], [230, 380]],
-    [[286, 322], [304, 318], [312, 348], [322, 452], [278, 454], [280, 356]],
-    [[430, 328], [450, 324], [462, 358], [478, 470], [426, 472], [424, 366]],
+  /* ── 隣の男。山高帽。少し奥に立たせる ───────────────────────── */
+  const mHat: Pt[] = [[214, 358], [216, 316], [268, 312], [272, 356], [292, 362], [290, 372], [196, 376], [194, 364]];
+  const mFace: Pt[] = [[224, 368], [264, 366], [266, 400], [258, 424], [240, 432], [226, 414], [220, 392]];
+  const mCoat: Pt[] = [[222, 434], [268, 430], [282, 510], [292, 640], [300, 796], [178, 796], [190, 640], [204, 512]];
+
+  /* ── 奥の人影。頭を描かないと立ったズボンに見える ─────────────── */
+  const crowd: { head: Pt[]; body: Pt[]; c: string }[] = [
+    {
+      head: [[300, 386], [318, 384], [320, 408], [310, 418], [300, 408]],
+      body: [[298, 420], [322, 418], [332, 480], [338, 566], [286, 566], [292, 480]],
+      c: INK,
+    },
+    {
+      head: [[492, 402], [510, 400], [512, 424], [502, 434], [492, 424]],
+      body: [[490, 436], [514, 434], [528, 512], [540, 640], [478, 640], [484, 508]],
+      c: BLUE_D,
+    },
+    {
+      head: [[344, 372], [358, 371], [360, 391], [352, 399], [344, 391]],
+      body: [[342, 400], [362, 399], [370, 452], [374, 522], [332, 522], [336, 452]],
+      c: INK,
+    },
   ];
 
   return (
@@ -159,41 +184,49 @@ export default function Plate() {
           <path d={jag(road, r, 60, 2)} />
         </clipPath>
         <clipPath id={`${P}-coat`}>
-          <path d={jag(coat, r, 40, 2.6)} />
+          <path d={jag(coat, r, 40, 2.4)} />
+        </clipPath>
+        <clipPath id={`${P}-mcoat`}>
+          <path d={jag(mCoat, r, 40, 2.4)} />
         </clipPath>
       </defs>
 
       <g clipPath={`url(#${P}-page)`}>
         <rect width="600" height="800" fill={PAPER} />
 
-        {/* ── 空の楔。酸のような橙。奥ほど白く抜く ─────────────────── */}
+        {/* ── 空の楔。酸のような橙 ─────────────────────────────── */}
         <path d={jag(sky, r, 46, 2.2)} fill={ORANGE} />
-        <path d={jag([[236, 130], [430, 138], [412, 296], [252, 286]], r, 40, 2)} fill={ORANGE_L} />
-        {/* 奥の建物。道の突き当り */}
-        <path d={jag([[248, 250], [416, 258], [414, 300], [250, 292]], r, 34, 1.8)} fill={BLUE_D} />
+        <path d={jag([[230, 148], [434, 156], [420, 364], [258, 352]], r, 40, 2)} fill={ORANGE_L} />
+        {/* 突き当りの建物。道の奥を暗く塞ぐ */}
+        <path d={jag([[254, 292], [424, 302], [420, 366], [258, 356]], r, 34, 1.8)} fill={BLUE_D} />
 
-        {/* ── 道。塗りを輪郭より下へずらす（色版のズレ） ─────────────── */}
-        <path d={jag(road, r, 60, 2)} fill={PAPER} transform="translate(6 5)" />
+        {/* ── 道。塗りを輪郭より下へずらす（色版のズレ） ───────────── */}
+        <path d={jag(road, r, 60, 2)} fill={BLUE} transform="translate(6 5)" />
         <g clipPath={`url(#${P}-road)`}>
-          <path d={jag([[252, 288], [412, 296], [520, 560], [130, 552]], r, 44, 2.4)} fill={ORANGE_L} opacity="0.85" />
-          <g fill={BLUE} opacity="0.5">
+          <path d={jag(roadLit, r, 54, 3)} fill={ORANGE_L} />
+          <g fill={INK} opacity="0.34">
             {roadHatch.map((d, i) => (
               <path key={`rh${i}`} d={d} />
             ))}
           </g>
-          {/* 敷石の目地。放射に並べる。遠近が急すぎるのは意図 */}
-          <g stroke={INK} strokeWidth="1.6" opacity="0.5">
-            {Array.from({ length: 11 }, (_, i) => {
-              const t = (i - 5) / 5;
-              return <line key={`pv${i}`} x1={VPX + t * 90} y1={VPY} x2={VPX + t * 760} y2="830" />;
+          {/* 敷石の目地。遠近が急すぎるのは意図 */}
+          <g stroke={INK} strokeWidth="2.4" opacity="0.42">
+            {Array.from({ length: 9 }, (_, i) => {
+              const t = (i - 4) / 4;
+              return <line key={`pv${i}`} x1={VPX + t * 84} y1={VPY} x2={VPX + t * 720} y2="834" />;
             })}
+          </g>
+          {/* 人の影。街灯から左下へ長く伸ばす */}
+          <g fill={INK} opacity="0.62">
+            <path d={jag([[330, 824], [486, 824], [592, 706], [520, 682]], r, 50, 3)} />
+            <path d={jag([[180, 824], [304, 824], [408, 700], [352, 682]], r, 50, 3)} />
           </g>
         </g>
 
         {/* ── 左の壁 ────────────────────────────────────────────── */}
         <path d={jag(wallL, r, 40, 2)} fill={BLUE} transform="translate(-5 4)" />
         <g clipPath={`url(#${P}-wallL)`}>
-          <g fill={INK} opacity="0.42">
+          <g fill={INK} opacity="0.4">
             {wallLHatch.map((d, i) => (
               <path key={`lh${i}`} d={d} />
             ))}
@@ -218,75 +251,101 @@ export default function Plate() {
         </g>
         <path d={jag(wallR, r, 40, 2)} fill="none" stroke={INK} strokeWidth="5" strokeLinejoin="miter" />
 
-        {/* ── 街灯。棘のある光。垂直から10度倒す ────────────────────── */}
-        <g transform="rotate(-9 168 300)">
-          <path d={jag([[162, 300], [174, 300], [186, 800], [150, 800]], r, 60, 1.6)} fill={INK} />
-          <g fill={ORANGE}>
-            <path d={jag([[168, 240], [196, 268], [168, 296], [140, 268]], r, 16, 1.6)} />
-          </g>
-          <g stroke={ORANGE} strokeWidth="3" opacity="0.9">
+        {/* ── 街灯。棘のある光。垂直から11度倒す ────────────────────── */}
+        <g transform="rotate(-13 74 244)">
+          <path d={jag([[69, 246], [79, 246], [88, 470], [58, 470]], r, 50, 1.4)} fill={INK} />
+          <g stroke={ORANGE} strokeWidth="3.2" opacity="0.95">
             {Array.from({ length: 12 }, (_, i) => {
               const a = (i / 12) * Math.PI * 2 + 0.2;
-              const L = 34 + (i % 3) * 20;
+              const L = 32 + (i % 3) * 22;
               return (
-                <line key={`ray${i}`} x1={168 + Math.cos(a) * 22} y1={268 + Math.sin(a) * 22}
-                      x2={168 + Math.cos(a) * L} y2={268 + Math.sin(a) * L} />
+                <line key={`ray${i}`} x1={74 + Math.cos(a) * 20} y1={222 + Math.sin(a) * 20}
+                      x2={74 + Math.cos(a) * L} y2={222 + Math.sin(a) * L} />
               );
             })}
           </g>
-          <path d={jag([[168, 246], [188, 268], [168, 290], [148, 268]], r, 12, 1.2)} fill={ORANGE_L} />
+          <path d={jag([[74, 196], [100, 222], [74, 248], [48, 222]], r, 14, 1.6)} fill={ORANGE} />
+          <path d={jag([[74, 204], [92, 222], [74, 240], [56, 222]], r, 11, 1.2)} fill={ORANGE_L} />
         </g>
 
-        {/* ── 奥の人影。黒い棒。顔は描かない ───────────────────────── */}
+        {/* ── 奥の人影。頭と胴。輪郭だけで顔は描かない ───────────────── */}
         {crowd.map((c, i) => (
           <g key={`cr${i}`}>
-            <path d={jag(c, r, 34, 2.4)} fill={i === 2 ? BLUE_D : INK} transform={`translate(${i % 2 ? -5 : 5} 4)`} />
-            <path d={jag(c, r, 34, 2.4)} fill="none" stroke={INK} strokeWidth="4" strokeLinejoin="miter" />
+            <path d={jag(c.body, r, 30, 2)} fill={c.c} transform={`translate(${i % 2 ? -4 : 4} 3)`} />
+            <path d={jag(c.body, r, 30, 2)} fill="none" stroke={INK} strokeWidth="3.4" strokeLinejoin="miter" />
+            <path d={jag(c.head, r, 14, 1.4)} fill={i === 1 ? ORANGE : INK} />
+            <path d={jag(c.head, r, 14, 1.4)} fill="none" stroke={INK} strokeWidth="3" strokeLinejoin="miter" />
           </g>
         ))}
 
-        {/* ── 手前の女。外套・顔・帽子 ─────────────────────────────── */}
-        <path d={jag(coat, r, 40, 2.6)} fill={INK} transform="translate(-7 6)" />
-        <path d={jag(coat, r, 40, 2.6)} fill={BLUE_D} />
+        {/* ── 隣の男 ────────────────────────────────────────────── */}
+        <path d={jag(mCoat, r, 36, 2.4)} fill={INK} transform="translate(-6 5)" />
+        <path d={jag(mCoat, r, 36, 2.4)} fill={BLUE_D} />
+        <g clipPath={`url(#${P}-mcoat)`}>
+          <g fill={INK} opacity="0.9">
+            {hatch(r, [170, 430, 140, 380], 84, 12, 2.6, 380).map((d, i) => (
+              <path key={`mh${i}`} d={d} />
+            ))}
+          </g>
+        </g>
+        <path d={jag(mCoat, r, 36, 2.4)} fill="none" stroke={INK} strokeWidth="5" strokeLinejoin="miter" />
+        <path d={jag(mFace, r, 18, 1.6)} fill={ORANGE} transform="translate(4 -3)" />
+        <path d={jag(mFace, r, 18, 1.6)} fill="none" stroke={INK} strokeWidth="4" strokeLinejoin="miter" />
+        <path d={jag([[228, 384], [244, 381], [245, 391], [229, 393]], r, 10, 0.9)} fill={INK} />
+        <path d={jag([[252, 380], [264, 378], [265, 388], [253, 390]], r, 9, 0.9)} fill={INK} />
+        <path d={jag([[234, 410], [256, 407], [255, 413], [234, 415]], r, 10, 0.8)} fill={INK} />
+        <path d={jag(mHat, r, 20, 2)} fill={INK} />
+
+        {/* ── 手前の女 ──────────────────────────────────────────── */}
+        <path d={jag(coat, r, 36, 2.4)} fill={INK} transform="translate(-7 6)" />
+        <path d={jag(coat, r, 36, 2.4)} fill={BLUE_D} />
         <g clipPath={`url(#${P}-coat)`}>
-          <g fill={INK} opacity="0.85">
-            {hatch(r, [260, 400, 300, 420], 82, 13, 3, 420).map((d, i) => (
+          <g fill={INK} opacity="0.9">
+            {hatch(r, [320, 390, 160, 430], 80, 11, 2.8, 430).map((d, i) => (
               <path key={`ch${i}`} d={d} />
             ))}
           </g>
           {/* 襟。朱を一枚だけ差す */}
-          <path d={jag([[378, 404], [452, 396], [438, 452], [396, 462]], r, 22, 2.2)} fill={RED} />
+          <path d={jag([[374, 390], [436, 386], [424, 442], [400, 456], [382, 436]], r, 20, 2)} fill={RED} />
+          {/* 裾の折り返し */}
+          <path d={jag([[330, 742], [472, 736], [476, 770], [328, 776]], r, 30, 2.4)} fill={INK} opacity="0.9" />
         </g>
-        <path d={jag(coat, r, 40, 2.6)} fill="none" stroke={INK} strokeWidth="6" strokeLinejoin="miter" />
+        <path d={jag(coat, r, 36, 2.4)} fill="none" stroke={INK} strokeWidth="6" strokeLinejoin="miter" />
+        {/* 腕。外套の外へ細く出す */}
+        <path d={jag(armR, r, 26, 2)} fill={BLUE_D} />
+        <path d={jag(armR, r, 26, 2)} fill="none" stroke={INK} strokeWidth="4.4" strokeLinejoin="miter" />
+        <path d={jag([[452, 556], [478, 552], [484, 582], [462, 590], [450, 574]], r, 14, 1.6)} fill={ORANGE} />
+        <path d={jag([[452, 556], [478, 552], [484, 582], [462, 590], [450, 574]], r, 14, 1.6)} fill="none" stroke={INK} strokeWidth="3.4" />
 
         {/* 顔。塗りを輪郭から5px ずらす */}
-        <path d={jag(face, r, 20, 1.8)} fill={ORANGE} transform="translate(5 -4)" />
-        <path d={jag(face, r, 20, 1.8)} fill="none" stroke={INK} strokeWidth="4.6" strokeLinejoin="miter" />
-        {/* 目。斜めの隙間。左右で角度を変えて不安にする */}
-        <path d={jag([[398, 344], [420, 338], [422, 350], [400, 356]], r, 12, 1)} fill={INK} />
-        <path d={jag([[430, 340], [446, 336], [448, 350], [432, 352]], r, 10, 1)} fill={INK} />
-        {/* 鼻と口。線は一の字 */}
-        <path d={jag([[416, 356], [412, 382], [426, 384]], r, 12, 1.2, false)} fill="none" stroke={INK} strokeWidth="3" />
-        <path d={jag([[404, 396], [438, 390], [436, 400], [404, 405]], r, 12, 1)} fill={RED} />
-        {/* 頬の刻み。木版の刃跡 */}
-        <g fill={INK} opacity="0.6">
-          {hatch(r, [392, 350, 30, 60], 78, 8, 1.2, 46).map((d, i) => (
+        <path d={jag(face, r, 18, 1.7)} fill={ORANGE} transform="translate(5 -4)" />
+        <path d={jag(face, r, 18, 1.7)} fill="none" stroke={INK} strokeWidth="4.4" strokeLinejoin="miter" />
+        <path d={jag([[384, 334], [404, 330], [406, 342], [386, 345]], r, 11, 1)} fill={INK} />
+        <path d={jag([[414, 330], [430, 327], [431, 340], [415, 342]], r, 10, 1)} fill={INK} />
+        <path d={jag([[402, 344], [398, 362], [410, 364]], r, 11, 1.1, false)} fill="none" stroke={INK} strokeWidth="2.8" />
+        <path d={jag([[390, 370], [422, 366], [420, 377], [390, 380]], r, 11, 1)} fill={RED} />
+        <g fill={INK} opacity="0.55">
+          {hatch(r, [378, 336, 26, 46], 78, 7, 1.1, 40).map((d, i) => (
             <path key={`fh${i}`} d={d} />
           ))}
         </g>
-
-        {/* 帽子 */}
-        <path d={jag(hat, r, 24, 2.6)} fill={INK} transform="translate(-4 -5)" />
-        <path d={jag(hat, r, 24, 2.6)} fill={INK} />
-        <path d={jag(hat, r, 24, 2.6)} fill="none" stroke={PAPER} strokeWidth="2" strokeLinejoin="miter" opacity="0.55" />
+        {/* 帽子。羽根を尖らせる。ここが近くで見る所 */}
+        <g>
+          {feathers.map((f, i) => (
+            <path key={`ft${i}`} d={jag(f, r, 16, 1.4)} fill={i === 1 ? RED : INK} />
+          ))}
+          <path d={jag(hatCrown, r, 18, 1.8)} fill={INK} />
+          <path d={jag(hatBrim, r, 20, 1.8)} fill={INK} />
+          <path d={jag(hatBrim, r, 20, 1.8)} fill="none" stroke={PAPER} strokeWidth="1.8" opacity="0.5" />
+        </g>
 
         {/* ── 題字。左上の壁に打ち込む。傾けて画面と揃える ──────────── */}
         <g transform="rotate(-6 40 96)">
           <text
-            x="26" y="96"
+            x="24" y="92"
             fill={PAPER}
             fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-            fontSize="46"
+            fontSize="44"
             fontWeight="800"
             letterSpacing="-1"
             style={{ paintOrder: "stroke" }}
@@ -296,12 +355,12 @@ export default function Plate() {
             DIE BRÜCKE
           </text>
           <text
-            x="30" y="120"
+            x="28" y="116"
             fill={ORANGE}
             fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-            fontSize="11"
+            fontSize="10.5"
             fontWeight="700"
-            letterSpacing="4.6"
+            letterSpacing="4.4"
           >
             DRESDEN — BERLIN — 1905/1913
           </text>

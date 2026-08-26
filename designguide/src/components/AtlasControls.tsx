@@ -65,6 +65,11 @@ export default function AtlasControls({ total }: { total: number }) {
       </div>
 
       <div className="ctl__search">
+        {(cat !== "all" || q) && (
+          <button type="button" className="ctl__clear" onClick={() => { setCat("all"); setQ(""); }}>
+            解除
+          </button>
+        )}
         <input
           ref={inputRef}
           type="search"
@@ -78,6 +83,13 @@ export default function AtlasControls({ total }: { total: number }) {
           {hit} / {total}
         </span>
       </div>
+
+      {hit === 0 && (
+        <p className="ctl__none">
+          「{q}」に当てはまるものはありません。
+          <button type="button" onClick={() => { setCat("all"); setQ(""); }}>すべて表示</button>
+        </p>
+      )}
     </div>
   );
 }

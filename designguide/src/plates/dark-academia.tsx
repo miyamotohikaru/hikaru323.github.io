@@ -102,8 +102,15 @@ export default function Plate() {
         <radialGradient id={`${P}-lamp`} cx="0.5" cy="0.5" r="0.5">
           <stop offset="0" stopColor="#d9a765" stopOpacity="0.5" />
           <stop offset="0.34" stopColor="#8a6a3c" stopOpacity="0.2" />
-          <stop offset="0.72" stopColor="#120e09" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#0b0805" stopOpacity="0.9" />
+          <stop offset="0.72" stopColor="#140f0a" stopOpacity="0.46" />
+          <stop offset="1" stopColor="#0b0805" stopOpacity="0.84" />
+        </radialGradient>
+        {/* 灯りの届く範囲。初稿は一定の不透明度の楕円を screen で重ねたので、
+            棚と机を横切る楕円の縁がはっきり見えた。縁で 0 に落とす */}
+        <radialGradient id={`${P}-glow`} cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#e8b877" stopOpacity="0.3" />
+          <stop offset="0.5" stopColor="#d9a765" stopOpacity="0.12" />
+          <stop offset="1" stopColor="#d9a765" stopOpacity="0" />
         </radialGradient>
         {/* 炎まわりの滲み */}
         <radialGradient id={`${P}-flame`} cx="0.5" cy="0.5" r="0.5">
@@ -156,15 +163,17 @@ export default function Plate() {
         </g>
 
         {/* ── 積んだ本。左下。重心をここに置く ───────────────── */}
+        {/* 天板に落ちる影。これが無いと本が浮く */}
+        <ellipse cx="188" cy="640" rx="130" ry="9" fill="#0d0a06" opacity="0.5" />
         {[[74, 596, 214, 15], [82, 581, 200, 15], [70, 566, 218, 15], [90, 552, 186, 14]]
           .map(([x, y, w, h], i) => (
           <g key={i}>
             <rect x={x} y={y} width={w} height={h} fill={HIDES[(i * 2 + 1) % HIDES.length]} />
             {/* 小口。紙の側面 */}
-            <rect x={x + 6} y={y + 2.5} width={w - 12} height={h - 5} fill="#c2b291" opacity="0.5" />
-            {Array.from({ length: 5 }, (_, k) => (
-              <rect key={k} x={x + 6} y={y + 3.5 + k * 1.9} width={w - 12} height="0.7"
-                    fill="#8a7350" opacity="0.5" />
+            <rect x={x + 7} y={y + 4} width={w - 13} height={h - 8} fill="#8f7c5c" opacity="0.6" />
+            {Array.from({ length: 4 }, (_, k) => (
+              <rect key={k} x={x + 7} y={y + 4.6 + k * 1.9} width={w - 13} height="0.6"
+                    fill="#6b563a" opacity="0.6" />
             ))}
             {/* 背の側。金の帯 */}
             <rect x={x} y={y} width="9" height={h} fill={HIDES[(i * 3) % HIDES.length]} />
@@ -215,6 +224,8 @@ export default function Plate() {
         <ellipse cx="496" cy="592" rx="14" ry="4" fill="#4a3a26" />
         <ellipse cx="496" cy="592" rx="8" ry="2.4" fill="#0d0a06" />
         <rect x="470" y="614" width="52" height="26" fill="#2f2a22" opacity="0.7" />
+        <path d="M470 606 Q470 600 476 600 L516 600 Q522 600 522 606"
+              fill="none" stroke={TAN} strokeWidth="1" opacity="0.45" />
         {/* 羽根。軸を1本、羽枝を細い線で */}
         <g transform="rotate(20 496 592)">
           <path d="M494 592 L494 486" stroke="#d6c7a4" strokeWidth="2.4" fill="none" />
@@ -228,17 +239,17 @@ export default function Plate() {
         </g>
 
         {/* 蛾。炎に寄る一匹。物語をここに一つだけ置く */}
-        <g transform={`translate(${FLAME_X + 62} 434) rotate(-16)`} fill={SHADOW} opacity="0.85">
+        <g transform={`translate(${FLAME_X + 62} 434) rotate(-16)`} fill="#4a4034" opacity="0.9">
           <path d="M0 0 q -16 -12 -22 -2 q -4 8 8 10 Z" />
           <path d="M0 0 q 16 -12 22 -2 q 4 8 -8 10 Z" />
           <ellipse cx="0" cy="3" rx="2.6" ry="7" />
-          <path d="M0 -4 l-4 -6 M0 -4 l4 -6" stroke={SHADOW} strokeWidth="0.9" />
+          <path d="M0 -4 l-4 -6 M0 -4 l4 -6" stroke="#4a4034" strokeWidth="0.9" />
         </g>
 
         {/* ── 灯りと闇。ここで一枚に締める ───────────────────── */}
         <rect width="600" height="800" fill={`url(#${P}-lamp)`}
               style={{ mixBlendMode: "multiply" }} opacity="0.92" />
-        <ellipse cx={FLAME_X} cy="500" rx="300" ry="240" fill="#e0a33e" opacity="0.09"
+        <ellipse cx={FLAME_X} cy="486" rx="360" ry="300" fill={`url(#${P}-glow)`}
                  style={{ mixBlendMode: "screen" }} />
 
         {/* 埃。光の中だけ */}

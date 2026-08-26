@@ -53,29 +53,43 @@ function guillocheBand(x0: number, x1: number, y: number, amp: number, waves: nu
   return `M${pts.join(" L")}`;
 }
 
-/** 角の唐草。渦と3枚の葉。四隅に鏡像で置く */
-function Fleuron({ x, y, sx, sy }: { x: number; y: number; sx: number; sy: number }) {
+/**
+ * 角の唐草。初稿は弧をばらまいただけで、割れた欠片に見えた。
+ * 唐草には骨組みがある。角を抱く親葉が2枚、対角に小葉が1枚、
+ * それぞれの先で渦を巻いて止まる。この順で組むと唐草に見える。
+ */
+function Fleuron({ x, y, sx, sy, k = 1 }: { x: number; y: number; sx: number; sy: number; k?: number }) {
   return (
-    <g transform={`translate(${x} ${y}) scale(${sx} ${sy})`}>
-      <path
-        d="M2 46 C 2 20 20 2 46 2 C 40 12 30 14 22 20 C 12 28 10 36 10 46 Z"
-        fill={INK}
-      />
-      <path
-        d="M14 52 C 14 30 30 14 52 14 C 46 26 34 30 26 38 C 20 44 20 48 20 52 Z"
-        fill={GOLD}
-        opacity="0.9"
-      />
-      <path
-        d="M24 60 C 24 44 36 30 54 26 C 44 38 40 44 38 54 C 36 62 30 64 24 60 Z"
-        fill={GREEN}
-      />
-      {/* 渦。ここが唐草の要。輪郭だけで巻く */}
-      <path d="M60 40 C 76 40 82 54 72 62 C 63 69 52 62 56 52 C 59 45 68 46 67 53" fill="none" stroke={INK} strokeWidth="2.6" />
-      <path d="M40 60 C 40 76 54 82 62 72 C 69 63 62 52 52 56 C 45 59 46 68 53 67" fill="none" stroke={INK} strokeWidth="2.6" opacity="0.55" />
-      <circle cx="8" cy="8" r="4" fill={RED} />
-      <circle cx="22" cy="6" r="2" fill={INK} />
-      <circle cx="6" cy="22" r="2" fill={INK} />
+    <g transform={`translate(${x} ${y}) scale(${sx * k} ${sy * k})`}>
+      {/* 親葉。上辺と左辺へ。角で交わらせて一体に見せる */}
+      <path d="M4 4 C 42 2 74 12 102 34 C 70 34 40 26 18 14 C 12 11 7 8 4 4 Z" fill={INK} />
+      <path d="M4 4 C 2 42 12 74 34 102 C 34 70 26 40 14 18 C 11 12 8 7 4 4 Z" fill={INK} />
+      {/* 金の内葉。二色刷りの縁取り。ずらして重ねるのがこの時代の作法 */}
+      <path d="M11 11 C 42 11 68 21 90 39 C 65 37 41 29 23 19 Z" fill={GOLD} />
+      <path d="M11 11 C 11 42 21 68 39 90 C 37 65 29 41 19 23 Z" fill={GOLD} />
+      {/* 対角の小葉 */}
+      <path d="M15 15 C 38 27 56 45 68 70 C 47 60 29 43 17 23 Z" fill={GREEN} />
+      {/* 渦。三つの葉先すべてで巻いて止める */}
+      <g fill="none" strokeLinecap="round">
+        <path d="M102 34 C 119 37 122 54 109 60 C 98 65 89 56 96 48 C 101 43 108 47 106 53" stroke={INK} strokeWidth="3" />
+        <path d="M34 102 C 37 119 54 122 60 109 C 65 98 56 89 48 96 C 43 101 47 108 53 106" stroke={INK} strokeWidth="3" />
+        <path d="M68 70 C 84 77 84 92 72 95 C 62 97 57 88 64 83" stroke={GREEN} strokeWidth="2.4" />
+        {/* 髭。細い線を1本添えると彫りに見える */}
+        <path d="M20 20 C 46 30 66 48 78 74" stroke={INK} strokeWidth="1" opacity="0.5" />
+      </g>
+      {/* 角の座金。親葉2枚の合わせ目が尖って紙飛行機に見えたので、
+          扇形の座で受けて隠す。彫金の角飾りはたいていこの形をしている */}
+      <path d="M2 2 L2 40 A38 38 0 0 0 40 2 Z" fill={INK} />
+      <path d="M2 2 L2 30 A28 28 0 0 0 30 2 Z" fill={RED} />
+      {Array.from({ length: 5 }, (_, i) => {
+        const a = ((i + 0.5) / 5) * (Math.PI / 2);
+        return <line key={i} x1="2" y1="2" x2={2 + Math.cos(a) * 30} y2={2 + Math.sin(a) * 30} stroke={GOLD} strokeWidth="1.4" />;
+      })}
+      <path d="M2 2 L2 14 A12 12 0 0 0 14 2 Z" fill={GOLD} />
+      {/* 実。三つ */}
+      <circle cx="9" cy="40" r="3.4" fill={RED} />
+      <circle cx="40" cy="9" r="3.4" fill={RED} />
+      <circle cx="27" cy="27" r="2.6" fill={INK} />
     </g>
   );
 }
@@ -131,8 +145,8 @@ export default function Plate() {
 
         <Fleuron x={64} y={64} sx={1} sy={1} />
         <Fleuron x={536} y={64} sx={-1} sy={1} />
-        <Fleuron x={64} y={736} sx={1} sy={-1} />
-        <Fleuron x={536} y={736} sx={-1} sy={-1} />
+        <Fleuron x={64} y={736} sx={1} sy={-1} k={0.78} />
+        <Fleuron x={536} y={736} sx={-1} sy={-1} k={0.78} />
 
         {/* ── アーチの円窓。ギヨシェの地紋 ───────────────────── */}
         <path d="M154 316 L154 218 A146 122 0 0 1 446 218 L446 316 Z" fill={`url(#${P}-medal)`} />
@@ -163,79 +177,83 @@ export default function Plate() {
         </g>
         <path d="M154 316 L154 218 A146 122 0 0 1 446 218 L446 316" fill="none" stroke={INK} strokeWidth="3.4" />
         <path d="M160 316 L160 220 A140 116 0 0 1 440 220 L440 316" fill="none" stroke={GOLD} strokeWidth="1.2" />
-        {/* アーチの起拱点に小さな持ち送り */}
+        {/* アーチの起拱点に持ち送り。さらに台輪で受ける。
+            初稿は金の面が宙に浮いて、盾を吊るしたように見えた */}
         {[154, 446].map((x, i) => (
           <g key={i}>
-            <rect x={x - 12} y="310" width="24" height="10" fill={INK} />
-            <rect x={x - 17} y="320" width="34" height="7" fill={RED} />
-            <rect x={x - 21} y="327" width="42" height="5" fill={INK} />
+            <rect x={x - 12} y="308" width="24" height="10" fill={INK} />
+            <rect x={x - 17} y="318" width="34" height="7" fill={RED} />
           </g>
         ))}
+        <rect x="118" y="325" width="364" height="9" fill={INK} />
+        <rect x="104" y="334" width="392" height="6" fill={RED} />
+        <rect x="92" y="340" width="416" height="4" fill={INK} />
+        <rect x="92" y="346" width="416" height="1.6" fill={GOLD} />
 
         {/* ── 題字の積み上げ。行ごとに書体も大きさも変える ────────── */}
         {/* 1行目。ごく小さい大文字、両側に罫 */}
-        <line x1="112" y1="360" x2="238" y2="360" stroke={INK} strokeWidth="1" />
-        <line x1="362" y1="360" x2="488" y2="360" stroke={INK} strokeWidth="1" />
-        <circle cx="106" cy="360" r="2.4" fill={RED} />
-        <circle cx="494" cy="360" r="2.4" fill={RED} />
-        <text x="300" y="365" textAnchor="middle" fill={INK} fontFamily="Georgia, 'Times New Roman', serif" fontSize="11" letterSpacing="5.5">
+        <line x1="104" y1="374" x2="150" y2="374" stroke={INK} strokeWidth="1.4" />
+        <line x1="450" y1="374" x2="496" y2="374" stroke={INK} strokeWidth="1.4" />
+        <circle cx="96" cy="374" r="2.6" fill={RED} />
+        <circle cx="504" cy="374" r="2.6" fill={RED} />
+        <text x="300" y="379" textAnchor="middle" fill={INK} fontFamily="Georgia, 'Times New Roman', serif" fontSize="11" letterSpacing="3.6">
           ESTABLISHED MDCCCXXXVII
         </text>
 
         {/* 2行目。斜体。細く長く */}
-        <text x="300" y="398" textAnchor="middle" fill={GREEN} fontFamily="Georgia, 'Times New Roman', serif" fontSize="24" fontStyle="italic">
+        <text x="300" y="412" textAnchor="middle" fill={GREEN} fontFamily="Georgia, 'Times New Roman', serif" fontSize="24" fontStyle="italic">
           The Great Exhibition of
         </text>
 
         {/* 3行目。木活字の3版刷り。金→焦茶→朱の順にずらす */}
         <g fontFamily="Georgia, 'Times New Roman', serif" fontSize="72" fontWeight="700" letterSpacing="1" textAnchor="middle">
-          <text x="306" y="472" fill={GOLD}>VICTORIAN</text>
-          <text x="303" y="469" fill={shift(INK, -0.1)}>VICTORIAN</text>
-          <text x="300" y="466" fill={RED} stroke={INK} strokeWidth="1.4" paintOrder="stroke">
+          <text x="306" y="486" fill={GOLD}>VICTORIAN</text>
+          <text x="303" y="483" fill={shift(INK, -0.1)}>VICTORIAN</text>
+          <text x="300" y="480" fill={RED} stroke={INK} strokeWidth="1.4" paintOrder="stroke">
             VICTORIAN
           </text>
         </g>
 
         {/* 4行目。極端に長体。同じ紙面に別の骨格を混ぜるのがこの様式 */}
         <text
-          x="300" y="502" textAnchor="middle" fill={INK}
+          x="300" y="516" textAnchor="middle" fill={INK}
           fontFamily="Georgia, 'Times New Roman', serif" fontSize="26" fontWeight="700" letterSpacing="2"
-          transform="translate(0 -502) scale(1 1) translate(0 502)"
-          style={{ transformOrigin: "300px 502px" }}
+          transform="translate(0 -516) scale(1 1) translate(0 516)"
+          style={{ transformOrigin: "300px 516px" }}
         >
           <tspan>ORNAMENT · TYPE · MACHINE</tspan>
         </text>
 
         {/* 飾り罫。菱形を挟んだ両振り */}
         <g>
-          <line x1="96" y1="522" x2="276" y2="522" stroke={INK} strokeWidth="2.6" />
-          <line x1="324" y1="522" x2="504" y2="522" stroke={INK} strokeWidth="2.6" />
-          <line x1="96" y1="527" x2="276" y2="527" stroke={GOLD} strokeWidth="1" />
-          <line x1="324" y1="527" x2="504" y2="527" stroke={GOLD} strokeWidth="1" />
-          <path d="M300 512 L312 522 L300 532 L288 522 Z" fill={RED} stroke={INK} strokeWidth="1.2" />
-          <circle cx="282" cy="522" r="2.4" fill={INK} />
-          <circle cx="318" cy="522" r="2.4" fill={INK} />
+          <line x1="96" y1="536" x2="276" y2="536" stroke={INK} strokeWidth="2.6" />
+          <line x1="324" y1="536" x2="504" y2="536" stroke={INK} strokeWidth="2.6" />
+          <line x1="96" y1="541" x2="276" y2="541" stroke={GOLD} strokeWidth="1" />
+          <line x1="324" y1="541" x2="504" y2="541" stroke={GOLD} strokeWidth="1" />
+          <path d="M300 526 L312 536 L300 546 L288 536 Z" fill={RED} stroke={INK} strokeWidth="1.2" />
+          <circle cx="282" cy="536" r="2.4" fill={INK} />
+          <circle cx="318" cy="536" r="2.4" fill={INK} />
         </g>
 
         {/* ── ギヨシェの帯。紙幣の縁。近くで見るともう一つの細部 ──── */}
         <g fill="none">
-          <path d={guillocheBand(96, 504, 556, 11, 13, 0)} stroke={GOLD} strokeWidth="1.1" />
-          <path d={guillocheBand(96, 504, 556, 11, 13, Math.PI)} stroke={GOLD} strokeWidth="1.1" />
-          <path d={guillocheBand(96, 504, 556, 6.5, 13, Math.PI / 2)} stroke={RED} strokeWidth="0.8" opacity="0.75" />
-          <path d={guillocheBand(96, 504, 556, 6.5, 13, -Math.PI / 2)} stroke={RED} strokeWidth="0.8" opacity="0.75" />
+          <path d={guillocheBand(96, 504, 570, 11, 13, 0)} stroke={GOLD} strokeWidth="1.1" />
+          <path d={guillocheBand(96, 504, 570, 11, 13, Math.PI)} stroke={GOLD} strokeWidth="1.1" />
+          <path d={guillocheBand(96, 504, 570, 6.5, 13, Math.PI / 2)} stroke={RED} strokeWidth="0.8" opacity="0.75" />
+          <path d={guillocheBand(96, 504, 570, 6.5, 13, -Math.PI / 2)} stroke={RED} strokeWidth="0.8" opacity="0.75" />
         </g>
-        <line x1="96" y1="574" x2="504" y2="574" stroke={INK} strokeWidth="1" />
+        <line x1="96" y1="588" x2="504" y2="588" stroke={INK} strokeWidth="1" />
 
         {/* ── 小さな字の塊。詰めるのがこの様式の作法 ───────────── */}
-        <text x="300" y="600" textAnchor="middle" fill={INK} fontFamily="Georgia, 'Times New Roman', serif" fontSize="12" letterSpacing="0.4">
+        <text x="300" y="612" textAnchor="middle" fill={INK} fontFamily="Georgia, 'Times New Roman', serif" fontSize="12" letterSpacing="0.4">
           Engraved &amp; Printed by <tspan fontStyle="italic">Messrs. Whitworth &amp; Sons</tspan>, Ludgate Hill
         </text>
-        <text x="300" y="618" textAnchor="middle" fill={GREEN} fontFamily="Georgia, 'Times New Roman', serif" fontSize="10.5" letterSpacing="1.4">
+        <text x="300" y="630" textAnchor="middle" fill={GREEN} fontFamily="Georgia, 'Times New Roman', serif" fontSize="10.5" letterSpacing="1.4">
           CHROMOLITHOGRAPHY · WOOD TYPE · GUILLOCHE ENGRAVING
         </text>
 
         {/* ── 印刷屋の花。活字の飾りを一列 ───────────────────── */}
-        <g transform="translate(300 660)">
+        <g transform="translate(300 668)">
           {[-150, -100, -50, 0, 50, 100, 150].map((d, i) => (
             <g key={i} transform={`translate(${d} 0)`}>
               {i % 2 === 0 ? (
@@ -257,14 +275,14 @@ export default function Plate() {
 
         {/* ── 台。リボン。ここで版面を閉じる ─────────────────── */}
         <path
-          d="M108 690 L492 690 L492 718 L108 718 Z"
+          d="M148 692 L452 692 L452 720 L148 720 Z"
           fill={RED}
           stroke={INK}
           strokeWidth="1.6"
         />
-        <path d="M86 696 L108 690 L108 718 L86 724 Z" fill={shift(RED, -0.3)} stroke={INK} strokeWidth="1.4" />
-        <path d="M514 696 L492 690 L492 718 L514 724 Z" fill={shift(RED, -0.3)} stroke={INK} strokeWidth="1.4" />
-        <text x="300" y="709" textAnchor="middle" fill={PAPER} fontFamily="Georgia, 'Times New Roman', serif" fontSize="13" letterSpacing="7">
+        <path d="M126 698 L148 692 L148 720 L126 726 Z" fill={shift(RED, -0.3)} stroke={INK} strokeWidth="1.4" />
+        <path d="M474 698 L452 692 L452 720 L474 726 Z" fill={shift(RED, -0.3)} stroke={INK} strokeWidth="1.4" />
+        <text x="300" y="711" textAnchor="middle" fill={PAPER} fontFamily="Georgia, 'Times New Roman', serif" fontSize="13" letterSpacing="7">
           LONDON · 1851
         </text>
 
