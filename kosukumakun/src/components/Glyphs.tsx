@@ -26,17 +26,6 @@ function Frame({ children }: { children: ReactNode }) {
   );
 }
 
-/** 金平糖のとげとげ。アプリ側の FX.star と同じ作り方（内側の半径を比率で持つ） */
-function starPath(cx: number, cy: number, r: number, points = 6, inner = 0.56) {
-  const pts: string[] = [];
-  for (let i = 0; i < points * 2; i++) {
-    const a = -Math.PI / 2 + (i * Math.PI) / points;
-    const rr = i % 2 === 0 ? r : r * inner;
-    pts.push(`${(cx + Math.cos(a) * rr).toFixed(2)} ${(cy + Math.sin(a) * rr).toFixed(2)}`);
-  }
-  return `M ${pts.join(" L ")} Z`;
-}
-
 /** カーソルを目で追う */
 export const EyeGlyph = () => (
   <Frame>
@@ -70,10 +59,13 @@ export const SteamGlyph = () => (
   </Frame>
 );
 
-/** たまに金平糖 */
-export const KonpeitoGlyph = () => (
+/** たまに梅干し。
+ *  ゆるく波打つ丸＋まんなかの三日月のしわ。アプリの ume0..5 と同じ見立て。 */
+export const UmeboshiGlyph = () => (
   <Frame>
-    <path d={starPath(12, 12, 9.4)} strokeLinejoin="round" />
+    <path d="M12 2.6C16.4 2.6 21.4 6.4 21.4 12C21.4 17.2 17 21.4 12 21.4C7.2 21.4 2.6 17.4 2.6 12C2.6 6.6 7.4 2.6 12 2.6Z" />
+    <path d="M9.4 8.6C9.4 12 10.6 13.6 12.4 14.2" />
+    <path d="M9.4 8.6C11.6 10.4 13.8 11.4 16 11.6" />
   </Frame>
 );
 
