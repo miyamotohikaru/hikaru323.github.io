@@ -260,7 +260,13 @@ export default function IndexView() {
               : "この条件のカードは、見つかりませんでした。"}
           </p>
         ) : mode === "deck" ? (
-          <DeckView key={filtered.map((j) => j.no).join(",")} jobs={filtered} />
+          <DeckView
+            key={filtered.map((j) => j.no).join(",")}
+            jobs={filtered}
+            // 引き出しが開いているあいだは束の大きさを測らせない
+            // （開いたぶん下へ押し下げられた位置を測ってしまう）
+            canMeasure={!open}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5">
             {filtered.map((j, i) => (

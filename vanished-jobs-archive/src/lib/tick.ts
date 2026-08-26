@@ -47,8 +47,10 @@ export function primeTick() {
     bus = ctx.createGain();
     bus.gain.value = 0.5;
     bus.connect(ctx.destination);
-    // 使い回す短いホワイトノイズ
-    const len = Math.floor(ctx.sampleRate * 0.05);
+    // 使い回すホワイトノイズ。
+    // 短く取ると回転音の風の層で頭に戻る周期が唸りになるので、1.5秒ぶん持つ。
+    // カチッのほうは頭の数十ミリ秒しか使わないので、長くても影響はない
+    const len = Math.floor(ctx.sampleRate * 1.5);
     noise = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = noise.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -111,8 +113,9 @@ export function tick() {
 }
 
 /**
- * カードを開くときの音。送りの「コッ」より低く、少し長く残す。
- * 同じ音だと「送った」のか「開いた」のか区別がつかない。
+ * カードを開くときの音。紙を1枚めくる感じにする。
+ * 帯域を上から下へ滑らせた「シュッ」と、置いたときの芯を重ねる。
+ * 送りの「カチッ」と同じ音だと、送ったのか開いたのか区別がつかない。
  */
 export function tapSound() {
   if (!enabled) return;
@@ -120,30 +123,124 @@ export function tapSound() {
   if (!ctx || !bus || !noise) return;
   const t = ctx.currentTime;
 
+  // 紙が擦れて離れる音。高いところから低いところへ帯を滑らせるのが要で、
+  // 固定の帯域だと「ザッ」と鳴るだけでめくった感じにならない
   const src = ctx.createBufferSource();
   src.buffer = noise;
   const bp = ctx.createBiquadFilter();
   bp.type = "bandpass";
-  bp.frequency.value = 620;
-  bp.Q.value = 1.1;
+  bp.Q.value = 0.85;
+  bp.frequency.setValueAtTime(2800, t);
+  bp.frequency.exponentialRampToValueAtTime(480, t + 0.17);
   const g = ctx.createGain();
-  g.gain.setValueAtTime(0.1, t);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+  g.gain.setValueAtTime(0.0001, t);
+  // 立ち上がりに角があると紙ではなく打撃に聞こえるので、少しだけ丸める
+  g.gain.exponentialRampToValueAtTime(0.085, t + 0.028);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
   src.connect(bp).connect(g).connect(bus);
   src.start(t);
-  src.stop(t + 0.1);
+  src.stop(t + 0.22);
 
-  // 置いたときの余韻。少し下がりながら消える
+  // 置いたときの芯。少し下がりながら消える
   const osc = ctx.createOscillator();
   osc.type = "sine";
-  osc.frequency.setValueAtTime(520, t);
-  osc.frequency.exponentialRampToValueAtTime(360, t + 0.11);
+  osc.frequency.setValueAtTime(560, t);
+  osc.frequency.exponentialRampToValueAtTime(330, t + 0.13);
   const og = ctx.createGain();
-  og.gain.setValueAtTime(0.075, t);
-  og.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+  og.gain.setValueAtTime(0.07, t);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
   osc.connect(og).connect(bus);
   osc.start(t);
-  osc.stop(t + 0.14);
+  osc.stop(t + 0.17);
+
+  // 開いた合図の余韻。芯の5度上を、遅らせてごく小さく重ねる
+  const up = ctx.createOscillator();
+  up.type = "sine";
+  up.frequency.setValueAtTime(840, t + 0.03);
+  const ug = ctx.createGain();
+  ug.gain.setValueAtTime(0.0001, t + 0.03);
+  ug.gain.exponentialRampToValueAtTime(0.026, t + 0.06);
+  ug.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+  up.connect(ug).connect(bus);
+  up.start(t + 0.03);
+  up.stop(t + 0.28);
 
   navigator.vibrate?.(12);
+}
+
+/** 回転音が鳴り終わるまでの目安。重ねて鳴らすと濁るので見張る */
+let spinUntil = 0;
+
+/**
+ * 思いきり払って何枚も送るときの「キュイーン」。
+ * パチンコの回転のように、弾いた瞬間に一気に上がってから、
+ * 束が止まるまでゆっくり落ちる。カチカチの下に薄く敷くだけで、
+ * 主役はあくまで1枚ごとの当たりの音。
+ *
+ * @param cards  送る枚数
+ * @param durMs  束が止まるまでの時間。落ちきる時刻をこれに合わせる
+ */
+export function spinSound(cards: number, durMs: number) {
+  if (!enabled) return;
+  if (ctx && ctx.state === "suspended") void ctx.resume();
+  if (!ctx || !bus || !noise) return;
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  // 前の回転がまだ鳴っているうちは足さない（唸って濁る）
+  if (now < spinUntil) return;
+
+  const dur = Math.min(Math.max(durMs / 1000, 0.28), 1.1);
+  spinUntil = now + dur * 700;
+  const t = ctx.currentTime;
+  const n = Math.min(cards, 40);
+  /** 勢いがあるほど高く回る。3枚で約500、40枚で約1460 */
+  const top = 420 + n * 26;
+  const end = 190;
+  /** 上がりきるまで。ここが長いと「キュイ」の立ち上がりが鈍る */
+  const rise = 0.11;
+
+  const osc = ctx.createOscillator();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(200, t);
+  osc.frequency.exponentialRampToValueAtTime(top, t + rise);
+  osc.frequency.exponentialRampToValueAtTime(end, t + dur);
+
+  // のこぎり波は生のままだと耳に刺さる。
+  // 共鳴の山を音程に少し遅れて追わせると、あの「キュイーン」の芯になる
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.Q.value = 5.5;
+  bp.frequency.setValueAtTime(400, t);
+  bp.frequency.exponentialRampToValueAtTime(top * 1.6, t + rise * 1.4);
+  bp.frequency.exponentialRampToValueAtTime(end * 1.6, t + dur);
+
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 3600;
+
+  const g = ctx.createGain();
+  /** カチッ(0.035〜0.09)より下に置く。回転は下敷きなので張り合わせない */
+  const peak = 0.028 + 0.02 * Math.min(n / 20, 1);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + 0.06);
+  g.gain.setValueAtTime(peak, t + dur * 0.45);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+  osc.connect(bp).connect(lp).connect(g).connect(bus);
+  osc.start(t);
+  osc.stop(t + dur + 0.02);
+
+  // 回っている空気。これがないと電子音だけになって、物が回っている感じが出ない
+  const src = ctx.createBufferSource();
+  src.buffer = noise;
+  const hp = ctx.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.setValueAtTime(1200, t);
+  hp.frequency.exponentialRampToValueAtTime(500, t + dur);
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.0001, t);
+  ng.gain.exponentialRampToValueAtTime(peak * 0.5, t + 0.08);
+  ng.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.9);
+  src.connect(hp).connect(ng).connect(bus);
+  src.start(t);
+  src.stop(t + dur + 0.02);
 }

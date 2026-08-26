@@ -7,7 +7,7 @@ import TiltCard from "@/components/TiltCard";
 import { Job } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
 import { readDeckAt, saveDeckAt, saveReturn } from "@/lib/returnNav";
-import { primeTick, tapSound, tick } from "@/lib/tick";
+import { primeTick, spinSound, tapSound, tick } from "@/lib/tick";
 
 /**
  * デッキ表示。151枚を「束」として見せ、指で送る。
@@ -435,9 +435,17 @@ export default function DeckView({
   // めくり方は横送りひとつに決めた（選ばせるのはやめた）。
   // 他の作りも FLIPS に残してあるので、変えたくなったらここを差し替える
   flip: flipId = "rail",
+  canMeasure = true,
 }: {
   jobs: Job[];
   flip?: FlipId;
+  /**
+   * いま束の大きさを測ってよいか。
+   * 絞り込みの引き出しが開いているあいだは束が下へ押し下げられるので、
+   * そのときに測ると「引き出しのぶん狭い画面」を測ってしまう。
+   * 閉じるまで測らず、閉じた瞬間に測り直す。
+   */
+  canMeasure?: boolean;
 }) {
   const router = useRouter();
   const { lang } = useLang();
@@ -509,10 +517,17 @@ export default function DeckView({
    * 「使える高さ」を --deck-avail としてCSSに渡す。
    * カードの幅を変えても上端と操作系の高さは動かないので、1回測れば足りる。
    */
+  const canMeasureRef = useRef(canMeasure);
+  canMeasureRef.current = canMeasure;
+  /** 測り直しを外から呼べるように持っておく */
+  const fitRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
+    let lastAvail = 0;
     const fit = () => {
+      if (!canMeasureRef.current) return;
       const box = el.getBoundingClientRect();
       // ページの上端から束の上端まで（巻き上げていても同じ値になるように scrollY を足す）
       const top = box.top + window.scrollY;
@@ -523,18 +538,34 @@ export default function DeckView({
       const bar = document.querySelector("nav.fixed.bottom-0");
       const barH = bar ? bar.getBoundingClientRect().height : 0;
       // 8px は下のふちに貼り付かせないための余白
-      const avail = window.innerHeight - top - ctrl - barH - 8;
-      el.style.setProperty("--deck-avail", `${Math.max(200, Math.round(avail))}px`);
+      const avail = Math.max(
+        200,
+        Math.round(window.innerHeight - top - ctrl - barH - 8)
+      );
+      if (avail === lastAvail) return;
+      lastAvail = avail;
+      el.style.setProperty("--deck-avail", `${avail}px`);
+      // 幅が変わったのだから、並べる間隔も測り直す。
+      // ここを忘れると、小さくなったカードを大きいままの間隔で並べてしまい、
+      // 重なっていた列に隙間が空く（絞り込みの引き出しを開けたまま絞ったときに出た）
+      measureRef.current();
     };
+    fitRef.current = fit;
     fit();
-    // ヒーローの畳み方や書体の読み込みで上端が動くので、落ち着いてからもう一度測る。
-    // ResizeObserver は使わない。束が縮むと版面も縮むので、観測が自分を呼び戻す形になる。
+    // ヒーローの畳み方や書体の読み込みで上端が動くので、落ち着いてからもう一度測る
     const t = setTimeout(fit, 250);
     document.fonts?.ready.then(fit);
     window.addEventListener("resize", fit);
+    // 絞り込みの引き出しが開け閉めされると、束の上端そのものが動く。
+    // 版面の高さの変化を見て測り直す。
+    // 束自身の大きさは avail の計算に入っていない（上端も操作系の高さも束の外）ので、
+    // 観測が自分を呼び戻して振動することはない。同じ値なら上で打ち切ってもいる
+    const ro = new ResizeObserver(() => fit());
+    ro.observe(document.body);
     return () => {
       clearTimeout(t);
       window.removeEventListener("resize", fit);
+      ro.disconnect();
     };
   }, []);
 
@@ -613,6 +644,17 @@ export default function DeckView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 引き出しが閉じて束が元の位置に戻ったところで測り直す
+  useEffect(() => {
+    if (canMeasure) fitRef.current();
+  }, [canMeasure]);
+
+  /**
+   * 幅の測り直し。--deck-avail を書き換えたあとにも呼ぶ必要があるので、
+   * 効果の外から触れるように持っておく
+   */
+  const measureRef = useRef<() => void>(() => {});
+
   /** 幅を測っておく（毎フレーム測らない）。送りに要る距離も画面の大きさに比例させる */
   useLayoutEffect(() => {
     const measure = () => {
@@ -624,6 +666,7 @@ export default function DeckView({
       );
       paint();
     };
+    measureRef.current = measure;
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
@@ -705,6 +748,9 @@ export default function DeckView({
       const from = posRef.current;
       const d = Math.abs(target - from);
       const dur = Math.min(300 + 55 * d, 950);
+      // 何枚も送るときだけ、下に回転音を敷く。
+      // 1〜2枚で鳴らすと、ただ隣へ動かしただけで大袈裟になる
+      if (d >= 3) spinSound(d, dur);
       const t0 = performance.now();
       const tick = (now: number) => {
         const t = Math.min((now - t0) / dur, 1);
