@@ -2,6 +2,9 @@ import AppKit
 
 let app = NSApplication.shared
 
+// 自己点検（決まりごとが壊れていないか。ビルドのたびに走る）
+_ = SelfTest.handle(CommandLine.arguments)
+
 // 見た目の検証用モード（画面に出さずPNGを書き出して終了）
 if Snapshot.handle(CommandLine.arguments) {
     exit(0)

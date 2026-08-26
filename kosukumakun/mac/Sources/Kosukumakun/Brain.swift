@@ -95,6 +95,8 @@ final class Brain {
     private var peekOffsetX: CGFloat = 0     // 窓の左端からの相対位置。窓が動いても保つ
     private var peekOffsetY: CGFloat = 0     // 横の縁のときの、窓の下端からの相対位置
     private var peekKind: WindowEdges.Kind = .top
+    /// 乗っている窓を番号で引けなかった回数。**1回で落とさない。**
+    private var peekLost = 0
     /// 横の縁で、体のどれだけを外に出すか
     private let peekColsRatio: CGFloat = 0.70
     /// 顔出しのとき、上から何行ぶん見せるか（頭＋耳＋前足まで）
@@ -198,6 +200,11 @@ final class Brain {
         autoPeekArmed = false
         express(.wide, seconds: 0.8)
     }
+
+    /// いま何かに貼り付いているか。**窓の縁だけでなく、画面の壁も含める。**
+    /// 壁を伝っているときの見た目は縁のぞきと同じなので、使う人には区別がつかない。
+    /// 触ったときの反応も揃えないと辻褄が合わない。
+    var isPerched: Bool { state == .peek || (state == .idle && rollSide != 0) }
 
     /// いま画面の中にちゃんと居るか。半分でも見えていれば居るとみなす。
     func isVisible(on screens: [NSScreen]) -> Bool {
@@ -390,10 +397,6 @@ final class Brain {
         // 画面の大きさは身長と関係ないので、下限を絶対値で入れる。
         let catchRange = max(displayHeight * 1.6, 200)
         let edgeFound = WindowEdges.topEdgeNear(pos, tolerance: catchRange)
-        // 手放した瞬間の判定を必ず記録する。画面を見られないので、
-        // ここに残っている事実だけが頼りになる（~/kosukuma-drop.log）
-        DropLog.write(pos: pos, speed: hypot(v.dx, v.dy), gentle: gentle, edge: edgeFound,
-                      height: displayHeight)
         // 上端に乗ると、こすくまくんは縁より上に出る。
         // ターミナルのように画面いっぱいの窓だと、そこに出せる高さが残っていない。
         // **乗せないのではなく、入るぶんだけ顔を出す**（少しだけひょこっと覗く形になる）。
@@ -411,6 +414,16 @@ final class Brain {
         }
         // 上端で拾えなければ、左右の縁も見る
         let sideFound = topOK == nil ? WindowEdges.sideEdgeNear(pos, tolerance: catchRange * 0.7) : nil
+
+        // 手放した瞬間の判定を、**結果まで** 記録する。画面を直接見られないので、
+        // ここに残っている事実だけが頼りになる（~/kosukuma-drop.log）
+        let landed = !gentle ? "投げた（初速が大きい）"
+            : topOK != nil ? "上端に乗った"
+            : sideFound != nil ? "横の縁に乗った"
+            : "どこにも乗らず落ちた"
+        DropLog.write(pos: pos, speed: hypot(v.dx, v.dy), gentle: gentle,
+                      top: edgeFound, side: sideFound, landed: landed,
+                      height: displayHeight)
 
         if gentle, let edge = topOK ?? sideFound {
             peekKind = edge.kind
@@ -676,6 +689,7 @@ final class Brain {
         if peekCheck <= 0 {
             peekCheck = 0.1        // 1つの窓を見るだけなので軽い
             if let e = WindowEdges.edge(ofWindow: peekWindow) {
+                peekLost = 0
                 switch peekKind {
                 case .top:
                     peekY = e.rect.maxY
@@ -690,7 +704,15 @@ final class Brain {
                     peekY = min(max(e.rect.minY + peekOffsetY, e.rect.minY + displayHeight * 0.25),
                                 e.rect.maxY - displayHeight * 0.25)
                 }
-            } else {
+            } else if !recatch() {
+                // **すぐには落とさない。**
+                // Chrome や Finder は、見た目ひとつの窓を中でいくつにも分けていて、
+                // 作り直されると番号が変わる。番号が引けないだけで落とすと、
+                // 何もしていないのに突然落ちたように見える（実際そうなった）。
+                // 同じ場所に縁がまだ有れば乗り直し、2回続けて見つからなければ落ちる。
+                peekLost += 1
+                if peekLost < 3 { return }
+                peekLost = 0
                 state = .thrown
                 vel = CGVector(dx: 0, dy: -30)
                 express(.wide, seconds: 0.6)
@@ -699,6 +721,29 @@ final class Brain {
             }
         }
         pos.y = peekY
+    }
+
+    /// 乗っていた縁を、いまの場所から探し直す。見つかれば番号を付け替えて乗り続ける。
+    private func recatch() -> Bool {
+        let near = peekKind == .top
+            ? WindowEdges.topEdgeNear(pos, tolerance: displayHeight * 0.6)
+            : WindowEdges.sideEdgeNear(pos, tolerance: displayHeight * 0.4)
+        guard let e = near else { return false }
+        peekWindow = e.id
+        peekKind = e.kind
+        peekLost = 0
+        switch e.kind {
+        case .top:
+            peekY = e.rect.maxY
+            peekOffsetX = pos.x - e.rect.minX
+        case .left:
+            pos.x = e.rect.minX
+            peekOffsetY = pos.y - e.rect.minY
+        case .right:
+            pos.x = e.rect.maxX
+            peekOffsetY = pos.y - e.rect.minY
+        }
+        return true
     }
 
     private func updateDrag(_ dt: CGFloat) {

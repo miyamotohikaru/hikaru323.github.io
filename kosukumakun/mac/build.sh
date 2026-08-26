@@ -74,5 +74,15 @@ else
   codesign --force --sign - "$APP"
 fi
 
+# **自己点検を必ず通す。**
+# 人の目で見て分かるバグばかりではない（実際、押しても剥がれないはずの子が
+# 剥がれていたのに、画面を見ているだけでは気づけなかった）。
+# ここで落ちたらビルドは失敗にする。中身は SelfTest.swift。
+echo "  self test ..."
+if ! "$APP/Contents/MacOS/$NAME" --selftest; then
+  echo "✗ 自己点検で落ちました。直すまでこのビルドは配らないこと。" >&2
+  exit 1
+fi
+
 SIZE=$(du -sh "$APP" | cut -f1)
 echo "✓ $APP  ($SIZE)"

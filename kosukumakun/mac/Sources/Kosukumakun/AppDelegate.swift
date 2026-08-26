@@ -22,6 +22,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var peekTapFrom: CGPoint?
     /// のぞいたまま縁に沿って動かしたか（動かしていたら、離しても場所は変えない）
     private var peekMoved = false
+    /// ウィンドウの縁に乗っている時に押し始めた場所。
+    /// **動かすまで つまみ上げない。** 押しただけで持ち上げると、離したときに
+    /// 乗り直せず落ちてしまう（タップのつもりが「つまんで落とす」になっていた）。
+    private var perchFrom: CGPoint?
     private weak var peekItem: NSMenuItem?
     private weak var pauseItem: NSMenuItem?
     private var lastPointer = CGPoint.zero
@@ -173,10 +177,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         peekTapFrom = nil
         dragging = true
+        // 貼り付いている間は、まだ つまみ上げない。動かしたら つまみ上げる。
+        // **窓の縁だけでなく、画面の壁も同じ扱いにする。**
+        // 見た目が同じなので、片方だけ剥がれると挙動が読めない
+        // （実際、壁に貼り付いている子をタップして落ちていた）。
+        if brain.isPerched {
+            perchFrom = p
+            return
+        }
         brain.beginDrag(at: p)
     }
 
     private func mouseDragged(_ p: CGPoint) {
+        // 縁に乗ったまま押していた指が動いた。ここで初めて つまみ上げる。
+        if let from = perchFrom {
+            guard hypot(p.x - from.x, p.y - from.y) > 6 else { return }
+            perchFrom = nil
+            brain.beginDrag(at: from)
+        }
         // のぞいている最中は、縁から剥がさずに **その縁に沿って動かす**。
         // つかんで放り出したいときは、右クリックの「のぞくのをやめる」から。
         if peekTapFrom != nil, brain.state == .screenPeek {
@@ -189,6 +207,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func mouseUp(_ p: CGPoint) {
         dragging = false
+        // 動かさずに離した＝ただのタップ。乗ったままにする。
+        if perchFrom != nil {
+            perchFrom = nil
+            return
+        }
         if peekTapFrom != nil {
             peekTapFrom = nil
             brain.endScreenPeekMove()

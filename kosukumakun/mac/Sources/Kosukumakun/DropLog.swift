@@ -7,13 +7,21 @@ enum DropLog {
     private static let url = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("kosukuma-drop.log")
 
+    /// - Parameters:
+    ///   - top: 上端の判定
+    ///   - side: 左右の縁の判定
+    ///   - landed: 結局どうなったか。**ここが無かったせいで、上端が無いだけの行を
+    ///     「落ちた」と読み違えた。** 何が起きたかは、結果まで書いて初めて分かる。
     static func write(pos: CGPoint, speed: CGFloat, gentle: Bool,
-                      edge: WindowEdges.Edge?, height: CGFloat) {
+                      top: WindowEdges.Edge?, side: WindowEdges.Edge?, landed: String,
+                      height: CGFloat) {
         let flip = NSScreen.screens.first?.frame.maxY ?? 0
         var lines = ["--- 手放した \(Date()) ---",
                      "  足元 = (\(Int(pos.x)), \(Int(pos.y)))  初速 = \(Int(speed))  乗る条件=\(gentle)",
                      "  画面の高さ = \(Int(flip))  表示身長 = \(Int(height))",
-                     "  判定 = " + (edge.map { "上端Y=\(Int($0.y)) x=\(Int($0.x0))..\(Int($0.x1)) 窓#\($0.id)" } ?? "乗らない")]
+                     "  上端 = " + (top.map { "Y=\(Int($0.y)) x=\(Int($0.x0))..\(Int($0.x1)) 窓#\($0.id)" } ?? "なし"),
+                     "  左右 = " + (side.map { "\($0.kind) x=\(Int($0.x0))..\(Int($0.x1)) 窓#\($0.id)" } ?? "なし"),
+                     "  結果 = \(landed)"]
 
         // その時点のウィンドウの重なりも一緒に残す
         let opts: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
