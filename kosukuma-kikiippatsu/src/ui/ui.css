@@ -303,6 +303,33 @@
   -webkit-backdrop-filter: blur(6px);
   animation: pop-in 0.35s var(--spring) both;
 }
+/* 待ちが明けた合図。一拍だけ金色に灯って、ふわっと消える。
+   同じ瞬間にこすくまくんが伸び上がって鈴が鳴るので、色と動きをそちらに寄せる */
+.cooldown-pill.is-ready {
+  border-color: rgba(255, 217, 61, 0.55);
+  color: var(--accent);
+  box-shadow: 0 0 18px rgba(255, 217, 61, 0.28);
+  animation:
+    cd-ready-pop 0.42s var(--spring) both,
+    cd-ready-out 0.36s ease 1.14s both;
+}
+.cooldown-pill.is-ready .ring-fg {
+  stroke: var(--accent);
+}
+@keyframes cd-ready-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@keyframes cd-ready-out {
+  to { opacity: 0; transform: translateY(-6px) scale(0.94); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cooldown-pill.is-ready {
+    animation: cd-ready-out 0.3s ease 1.2s both;
+  }
+}
+
 .cooldown-pill b {
   color: var(--accent);
   font-size: 1.3em;

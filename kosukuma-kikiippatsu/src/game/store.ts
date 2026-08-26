@@ -28,7 +28,7 @@ import {
   T_SUSPENSE,
   T_TROPHY,
 } from "@/lib/config";
-import { base64ToMask, emptyMask, getBit } from "@/lib/bitmask";
+import { base64ToMask, emptyMask, getBit, maskToBase64 } from "@/lib/bitmask";
 import { charmOf, packStyle, skinOf } from "@/lib/style";
 import type {
   ClaimResponse,
@@ -222,6 +222,23 @@ export function getFingerprint(): string {
 }
 
 /**
+ * デモ(?demo=watch): 「他の人が当てて、こすくまくんが飛んでいくのを見ている側」の
+ * 画面をその場で再生する。サーバーには一切書き込まない(記録は残らない)。
+ * ふだんはポーリングで roundNo が進んだのを見つけたときにだけ起きる画面なので、
+ * ひとりで確認するには こうして呼び出す口が要る。
+ */
+function isDemoWatch(): boolean {
+  try {
+    return (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("demo") === "watch"
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * デモモード(?demo=win): 刺すと必ず「当たり」になり、発射〜トロフィー授与を
  * 体験できる。サーバーには一切書き込まない(記録は残らない)。
  */
@@ -237,6 +254,39 @@ function isDemoWin(): boolean {
 }
 
 const DEMO_TOKEN = "demo";
+
+/**
+ * ?demo=watch で流す「誰かが当てた直後」の偽スナップショット。
+ * 本物のポーリング応答と同じ形にしておくと、あとの流れ(観客カットシーン →
+ * 降臨 → idle)がそのまま本番の道を通る。サーバーへは書き込まない。
+ */
+function demoWatchState(cur: {
+  roundNo: number;
+  stabCount: number;
+  recent: StateResponse["recent"];
+}): StateResponse {
+  const round = Math.max(1, cur.roundNo);
+  return {
+    // 代は進めない。進めると applyState の巻き戻しガードに引っかかって
+    // 以後のポーリングが全部無視されてしまう(デモのあと画面が止まる)
+    roundNo: round,
+    startedAt: new Date().toISOString(),
+    stabCount: cur.stabCount,
+    // 空文字だと長さ0の配列になって、刺さっている剣が全部消える
+    holesBase64: maskToBase64(emptyMask()),
+    stabColorsBase64: "",
+    stabStylesBase64: "",
+    recent: cur.recent,
+    prevWinner: {
+      roundNo: round,
+      name: "だれか",
+      country: "JP",
+      wonAt: new Date().toISOString(),
+      holeId: 512,
+      stabCount: cur.stabCount,
+    },
+  };
+}
 
 /** この代の自分の刺しをlocalStorageに保存(ラウンドが変わったら空になる) */
 function loadMyStabs(roundNo: number): number[] {
@@ -712,6 +762,12 @@ export const useGameStore = create<GameState>((set, get) => {
       if (get().phase !== "title") return;
       emitGameEvent("ui-tap");
       setPhase("idle");
+      // ?demo=watch: 月をながめていたら誰かが当てた、という画面を再生する
+      if (isDemoWatch()) {
+        setTimeout(() => {
+          if (get().phase === "idle") playSpectatorLaunch(demoWatchState(get()));
+        }, 1200);
+      }
     },
 
     setReady3d: () => set({ ready3d: true }),

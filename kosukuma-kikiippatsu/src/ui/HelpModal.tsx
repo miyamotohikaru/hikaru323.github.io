@@ -2,6 +2,7 @@
 
 // あそびかたモーダル。Hud の ❓ ボタンから開閉する。
 
+import { COOLDOWN_SEC } from "@/lib/config";
 import "./ui.css";
 
 interface HelpModalProps {
@@ -20,6 +21,9 @@ const GEAR = [
   { icon: "🎨", text: "けんの いろは 8しょくから えらべるよ" },
   { icon: "🏅", text: "10本 刺すごとに チャームが 1こ ふえる(ぜんぶで12こ)" },
   { icon: "✨", text: "こすくまくんを とばすと、ぎん・きんの けんが つかえるよ" },
+  // つついて揺らせることは、待ち時間のセリフでしか伝わらない。
+  // 刺したことのない人にも気づいてもらうため、ここに1行おく
+  { icon: "👆", text: "こすくまくんは つつけるよ" },
 ] as const;
 
 export default function HelpModal({ open, onClose }: HelpModalProps) {
@@ -55,7 +59,9 @@ export default function HelpModal({ open, onClose }: HelpModalProps) {
             </li>
           ))}
         </ul>
-        <p className="help-cooldown">⏱️ 1分に1回だけ 刺せるよ</p>
+        <p className="help-cooldown">
+          ⏱️ {COOLDOWN_SEC}びょうに1回だけ 刺せるよ
+        </p>
         <button type="button" className="btn btn-primary" onClick={onClose}>
           とじる
         </button>
