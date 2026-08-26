@@ -24,7 +24,6 @@ final class Brain {
         case sleep         // 丸まって寝ている
         case peek          // ウィンドウの縁に乗って顔だけ出している
         case screenPeek    // 画面のはしから のぞいている（動画を見ているときなど）
-        case meeting       // 会議モード。カーソルのそばで指して、言葉を見せる
     }
 
     /// 画面のはしからのぞく4通り。タップするたびにこの順で移る。
@@ -84,8 +83,6 @@ final class Brain {
     /// メニューバーやDockも含む、画面まるごとの矩形。
     /// 下のふちからのぞくときは **Dockの下＝いちばん下** に置きたいので必要。
     private var lastFullScreen = NSRect(x: 0, y: 0, width: 1440, height: 900)
-    /// 会議モードで出している言葉の番号
-    private(set) var meetingLine = 0
     /// カーソルのスクリーン座標（矢印を向ける先）
     private(set) var pointer = CGPoint.zero
     private var tapHold: CGFloat = 0       // 叩いて沈んでいる残り時間
@@ -135,6 +132,13 @@ final class Brain {
     var screenPeekAfter: CGFloat = 45
     /// 手が止まったら自分で はしへ どくか。切ると、こちらから言ったときだけ のぞく。
     var autoScreenPeek = true
+    /// 自動でのぞきに行っていいか。
+    ///
+    /// **こちらから「定位置にもどす」「のぞくのをやめる」と言ったら、いったん降ろす。**
+    /// これが無いと、放置45秒を過ぎている間は降ろした次のフレームで
+    /// また はしへ登ってしまい、メニューが効かないように見える（実際そうなった）。
+    /// また打ち始めた＝仕事に戻った時にだけ、もう一度 自動でのぞくようになる。
+    private var autoPeekArmed = true
 
     // MARK: - 外から呼ぶ操作
 
@@ -191,6 +195,7 @@ final class Brain {
         dragPull = 0
         lift = 0
         jellyT = 0
+        autoPeekArmed = false
         express(.wide, seconds: 0.8)
     }
 
@@ -250,6 +255,7 @@ final class Brain {
         state = .thrown
         stateTime = 0
         vel = CGVector(dx: 0, dy: -20)
+        autoPeekArmed = false
         // さかさまや横向きのまま落ちないように、姿勢はここで戻す
         express(.wide, seconds: 0.6)
     }
@@ -299,61 +305,6 @@ final class Brain {
             pos = CGPoint(x: along(s.minX + m, s.maxX - m, s.midX), y: lastFullScreen.minY)
         }
         ground = s.minY + 6
-    }
-
-    // MARK: - 会議モード
-
-    var isMeeting: Bool { state == .meeting }
-
-    /// カーソルの位置をステージ座標で返す（矢印の向き先に使う）
-    var pointerInStage: CGPoint {
-        guard let h = host else { return .zero }
-        return CGPoint(x: h.footInStage.x + (pointer.x - pos.x),
-                       y: h.footInStage.y + (pointer.y - pos.y))
-    }
-
-    /// 会議モードに入る／出る。
-    ///
-    /// 画面を共有しているあいだの姿。カーソルのそばに付いていって、
-    /// そちらを指し、short い言葉を出す。寝ないし、勝手にも動かない。
-    func toggleMeeting() {
-        if state == .meeting {
-            state = .idle
-            stateTime = 0
-            thought = nil
-            thoughtLeft = 0
-            jellyT = 0
-        } else {
-            state = .meeting
-            stateTime = 0
-            vel = .zero
-            rollSide = 0
-            rollDir = 0
-            scrollT = 0
-            peekWindow = 0
-            express(.happy, seconds: 1.2)
-        }
-    }
-
-    /// タップで次の言葉へ
-    func nextMeetingLine() {
-        guard state == .meeting else { return }
-        meetingLine += 1
-        express(.happy, seconds: 0.8)
-    }
-
-    /// カーソルのそばに付いていく。カーソルの **左下** に、少し離れて立つ。
-    /// 真下だと指す先が自分の頭で隠れる。
-    private func updateMeeting(_ dt: CGFloat, _ a: Activity, screen: NSRect) {
-        let h = displayHeight
-        // 体1つぶん離れて立つ。近すぎると、指す矢印が自分の耳に重なって読めない。
-        var target = CGPoint(x: a.pointer.x - h * 0.95, y: a.pointer.y - h * 1.25)
-        target.x = max(screen.minX + h * 0.45, min(screen.maxX - h * 0.45, target.x))
-        target.y = max(screen.minY + 6, min(screen.maxY - h * 1.45, target.y))
-        pos = approach(pos, target, rate: 6, dt: dt)
-        facingRight = a.pointer.x >= pos.x
-        // 言葉は出しっぱなし。会議のあいだ ずっと読めるように毎コマ入れ直す。
-        think(MeetingLines.line(meetingLine), seconds: 1, big: true)
     }
 
     /// メニューから寝かせる
@@ -516,6 +467,8 @@ final class Brain {
         // **打鍵1回につき1回だけ叩く。** 以前は自前の振動で動かしていたので、
         // 実際の打鍵と無関係に速く動いてしまっていた。
         typing = activity.isTyping
+        // 打ち始めた＝仕事に戻った。ここで初めて、また自動でのぞきに行けるようにする。
+        if typing { autoPeekArmed = true }
         if lastStrokes < 0 { lastStrokes = activity.strokes }
         if activity.strokes != lastStrokes {
             lastStrokes = activity.strokes
@@ -578,7 +531,7 @@ final class Brain {
         }
         // 打つのをやめてしばらく経ったら、寝る前にいったん画面のはしへどく。
         // 「使ってはいるが打っていない」＝動画を見ているような時間のための姿。
-        if autoScreenPeek, state == .idle, rollSide == 0, !typing,
+        if autoScreenPeek, autoPeekArmed, state == .idle, rollSide == 0, !typing,
            activity.idle > screenPeekAfter, activity.idle < sleepAfter {
             enterScreenPeek(.top)
         }
@@ -598,7 +551,6 @@ final class Brain {
         case .sleep:   break
         case .peek:    updatePeek(dt)
         case .screenPeek: break
-        case .meeting: updateMeeting(dt, activity, screen: screen)
         }
 
         for b in behaviors.sorted(by: { $0.priority > $1.priority }) {
@@ -887,13 +839,6 @@ final class Brain {
                 f.peekSide = (peekKind == .left) ? -1 : 1
                 f.faceRight = (peekKind == .left)
             }
-
-        case .meeting:
-            // カーソルの方へ体を向ける。指すのは矢印（PointingBehavior）の役目で、
-            // 体は「そちらを見ている」だけにする。腕を描き足すと別のくまになる。
-            f.sprite = closed ? "blink" : "idle"
-            f.look = pointer.x > pos.x + displayHeight * 0.1 ? 1
-                : (pointer.x < pos.x - displayHeight * 0.1 ? -1 : 0)
 
         case .screenPeek:
             edgeLook(&f, screenPeek, closed: closed)

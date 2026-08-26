@@ -17,6 +17,17 @@ final class PetWindow: NSPanel {
     /// ステージ内で「足元」に当たる点
     static let anchor = CGPoint(x: stage.width / 2, y: 240)
 
+    /// どのデスクトップに切り替えても付いてくるための指定。
+    ///
+    /// **一度言うだけでは足りない。** 分割表示のスペースを出入りしたり、
+    /// スリープから戻ったり、画面の構成が変わったりすると この指定が外れて、
+    /// 窓が1つのスペースに縛られる。そうなると、メニューバーの絵だけ付いてきて
+    /// こすくまくん本体は別のデスクトップに取り残される
+    /// （6日動かしっぱなしにしたら、実際に分割表示のスペースへ置き去りになっていた）。
+    /// 言い直せば全部のスペースに戻ることは確認済みなので、折を見て言い直す。
+    static let allSpaces: NSWindow.CollectionBehavior =
+        [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+
     let petView: PetView
 
     init() {
@@ -32,7 +43,7 @@ final class PetWindow: NSPanel {
         // 既定の .floating だと Dock の方が手前で、下からのぞく姿が隠れてしまう。
         // メニューバー（24以上）より下なので、上のふちは今までどおり その下に出る。
         level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.dockWindow)) + 1)
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+        collectionBehavior = PetWindow.allSpaces
         isMovableByWindowBackground = false
         ignoresMouseEvents = true
         hidesOnDeactivate = false
@@ -40,6 +51,32 @@ final class PetWindow: NSPanel {
         contentView = petView
         // 画面収録・スクショに写ってもいいが、ミッションコントロールでは目立たせない
         animationBehavior = .none
+        watchSpaces()
+    }
+
+    deinit {
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    /// 迷子になりうる場面を見張って、そのたびに「全部のスペースに居る」と言い直す。
+    private func watchSpaces() {
+        let ws = NSWorkspace.shared.notificationCenter
+        ws.addObserver(self, selector: #selector(rejoinAllSpaces),
+                       name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+        ws.addObserver(self, selector: #selector(rejoinAllSpaces),
+                       name: NSWorkspace.didWakeNotification, object: nil)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(rejoinAllSpaces),
+            name: NSApplication.didChangeScreenParametersNotification, object: nil)
+    }
+
+    /// 全部のスペースに居る指定を付け直して、前に出し直す。
+    /// **隠している時（かくれてもらう）は出さない。** ここで出すと、
+    /// 隠したはずのこすくまくんが勝手に戻ってきてしまう。
+    @objc private func rejoinAllSpaces() {
+        collectionBehavior = PetWindow.allSpaces
+        if isVisible { orderFrontRegardless() }
     }
 
     override var canBecomeKey: Bool { false }

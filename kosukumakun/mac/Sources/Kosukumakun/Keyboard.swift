@@ -69,7 +69,6 @@ final class KeyboardBehavior: PetBehavior {
             && brain.state != .thrown
             && brain.state != .peek
             && brain.state != .screenPeek
-            && brain.state != .meeting
 
         if active != shown {
             shown = active

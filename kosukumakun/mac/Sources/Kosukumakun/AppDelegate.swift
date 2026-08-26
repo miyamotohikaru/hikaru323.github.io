@@ -13,7 +13,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let keyboard = KeyboardBehavior()
     private let zzz = ZzzBehavior()
     private let rolling = RollingBehavior()
-    private let pointing = PointingBehavior()
 
     private var timer: DispatchSourceTimer?
     private var lastTick = CACurrentMediaTime()
@@ -23,10 +22,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var peekTapFrom: CGPoint?
     /// のぞいたまま縁に沿って動かしたか（動かしていたら、離しても場所は変えない）
     private var peekMoved = false
-    /// 会議モードで押し始めた場所。動かさずに離したら次の言葉へ。
-    private var meetTapFrom: CGPoint?
-    private weak var meetingItem: NSMenuItem?
     private weak var peekItem: NSMenuItem?
+    private weak var pauseItem: NSMenuItem?
     private var lastPointer = CGPoint.zero
     private var hoverTime: CGFloat = 0
     private var cursorNear = false
@@ -48,8 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NotificationCenter.default.addObserver(
             self, selector: #selector(settingsChanged), name: .kosuSettingsChanged, object: nil)
 
-        let vf = (NSScreen.main ?? NSScreen.screens[0]).visibleFrame
-        brain.setStart(CGPoint(x: vf.midX, y: vf.minY + 6))
+        brain.setStart(homePoint())
 
         window.orderFrontRegardless()
         buildStatusItem()
@@ -175,14 +171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else {
             lastTapAt = now
         }
-        // 会議モードも同じで、タップは「次の言葉へ」
-        if brain.isMeeting {
-            meetTapFrom = p
-            dragging = true
-            return
-        }
         peekTapFrom = nil
-        meetTapFrom = nil
         dragging = true
         brain.beginDrag(at: p)
     }
@@ -195,11 +184,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if peekMoved { brain.moveScreenPeek(to: p) }
             return
         }
-        if let from = meetTapFrom {
-            guard hypot(p.x - from.x, p.y - from.y) > 6 else { return }
-            meetTapFrom = nil
-            brain.beginDrag(at: from)
-        }
         brain.moveDrag(to: p)
     }
 
@@ -211,11 +195,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             // 動かさずに離した＝次ののぞき場所へ。動かしたなら、その場所のまま。
             if !peekMoved { brain.cycleScreenPeek() }
             peekMoved = false
-            return
-        }
-        if meetTapFrom != nil {
-            meetTapFrom = nil
-            brain.nextMeetingLine()
             return
         }
         brain.endDrag()
@@ -247,10 +226,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         m.addItem(off)
 
         m.addItem(.separator())
-        let meet = NSMenuItem(title: "会議モード", action: #selector(toggleMeeting), keyEquivalent: "")
-        meet.target = self
-        meet.state = brain.isMeeting ? .on : .off
-        m.addItem(meet)
         let back = NSMenuItem(title: "定位置にもどす", action: #selector(recall), keyEquivalent: "")
         back.target = self
         m.addItem(back)
@@ -282,9 +257,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let m = NSMenu()
         m.addItem(withTitle: "こすくまくん", action: nil, keyEquivalent: "")
         m.addItem(.separator())
-        let hide = NSMenuItem(title: "そっとしておく", action: #selector(togglePause), keyEquivalent: "")
+        let hide = NSMenuItem(title: "かくれてもらう", action: #selector(togglePause), keyEquivalent: "")
         hide.target = self
         m.addItem(hide)
+        pauseItem = hide
         let back = NSMenuItem(title: "定位置にもどす", action: #selector(recall), keyEquivalent: "r")
         back.target = self
         m.addItem(back)
@@ -293,10 +269,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         peek.target = self
         m.addItem(peek)
         peekItem = peek
-        let meet = NSMenuItem(title: "会議モード", action: #selector(toggleMeeting), keyEquivalent: "m")
-        meet.target = self
-        m.addItem(meet)
-        meetingItem = meet
         let sleep = NSMenuItem(title: "おやすみ", action: #selector(forceSleep), keyEquivalent: "")
         sleep.target = self
         m.addItem(sleep)
@@ -321,13 +293,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let peeking = brain.state == .screenPeek
         peekItem?.title = peeking ? "画面のはしからのぞくのを やめる" : "画面のはしからのぞく"
         peekItem?.state = peeking ? .on : .off
-        meetingItem?.title = brain.isMeeting ? "会議モードを やめる" : "会議モード"
-        meetingItem?.state = brain.isMeeting ? .on : .off
     }
 
     @objc private func togglePause(_ sender: NSMenuItem) {
-        paused.toggle()
-        sender.title = paused ? "出てきてもらう" : "そっとしておく"
+        setPaused(!paused)
+    }
+
+    /// かくれてもらう／出てきてもらう。
+    /// **窓の出し入れと時計の止め方を必ず一緒に動かす。** 片方だけ動かすと、
+    /// 「窓は出ているのに時計が止まっている＝出てきたのに固まっている」状態が作れてしまう。
+    private func setPaused(_ p: Bool) {
+        paused = p
+        pauseItem?.title = paused ? "出てきてもらう" : "かくれてもらう"
         window.setIsVisible(!paused)
         setFPS(paused ? 0 : 30)
     }
@@ -336,18 +313,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func toggleScreenPeek() { brain.toggleScreenPeek() }
 
-    @objc private func toggleMeeting() {
-        brain.toggleMeeting()
-        meetingItem?.state = brain.isMeeting ? .on : .off
-    }
+    /// いつもの立ち位置（メインの画面の下・右のほう）。
+    ///
+    /// まんなかは、作業している窓のちょうど前に立つことになって邪魔だった。
+    /// **右のはしからの距離で決める。** 画面の幅で割った比率にすると、
+    /// 画面が広い時ほど右へ寄って、いつもの見え方が変わってしまう。
+    private static let homeInsetFromRight: CGFloat = 186
 
-    /// いつもの立ち位置（メインの画面の下・まんなか）
     private func homePoint() -> CGPoint {
         let vf = (NSScreen.main ?? NSScreen.screens[0]).visibleFrame
-        return CGPoint(x: vf.midX, y: vf.minY + 6)
+        // 狭い画面でも画面の外へ出ないように、左半分より左には行かせない
+        let x = max(vf.midX, vf.maxX - AppDelegate.homeInsetFromRight)
+        return CGPoint(x: x, y: vf.minY + 6)
     }
 
     @objc private func recall() {
+        // かくれてもらっている最中に呼ばれたら、隠したままにしない。
+        // 窓だけ出して時計を止めたままだと、出てきたのに動かないように見える。
+        if paused { setPaused(false) }
         brain.recall(to: homePoint())
         window.orderFrontRegardless()
     }
@@ -380,7 +363,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // 設定で切ったら、いまのぞいている子も降ろす（これが「解除」になる）
         if !s.autoScreenPeek, brain.state == .screenPeek { brain.leaveScreenPeek() }
 
-        brain.behaviors = [thought, reminders, keyboard, zzz, rolling, pointing]
+        brain.behaviors = [thought, reminders, keyboard, zzz, rolling]
     }
 
     @objc private func togglePomodoro(_ sender: NSMenuItem) {

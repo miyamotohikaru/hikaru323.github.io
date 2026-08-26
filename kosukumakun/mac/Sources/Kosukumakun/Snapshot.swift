@@ -423,28 +423,6 @@ enum Snapshot {
             if brain.screenPeek != want { brain.enterScreenPeek(want) }
         }, footAt: { brain in brain.pos })
 
-        // --- 会議モード（カーソルを指して言葉を見せる）------------------------
-        let pointing = PointingBehavior()
-        let thought2 = ThoughtBehavior()
-        let meetOrbit: (Int) -> CGPoint = { i in
-            let t = CGFloat(i) / 80.0 * 2 * .pi
-            return CGPoint(x: cx + 130 * sin(t), y: 250 + 40 * cos(t))
-        }
-        run("meeting", caps: 40, behaviors: [thought2, pointing], setup: { brain, activity in
-            brain.toggleMeeting()
-            for i in 0..<40 {
-                activity.debugOverride(typingRate: 0, idle: 3, pointer: meetOrbit(i))
-                brain.update(dt: dt, activity: activity, screen: screen)
-            }
-        }, step: { _, activity, i in
-            activity.debugOverride(typingRate: 0, idle: 3, pointer: meetOrbit(i))
-        }, footAt: { brain in
-            CGPoint(x: brain.pos.x, y: brain.pos.y + footY - 6)
-        }, mark: { _, n in
-            let p = meetOrbit(n * every)
-            return ["cursor": [p.x, p.y + footY - 6]]
-        })
-
         // --- 放っておくと 寝る ----------------------------------------------
         let zzz = ZzzBehavior()
         run("sleep", caps: 75, behaviors: [zzz], setup: { brain, activity in
