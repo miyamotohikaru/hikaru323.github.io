@@ -31,13 +31,17 @@ import {
   LAUNCH_ME,
   LAUNCH_OTHER,
   NEW_ROUND,
+  POKE,
+  POKE_MANY,
   RANDOM,
+  READY,
   REMOTE,
   SAFE,
   SKIN,
   STABBING,
   SUSPENSE,
   TRIVIA_EARTH,
+  WAIT,
   pick,
   type Line,
 } from "./lines";
@@ -74,6 +78,17 @@ const REMOTE_CHANCE = 0.55;
 const REMOTE_GAP = 6500;
 /** 地球つつきは15回に1回くらい(つつきは連打されるので控えめに保つ) */
 const EARTH_TAP_CHANCE = 1 / 15;
+/**
+ * こすくまくんを つついたときにしゃべる確率と、その最低間隔。
+ * 地球つつきよりは高い(自分の体を触られている本人なので、無反応だと寂しい)が、
+ * 連打のたびにしゃべると吹き出しが点滅するので、間隔でしっかり止める。
+ */
+const POKE_CHANCE = 0.5;
+const POKE_GAP = 4500;
+/** これより速く続けてつつかれたら「連打されている」と数える(ms) */
+const POKE_STREAK_GAP = 1100;
+/** 何回続けてつつかれたら、たまりかねた言いかたに変わるか */
+const POKE_MANY_AT = 4;
 /** 刺せなかったときに ぼやく確率 */
 const COOLDOWN_CHANCE = 0.7;
 /** あなが残りわずか、と感じはじめる本数 */
@@ -96,6 +111,9 @@ export default function SpeechDirector() {
     let lastAt = 0; // 最後にしゃべった時刻
     let lastHoverAt = 0;
     let lastRemoteAt = 0;
+    let lastPokeAt = 0; // 最後につつかれた時刻(連打を数えるため)
+    let lastPokeSpeakAt = 0;
+    let pokeStreak = 0;
     let pendingSkin = false; // 解放したスキンの話をまだしていない
     let idleTurn = 0; // ひとりごとの通し番号(豆知識・雑談を順番で回すのに使う)
     let idleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -157,14 +175,16 @@ export default function SpeechDirector() {
      * たまにまったく関係ない話。「急に何の話?」が可愛いので、混ぜる比率は
      * 低めにして、出たときに効くようにしている。
      */
-    const idlePool = (few: boolean): Line[] => {
+    const idlePool = (few: boolean, waiting: boolean): Line[] => {
       if (few) return FEW_LEFT;
       // 確率まかせだと「何十回も出ない」ことが普通に起きるので、順番で保証する。
       // 4回に1回が地球の豆知識、4回に1回がまったく関係ない話、残り半分がふだんの話。
       idleTurn++;
       if (idleTurn % 4 === 1) return TRIVIA_EARTH;
       if (idleTurn % 4 === 3) return RANDOM;
-      return IDLE;
+      // つぎに刺せるまでの30秒だけ、ふだんのひとりごとを「待つ人にむけた話」に
+      // 差し替える。豆知識と雑談の枠はそのまま残すので、話題が偏らない
+      return waiting ? WAIT : IDLE;
     };
 
     const tickIdle = () => {
@@ -174,7 +194,10 @@ export default function SpeechDirector() {
         // 残りが少なくなってきたら、そわそわしたセリフを混ぜる
         const few =
           s.stabCount > FEW_LEFT_AT && Math.random() < FEW_LEFT_CHANCE;
-        if (speak(idlePool(few), P.IDLE, T_SPEECH + 900, QUIET_GAP)) return;
+        const waiting = s.cooldownUntil > Date.now();
+        if (speak(idlePool(few, waiting), P.IDLE, T_SPEECH + 900, QUIET_GAP)) {
+          return;
+        }
       }
       armIdle(IDLE_MIN, IDLE_MAX);
     };
@@ -291,6 +314,25 @@ export default function SpeechDirector() {
           break;
         case "earth-boom":
           speak(EARTH_BOOM, P.BIG, 3800);
+          break;
+        case "kosukuma-poke": {
+          // 連打は store に数えさせず、届いた時刻から数える
+          const now = Date.now();
+          pokeStreak = now - lastPokeAt < POKE_STREAK_GAP ? pokeStreak + 1 : 1;
+          lastPokeAt = now;
+          if (now - lastPokeSpeakAt < POKE_GAP) break;
+          const many = pokeStreak >= POKE_MANY_AT;
+          // 連打されているときは確率を通す。「そんなに押さないでよ」は
+          // 押している本人がいちばん見たい反応なので、必ず返す
+          if (!many && Math.random() > POKE_CHANCE) break;
+          if (speak(many ? POKE_MANY : POKE, P.FLAVOR, T_SPEECH, QUIET_GAP)) {
+            lastPokeSpeakAt = now;
+          }
+          break;
+        }
+        case "cooldown-ready":
+          // 待ち時間あけ。UIのピルが消えるのと同時に、本人からも知らせる
+          speak(READY, P.PHASE, 2800);
           break;
         case "error":
           // error は「もう刺さってる」等とも共用。クールダウン中かどうかで見分ける

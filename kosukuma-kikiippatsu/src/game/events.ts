@@ -20,6 +20,8 @@ export type GameEventType =
   | "skin-unlock" // 剣のスキン解放(キラッ)
   | "earth-tap" // 地球をつついた(ポコッ)
   | "earth-boom" // 地球が1000回で爆発
+  | "kosukuma-poke" // こすくまくんをつついた(ぽふっ)
+  | "cooldown-ready" // つぎの1本が刺せるようになった(待ち時間あけ)
   | "error"; // 失敗トースト(クールダウン/先を越された等)
 
 type Listener = (type: GameEventType) => void;

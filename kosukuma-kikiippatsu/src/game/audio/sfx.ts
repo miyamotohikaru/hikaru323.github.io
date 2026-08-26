@@ -1248,3 +1248,126 @@ export function earthBoom(): void {
     peak: 0.11,
   });
 }
+
+// ══════════════════════════════════════════════════════
+// こすくまくんに さわる / 待ち時間があける
+// ══════════════════════════════════════════════════════
+
+/**
+ * つついたときの音階(半音)。メジャーペンタトニックなので、
+ * どこで止めても不協和にならない。連打すると一段ずつ上がっていく。
+ */
+const POKE_STEPS = [0, 2, 4, 7, 9, 12, 14, 16, 19] as const;
+/** つつきの基音(G3)。剣や地球より1オクターブ低い = やわらかいものの音 */
+const POKE_BASE = 196.0;
+/** この時間あくと、音階は最初の段に戻る(秒) */
+const POKE_STREAK_GAP = 1.1;
+
+let pokeStep = 0;
+let lastPokeAt = -99;
+
+// 連打ガード。earth-tap ほど速くは押されないが、指を滑らせると連発するので
+// 最低間隔だけは持たせる(音量は落としきらない = さわった手応えは必ず返す)
+const pokeThrottle = makeThrottle({
+  minGap: 0.06,
+  soft: 5,
+  hard: 11,
+  floor: 0.5,
+});
+
+/**
+ * ぽふっ: こすくまくんをつついた手応え。
+ *
+ * 地球の「ぽこっ」(硬い水滴)と混ざらないように、逆の作りにしてある:
+ *   - 基音を1オクターブ下(196Hz付近)に置き、立ち上がりを 0.012秒 まで鈍らせる。
+ *     角の取れた立ち上がり = やわらかいものに触れた音。
+ *   - 芯のうしろにローパスで丸めたノイズを一枚だけ敷く(布と綿のこすれ)。
+ *   - 倍音は 1オクターブ上の triangle が1本だけ。何度押しても耳が疲れない。
+ * 連打すると POKE_STEPS を一段ずつのぼる。押しつづけると音が育つので、
+ * 「反応が返ってきている」ことが音だけで分かる。
+ */
+export function kosukumaPoke(): void {
+  const g = ready();
+  if (!g) return;
+  const v = pokeThrottle(g.ctx.currentTime);
+  if (v <= 0) return;
+
+  const now = g.ctx.currentTime;
+  pokeStep =
+    now - lastPokeAt < POKE_STREAK_GAP
+      ? Math.min(pokeStep + 1, POKE_STEPS.length - 1)
+      : 0;
+  lastPokeAt = now;
+  const base = POKE_BASE * Math.pow(2, POKE_STEPS[pokeStep] / 12);
+
+  // 「ぽ」: 綿の詰まった胴。押されて一度だけ下へたわむ
+  tone({
+    type: "sine",
+    freq: base,
+    glide: [[0.09, base * 0.74]],
+    attack: 0.012,
+    decay: 0.17,
+    peak: 0.09 * v,
+    filter: { type: "lowpass", freq: 1500 },
+  });
+  // 「ふ」: 毛のこすれ。帯域を下に絞ってあるので、連打しても刺さらない
+  noiseHit({
+    attack: 0.005,
+    decay: 0.06,
+    peak: 0.026 * v,
+    filter: { type: "lowpass", freq: 950, sweepTo: 320, sweepTime: 0.055 },
+  });
+  // 「っ」: 玩具のまるい響き。連打の音階はこの一粒が聞かせる
+  tone({
+    type: "triangle",
+    freq: base * 2,
+    at: 0.014,
+    attack: 0.004,
+    decay: 0.12,
+    peak: 0.03 * v,
+    filter: { type: "lowpass", freq: 2600 },
+    send: 0.14,
+  });
+}
+
+/**
+ * ちりん、と ふたつ: つぎの1本が刺せるようになった合図(約0.7秒)。
+ * charm-get(G6→C7 の鈴)より1オクターブ下の C6→F6 に置いて、
+ * 「ごほうび」ではなく「順番が来た」と聞こえるようにしてある。
+ * ピーク合計は 0.16 ほど。safe(0.15)と同じくらいで、通知として最小限。
+ */
+export function cooldownReady(): void {
+  if (!ready()) return;
+  bell({
+    freq: 1046.5, // C6
+    peak: 0.07,
+    decay: 0.34,
+    partials: [
+      [1, 1],
+      [2.9, 0.13],
+    ],
+    send: 0.42,
+    pan: -0.1,
+  });
+  bell({
+    freq: 1396.91, // F6
+    at: 0.11,
+    peak: 0.08,
+    decay: 0.62,
+    partials: [
+      [1, 1],
+      [2.96, 0.11],
+    ],
+    send: 0.55,
+    pan: 0.1,
+  });
+  // 下に丸い芯を一枚。小さいスピーカーでも「鳴った」ことが分かる
+  tone({
+    type: "triangle",
+    freq: 523.25, // C5
+    attack: 0.006,
+    decay: 0.17,
+    peak: 0.05,
+    filter: { type: "lowpass", freq: 1800 },
+  });
+}

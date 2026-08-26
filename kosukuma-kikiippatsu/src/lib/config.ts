@@ -10,7 +10,7 @@ export const MOON_RADIUS = 5;
 export const POLAR_CAP_DEG = 34;
 
 /** 同一プレイヤーの連続刺し禁止時間(秒) */
-export const COOLDOWN_SEC = 60;
+export const COOLDOWN_SEC = 30;
 
 /** 状態ポーリング間隔(ms) — /api/state はCDNで3秒キャッシュされる */
 export const POLL_MS = 4000;

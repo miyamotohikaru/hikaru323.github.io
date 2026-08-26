@@ -112,6 +112,14 @@ export default function AudioDirector() {
         case "earth-boom":
           sfx.earthBoom();
           break;
+        case "kosukuma-poke":
+          // 連打の音階(何段目か)は sfx 側が時刻から数える。
+          // storeに状態を増やさずに「押しつづけると音が育つ」を作るため
+          sfx.kosukumaPoke();
+          break;
+        case "cooldown-ready":
+          sfx.cooldownReady();
+          break;
         case "error":
           sfx.error();
           break;
