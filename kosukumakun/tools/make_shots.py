@@ -94,6 +94,80 @@ def build_tips(fx):
 
 
 # --------------------------------------------------------------------------
+# 「こんなときは」の3枚
+# --------------------------------------------------------------------------
+
+SCREEN = (144, 34, 616, 426)      # 画面の見立て。display() と同じ枠
+
+
+def _bear(mo, scene, n):
+    """場面のコマから、こすくまくんだけを切り出す。
+
+    **新しく描き起こさない。** ここもアプリ自身が描いた絵から借りる。
+    そうしないと、サイトの中でこの3枚だけ絵柄が浮く。
+    """
+    im = Image.open(os.path.join(mo, scene, "%03d.png" % n)).convert("RGBA")
+    box = im.getbbox()
+    return im.crop(box) if box else im
+
+
+def _fade(im, amount):
+    """うすくする。姿を消しているところを「居ない」と読ませるために使う。"""
+    out = im.copy()
+    out.putalpha(out.getchannel("A").point(lambda v: int(v * amount)))
+    return out
+
+
+def build_when(mo):
+    os.makedirs(OUT, exist_ok=True)
+    x0, y0, x1, y1 = SCREEN
+
+    # ① じゃまなとき … 窓の前に立たず、画面の右のはしへどいている
+    c = card()
+    d = ImageDraw.Draw(c)
+    d.rounded_rectangle((x0 + 26, y0 + 52, x1 - 96, y1 - 18), radius=10,
+                        fill=(255, 255, 255, 255), outline=INK, width=3)
+    d.line([x0 + 28, y0 + 92, x1 - 98, y0 + 92], fill=INK, width=3)
+    for i in range(3):
+        bx = x0 + 46 + i * 26
+        d.ellipse([bx, y0 + 64, bx + 13, y0 + 77], outline=INK, width=2)
+    for i in range(4):                      # 書きかけの本文
+        ly = y0 + 122 + i * 30
+        d.line([x0 + 50, ly, x1 - 130 - (i % 2) * 60, ly], fill=(190, 186, 170, 255), width=7)
+    b = _bear(mo, "edgepeek", 50)           # 右のはしからのぞいている姿
+    c.alpha_composite(b, (x1 - b.width, (y0 + y1) // 2 - b.height // 2))
+    display(c)
+    _save_when(c, "when_peek")
+
+    # ② 見失ったとき … 呼ぶと画面のいちばん下・右のほうへ帰ってくる
+    c = card()
+    d = ImageDraw.Draw(c)
+    b = _bear(mo, "eyes", 0)
+    bx, by = x1 - b.width - 38, y1 - b.height - 6
+    for k in range(16):                     # 帰ってくる道すじ（点線）
+        t = k / 15
+        px = x0 + 40 + (bx + b.width // 2 - x0 - 40) * t
+        py = y0 + 70 + (by + b.height - y0 - 70) * (t * t)
+        d.ellipse([px - 2, py - 2, px + 2, py + 2], fill=(190, 186, 170, 255))
+    c.alpha_composite(b, (bx, by))
+    display(c)
+    _save_when(c, "when_home")
+
+    # ③ 集中したいとき … 姿も動きも消える
+    c = card()
+    b = _fade(_bear(mo, "eyes", 0), 0.16)
+    c.alpha_composite(b, ((x0 + x1) // 2 - b.width // 2, y1 - b.height - 6))
+    display(c)
+    _save_when(c, "when_hidden")
+
+
+def _save_when(c, name):
+    p = os.path.join(OUT, name + ".png")
+    c.convert("RGB").save(p, optimize=True)
+    print("  %-10s %dx%d  %.1f KB" % (name, c.width, c.height, os.path.getsize(p) / 1024))
+
+
+# --------------------------------------------------------------------------
 # 動く絵（GIF）
 # --------------------------------------------------------------------------
 
@@ -115,7 +189,17 @@ def gif_scene(mo, name, marks):
         for i, m in enumerate(marks[:len(raw)]):
             x, y = m["cursor"]
             # アプリの座標は下が原点。絵は上が原点なので裏返す
-            over[i].alpha_composite(cur, (int(x) - 6, FRAME_H - int(y) - 4))
+            cx_, cy_ = int(x), FRAME_H - int(y)
+            # 押した合図。カーソルの先から輪がひろがる。
+            # **カーソルより先に描く。** あとに描くと矢印の上に線が乗って汚れる。
+            tap = m.get("tap") or 0
+            if tap:
+                d = ImageDraw.Draw(over[i])
+                r = 5 + 4 * (tap - 1)
+                a = max(40, 235 - 45 * (tap - 1))
+                d.ellipse([cx_ - r, cy_ - r, cx_ + r, cy_ + r],
+                          outline=INK + (a,), width=2)
+            over[i].alpha_composite(cur, (cx_ - 6, cy_ - 4))
 
     # 縁のぞきだけは窓の枠が主役なので、置き場所を決め打ちする。
     # 足元の線（コマの下から56px）が窓の上端に重なると「縁に立っている」に見える。
@@ -183,6 +267,7 @@ def main():
         subprocess.run([APP, "--frames", fx], check=True, capture_output=True)
         build_tips(fx)
         build_gifs(fx)
+        build_when(fx)
     finally:
         shutil.rmtree(fx, ignore_errors=True)
     print("\n→ %s" % OUT)

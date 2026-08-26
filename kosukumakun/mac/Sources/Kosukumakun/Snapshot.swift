@@ -413,15 +413,36 @@ enum Snapshot {
         // --- 画面のはしからのぞく（4か所を順に）--------------------------------
         // ここだけは絵の四角を **画面そのもの** として使う。
         // 足元をそのまま置くので、上端・左右端・左下がコマの縁に一致する。
-        run("edgepeek", caps: 48, behaviors: [], setup: { brain, activity in
+        // 1か所につき72コマ（＝2.4秒）居させる。前は0.8秒で、読む前に次へ行っていた。
+        // **カーソルも一緒に写す。** 勝手に移っているのではなく
+        // 「タップするたびに移る」ことが、絵だけで伝わらないといけない。
+        let peekHold = 72
+        run("edgepeek", caps: 144, behaviors: [], setup: { brain, activity in
             activity.debugOverride(typingRate: 0, idle: 60)
             brain.update(dt: dt, activity: activity, screen: screen)   // 画面の大きさを覚えさせる
             brain.enterScreenPeek(.top)
         }, step: { brain, activity, i in
             activity.debugOverride(typingRate: 0, idle: 60, pointer: CGPoint(x: cx, y: 170))
-            let want = Brain.ScreenPeek(rawValue: (i / 24) % 4) ?? .top
+            let want = Brain.ScreenPeek(rawValue: (i / peekHold) % 4) ?? .top
             if brain.screenPeek != want { brain.enterScreenPeek(want) }
-        }, footAt: { brain in brain.pos })
+        }, footAt: { brain in brain.pos }, mark: { brain, n in
+            // カーソルは、いま見えている体のまんなかへ置く。
+            // 足元(brain.pos)はふちの上にあるので、そこに置くと画面の外を指す。
+            let h = CGFloat(SpriteBank.sprite("idle").h * scale)
+            var p = brain.pos
+            switch brain.screenPeek {
+            case .top:    p.y -= h * 0.42
+            case .bottom: p.y += h * 0.42
+            case .left:   p.x += h * 0.32; p.y += h * 0.42
+            case .right:  p.x -= h * 0.32; p.y += h * 0.42
+            }
+            // 押した合図は、次の場所へ移る **直前** の4コマだけ。
+            // 移ったあとに出すと「移ったから押した」に見えて、順序が逆になる。
+            let k = n % (peekHold / every)
+            let last = peekHold / every - 1
+            let tap = k >= last - 3 ? k - (last - 4) : 0
+            return ["cursor": [p.x, p.y], "tap": tap]
+        })
 
         // --- 放っておくと 寝る ----------------------------------------------
         let zzz = ZzzBehavior()
