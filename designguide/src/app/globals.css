@@ -1199,3 +1199,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   background: var(--vermilion);
   border-color: var(--vermilion);
 }
+
+/* 狭い画面では絞り込み帯を貼り付けない。
+   種別＋検索＋気分14個で3段になり、貼り付けると画面の1/4を占め続ける */
+@media (max-width: 760px) {
+  .ctl { position: static; padding-block: 12px; }
+  .ctl__moods { gap: 4px; }
+  .ctl__mood { padding: 4px 9px; font-size: 11px; }
+  .ctl__search { width: 100%; }
+  .ctl__search input { flex: 1; width: auto; }
+}
