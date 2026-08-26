@@ -2,151 +2,191 @@
  * キュビズム。
  *
  * 1911–12年のブラック／ピカソ。分析的キュビズムに、ステンシル文字と
- * 貼り紙が入り始めるあたり。
+ * 貼り紙が入りはじめるあたり。楕円のカンヴァス。
  *
- * ■ 幾何の系譜のなかで、これだけ別物に見せるために
- *   1. **楕円の画布。** この時期の二人は楕円のカンヴァスを使った。
- *      面は縁で薄れ、素の麻布に溶ける。四角い版面を割る他の様式と、
- *      輪郭からして違う。
- *   2. **色を捨てる。** 土色だけ。原色を1つでも入れるとバウハウスの側に落ちる。
- *   3. **面を透かして重ねる（パッサージュ）。** 格子をもう1枚、15度ずらして
- *      半透明で重ねる。重なりが中間調を作る。ここが構成主義との差。
- *   4. **同じものを2度描く。** グラスは真上から見た楕円と、横から見た台形を
- *      1本の辺で繋いである。多視点の同時提示という主題そのもの。
- *   5. **貼り紙（パピエ・コレ）。** 木目の刷り紙、籐編み、新聞。
- *      ステンシルの JOU は「JOURNAL」の切れ端。
+ * ■ 四稿目でここを作り直した理由
+ *   三稿までは「揺らした四辺形の格子」で面を敷いていた。辺は必ず一致するし
+ *   隙間も出ないが、出来上がるのはモザイクの壁紙で、その上に器物の輪郭を
+ *   線で描き足しただけになっていた。**面と物が無関係**なので、
+ *   何の絵か読めない。濁った茶色の塊にしか見えない。
+ *   キュビズムの面は模様ではなく、**画面を横切る直線の束が作る区画**である。
  *
- * ■ 面の作りかた（ここを2回作り直した）
- *   初稿：支点から扇状に三角形を出した → 爆発した破片に見えた。
- *   二稿：同じ方式で暗くしただけ → やはり扇のまま。
- *   決定稿：**先に格子の頂点を作り、頂点ごとに一度だけ揺らす。**
- *   隣り合うセルは同じ頂点を共有するので、辺が必ず一致し、
- *   隙間も交差もない四辺形の敷き詰めになる。これがキュビズムの面。
- *   明暗はセルの位置から決める（中央が暗く、縁が明るい）。
- *   完全な乱数で塗ると、モザイクのノイズになって構成が消える。
+ * ■ 決定稿の作りかた
+ *   1. **直線の配置（line arrangement）で面を切る。**
+ *      楕円の版面を、方向のそろった16本の直線で順に半分に割っていく
+ *      （Sutherland–Hodgman）。角度は3系統しかない——ほぼ垂直・約34度・約146度。
+ *      これで辺が画面を貫いて continue し、長い楔形の面が生まれる。
+ *      揺らした格子との差はここ。ブラックの面はどれも「切った」形をしている。
+ *   2. **直線は物の急所を通す。** 壜の肩、ギターのくびれ、グラスの縁、卓の稜。
+ *      面の切れ目と物の切れ目が一致するから、物が面に溶ける（パッサージュ）。
+ *   3. **明暗を先に決める。** 光は左上から。射影で明るさを取り、
+ *      静物の塊で沈め、卓の下でさらに沈める。近白から近黒まで11段使う。
+ *      三稿までは中間調の茶色だけで塗っていた。あれが「濁り」の正体。
+ *   4. **縁で解体する。** 楕円の縁に近いほど階調の幅を圧縮し、明るく寄せる。
+ *      ぼかしは使わない。**面のコントラストだけで消していく。**
+ *      ぼかすと写真の周辺減光になる（二稿でそうなった）。
+ *   5. **綱の額。** ピカソが1912年、楕円の画布のまわりに本物の綱を貼った。
+ *      縁が「決めた縁」になるので、地の麻布への落とし方が曖昧にならない。
+ *   6. **輪郭は切る。** 器物の線は途中で必ず途切れる。閉じた輪郭を引くと
+ *      塗り絵になる。面の辺に線を渡し、別のところで再開させる。
  */
 import { ATLAS, rand, rad, type Rand } from "@/lib/plate";
 
 const P = "cub";
 const SAND = "#d8cdb8";
 const RUST = "#a8582f";
+const SLATE = "#3f4a52";
 const BLACK = "#1c1a17";
 const LIGHT = "#efe7d3";
 
 const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
-/* 面の階調。地の砂色から黒までの9段。原色は足さない */
-/* 階調は「土」で作る。中間調を青灰にすると絵ぜんたいが冷えて、
-   キュビズムではなく現代の抽象に見えた（三稿目でそうなった）。
-   青灰（spine の #3f4a52）は面全体ではなく、差し色として時々だけ使う */
-const RAMP = ["#f2ead6", "#e2d7bd", "#cec0a2", "#b6a789", "#9c8d72", "#80735c", "#665c49", "#4e463a", "#35312a"];
-const SLATE = "#3f4a52";
+/* 近白から近黒まで11段。三稿までは中央5段しか使っていなかった。
+   分析的キュビズムは単色だが、明暗の幅は油彩のぶんだけ広い */
+const RAMP = [
+  "#f4eddc", "#e9dfc8", "#d9ceb2", "#c5b897", "#ad9e7e",
+  "#948668", "#7b6e55", "#635846", "#4c4437", "#37322a", "#242019",
+];
 
-const X0 = 30, X1 = 566, Y0 = 8, Y1 = 706;
-const COLS = 6, ROWS = 8;
+/* 楕円の画布 */
+const CX = 300, CY = 348, RX = 254, RY = 322;
 
-type Cell = { pts: string; fill: string; cx: number; cy: number; ha: number; hatch: boolean; hlen: number };
+type Pt = [number, number];
 
 /**
- * 揺らした格子。頂点を先に作って共有するので、辺が必ず一致する。
- * ang を与えると、その角度で回した格子になる（重ねる2枚目用）。
+ * 半平面で多角形を切る（Sutherland–Hodgman）。直線は ax+by+c=0。
+ * 負の側だけ残す。両側を取れば「割る」になり、辺は必ず共有される。
  */
-function lattice(seed: number, cols: number, rows: number, jx: number, jy: number, tone: (u: number, v: number, j: Rand) => string) {
-  const r = rand(seed);
-  const V: [number, number][][] = [];
-  for (let j = 0; j <= rows; j++) {
-    const row: [number, number][] = [];
-    for (let i = 0; i <= cols; i++) {
-      const bx = X0 + ((X1 - X0) * i) / cols;
-      const by = Y0 + ((Y1 - Y0) * j) / rows;
-      row.push([bx + r(-jx, jx), by + r(-jy, jy)]);
+function half(poly: Pt[], a: number, b: number, c: number): Pt[] {
+  const out: Pt[] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i];
+    const q = poly[(i + 1) % poly.length];
+    const dp = a * p[0] + b * p[1] + c;
+    const dq = a * q[0] + b * q[1] + c;
+    if (dp <= 0) out.push(p);
+    if ((dp < 0 && dq > 0) || (dp > 0 && dq < 0)) {
+      const t = dp / (dp - dq);
+      out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
     }
-    V.push(row);
   }
-  const cells: Cell[] = [];
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i < cols; i++) {
-      const a = V[j][i], b = V[j][i + 1], c = V[j + 1][i + 1], d = V[j + 1][i];
-      const u = (i + 0.5) / cols;
-      const v = (j + 0.5) / rows;
-      cells.push({
-        pts: [a, b, c, d].map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" "),
-        fill: tone(u, v, r),
-        cx: (a[0] + b[0] + c[0] + d[0]) / 4,
-        cy: (a[1] + b[1] + c[1] + d[1]) / 4,
-        ha: (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI,
-        hatch: r() > 0.6,
-        hlen: Math.hypot(b[0] - a[0], b[1] - a[1]) * 0.62,
-      });
+  return out;
+}
+
+function area(poly: Pt[]) {
+  let s = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i];
+    const q = poly[(i + 1) % poly.length];
+    s += p[0] * q[1] - q[0] * p[1];
+  }
+  return Math.abs(s) / 2;
+}
+
+/** 点 (px,py) を角度 deg で通る直線 */
+function line(px: number, py: number, deg: number) {
+  const a = -Math.sin(rad(deg));
+  const b = Math.cos(rad(deg));
+  return { a, b, c: -(a * px + b * py) };
+}
+
+/**
+ * 切る直線。角度は3系統だけ。物の急所を通してある。
+ *  ほぼ垂直（84–98度）／ 約34度 ／ 約146度 ／ 卓のための緩い水平2本
+ */
+const CUTS = [
+  line(148, 352, 82),  // 壜の左肩
+  line(203, 330, 96),  // 壜の右肩
+  line(252, 400, 88),  // ギターの中心軸
+  line(322, 372, 100), // ギターの右のくびれ
+  line(404, 316, 79),  // グラスの左
+  line(486, 300, 93),  // グラスの右
+  line(300, 196, 27),  // 新聞の下端
+  line(300, 292, 38),  // ギターの肩
+  line(300, 404, 31),  // 音孔を通る
+  line(300, 522, 41),  // 下部胴
+  line(300, 236, 152), // 棹の方向
+  line(300, 344, 141),
+  line(300, 446, 157),
+  line(300, 566, 143),
+  line(300, 574, 6),   // 卓の稜
+  line(300, 640, 3),   // 卓の前縁
+];
+
+/** 面。直線で順に割る。辺は必ず共有される */
+function facets() {
+  let cells: Pt[][] = [[[46, 26], [554, 26], [554, 670], [46, 670]]];
+  for (const L of CUTS) {
+    const next: Pt[][] = [];
+    for (const cell of cells) {
+      const A = half(cell, L.a, L.b, L.c);
+      const B = half(cell, -L.a, -L.b, -L.c);
+      if (A.length > 2 && area(A) > 26) next.push(A);
+      if (B.length > 2 && area(B) > 26) next.push(B);
     }
+    cells = next;
   }
   return cells;
 }
 
 /**
- * 明暗。左上が明るく、右下へ沈む。絵画の光の当たり方をそのまま使う。
- * 三稿目は「中央が暗い」にしたら、写真の周辺減光に見えた。
+ * 明暗。左上からの光を射影で取り、静物の塊と卓の影で沈める。
+ * 楕円の縁では階調の幅を圧縮して明るく寄せ、面のまま解体していく。
  */
-function tonal(u: number, v: number, j: Rand) {
-  let t = 0.14 + 0.74 * ((u * 0.4 + v * 0.78) / 1.18) + j(-0.15, 0.15);
-  t = Math.max(0, Math.min(0.999, t));
-  if (j() > 0.972) return RUST;
-  if (j() > 0.9) return SLATE;
-  return RAMP[Math.floor(t * RAMP.length)];
+function tone(x: number, y: number, j: Rand) {
+  const lit = ((x - CX) * -0.55 + (y - CY) * -0.83) / 430; // 光軸への射影
+  const core = Math.exp(-(((x - 268) / 158) ** 2 + ((y - 428) / 176) ** 2)); // 静物の塊
+  const table = 1 / (1 + Math.exp(-(y - 578) / 26)); // 卓の下
+  const flash1 = Math.exp(-(((x - 226) / 78) ** 2 + ((y - 326) / 88) ** 2)); // 光る面
+  const flash2 = Math.exp(-(((x - 438) / 66) ** 2 + ((y - 292) / 74) ** 2));
+
+  let t = 0.47 + lit * 0.34 - core * 0.36 - table * 0.34 + flash1 * 0.3 + flash2 * 0.24;
+  t += j(-0.12, 0.12);
+
+  // 縁での解体。中央から離れるほど中間調へ圧縮し、わずかに明るく
+  const e = Math.min(1, Math.hypot((x - CX) / RX, (y - CY) / RY));
+  t = 0.52 + (t - 0.52) * (1 - 0.42 * e * e) + 0.15 * e * e * e;
+
+  const k = Math.max(0, Math.min(RAMP.length - 1, Math.round((1 - t) * (RAMP.length - 1))));
+  return RAMP[k];
 }
 
-function Hatch({ list, tag, op }: { list: Cell[]; tag: string; op: number }) {
-  return (
-    <g stroke={BLACK} strokeWidth="0.85" opacity={op}>
-      {list.map((f, i) =>
-        f.hatch ? (
-          <g key={`${tag}${i}`} transform={`rotate(${f.ha.toFixed(1)} ${f.cx.toFixed(1)} ${f.cy.toFixed(1)})`}>
-            {Array.from({ length: 11 }, (_, k) => (
-              <line
-                key={k}
-                x1={f.cx - f.hlen / 2}
-                y1={f.cy - 22 + k * 4.4}
-                x2={f.cx + f.hlen / 2}
-                y2={f.cy - 22 + k * 4.4}
-              />
-            ))}
-          </g>
-        ) : null,
-      )}
-    </g>
-  );
-}
-
-/** 輪郭は暗線に明線を1本添えて引く。明るい面でも暗い面でも読める */
-function Contour({ d, w = 2.8, o = 0.9 }: { d: string; w?: number; o?: number }) {
+/** 輪郭。暗線に明線を添え、破線で切る。閉じた輪郭を引くと塗り絵になる */
+function Contour({ d, w = 2.6, o = 0.9, dash }: { d: string; w?: number; o?: number; dash?: string }) {
   return (
     <>
-      <path d={d} fill="none" stroke={LIGHT} strokeWidth={w * 0.8} opacity={o * 0.38} strokeLinecap="round" transform="translate(2 2)" />
-      <path d={d} fill="none" stroke={BLACK} strokeWidth={w} opacity={o} strokeLinecap="round" />
+      <path d={d} fill="none" stroke={LIGHT} strokeWidth={w * 0.85} opacity={o * 0.4}
+            strokeLinecap="round" strokeDasharray={dash} transform="translate(2.2 2.2)" />
+      <path d={d} fill="none" stroke={BLACK} strokeWidth={w} opacity={o}
+            strokeLinecap="round" strokeDasharray={dash} />
     </>
   );
 }
 
-/** ヴァイオリンの f 孔 */
-function FHole({ x, y, s, flip }: { x: number; y: number; s: number; flip?: boolean }) {
-  return (
-    <g transform={`translate(${x} ${y}) scale(${flip ? -s : s} ${s})`}>
-      <path d="M0 0 C -7 -9, -1 -16, 2 -22 C 5 -28, 0 -34, -4 -38" fill="none" stroke={BLACK}
-            strokeWidth="5" strokeLinecap="round" opacity="0.9" />
-      <circle cx="1" cy="1" r="4.6" fill={BLACK} opacity="0.9" />
-      <circle cx="-5" cy="-39" r="4.6" fill={BLACK} opacity="0.9" />
-      <line x1="-9" y1="-19" x2="7" y2="-19" stroke={BLACK} strokeWidth="2" opacity="0.75" />
-    </g>
-  );
-}
-
 export default function Plate() {
-  const base = lattice(19120714, COLS, ROWS, 34, 30, tonal);
-  const over = lattice(556677, 4, 5, 44, 40, (u, v, j) => {
-    const t = Math.max(0, Math.min(0.999, 0.2 + 0.7 * ((u * 0.5 + v * 0.7) / 1.2) + j(-0.18, 0.18)));
-    return RAMP[Math.floor(t * RAMP.length)];
-  });
+  const r = rand(19120714);
   const rw = rand(881);
+  const cells = facets().map((pts) => {
+    let cx = 0, cy = 0;
+    for (const p of pts) { cx += p[0]; cy += p[1]; }
+    cx /= pts.length; cy /= pts.length;
+    // いちばん長い辺の向き。刷毛（ハッチング）はこの向きに走る
+    let bl = 0, ba = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i], q = pts[(i + 1) % pts.length];
+      const l = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (l > bl) { bl = l; ba = (Math.atan2(q[1] - p[1], q[0] - p[0]) * 180) / Math.PI; }
+    }
+    const pick = r();
+    return {
+      d: `M${pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join("L")}Z`,
+      fill: pick > 0.965 ? RUST : pick > 0.93 ? SLATE : tone(cx, cy, r),
+      cx, cy, ba, bl,
+      hatch: r() > 0.62,
+      edge: r() > 0.55,
+      pts,
+    };
+  });
 
   return (
     <svg viewBox="0 0 600 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="キュビズム様式の図版">
@@ -154,170 +194,196 @@ export default function Plate() {
         <clipPath id={`${P}-page`}>
           <rect width="600" height="800" />
         </clipPath>
-        {/* 楕円の画布。縁の20pxほどで麻布へ落とす。
-            ぼかしを広く取ると、周辺減光をかけた写真に見えた */}
-        <radialGradient id={`${P}-fade`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="0.93" stopColor="#fff" />
-          <stop offset="1" stopColor="#000" />
-        </radialGradient>
-        <mask id={`${P}-oval`}>
-          <ellipse cx="298" cy="356" rx="262" ry="344" fill={`url(#${P}-fade)`} />
-        </mask>
+        {/* 楕円の画布。ぼかさない。縁は面の階調だけで解体する */}
+        <clipPath id={`${P}-oval`}>
+          <ellipse cx={CX} cy={CY} rx={RX} ry={RY} />
+        </clipPath>
         {/* 籐編み。ピカソが実際に貼った、印刷された籐柄の油布 */}
-        <pattern id={`${P}-cane`} width="17" height="17" patternUnits="userSpaceOnUse" patternTransform="rotate(22)">
-          <path d="M0 0 L17 17 M17 0 L0 17" stroke={BLACK} strokeWidth="1.5" fill="none" opacity="0.8" />
-          <path d="M8.5 0 L8.5 17 M0 8.5 L17 8.5" stroke={BLACK} strokeWidth="0.9" fill="none" opacity="0.5" />
-          <circle cx="8.5" cy="8.5" r="2.4" fill="none" stroke={BLACK} strokeWidth="0.8" opacity="0.6" />
+        <pattern id={`${P}-cane`} width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(20)">
+          <path d="M0 0 L16 16 M16 0 L0 16" stroke={BLACK} strokeWidth="1.6" fill="none" opacity="0.75" />
+          <path d="M8 0 L8 16 M0 8 L16 8" stroke={BLACK} strokeWidth="0.9" fill="none" opacity="0.45" />
+          <circle cx="8" cy="8" r="2.3" fill="none" stroke={BLACK} strokeWidth="0.8" opacity="0.55" />
         </pattern>
         <clipPath id={`${P}-wood`}>
-          <polygon points="80,538 220,518 238,660 94,682" />
+          <polygon points="128,546 258,528 268,650 140,666" />
         </clipPath>
         {/* ステンシルの橋。1本だけ。2本入れると小文字に見えた */}
         <mask id={`${P}-stencil`}>
-          <rect x="280" y="180" width="260" height="100" fill="#fff" />
-          <rect x="280" y="232" width="260" height="5" fill="#000" />
+          <rect x="312" y="172" width="220" height="80" fill="#fff" />
+          <rect x="312" y="212" width="220" height="4.5" fill="#000" />
         </mask>
       </defs>
 
       <g clipPath={`url(#${P}-page)`}>
         <rect width="600" height="800" fill={SAND} />
 
-        <g mask={`url(#${P}-oval)`}>
-          {/* ① 面の敷き詰め。頂点を共有した四辺形の格子 */}
-          {base.map((c, i) => (
-            <polygon key={`b${i}`} points={c.pts} fill={c.fill} />
+        <g clipPath={`url(#${P}-oval)`}>
+          {/* ① 面。直線の束が切った区画 ─────────────────────── */}
+          {cells.map((c, i) => (
+            <path key={`f${i}`} d={c.d} fill={c.fill} />
           ))}
-          {/* ② もう1枚の格子を15度ずらして半透明で重ねる＝パッサージュ */}
-          <g transform="rotate(15 298 356)" opacity="0.42">
-            {over.map((c, i) => (
-              <polygon key={`o${i}`} points={c.pts} fill={c.fill} />
-            ))}
-          </g>
-          <Hatch list={base} tag="hb" op={0.26} />
 
-          {/* ③ 貼り紙。面の上、線の下に挟むのが実際の順序 ───────── */}
+          {/* ② 面の辺。全部は引かない。引いた辺だけが構造として残る */}
+          <g fill="none" stroke={BLACK} strokeWidth="0.8" opacity="0.2">
+            {cells.map((c, i) => (c.edge ? <path key={`e${i}`} d={c.d} /> : null))}
+          </g>
+
+          {/* ③ ハッチング。面のいちばん長い辺に沿って走らせる。
+                 面をまたいで少しはみ出すのは、実際の筆でもそうなる */}
+          <g stroke={BLACK} strokeWidth="0.75" opacity="0.17">
+            {cells.map((c, i) =>
+              c.hatch ? (
+                <g key={`h${i}`} transform={`rotate(${c.ba.toFixed(1)} ${c.cx.toFixed(1)} ${c.cy.toFixed(1)})`}>
+                  {Array.from({ length: 8 }, (_, k) => {
+                    // 長いと面をまたいで「雨」に見えた。面の中に収まる長さで止める
+                    const w = Math.min(c.bl * 0.3, 26);
+                    return (
+                      <line key={k}
+                        x1={c.cx - w / 2} y1={c.cy - 9.8 + k * 2.8}
+                        x2={c.cx + w / 2} y2={c.cy - 9.8 + k * 2.8} />
+                    );
+                  })}
+                </g>
+              ) : null,
+            )}
+          </g>
+
+          {/* ④ 貼り紙。面の上、線の下。実際の制作順と同じ ───────── */}
           <g clipPath={`url(#${P}-wood)`}>
-            <polygon points="80,538 220,518 238,660 94,682" fill="#b8965f" />
-            {Array.from({ length: 19 }, (_, i) => {
-              const y = 520 + i * 9;
+            <polygon points="128,546 258,528 268,650 140,666" fill="#b8965f" />
+            {Array.from({ length: 17 }, (_, i) => {
+              const y = 528 + i * 8.4;
               return (
-                <path
-                  key={i}
-                  d={`M74 ${y} C 114 ${y - 9}, 158 ${y + 10}, 198 ${y - 4} S 238 ${y + 7}, 246 ${y}`}
-                  fill="none"
-                  stroke="#4a3620"
-                  strokeWidth={rw(0.7, 2.3).toFixed(2)}
-                  opacity={rw(0.35, 0.75).toFixed(2)}
-                />
+                <path key={i}
+                  d={`M122 ${y} C 162 ${y - 9}, 206 ${y + 10}, 246 ${y - 4} S 286 ${y + 7}, 292 ${y}`}
+                  fill="none" stroke="#4a3620"
+                  strokeWidth={rw(0.7, 2.3).toFixed(2)} opacity={rw(0.35, 0.75).toFixed(2)} />
               );
             })}
           </g>
-          <polygon points="80,538 220,518 238,660 94,682" fill="none" stroke={BLACK} strokeWidth="1.2" opacity="0.6" />
+          <polygon points="128,546 258,528 268,650 140,666" fill="none" stroke={BLACK} strokeWidth="1.2" opacity="0.55" />
 
-          <polygon points="396,540 528,560 516,684 382,662" fill="#cdbb93" />
-          <polygon points="396,540 528,560 516,684 382,662" fill={`url(#${P}-cane)`} />
-          <polygon points="396,540 528,560 516,684 382,662" fill="none" stroke={BLACK} strokeWidth="1.2" opacity="0.6" />
+          <polygon points="362,556 486,572 476,660 354,646" fill="#cdbb93" />
+          <polygon points="362,556 486,572 476,660 354,646" fill={`url(#${P}-cane)`} />
+          <polygon points="362,556 486,572 476,660 354,646" fill="none" stroke={BLACK} strokeWidth="1.2" opacity="0.55" />
 
-          <g transform="rotate(-7 340 626)">
-            <rect x="274" y="582" width="132" height="90" fill="#ded4bb" />
-            <g fill={BLACK} opacity="0.72">
-              {Array.from({ length: 9 }, (_, i) => (
-                <rect key={i} x={282} y={590 + i * 9} width={116 * rw(0.6, 1)} height="2.3" />
+          {/* 新聞の切れ端。JOU はここに乗る */}
+          {/* 新聞の切れ端。前の版は白すぎて、面の上に貼った付箋に見えた。
+              古新聞の地は白ではなく、灰みの黄土 */}
+          <g transform="rotate(-5 386 210)">
+            <polygon points="312,170 480,156 486,254 318,264" fill="#cdc3a6" />
+            <g fill={BLACK} opacity="0.4">
+              {Array.from({ length: 4 }, (_, i) => (
+                <rect key={i} x={322} y={226 + i * 8} width={148 * rw(0.55, 1)} height="2" />
               ))}
             </g>
-            <rect x="274" y="582" width="132" height="90" fill="none" stroke={BLACK} strokeWidth="1" opacity="0.55" />
+            <polygon points="312,170 480,156 486,254 318,264" fill="none" stroke={BLACK} strokeWidth="1" opacity="0.45" />
           </g>
 
-          {/* ④ 器物の線。暗線＋明線の二重引きで、どの面の上でも読める ── */}
-          <Contour d="M162 386 A 84 84 0 0 1 314 340" />
-          <Contour d="M166 502 A 102 102 0 0 0 368 518" />
-          <Contour d="M180 398 C 196 452, 196 474, 174 508" w={2.3} o={0.78} />
-          <Contour d="M320 350 C 340 418, 344 466, 366 514" w={2.3} o={0.78} />
-          {/* 棹は断片で止める。長く伸ばすと JOU の O を貫いて Ø に見えた */}
-          <Contour d="M300 334 L346 266" w={2.5} />
-          <Contour d="M338 356 L384 288" w={2.5} />
-          <g stroke={BLACK} fill="none">
-            {Array.from({ length: 6 }, (_, i) => {
-              const t = 0.12 + i * 0.15;
-              return (
-                <line key={i}
-                  x1={300 + (346 - 300) * t} y1={334 + (266 - 334) * t}
-                  x2={338 + (384 - 338) * t} y2={356 + (288 - 356) * t}
-                  strokeWidth="1.7" opacity="0.7" />
-              );
-            })}
-            {Array.from({ length: 5 }, (_, i) => (
-              <line key={`s${i}`} x1={314 + i * 5} y1={348 + i * 3} x2={254 + i * 7} y2={558}
-                    strokeWidth="1.1" opacity="0.6" />
-            ))}
-          </g>
-          {/* 卓の稜。二重線で引き、静物を地面に着ける */}
-          <Contour d="M62 604 L540 552" w={3} o={0.72} />
-          <g stroke={BLACK} fill="none" opacity="0.5">
-            <line x1="62" y1="616" x2="540" y2="564" strokeWidth="1.1" />
-          </g>
-          {/* パイプ。ブラックの静物の常連 */}
-          <Contour d="M152 472 c -18 -2, -28 8, -26 21 c 2 13, 17 19, 32 15" w={2.6} o={0.82} />
-          <Contour d="M158 510 L258 538" w={2.2} o={0.82} />
+          {/* ⑤ 器物。線は必ずどこかで切れる ───────────────────── */}
 
-          {/* 音孔。正面から見た円と、斜めから見た楕円。多視点の同時提示 */}
-          <circle cx="246" cy="448" r="34" fill="#1a1d20" />
-          <circle cx="246" cy="448" r="34" fill="none" stroke={LIGHT} strokeWidth="2.4" opacity="0.6" />
-          <ellipse cx="374" cy="336" rx="27" ry="9" fill="#1a1d20" opacity="0.85" transform="rotate(22 374 336)" />
+          {/* ギター。左右対称に正面から描いたら、黒い音孔が顔の目に見えて
+              熊のぬいぐるみになった（四稿目の最初の版）。**傾ける**と、
+              対称が崩れて楽器に戻る。棹も胴の肩から直接生やす。
+              前の版は棹だけ宙に浮いていて、胴と繋がっていなかった */}
+          <g transform="rotate(-15 258 452)">
+            {/* 胴の左右。高さの違うところで止め、輪郭を閉じない */}
+            <Contour d="M186 350 C 166 390, 172 424, 202 448 C 170 474, 162 522, 182 556" w={2.8} />
+            <Contour d="M330 342 C 352 384, 346 420, 316 446 C 350 470, 358 520, 338 556"
+                     w={2.8} dash="76 16 40 12" />
+            <Contour d="M186 350 C 214 320, 292 316, 330 342" w={2.6} dash="66 16 34 0" />
+            <Contour d="M182 556 C 216 586, 306 586, 338 556" w={2.6} />
+            {/* 棹。胴の肩から生えて上へ。指板と糸巻き */}
+            <Contour d="M242 336 L238 168" w={2.6} />
+            <Contour d="M276 332 L272 168" w={2.6} dash="96 18 46 0" />
+            <Contour d="M234 166 L280 162 L282 130 L232 134 Z" w={2.3} o={0.8} />
+            <Contour d="M236 172 L280 169" w={2.6} o={0.85} />
+            <g fill={BLACK} opacity="0.75">
+              {Array.from({ length: 3 }, (_, i) => (
+                <circle key={`pg${i}`} cx={238 + i * 12} cy={140 + i * 1.5} r="3.2" />
+              ))}
+            </g>
+            {/* 音孔。近黒の円。185pxまで縮めてもここだけは残る */}
+            <circle cx="256" cy="424" r="29" fill="#161818" />
+            <circle cx="256" cy="424" r="29" fill="none" stroke={LIGHT} strokeWidth="2.2" opacity="0.55" />
+            {/* 駒と弦。弦は指板の途中で切る */}
+            <Contour d="M218 508 L300 500" w={3} o={0.8} />
+            <g stroke={BLACK} fill="none" opacity="0.6">
+              {Array.from({ length: 6 }, (_, i) => (
+                <line key={`s${i}`} x1={222 + i * 13} y1={507 - i * 1.4} x2={240 + i * 6.6} y2={172}
+                      strokeWidth="1.1" strokeDasharray="120 26 92 0" />
+              ))}
+            </g>
+          </g>
+          {/* 同じ音孔を、斜めから見た楕円でもう一度置く。多視点の同時提示。
+              こちらは傾けた組の外に出す。ずれていること自体が主題 */}
+          <ellipse cx="332" cy="382" rx="26" ry="9" fill="#161818" opacity="0.75"
+                   transform="rotate(-32 332 382)" />
 
-          <FHole x={192} y={498} s={1.2} />
-          <FHole x={330} y={522} s={1.2} flip />
+          {/* 壜。同じ首を9度ずらして2度描く。ここも多視点。
+              棹の先（糸巻き）と重なって読めなくなったので、左へ寄せ、
+              線も一段濃くした。重ねること自体はキュビズムだが、
+              重ねた結果どちらも消えるのはただの失敗 */}
+          <Contour d="M100 182 L100 238 C 100 260, 86 266, 86 292 L86 418" w={2.7} o={0.95} />
+          <Contour d="M154 176 L154 232 C 154 254, 168 260, 168 286 L168 412" w={2.7} o={0.95} dash="120 16 92 0" />
+          <Contour d="M100 182 L154 176" w={2.7} o={0.95} />
+          <Contour d="M86 418 L168 412" w={2.2} o={0.7} dash="30 14 26 0" />
+          <g transform="rotate(9 126 292)" opacity="0.34" fill="none" stroke={BLACK} strokeWidth="2.3">
+            <path d="M100 182 L100 238 C 100 260, 86 266, 86 292 L86 418" />
+            <path d="M154 176 L154 232 C 154 254, 168 260, 168 286 L168 412" />
+          </g>
 
           {/* グラス。真上から見た楕円と、横から見た台形を1本の辺で繋ぐ */}
-          <Contour d="M392 282 A 48 17 0 1 0 488 282 A 48 17 0 1 0 392 282" w={2.5} />
-          <Contour d="M392 282 L406 374 L474 374 L488 282" w={2.5} />
-          <g fill="none" stroke={BLACK} opacity="0.7">
-            <path d="M406 374 L424 410 L456 410 L474 374" strokeWidth="1.8" />
-            <ellipse cx="440" cy="282" rx="31" ry="10" strokeWidth="1.3" opacity="0.7" />
+          <Contour d="M404 282 A 44 15 0 1 0 492 282 A 44 15 0 1 0 404 282" w={2.4} />
+          <Contour d="M404 282 L417 372 L479 372 L492 282" w={2.4} dash="88 14 62 0" />
+          <g fill="none" stroke={BLACK} opacity="0.6">
+            <path d="M417 372 L433 406 L463 406 L479 372" strokeWidth="1.7" />
+            <ellipse cx="448" cy="282" rx="28" ry="9" strokeWidth="1.2" opacity="0.6" />
           </g>
 
-          {/* 壜。同じ首を9度ずらして2度描く。ここも多視点 */}
-          <Contour d="M138 240 L138 292 C 138 314, 124 320, 124 346 L124 446" w={2.5} o={0.82} />
-          <Contour d="M188 234 L188 288 C 188 310, 202 316, 202 342 L202 440" w={2.5} o={0.82} />
-          <Contour d="M138 240 L188 234" w={2.5} o={0.82} />
-          <g transform="rotate(9 164 340)" opacity="0.42" fill="none" stroke={BLACK} strokeWidth="2.4">
-            <path d="M138 240 L138 292 C 138 314, 124 320, 124 346 L124 446" />
-            <path d="M188 234 L188 288 C 188 310, 202 316, 202 342 L202 440" />
-          </g>
+          {/* 卓の稜。二重線。静物を地面に着ける */}
+          <Contour d="M52 588 L548 536" w={3} o={0.7} />
+          <line x1="52" y1="601" x2="548" y2="549" stroke={BLACK} strokeWidth="1.1" opacity="0.45" />
+
+          {/* パイプ。ブラックの静物の常連 */}
+          <Contour d="M140 462 c -18 -2, -28 8, -26 21 c 2 13, 17 19, 32 15" w={2.5} o={0.8} />
+          <Contour d="M148 500 L236 524" w={2.1} o={0.8} />
 
           {/* 定規で引いた当たり線。ブラックはこれを消さずに残す */}
-          <g stroke={BLACK} opacity="0.3" strokeWidth="0.8">
-            <line x1="40" y1="200" x2="560" y2="332" />
-            <line x1="176" y1="20" x2="300" y2="700" />
-            <line x1="560" y1="120" x2="60" y2="560" />
-          </g>
-
-          {/* ⑤ 手前の面。線の一部をここで沈める */}
-          <g opacity="0.34">
-            {base.filter((_, i) => i % 5 === 2).map((c, i) => (
-              <polygon key={`t${i}`} points={c.pts} fill={c.fill} />
-            ))}
+          <g stroke={BLACK} opacity="0.18" strokeWidth="0.7">
+            <line x1="46" y1="212" x2="554" y2="330" />
+            <line x1="554" y1="132" x2="60" y2="560" />
           </g>
 
           {/* ⑥ ステンシル。最後に置く。橋の穴から下の面が透ける */}
           <g mask={`url(#${P}-stencil)`}>
-            <text x="292" y="258" fill={BLACK} fontFamily={SANS} fontSize="66" fontWeight="700"
-                  letterSpacing="8" opacity="0.9">
+            <text x="326" y="234" fill={BLACK} fontFamily={SANS} fontSize="58" fontWeight="700"
+                  letterSpacing="8" opacity="0.88">
               JOU
             </text>
           </g>
-          <text x="170" y="652" fill={BLACK} fontFamily={SANS} fontSize="22" fontWeight="700"
-                letterSpacing="5" opacity="0.85" transform="rotate(-7 170 652)">
+          <text x="176" y="622" fill={BLACK} fontFamily={SANS} fontSize="20" fontWeight="700"
+                letterSpacing="4" opacity="0.8" transform="rotate(-8 176 622)">
             VALSE
           </text>
         </g>
 
+        {/* ⑦ 綱の額。1912年、ピカソは楕円の画布のまわりに本物の綱を貼った。
+               縁が「決めた縁」になる。撚りは破線で作ってある。
+               太くすると缶の蓋の縁（あるいはフィルムのパーフォレーション）に
+               見えたので、太さも撚りの濃さも半分まで落としてある */}
+        <g fill="none">
+          <ellipse cx={CX} cy={CY} rx={RX + 3} ry={RY + 3} stroke="#a89468" strokeWidth="6.5" />
+          <ellipse cx={CX} cy={CY} rx={RX + 3} ry={RY + 3} stroke="#4a3a22" strokeWidth="6.5"
+                   strokeDasharray="2.5 6" opacity="0.3" />
+          <ellipse cx={CX} cy={CY} rx={RX + 6.4} ry={RY + 6.4} stroke={BLACK} strokeWidth="0.9" opacity="0.3" />
+        </g>
+
         {/* だまし絵の釘。ブラックが画面に1本だけ描き込んだあれ */}
         <g>
-          <ellipse cx="504" cy="96" rx="9.5" ry="7" fill="#5c574a" />
-          <ellipse cx="502" cy="94" rx="5" ry="3.4" fill="#a29a86" />
-          <path d="M511 101 L531 122" stroke={BLACK} strokeWidth="4" opacity="0.3" strokeLinecap="round" />
+          <ellipse cx="520" cy="88" rx="9.5" ry="7" fill="#5c574a" />
+          <ellipse cx="518" cy="86" rx="5" ry="3.4" fill="#a29a86" />
+          <path d="M527 93 L547 114" stroke={BLACK} strokeWidth="4" opacity="0.3" strokeLinecap="round" />
         </g>
 
         {/* 題字。楕円の外、素の麻布の上に置く */}
@@ -331,7 +397,7 @@ export default function Plate() {
           </text>
         </g>
 
-        {/* 麻布の目。紙ではなく布。強くすると絵が白ちゃけるので控えめに */}
+        {/* 麻布の目。紙ではなく布 */}
         <rect width="600" height="800" filter={`url(#${ATLAS.fibre})`} opacity="0.13"
               style={{ mixBlendMode: "multiply" }} />
         <rect width="600" height="800" filter={`url(#${ATLAS.grain})`} opacity="0.12"

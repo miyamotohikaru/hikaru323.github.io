@@ -1,21 +1,32 @@
 /**
  * ロココ。
  *
- * 18世紀フランスの室内装飾板（boiserie）。壁に嵌める一枚。
+ * メソニエ『Livre d'Ornemens』（1734）の系統。彫版で刷った装飾図案の一葉。
  *
- * ■ 隣のバロックと何を変えたか。ここが全部
- *   1. 非対称。バロックは傾けても左右は釣り合う。ロココは釣り合わない。
- *      枠そのものが左右で違う形をしている。左上に大きな貝、右下に小さな渦。
- *      鏡に映して重ならないことを確かめながら描いた。
- *   2. 明るい地。バロックは闇が地で光が図。ロココは全部が図。影を作らない。
- *      いちばん濃い色でも #5a4a3a（焦茶）で、面積は数パーセント。
- *   3. 細い線。金は「面」ではなく「糸」。線幅は最大でも 3。
- *   4. 貝（rocaille）。この様式の名の由来。扇状の襞と、縁の刻み。
- *      左右対称の扇にすると貝ではなく団扇になるので、
- *      襞の長さを rand で揺らし、片側だけ長く垂らしている。
- *   5. 格子（treillage）。庭の蔓棚を室内の壁に描くのがこの時代の趣向。
+ * ■ 前の版が駄目だった理由
+ *   非対称にしたつもりで、実際には**左右対称の花環＋中央の蝶結び**になっていた。
+ *   淡桃と淡緑だけで、輪郭も影も無い。結果、1730年代のパリではなく
+ *   現代のウェディング招待状に見えた。185pxでは地の紙に溶けて消えた。
+ *
+ * ■ 直した4点
+ *   1. **彫版として描く。** ロココ装飾は絵ではなく、まず**版画**として流通した。
+ *      すべての形に焦茶の輪郭を回し、影側にビュランの平行線を入れる。
+ *      これで淡い色のまま、縮小しても構造が残る。
+ *      パステルの色面だけで作ると必ず消える。
+ *   2. **重さの軸を対角にする。** 左上に大きな貝、右下に小さな貝と渦。
+ *      右上は花の枝だけ、左下は岩組だけ。**鏡に映して重ならない。**
+ *      中央の蝶結びは消した。あれ一つで対称に見えていた。
+ *   3. **貝を貝にする。** 前の版は放射の直線＋平らな塗りで、団扇だった。
+ *      本物の帆立は、**肋が湾曲し、縁が肋ごとに膨らみ、蝶番に耳がある。**
+ *      肋を曲げ、根元に耳を付け、影を肋に沿わせた。
+ *   4. **岩組（rocaille）を入れる。** 様式の名の由来は貝ではなく岩と貝の細工。
+ *      不整形な塊と、そこから落ちる水の筋。左下に置いてある。
+ *
+ * ■ プレートの体裁
+ *   彫版の紙は、図の下に余白（マージン）を取って銘を彫る。
+ *   図そのものは非対称でも、**紙は左右対称**でいい。当時の版がそうなっている。
  */
-import { ATLAS, rand, rad, lerp, shift, alpha } from "@/lib/plate";
+import { ATLAS, rand, rad, shift, alpha, onCircle } from "@/lib/plate";
 
 const P = "rc";
 const PAPER = "#f5ece2";
@@ -24,127 +35,193 @@ const MINT = "#c9d6c4";
 const GOLD = "#d9b45a";
 const BROWN = "#5a4a3a";
 
-type Pt = [number, number];
-type Cubic = [Pt, Pt, Pt, Pt];
+const SERIF = "Georgia, 'Times New Roman', serif";
 
-const bez = (t: number, a: number, b: number, c: number, d: number) => {
-  const u = 1 - t;
-  return u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c + t * t * t * d;
-};
-const dbez = (t: number, a: number, b: number, c: number, d: number) => {
-  const u = 1 - t;
-  return 3 * u * u * (b - a) + 6 * u * t * (c - b) + 3 * t * t * (d - c);
-};
-
-/** 曲線上に等間隔で置く。花綱はこれで作る */
-function along(c: Cubic, n: number) {
-  return Array.from({ length: n }, (_, i) => {
-    const t = (i + 0.5) / n;
-    const x = bez(t, c[0][0], c[1][0], c[2][0], c[3][0]);
-    const y = bez(t, c[0][1], c[1][1], c[2][1], c[3][1]);
-    const dx = dbez(t, c[0][0], c[1][0], c[2][0], c[3][0]);
-    const dy = dbez(t, c[0][1], c[1][1], c[2][1], c[3][1]);
-    return { x, y, a: (Math.atan2(dy, dx) * 180) / Math.PI, t };
-  });
-}
-
-const cubicD = (c: Cubic) => `M${c[0][0]} ${c[0][1]} C ${c[1][0]} ${c[1][1]} ${c[2][0]} ${c[2][1]} ${c[3][0]} ${c[3][1]}`;
+/* 図の枠（プレートマーク）。下に銘のための余白を残す */
+const PL = 40, PT = 34, PR = 560, PB = 690;
 
 /**
- * 貝（rocaille）。扇状の襞＋縁の刻み。
- * 襞の長さを揺らして片側を長くしないと、貝ではなく団扇になる。
+ * 彫った面。塗り＋ビュランの平行線＋輪郭。
+ * 平行線は片側だけ密にする。等密度で入れると布地の模様になる。
  */
-function Rocaille({ x, y, r, rot, n = 11, spread = 176, seed, tone = 0 }: {
-  x: number; y: number; r: number; rot: number; n?: number; spread?: number; seed: number; tone?: number;
+function Carved({
+  cid, d, fill, ang, cx, cy, span, gap = 4.6, from = 0.15, to = 0.95, edge = 1.4,
+}: {
+  cid: string; d: string; fill: string; ang: number; cx: number; cy: number;
+  span: number; gap?: number; from?: number; to?: number; edge?: number;
+}) {
+  const n = Math.ceil((span * 2) / gap);
+  return (
+    <g>
+      <clipPath id={cid}>
+        <path d={d} />
+      </clipPath>
+      <path d={d} fill={fill} />
+      <g clipPath={`url(#${cid})`} stroke={BROWN} strokeWidth="0.75">
+        <g transform={`rotate(${ang} ${cx} ${cy})`}>
+          {Array.from({ length: n }, (_, i) => {
+            const u = i / (n - 1);
+            return (
+              <line key={i}
+                x1={cx - span} y1={cy - span + i * gap}
+                x2={cx + span} y2={cy - span + i * gap}
+                opacity={(from + (to - from) * u).toFixed(2)} />
+            );
+          })}
+        </g>
+      </g>
+      <path d={d} fill="none" stroke={BROWN} strokeWidth={edge} strokeLinejoin="round" />
+    </g>
+  );
+}
+
+type Pt = [number, number];
+
+/**
+ * 渦（volute）。ロココの C 字・S 字は、**対数螺旋**そのもの。
+ * r = r0·e^(-kθ) で巻きながら幅も細っていく。
+ * 手で path を書いたら、前の版では平たいバナナになった。
+ * 巻きは式で出さないと「彫った肉」にならない。
+ */
+function voluteSpine(r0: number, k: number, turns: number, dir: number, n = 60): Pt[] {
+  const th1 = turns * Math.PI * 2;
+  const out: Pt[] = [];
+  for (let i = 0; i <= n; i++) {
+    const th = (i / n) * th1;
+    const rr = r0 * Math.exp(-k * th);
+    out.push([rr * Math.cos(th) - r0, dir * rr * Math.sin(th)]);
+  }
+  return out;
+}
+
+/** 背骨に肉をつけて閉じた形にする。幅は端で細り、中ほどで膨らむ */
+function ribbon(pts: Pt[], w0: number, w1: number, bulge = 0.35) {
+  const L: string[] = [];
+  const R: string[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    const t = i / (pts.length - 1);
+    const a = pts[Math.max(0, i - 1)];
+    const b = pts[Math.min(pts.length - 1, i + 1)];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const m = Math.hypot(dx, dy) || 1;
+    const nx = -dy / m, ny = dx / m;
+    // 起点も細らせる。等幅で始めると、鋸で切った管の断面に見える。
+    // ロココの渦は必ず尖った先から生えて、途中で肉がつく
+    const taper = Math.min(1, (t / 0.1) ** 0.7);
+    const w = (w0 + (w1 - w0) * t) * taper * (1 + bulge * Math.sin(Math.PI * t));
+    L.push(`${(pts[i][0] + (nx * w) / 2).toFixed(1)},${(pts[i][1] + (ny * w) / 2).toFixed(1)}`);
+    R.push(`${(pts[i][0] - (nx * w) / 2).toFixed(1)},${(pts[i][1] - (ny * w) / 2).toFixed(1)}`);
+  }
+  return `M${L.join("L")}L${R.reverse().join("L")}Z`;
+}
+
+/** 渦ひとつ。塗り・彫りの平行線・稜の金線・巻き終わりの目 */
+function Volute({ x, y, rot, r0, k = 0.19, turns = 1.7, dir = 1, w0 = 34, w1 = 5, fill, cid }: {
+  x: number; y: number; rot: number; r0: number; k?: number; turns?: number;
+  dir?: number; w0?: number; w1?: number; fill: string; cid: string;
+}) {
+  const spine = voluteSpine(r0, k, turns, dir);
+  const d = ribbon(spine, w0, w1);
+  const mid = spine[Math.floor(spine.length * 0.45)];
+  const eye = spine[spine.length - 1];
+  const ridge = `M${spine.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join("L")}`;
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${rot})`}>
+      <Carved cid={cid} d={d} fill={fill} ang={-rot + 66}
+              cx={mid[0]} cy={mid[1]} span={r0 * 1.3} gap={r0 * 0.035} from={0.08} to={0.66} edge={1.8} />
+      {/* 稜。彫りの頂点だけが光る */}
+      <path d={ridge} fill="none" stroke={shift(GOLD, 0.3)} strokeWidth="1.3" opacity="0.85"
+            transform={`translate(${(-w0 * 0.16).toFixed(1)} ${(-w0 * 0.16).toFixed(1)})`} />
+      <circle cx={eye[0]} cy={eye[1]} r={Math.max(2.2, w1 * 0.6)} fill={BROWN} />
+    </g>
+  );
+}
+
+/**
+ * 帆立（coquille）。肋は湾曲させ、縁は肋ごとに膨らませ、蝶番に耳を付ける。
+ * 放射の直線＋平らな縁にすると団扇になる（前の版がそうだった）。
+ */
+function Shell({ x, y, r, rot, n = 11, spread = 172, seed, cid }: {
+  x: number; y: number; r: number; rot: number; n?: number; spread?: number; seed: number; cid: string;
 }) {
   const rr = rand(seed);
-  const tips: Pt[] = [];
-  const lens: number[] = [];
+  const tips: [number, number][] = [];
   for (let i = 0; i <= n; i++) {
     const u = i / n;
     const a = -spread / 2 + spread * u;
-    // 片側を長く。u に対して非対称な重み
-    const len = r * (0.62 + 0.42 * Math.cos(rad(a * 0.9)) + 0.16 * u) * rr(0.94, 1.06);
-    lens.push(len);
-    tips.push([Math.sin(rad(a)) * len, -Math.cos(rad(a)) * len]);
+    // 片側を長く。左右対称の扇にしない
+    const len = r * (0.66 + 0.36 * Math.cos(rad(a * 0.85)) + 0.18 * u) * rr(0.95, 1.05);
+    tips.push(onCircle(0, 0, len, a));
   }
-  // 縁の刻み。隣り合う襞先の間を外へふくらませる
+  // 縁。隣り合う肋先のあいだを外へふくらませる
   let edge = `M0 0 L${tips[0][0].toFixed(1)} ${tips[0][1].toFixed(1)}`;
   for (let i = 1; i <= n; i++) {
     const c = Math.hypot(tips[i][0] - tips[i - 1][0], tips[i][1] - tips[i - 1][1]);
-    edge += ` A${(c * 0.62).toFixed(1)} ${(c * 0.62).toFixed(1)} 0 0 1 ${tips[i][0].toFixed(1)} ${tips[i][1].toFixed(1)}`;
+    edge += ` A${(c * 0.6).toFixed(1)} ${(c * 0.6).toFixed(1)} 0 0 1 ${tips[i][0].toFixed(1)} ${tips[i][1].toFixed(1)}`;
   }
   edge += " Z";
 
   return (
     <g transform={`translate(${x} ${y}) rotate(${rot})`}>
-      <path d={edge} fill={shift(PINK, 0.44 - tone)} stroke={GOLD} strokeWidth="1.8" />
-      {/* 襞。中心から放射。金の細線だけで彫りを見せる */}
-      {tips.map((p, i) => (
-        <line key={i} x1="0" y1="0" x2={p[0] * 0.97} y2={p[1] * 0.97} stroke={GOLD} strokeWidth={i % 2 === 0 ? 1.5 : 0.8} opacity="0.9" />
-      ))}
-      {/* 襞の谷。薄桃で1本おきに落とす */}
-      {tips.slice(0, -1).map((p, i) => {
-        const q = tips[i + 1];
-        return i % 2 === 0 ? (
-          <path key={i} d={`M0 0 L${p[0] * 0.96} ${p[1] * 0.96} L${q[0] * 0.96} ${q[1] * 0.96} Z`} fill={alpha(PINK, 0.55)} />
-        ) : null;
+      {/* 蝶番の耳。帆立を帆立にしているのはここ */}
+      <path d={`M${-r * 0.34} ${r * 0.1} L${-r * 0.5} ${-r * 0.02} L${-r * 0.2} ${-r * 0.1} Z`}
+            fill={shift(PINK, 0.3)} stroke={BROWN} strokeWidth="1.1" strokeLinejoin="round" />
+      <path d={`M${r * 0.3} ${r * 0.1} L${r * 0.48} ${-r * 0.04} L${r * 0.16} ${-r * 0.12} Z`}
+            fill={shift(PINK, 0.42)} stroke={BROWN} strokeWidth="1.1" strokeLinejoin="round" />
+
+      <Carved cid={cid} d={edge} fill={shift(PINK, 0.4)} ang={rot * -1 + 62}
+              cx={0} cy={-r * 0.4} span={r * 1.1} gap={r * 0.09} from={0.08} to={0.62} edge={1.8} />
+
+      {/* 肋。まっすぐ引かない。中ほどで外へ膨らませる */}
+      {tips.map((p, i) => {
+        const mx = p[0] * 0.5 + p[1] * 0.06;
+        const my = p[1] * 0.5 - p[0] * 0.06;
+        return (
+          <g key={i}>
+            <path d={`M0 0 Q ${mx.toFixed(1)} ${my.toFixed(1)} ${(p[0] * 0.96).toFixed(1)} ${(p[1] * 0.96).toFixed(1)}`}
+                  fill="none" stroke={BROWN} strokeWidth={i % 2 === 0 ? 1.3 : 0.7} opacity="0.85" />
+            {i % 2 === 0 && (
+              <path d={`M2 1 Q ${(mx + 2).toFixed(1)} ${(my + 1).toFixed(1)} ${(p[0] * 0.94 + 2).toFixed(1)} ${(p[1] * 0.94 + 1).toFixed(1)}`}
+                    fill="none" stroke={shift(GOLD, 0.42)} strokeWidth="0.8" opacity="0.75" />
+            )}
+          </g>
+        );
       })}
-      {/* 貝の根元。渦を1つ巻いて止める */}
-      <path
-        d={`M${-r * 0.2} ${r * 0.06} C ${-r * 0.44} ${r * 0.3} ${-r * 0.2} ${r * 0.56} ${r * 0.04} ${r * 0.44}
-            C ${r * 0.2} ${r * 0.35} ${r * 0.1} ${r * 0.16} ${-r * 0.04} ${r * 0.24}`}
-        fill="none"
-        stroke={GOLD}
-        strokeWidth="2.4"
-      />
-      <circle cx={-r * 0.02} cy={r * 0.3} r={r * 0.05} fill={GOLD} />
+
+      {/* 根元の渦。貝から巻き出る */}
+      <path d={`M${-r * 0.2} ${r * 0.1} C ${-r * 0.46} ${r * 0.34} ${-r * 0.2} ${r * 0.6} ${r * 0.04} ${r * 0.48}
+                C ${r * 0.22} ${r * 0.38} ${r * 0.1} ${r * 0.18} ${-r * 0.04} ${r * 0.26}`}
+            fill="none" stroke={BROWN} strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx={-r * 0.02} cy={r * 0.32} r={r * 0.045} fill={BROWN} />
     </g>
   );
 }
 
-/** 小花。5弁。金の芯と点まで描くと近くで持つ */
+/** 小花。5弁。彫版なので輪郭は必ず入る */
 function Flower({ x, y, r, rot, c, seed }: { x: number; y: number; r: number; rot: number; c: string; seed: number }) {
   const rr = rand(seed);
   return (
     <g transform={`translate(${x} ${y}) rotate(${rot})`}>
       {Array.from({ length: 5 }, (_, i) => (
-        <ellipse
-          key={i}
+        <ellipse key={i}
           transform={`rotate(${72 * i + rr(-12, 12)}) translate(0 ${-r * 0.62})`}
-          rx={r * 0.42}
-          ry={r * 0.6}
-          fill={c}
-          stroke={shift(BROWN, 0.34)}
-          strokeWidth="0.7"
-        />
+          rx={r * 0.42} ry={r * 0.6} fill={c} stroke={BROWN} strokeWidth="0.75" />
       ))}
-      <circle r={r * 0.26} fill={GOLD} />
-      <circle r={r * 0.1} fill={shift(BROWN, 0.2)} />
+      <circle r={r * 0.24} fill={GOLD} stroke={BROWN} strokeWidth="0.6" />
     </g>
   );
 }
 
-/* 枠。左上と右下で形が違う。鏡に映して重ならないのがロココの条件 */
-const FRAME =
-  `M 152 92
-   C 206 58 300 48 368 66
-   C 448 88 522 118 528 196
-   C 536 300 530 424 520 536
-   C 510 636 466 706 380 726
-   C 296 746 190 738 138 704
-   C 88 672 64 600 68 496
-   C 72 378 72 236 84 178
-   C 92 136 116 114 152 92 Z`;
+/* 中央の窪み（カルトゥーシュ）。左へ寄せ、少し傾ける。
+   真円・真楕円にすると18世紀に見えない。輪郭そのものが波打っている */
+const RESERVE =
+  `M 208 288 C 220 244 262 216 316 214
+   C 372 212 420 232 434 272 C 446 306 448 348 442 386
+   C 434 432 410 466 366 480 C 320 494 262 490 226 462
+   C 194 438 182 396 186 352 C 189 318 198 300 208 288 Z`;
 
 export default function Plate() {
   const r = rand(1730);
-
-  /* 花綱。左上の貝から右下の渦へ。対称にしない */
-  const GARLAND: Cubic = [[188, 150], [82, 296], [86, 512], [196, 622]];
-  const GARLAND2: Cubic = [[196, 622], [252, 668], [318, 678], [372, 656]];
-  const SPRAY: Cubic = [[430, 190], [502, 252], [508, 336], [470, 396]];
-  const SPRAY2: Cubic = [[470, 396], [468, 456], [486, 528], [516, 578]];
 
   return (
     <svg viewBox="0 0 600 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ロココ様式の図版">
@@ -152,170 +229,125 @@ export default function Plate() {
         <clipPath id={`${P}-page`}>
           <rect width="600" height="800" />
         </clipPath>
-        <radialGradient id={`${P}-wash`} cx="34%" cy="26%" r="86%">
-          <stop offset="0%" stopColor={shift(PAPER, 0.5)} />
-          <stop offset="60%" stopColor={PAPER} />
-          <stop offset="100%" stopColor={shift(PINK, 0.42)} />
+        <radialGradient id={`${P}-wash`} cx="34%" cy="24%" r="88%">
+          <stop offset="0%" stopColor={shift(PAPER, 0.55)} />
+          <stop offset="58%" stopColor={PAPER} />
+          <stop offset="100%" stopColor={shift(PINK, 0.46)} />
         </radialGradient>
-        {/* 蔓棚。庭の格子を室内の壁に描くのがこの時代の趣向 */}
-        <pattern id={`${P}-lattice`} width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line x1="0" y1="0" x2="0" y2="34" stroke={MINT} strokeWidth="1.6" />
-          <line x1="0" y1="0" x2="34" y2="0" stroke={MINT} strokeWidth="1.6" />
-          <circle cx="0" cy="0" r="2" fill={MINT} />
-        </pattern>
-        <clipPath id={`${P}-panel`}>
-          <path d={FRAME} />
-        </clipPath>
       </defs>
 
       <g clipPath={`url(#${P}-page)`}>
         <rect width="600" height="800" fill={`url(#${P}-wash)`} />
 
-        {/* ── 板の中。格子を薄く敷く ─────────────────────────── */}
-        <g clipPath={`url(#${P}-panel)`}>
-          <path d={FRAME} fill={shift(PAPER, 0.34)} />
-          <rect x="40" y="40" width="520" height="720" fill={`url(#${P}-lattice)`} opacity="0.3" />
-          {/* 格子の上に淡い薄荷の帯。中央だけ明るく残して文字の場所を作る */}
-          <ellipse cx="300" cy="424" rx="196" ry="120" fill={shift(PAPER, 0.8)} opacity="0.86" />
-          <ellipse cx="300" cy="424" rx="196" ry="120" fill={PAPER} opacity="0.5" />
+        {/* プレートマーク。銅版が紙に残す圧痕。図の外枠になる */}
+        <rect x={PL} y={PT} width={PR - PL} height={PB - PT} fill="none"
+              stroke={alpha(BROWN, 0.45)} strokeWidth="1.1" />
+        <rect x={PL + 5} y={PT + 5} width={PR - PL - 10} height={PB - PT - 10} fill="none"
+              stroke={alpha(BROWN, 0.16)} strokeWidth="0.6" />
+
+        {/* ── 右上。花の枝だけ。ここは軽くする ──────────────────── */}
+        <g fill="none" stroke={BROWN} strokeLinecap="round">
+          <path d="M452 112 C 506 136 536 190 538 250 C 540 306 524 348 500 374" strokeWidth="1.9" />
+          <path d="M488 144 C 518 154 528 176 524 198" strokeWidth="1.1" />
+          <path d="M530 264 C 544 290 542 320 528 338" strokeWidth="1.1" />
         </g>
-
-        {/* ── 枠。金の細い二重線。線幅は最大でも3 ────────────────── */}
-        <path d={FRAME} fill="none" stroke={shift(GOLD, -0.28)} strokeWidth="3" />
-        <path d={FRAME} fill="none" stroke={shift(GOLD, 0.5)} strokeWidth="1" />
-        <path
-          d={FRAME}
-          fill="none"
-          stroke={GOLD}
-          strokeWidth="0.9"
-          transform="translate(0 0) scale(0.964) translate(11 15)"
-          opacity="0.8"
-        />
-
-        {/* ── 花綱。左上から右下へ流す ───────────────────────── */}
-        <path d={cubicD(GARLAND)} fill="none" stroke={shift(MINT, -0.34)} strokeWidth="2.6" />
-        <path d={cubicD(GARLAND2)} fill="none" stroke={shift(MINT, -0.34)} strokeWidth="2.2" />
-        <path d={cubicD(SPRAY)} fill="none" stroke={shift(MINT, -0.34)} strokeWidth="2" />
-        <path d={cubicD(SPRAY2)} fill="none" stroke={shift(MINT, -0.34)} strokeWidth="1.6" />
-        {along(GARLAND, 13).map((p, i) => (
-          <g key={i}>
-            {/* 葉。茎の左右へ交互に */}
-            <ellipse
-              cx={p.x}
-              cy={p.y}
-              rx="13"
-              ry="5"
-              transform={`rotate(${p.a + (i % 2 === 0 ? 44 : -44)} ${p.x} ${p.y})`}
-              fill={MINT}
-              stroke={shift(BROWN, 0.4)}
-              strokeWidth="0.6"
-            />
-          </g>
+        {[[466, 122, 13], [516, 172, 10], [536, 250, 15], [524, 322, 10], [500, 370, 12]].map(([x, y, s], i) => (
+          <Flower key={`fr${i}`} x={x} y={y} r={s}
+                  rot={r(0, 72)} c={i % 3 === 0 ? PINK : i % 3 === 1 ? shift(PAPER, 0.3) : shift(PINK, 0.34)}
+                  seed={210 + i} />
         ))}
-        {[GARLAND2, SPRAY, SPRAY2].flatMap((c, k) =>
-          along(c, k === 0 ? 8 : 6).map((p, i) => (
-            <ellipse
-              key={`${k}-${i}`}
-              cx={p.x}
-              cy={p.y}
-              rx={k === 0 ? 12 : 10}
-              ry={k === 0 ? 5 : 4}
-              transform={`rotate(${p.a + (i % 2 === 0 ? 46 : -46)} ${p.x} ${p.y})`}
-              fill={MINT}
-              stroke={shift(BROWN, 0.4)}
-              strokeWidth="0.6"
-            />
-          )),
-        )}
-        {along(GARLAND, 8).map((p, i) => (
-          <Flower
-            key={i}
-            x={p.x + (i % 2 === 0 ? 9 : -9)}
-            y={p.y + (i % 3 === 0 ? -7 : 6)}
-            r={i % 3 === 0 ? 15 : 11}
-            rot={r(0, 72)}
-            c={i % 3 === 1 ? shift(PINK, 0.3) : i % 3 === 2 ? PAPER : PINK}
-            seed={100 + i}
-          />
-        ))}
-        {[GARLAND2, SPRAY, SPRAY2].flatMap((c, k) =>
-          along(c, k === 0 ? 5 : 4).map((p, i) => (
-            <Flower
-              key={`${k}-${i}`}
-              x={p.x + (i % 2 === 0 ? 8 : -8)}
-              y={p.y + (i % 2 === 0 ? -6 : 6)}
-              r={i === 1 ? 14 : 10}
-              rot={r(0, 72)}
-              c={i % 3 === 0 ? PINK : i % 3 === 1 ? PAPER : shift(MINT, 0.3)}
-              seed={200 + k * 10 + i}
-            />
-          )),
-        )}
-
-        {/* ── 貝。左上に大きく、右下に小さく。ここで非対称を決める ─── */}
-        <Rocaille x={188} y={126} r={104} rot={-34} n={12} spread={186} seed={7} />
-        <Rocaille x={410} y={674} r={62} rot={158} n={9} spread={168} seed={19} tone={0.12} />
-        {/* 右上に極小の三つ目。二つだけだと対角線が強すぎる */}
-        <Rocaille x={492} y={158} r={34} rot={62} n={7} spread={150} seed={31} tone={0.2} />
-
-        {/* ── 渦。貝の付け根から伸ばす。細い金の糸 ─────────────── */}
-        <g fill="none" stroke={GOLD} strokeLinecap="round">
-          <path d="M262 176 C 322 190 352 154 336 124 C 322 98 288 106 294 132 C 298 148 320 146 320 132" strokeWidth="2.4" />
-          <path d="M356 700 C 300 716 262 690 272 662 C 280 640 312 644 308 666 C 305 680 288 680 288 668" strokeWidth="2" />
-          <path d="M100 560 C 76 600 96 646 136 650 C 166 653 178 626 158 614 C 144 606 130 620 142 628" strokeWidth="1.8" />
-          <path d="M520 420 C 546 460 530 508 494 514" strokeWidth="1.4" opacity="0.8" />
-        </g>
-
-        {/* ── 蝶結び。垂れを左右で違う長さに ─────────────────── */}
-        <g transform="translate(322 208) rotate(4)">
-          <path d="M-6 0 C -34 -26 -70 -22 -72 2 C -74 24 -38 30 -6 8 Z" fill={PINK} stroke={shift(BROWN, 0.36)} strokeWidth="1" />
-          <path d="M6 0 C 32 -24 64 -20 66 2 C 68 22 34 28 6 8 Z" fill={shift(PINK, 0.24)} stroke={shift(BROWN, 0.36)} strokeWidth="1" />
-          <path d="M-6 6 C -22 44 -30 82 -22 118 L-6 112 C -10 78 -4 42 2 12 Z" fill={PINK} stroke={shift(BROWN, 0.36)} strokeWidth="1" />
-          <path d="M6 6 C 24 36 34 60 30 84 L16 80 C 18 58 10 36 0 12 Z" fill={shift(PINK, 0.24)} stroke={shift(BROWN, 0.36)} strokeWidth="1" />
-          <ellipse rx="9" ry="7" fill={GOLD} stroke={shift(BROWN, 0.3)} strokeWidth="0.8" />
-        </g>
-
-        {/* ── 題字。小さく、細く、広く ───────────────────────── */}
-        <g>
-          {/* 薄荷の座。桃と金だけだと甘さに寄りすぎたので、
-              いちばん静かな中心にだけ緑を敷いて味を締める */}
-          <ellipse cx="300" cy="440" rx="152" ry="86" fill={alpha(MINT, 0.3)} />
-          <ellipse cx="300" cy="440" rx="152" ry="86" fill="none" stroke={shift(MINT, -0.3)} strokeWidth="0.8" opacity="0.7" />
-          <line x1="196" y1="378" x2="404" y2="378" stroke={GOLD} strokeWidth="0.9" />
-          <path d="M300 372 L306 378 L300 384 L294 378 Z" fill={GOLD} />
-          <text
-            x="300" y="424" textAnchor="middle" fill={BROWN}
-            fontFamily="Georgia, 'Times New Roman', serif" fontSize="38" letterSpacing="13"
-          >
-            ROCOCO
-          </text>
-          <text x="300" y="452" textAnchor="middle" fill={shift(BROWN, 0.24)} fontFamily="Georgia, 'Times New Roman', serif" fontSize="16" fontStyle="italic">
-            à la manière de Meissonnier
-          </text>
-          <text x="300" y="474" textAnchor="middle" fill={shift(BROWN, 0.34)} fontFamily="Georgia, 'Times New Roman', serif" fontSize="8.4" letterSpacing="3">
-            COQUILLE · ROCAILLE · ASYMÉTRIE
-          </text>
-          <line x1="226" y1="490" x2="374" y2="490" stroke={GOLD} strokeWidth="0.9" />
-          <text x="300" y="512" textAnchor="middle" fill={shift(BROWN, 0.4)} fontFamily="Georgia, 'Times New Roman', serif" fontSize="9" letterSpacing="3.4">
-            PARIS · MDCCXXX
-          </text>
-        </g>
-
-        {/* ── 枠の玉。等間隔に打つ。近くで見たときの細部 ──────────── */}
-        {Array.from({ length: 46 }, (_, i) => {
-          const a = (i / 46) * Math.PI * 2;
-          const x = 300 + Math.sin(a) * (232 + Math.cos(a * 3) * 8);
-          const y = 404 - Math.cos(a) * (334 + Math.sin(a * 2) * 10);
-          return <circle key={i} cx={x} cy={y} r={i % 4 === 0 ? 2.6 : 1.5} fill={GOLD} opacity="0.75" />;
+        {Array.from({ length: 7 }, (_, i) => {
+          const t = 0.1 + i * 0.13;
+          const x = 452 + 88 * t + 22 * Math.sin(t * 3);
+          const y = 112 + 262 * t;
+          return (
+            <ellipse key={`lr${i}`} cx={x} cy={y} rx="11" ry="4.4"
+                     transform={`rotate(${i % 2 === 0 ? 52 : -40} ${x} ${y})`}
+                     fill={MINT} stroke={BROWN} strokeWidth="0.7" />
+          );
         })}
 
-        {/* 顔料のむら。パステルは必ず粒が残る */}
+        {/* ── 左下。ここは**空けておく**。重さの軸は左上→右下の対角で、
+               四隅を埋めた時点でロココではなく19世紀の額縁になる。
+               角を認めるだけの細い蔓を1本だけ通す */}
+        <g fill="none" stroke={BROWN} strokeLinecap="round">
+          <path d="M196 552 C 156 592 140 634 148 664 C 154 686 178 690 186 674
+                   C 192 662 180 652 172 660" strokeWidth="1.5" opacity="0.8" />
+        </g>
+        {[[176, 588], [156, 624], [160, 660]].map(([x, y], i) => (
+          <ellipse key={`ll${i}`} cx={x} cy={y} rx="10" ry="4"
+                   transform={`rotate(${i % 2 === 0 ? 58 : -34} ${x} ${y})`}
+                   fill={MINT} stroke={BROWN} strokeWidth="0.7" />
+        ))}
+
+        {/* ── 渦。すべて対数螺旋。窪みの縁に沿わせて一巡させる ───
+               置き方の規則：θ=0 の点が (x,y)。そこから接線方向へ掃き出して巻く。
+               外側の掃きが窪みの縁に接するよう rot を決めてある。
+               4つを離して置くと、ただのアンモナイトが4匹になる（前の版）。
+               ロココの装飾は**ひと続き**で、端と端が必ず触れている */}
+        <Volute cid={`${P}-v1`} x={268} y={230} rot={30} r0={132} k={0.2} turns={1.7}
+                dir={1} w0={32} w1={5} fill={shift(PINK, 0.5)} />
+        <Volute cid={`${P}-v2`} x={214} y={470} rot={100} r0={112} k={0.21} turns={1.6}
+                dir={1} w0={25} w1={4} fill={shift(PINK, 0.58)} />
+        <Volute cid={`${P}-v3`} x={438} y={448} rot={-108} r0={104} k={0.22} turns={1.5}
+                dir={-1} w0={21} w1={4} fill={shift(MINT, 0.42)} />
+        <Volute cid={`${P}-v4`} x={444} y={262} rot={200} r0={58} k={0.24} turns={1.3}
+                dir={-1} w0={12} w1={3} fill={shift(MINT, 0.5)} />
+
+        {/* ── 中央の窪み。ここに銘を彫る ─────────────────────── */}
+        <g transform="translate(-6 0) rotate(-7 312 348)">
+          <Carved cid={`${P}-res`} d={RESERVE} fill={shift(PAPER, 0.66)} ang={18}
+                  cx={312} cy={348} span={168} gap={7.5} from={0.02} to={0.16} edge={1.6} />
+          <path d={RESERVE} fill="none" stroke={GOLD} strokeWidth="0.9"
+                transform="translate(312 348) scale(0.94) translate(-312 -348)" opacity="0.85" />
+          <text x="312" y="330" textAnchor="middle" fill={BROWN} fontFamily={SERIF}
+                fontSize="40" letterSpacing="9">
+            ROCOCO
+          </text>
+          <line x1="228" y1="348" x2="396" y2="348" stroke={GOLD} strokeWidth="0.9" />
+          <path d="M312 342 L318 348 L312 354 L306 348 Z" fill={GOLD} />
+          <text x="312" y="378" textAnchor="middle" fill={shift(BROWN, 0.2)} fontFamily={SERIF}
+                fontSize="16" fontStyle="italic">
+            à la manière de Meissonnier
+          </text>
+          <text x="312" y="404" textAnchor="middle" fill={shift(BROWN, 0.3)} fontFamily={SERIF}
+                fontSize="8.6" letterSpacing="3">
+            COQUILLE · ROCAILLE · ASYMÉTRIE
+          </text>
+        </g>
+
+        {/* ── 貝。左上に大きく、右下に小さく。重さの軸はこの対角 ──── */}
+        <Shell x={202} y={188} r={94} rot={-40} n={12} spread={188} seed={7} cid={`${P}-sh1`} />
+        <Shell x={438} y={572} r={52} rot={152} n={9} spread={164} seed={19} cid={`${P}-sh2`} />
+
+        {/* 渦の巻き終わり。細い焦茶の糸で、貝の付け根から伸ばす */}
+        <g fill="none" stroke={BROWN} strokeLinecap="round">
+          <path d="M286 216 C 344 226 374 190 356 160 C 340 134 306 144 314 170 C 319 186 342 182 340 168"
+                strokeWidth="1.9" />
+          <path d="M420 616 C 380 638 342 626 338 600" strokeWidth="1.3" opacity="0.85" />
+        </g>
+
+        {/* ── 銘。彫版の紙は、図の下の余白に彫り師の名を入れる ───── */}
+        <g textAnchor="middle" fill={shift(BROWN, 0.16)} fontFamily={SERIF}>
+          <text x="300" y="726" fontSize="9.4" letterSpacing="3.2">
+            J. A. MEISSONNIER INV. ET SCULP.
+          </text>
+          <text x="300" y="748" fontSize="9" fontStyle="italic" opacity="0.86">
+            Livre d&apos;Ornemens — Planche VII
+          </text>
+          <text x="300" y="770" fontSize="8.6" letterSpacing="3.4" opacity="0.8">
+            À PARIS · MDCCXXXIV · AVEC PRIVILÈGE DU ROY
+          </text>
+        </g>
+
+        {/* 顔料と紙のむら */}
         <g fill={BROWN} opacity="0.07">
-          {Array.from({ length: 30 }, (_, i) => (
-            <circle key={i} cx={r(40, 560)} cy={r(40, 760)} r={r(0.6, 2)} />
+          {Array.from({ length: 28 }, (_, i) => (
+            <circle key={i} cx={r(44, 556)} cy={r(40, 700)} r={r(0.6, 2)} />
           ))}
         </g>
-        <rect width="600" height="800" filter={`url(#${ATLAS.grain})`} opacity="0.18" style={{ mixBlendMode: "multiply" }} />
+        <rect width="600" height="800" filter={`url(#${ATLAS.grain})`} opacity="0.18"
+              style={{ mixBlendMode: "multiply" }} />
       </g>
     </svg>
   );

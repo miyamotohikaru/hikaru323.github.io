@@ -21,6 +21,11 @@
  */
 import { ATLAS, rand } from "@/lib/plate";
 
+/* 北欧は淡い様式だが、**淡いことと薄いことは違う。**
+   前の版は壁・床・木・布がすべて同じ明るさの帯に入っていて、
+   185pxの一覧では白紙のカードに見えた。
+   陽の当たる床だけを紙より明るく残し、それ以外の面を一段ずつ落とした。
+   淡さは保ったまま、明暗の幅（レンジ）だけを広げてある */
 const P = "scn";
 
 const PAPER = "#f4f1ea";
@@ -30,11 +35,11 @@ const SAGE = "#7f8a7a";
 const INK = "#2e2b26";
 
 /* 5色から作った中間色。白木は紙とピンクの間の低彩度 */
-const WOOD = "#d8c0a3";
-const WOOD_D = "#ae8f77";
+const WOOD = "#cfb193";
+const WOOD_D = "#8b6f58";
 const WOOD_L = "#ecdcc7";
-const FLOOR = "#e3dbcb";
-const WALL = "#f1ede4";
+const FLOOR = "#d7ccb6";
+const WALL = "#e9e3d6";
 
 const HORIZON = 526; // 壁と床の境
 const WX0 = 296;
@@ -240,20 +245,26 @@ export default function Plate() {
           {/* 長く甘い影。窓が右上なので左下へ伸びる */}
           <g opacity="0.9">
             <ellipse cx="16" cy="272" rx="164" ry="27" fill={`url(#${P}-soft)`} />
-            <polygon points="26,266 142,260 40,306 -80,310" fill={INK} opacity="0.055" />
-            <polygon points="34,268 126,264 56,294 -26,298" fill={INK} opacity="0.045" />
+            <polygon points="26,266 142,260 40,306 -80,310" fill={INK} opacity="0.12" />
+            <polygon points="34,268 126,264 56,294 -26,298" fill={INK} opacity="0.1" />
           </g>
           {/* 後脚（背束のまま床へ） */}
           <path d="M22 34 L6 270" stroke={WOOD} strokeWidth="7" strokeLinecap="round" />
           <path d="M158 34 L176 270" stroke={WOOD} strokeWidth="7" strokeLinecap="round" />
-          <path d="M22 34 L6 270" stroke={WOOD_D} strokeWidth="2" opacity="0.25" transform="translate(2.4 0)" />
-          <path d="M158 34 L176 270" stroke={WOOD_D} strokeWidth="2" opacity="0.25" transform="translate(2.4 0)" />
+          <path d="M22 34 L6 270" stroke={WOOD_D} strokeWidth="2.4" opacity="0.5" transform="translate(2.6 0)" />
+          <path d="M158 34 L176 270" stroke={WOOD_D} strokeWidth="2.4" opacity="0.5" transform="translate(2.6 0)" />
           {/* 背の細桟。7本 */}
           {Array.from({ length: 7 }, (_, i) => {
             const t = (i + 1) / 8;
             const xt = 26 + t * 128;
             const xb = 30 + t * 122;
-            return <line key={i} x1={xt} y1="34" x2={xb} y2="146" stroke={WOOD} strokeWidth="3.4" strokeLinecap="round" />;
+            return (
+              <g key={i}>
+                <line x1={xt} y1="34" x2={xb} y2="146" stroke={WOOD} strokeWidth="3.4" strokeLinecap="round" />
+                {/* 細桟の影側。1本ずつ暗い縁を添えないと、白木の丸棒が平らな棒に見える */}
+                <line x1={xt + 1.2} y1="34" x2={xb + 1.2} y2="146" stroke={WOOD_D} strokeWidth="1" opacity="0.42" strokeLinecap="round" />
+              </g>
+            );
           })}
           {/* 笠木。ゆるく反る */}
           <path d="M16 36 C 62 14 116 14 164 36 C 116 30 62 30 16 36 Z" fill={WOOD} />
@@ -264,9 +275,12 @@ export default function Plate() {
           <path d="M0 192 L180 192 L177 202 L3 202 Z" fill={WOOD} />
           {/* 前脚。細く、わずかに開く */}
           <path d="M14 198 L0 270" stroke={WOOD} strokeWidth="8" strokeLinecap="round" />
+          <path d="M16 200 L2 270" stroke={WOOD_D} strokeWidth="2.4" opacity="0.4" strokeLinecap="round" />
           <path d="M166 198 L182 270" stroke={WOOD} strokeWidth="8" strokeLinecap="round" />
+          <path d="M168 200 L184 270" stroke={WOOD_D} strokeWidth="2.4" opacity="0.4" strokeLinecap="round" />
           {/* 貫。1本だけ */}
           <path d="M4 240 L178 240" stroke={WOOD} strokeWidth="4.6" strokeLinecap="round" />
+          <path d="M4 242 L178 242" stroke={WOOD_D} strokeWidth="1.4" opacity="0.42" strokeLinecap="round" />
           {/* 掛けた布。桃と鼠青の縞。房まで描く */}
           <g>
             <path d="M100 28 L158 34 L166 130 C 146 138 126 136 112 128 Z" fill={MINT} />
@@ -283,7 +297,7 @@ export default function Plate() {
         {/* ── 石器の壺と枯枝。光の四角の縁に置いて、影を長く引かせる ── */}
         <g transform="translate(400 592)">
           <ellipse cx="26" cy="112" rx="72" ry="14" fill={`url(#${P}-soft)`} />
-          <polygon points="10,110 44,108 -30,124 -66,122" fill={INK} opacity="0.05" />
+          <polygon points="10,110 44,108 -30,124 -66,122" fill={INK} opacity="0.11" />
           {/* 枝 */}
           <g stroke="#7d7468" fill="none" strokeLinecap="round">
             <path d="M24 44 C 20 6 34 -26 30 -68" strokeWidth="2.6" />

@@ -14,6 +14,15 @@
  *   輪郭を白で描いても水にならない。
  *   （1）上の縁を暗く（2）下の縁を明るく（3）左上に小さな鏡面
  *   （4）真下に薄い影。この4つが揃うと、初めて「濡れている」。
+ *
+ * ■ 検分で直したこと
+ *   版面の左中央（x 40〜260 / y 280〜560）が完全に空で、
+ *   「清潔な余白」ではなく「余った余白」に見えていた。
+ *   埋めるのに自然物を足すのは間違い。この様式は自然写真の様式ではなく、
+ *   **半透明のUI板と自然写真を重ねる**様式で、Aero の名はUI板のほうから来ている。
+ *   だからガジェット（硝子の面）を1枚だけ置いた。
+ *   置いてみて分かったが、これが入ると玉・帯・草の3つが
+ *   「壁紙」ではなく「画面」として読めるようになる。
  */
 import { ATLAS, rand } from "@/lib/plate";
 
@@ -143,6 +152,15 @@ export default function Plate() {
           <feDropShadow dx="0" dy="10" stdDeviation="11" floodColor="#12557f" floodOpacity="0.3" />
         </filter>
         <clipPath id={`${P}-orbclip`}><circle cx="390" cy="352" r="138" /></clipPath>
+        {/* 硝子の面（ガジェット）。曇りガラス。透けるが、向こうは滲む */}
+        <linearGradient id={`${P}-panel`} x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.66" />
+          <stop offset="0.48" stopColor="#dcf1fd" stopOpacity="0.42" />
+          <stop offset="1" stopColor="#a9dcf5" stopOpacity="0.5" />
+        </linearGradient>
+        <clipPath id={`${P}-panelclip`}>
+          <rect x="44" y="298" width="198" height="146" rx="24" />
+        </clipPath>
       </defs>
 
       <g clipPath={`url(#${P}-page)`}>
@@ -165,6 +183,45 @@ export default function Plate() {
           <path d="M-40 636 C130 580 200 428 356 372 C450 338 546 348 640 300"
                 fill="none" stroke={WHITE} strokeWidth="1.2" opacity="0.5" />
         </g>
+
+        {/* ── 硝子の面（ガジェット）。Aero の名の出どころ ─────────
+               自然写真のほうだけを描くと、ただの壁紙になる。
+               半透明のUI板が1枚あって初めて「Aero」になる ────────── */}
+        <g filter={`url(#${P}-drop2)`}>
+          <rect x="44" y="298" width="198" height="146" rx="24" fill={`url(#${P}-panel`.concat(")")} />
+          <g clipPath={`url(#${P}-panelclip`.concat(")")}>
+            {/* 上半分の艶。これが無いと、ただの半透明の四角 */}
+            <path d="M44 298 H242 V352 C176 372 110 372 44 354 Z" fill={`url(#${P}-gloss`.concat(")")} />
+            {/* 底に溜まる光 */}
+            <ellipse cx="143" cy="446" rx="86" ry="16" fill={WHITE} opacity="0.55" filter={`url(#${P}-soft2`.concat(")")} />
+          </g>
+          <rect x="44" y="298" width="198" height="146" rx="24" fill="none" stroke={WHITE} strokeWidth="2.2" opacity="0.92" />
+          <rect x="47.6" y="301.6" width="190.8" height="138.8" rx="21" fill="none" stroke={BLUE} strokeWidth="1" opacity="0.28" />
+
+          {/* 中身。葉の記号ひとつと、水位の目盛り。
+              文字を入れると図鑑の中で読めない大きさになるので、棒で置く */}
+          <g transform="translate(92 372)">
+            <path d="M0 27 C-23 12 -25 -15 -2 -29 C 19 -15 21 12 0 27 Z" fill={`url(#${P}-leaf`.concat(")")} />
+            <path d="M0 27 C -1 6 -1 -13 -2 -29" fill="none" stroke="#3f8f2f" strokeWidth="1.2" opacity="0.55" />
+            <g stroke="#3f8f2f" strokeWidth="0.9" opacity="0.4" fill="none">
+              <path d="M-1 9 C -8 5 -13 -1 -15 -8" /><path d="M-1 -2 C -7 -6 -11 -12 -12 -18" />
+              <path d="M1 9 C 8 5 13 -1 15 -8" /><path d="M1 -2 C 7 -6 11 -12 12 -18" />
+            </g>
+            {/* 葉の上の艶。硝子の中でも濡れている */}
+            <ellipse cx="-7" cy="-12" rx="5" ry="9" fill={WHITE} opacity="0.5" transform="rotate(-24 -7 -12)" />
+          </g>
+          <g fill={DEEP} opacity="0.45">
+            <rect x="134" y="346" width="84" height="6" rx="3" />
+            <rect x="134" y="362" width="62" height="5" rx="2.5" />
+            <rect x="134" y="376" width="72" height="5" rx="2.5" />
+          </g>
+          {/* 水位。硝子の中に水がある、というこの様式の決まり文句 */}
+          <rect x="134" y="396" width="84" height="11" rx="5.5" fill={WHITE} opacity="0.6" />
+          <rect x="134" y="396" width="56" height="11" rx="5.5" fill={BLUE} opacity="0.62" />
+          <rect x="134" y="396" width="56" height="5" rx="2.5" fill={WHITE} opacity="0.45" />
+        </g>
+        {/* 板に乗る露。板が「面」であることを、影付きの水滴が保証する */}
+        <Drop x={206} y={424} rx={11} ry={8.5} rot={-12} />
 
         {/* ── 硝子の玉。版面の主 ─────────────────────────────── */}
         <g filter={`url(#${P}-drop2)`}>

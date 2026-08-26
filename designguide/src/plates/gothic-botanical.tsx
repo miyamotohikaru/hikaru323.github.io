@@ -35,7 +35,12 @@ const lobeW = (t: number, w: number, lobes: number, ph: number) => {
   // 先を尖らせる包絡。基部を細く、中程で最大、先端で 0 に落とす
   const env = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.82)), 0.7);
   // 切れ込み。|cos| を鈍らせると裂片が丸く、鋭くすると深く切れる
-  const cut = 0.22 + 0.78 * Math.pow(Math.abs(Math.cos(t * Math.PI * lobes + ph)), 0.55);
+  // 前の版は底値 0.22・指数 0.55 で、裂片が浅くて丸く、雲の塊に見えた。
+  // 指数を 1 より上げると裂片は**尖り**、谷は広く深くなる。
+  // ケシ（Papaver）の葉は羽状に深く裂け、裂片の先が尖る。
+  // 指数を 1 より下げすぎると（0.42）球が数珠つなぎになり、
+  // 上げすぎると（1.35）鋸の刃になる。0.8 と底値 0.12 が羽状裂に見える境目
+  const cut = 0.12 + 0.88 * Math.pow(Math.abs(Math.cos(t * Math.PI * lobes + ph)), 0.8);
   return w * env * cut;
 };
 
@@ -112,12 +117,15 @@ function Moth({ x, y, s, rot }: { x: number; y: number; s: number; rot: number }
     <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${s})`} fill={alpha(BONE, 0.16)} stroke={BONE} strokeWidth="0.9">
       {[1, -1].map((f) => (
         <g key={f} transform={`scale(${f} 1)`}>
-          {/* 前翅。三角に近い。丸くすると蝶になる */}
-          <path d="M2 -10 C 20 -22 44 -18 48 -4 C 50 6 30 14 4 6 Z" />
-          <path d="M3 6 C 20 8 30 16 25 26 C 20 34 8 27 2 15 Z" />
-          <path d="M9 -10 C 22 -16 36 -13 44 -5" fill="none" strokeWidth="0.6" opacity="0.85" />
-          <path d="M6 -2 C 20 -3 34 -1 46 0" fill="none" strokeWidth="0.5" opacity="0.6" />
-          <path d="M7 10 C 17 12 23 18 22 24" fill="none" strokeWidth="0.6" opacity="0.85" />
+          {/* 前翅。前縁（costa）は直線で、先端（apex）が尖る。
+              丸い卵形にすると蛾ではなく木の葉になる */}
+          <path d="M2 -11 L30 -19 L52 -8 C 52 2 30 12 4 6 Z" />
+          <path d="M3 6 C 22 8 32 16 27 27 C 21 36 8 28 2 15 Z" />
+          {/* 翅の横帯。夜蛾はここに必ず線が2本入る */}
+          <path d="M8 -12 C 22 -9 36 -6 49 -6" fill="none" strokeWidth="0.7" opacity="0.9" />
+          <path d="M6 -3 C 22 -4 36 -1 50 -1" fill="none" strokeWidth="0.55" opacity="0.7" />
+          <path d="M16 -16 L18 5" fill="none" strokeWidth="0.5" opacity="0.55" />
+          <path d="M7 10 C 18 13 24 19 23 25" fill="none" strokeWidth="0.6" opacity="0.85" />
           {/* 触角。櫛歯。蛾はここが蝶と違う */}
           <path d="M1 -12 C -6 -22 -12 -28 -20 -31" fill="none" strokeWidth="0.9" />
           {Array.from({ length: 6 }, (_, i) => (
@@ -245,12 +253,22 @@ export default function Plate() {
               strokeWidth="1"
             />
           ))}
-          {/* 花弁の皺。ケシは必ず皺が寄る */}
-          <g stroke={alpha(BONE, 0.5)} strokeWidth="0.6" fill="none">
-            {Array.from({ length: 16 }, (_, i) => {
-              const a = -150 + i * 19;
-              const [x2, y2] = onCircle(0, 0, 50, a);
-              return <line key={i} x1="0" y1="0" x2={x2} y2={y2} />;
+          {/* 花弁の基部の暗斑。ケシ属の識別点で、図譜なら必ず描かれる。
+              ここが無いと、赤い円盤に線を引いただけの造花に見える */}
+          <g fill={alpha("#2a0d14", 0.72)}>
+            {[6, 96, 188, 274].map((rot, i) => (
+              <path key={i} transform={`rotate(${rot})`}
+                    d="M0 0 C 13 -6 24 -14 26 -27 C 14 -22 -2 -22 -14 -26 C -12 -14 -9 -6 0 0 Z" />
+            ))}
+          </g>
+          {/* 花弁の皺。直線の放射だと球（ビーチボール）の分割線に見えた。
+              皺は基部から出て中ほどで曲がり、縁の手前で消える */}
+          <g stroke={alpha(BONE, 0.42)} strokeWidth="0.6" fill="none" strokeLinecap="round">
+            {Array.from({ length: 20 }, (_, i) => {
+              const a = -170 + i * 17.4;
+              const [mx, my] = onCircle(0, 0, 26, a + 5);
+              const [ex, ey] = onCircle(0, 0, 44 + (i % 3) * 4, a - 6);
+              return <path key={i} d={`M0 0 Q${mx.toFixed(1)} ${my.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`} />;
             })}
           </g>
           {/* 雄しべ。細い糸と葯。近くで見たときの細部その2 */}
@@ -271,26 +289,43 @@ export default function Plate() {
           ))}
         </g>
 
-        {/* 根。掘り上げた全草。ここが「ゴシック」に効く */}
-        <g stroke={BONE} fill="none">
-          <path d="M240 614 C 238 636 236 654 232 670" strokeWidth="3.4" />
-          <path d="M240 614 C 238 636 236 654 232 670" strokeWidth="1.6" stroke={alpha(GREEN, 0.8)} />
-          {Array.from({ length: 22 }, (_, i) => {
-            const t = i / 21;
-            const y = 620 + t * 50;
-            const s = i % 2 === 0 ? 1 : -1;
-            const L = r(14, 42) * (1 - t * 0.4);
+        {/* 根。掘り上げた全草。ここが「ゴシック」に効く。
+            前の版は細い線を22本ばらまいただけで、髭の落書きに見えた。
+            図譜の根は**主根（太い・先へ細る）＋側根（数本・太さの階層あり）
+            ＋細根**という三段の構造で描かれる。太さの階層が無いと根に見えない */}
+        <g stroke={BONE} fill="none" strokeLinecap="round">
+          {/* 主根。下へ行くほど細る */}
+          {[5.2, 3.6, 2.2, 1.2].map((w, i) => (
+            <path key={`tap${i}`}
+              d={`M240 612 C 238 ${632 + i * 12} 235 ${650 + i * 14} ${231 - i * 1.5} ${664 + i * 18}`}
+              strokeWidth={w} />
+          ))}
+          <path d="M240 612 C 238 634 235 652 231 668" strokeWidth="2.4" stroke={alpha(GREEN, 0.7)} />
+          {/* 側根。6本。左右で長さも太さも変える */}
+          {[
+            [618, 1, 46, 1.9], [628, -1, 38, 1.7], [640, 1, 32, 1.4],
+            [650, -1, 44, 1.5], [660, 1, 26, 1.1], [672, -1, 30, 1.2],
+          ].map(([y, sd, L, w], i) => (
+            <path key={`lat${i}`}
+              d={`M${239 - (y - 612) * 0.14} ${y} C ${239 + sd * L * 0.42} ${y + 6}
+                  ${239 + sd * L * 0.82} ${y + 12} ${239 + sd * L} ${y + 22}`}
+              strokeWidth={w} opacity="0.9" />
+          ))}
+          {/* 細根。側根から分かれる */}
+          {Array.from({ length: 20 }, (_, i) => {
+            const t = i / 19;
+            const y = 622 + t * 62;
+            const sd = i % 2 === 0 ? 1 : -1;
+            const L = r(10, 30) * (1 - t * 0.45);
             return (
-              <path
-                key={i}
-                d={`M${239 - t * 7} ${y} C ${239 + s * L * 0.4} ${y + 8} ${239 + s * L * 0.8} ${y + 12} ${239 + s * L} ${y + r(8, 22)}`}
-                strokeWidth={0.9 - t * 0.3}
-                opacity={0.85 - t * 0.25}
-              />
+              <path key={`fin${i}`}
+                d={`M${239 - t * 8} ${y} C ${239 + sd * L * 0.4} ${y + 7} ${239 + sd * L * 0.8} ${y + 11} ${239 + sd * L} ${y + r(8, 20)}`}
+                strokeWidth={0.7 - t * 0.25}
+                opacity={0.7 - t * 0.25} />
             );
           })}
-          <path d="M232 670 C 230 682 228 688 226 694" strokeWidth="1.4" />
         </g>
+
         {/* 土の線。根の上に一本引くと「掘り上げた」ことが伝わる */}
         <g stroke={alpha(BONE, 0.4)} strokeWidth="0.7" strokeDasharray="7 6">
           <line x1="150" y1="610" x2="336" y2="610" />

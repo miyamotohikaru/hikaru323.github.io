@@ -18,6 +18,15 @@
  * ■ 書体は膨らませる
  *   丸い書体は読めないので、太い線を丸継ぎで裏に敷いて字を太らせる
  *   （paint-order: stroke）。これでバブル文字の形になる。
+ *
+ * ■ 検分で直したこと
+ *   「暗い3枚と分けるために明るくする」という判断は正しいが、
+ *   初稿はそれを白に振り切ってしまい、185pxでは地の紙（#eeebe4）に
+ *   溶けて空きコマに見えた。物も全部宙に浮いていた。直したのは3つ。
+ *     ・四隅を銀青に沈めて、版面に輪郭を作った。明るさは中央に残す。
+ *     ・細い格子とレティクル（照準）を敷いた。物と物のあいだが
+ *       ただの余白ではなく「画面」になる。Y2K の画面は必ず罫が走っている。
+ *     ・小さい字の明度を上げた。銀地に薄墨は読めない。
  */
 import { ATLAS, rand } from "@/lib/plate";
 
@@ -69,6 +78,20 @@ export default function Plate() {
           <stop offset="0.72" stopColor="#d5dcea" />
           <stop offset="1" stopColor={SILVER} />
         </linearGradient>
+
+        {/* 四隅の沈み。明るさは中央に残したまま、版面の輪郭だけ作る */}
+        <radialGradient id={`${P}-vig`} cx="0.44" cy="0.42" r="0.76">
+          <stop offset="0.4" stopColor="#8ea1c4" stopOpacity="0" />
+          <stop offset="1" stopColor="#7f93ba" stopOpacity="0.6" />
+        </radialGradient>
+
+        {/* 画面の罫。Y2K の未来は必ず格子の上に載っている */}
+        <pattern id={`${P}-grid`} width="24" height="24" patternUnits="userSpaceOnUse">
+          <path d="M24 0 H0 V24" fill="none" stroke="#93a8cc" strokeWidth="0.6" />
+        </pattern>
+        <pattern id={`${P}-grid5`} width="120" height="120" patternUnits="userSpaceOnUse">
+          <path d="M120 0 H0 V120" fill="none" stroke="#7f97c0" strokeWidth="0.9" />
+        </pattern>
 
         {/* クローム。暗い帯が要。ここが金属と樹脂の分かれ目 */}
         <linearGradient id={`${P}-chrome`} x1="0" y1="0" x2="0.14" y2="1">
@@ -150,9 +173,44 @@ export default function Plate() {
       <g clipPath={`url(#${P}-page)`}>
         <rect width="600" height="800" fill={`url(#${P}-bg)`} />
 
+        {/* 画面の罫。物と物のあいだを「余白」ではなく「画面」にする。
+            細目の上に大目を重ねると、格子に階層ができて安っぽくならない */}
+        <rect width="600" height="800" fill={`url(#${P}-grid)`} opacity="0.3" />
+        <rect width="600" height="800" fill={`url(#${P}-grid5`.concat(")")} opacity="0.42" />
+
         {/* 靄 */}
         <ellipse cx="470" cy="120" rx="240" ry="200" fill={`url(#${P}-bloomP)`} />
         <ellipse cx="120" cy="430" rx="250" ry="230" fill={`url(#${P}-bloomC)`} />
+
+        {/* レティクル。左の空きに2つ。近寄ったときに読むもの。
+            Y2K の画面は、何も無いところにも必ず目盛りが走っている */}
+        <g stroke="#4a5c8c" fill="none" opacity="0.42">
+          <g transform="translate(168 452)">
+            <circle r="46" strokeWidth="0.9" strokeDasharray="3 5" />
+            <circle r="30" strokeWidth="0.9" />
+            <circle r="3.4" strokeWidth="0.9" />
+            <path d="M-60 0 H-36 M36 0 H60 M0 -60 V-36 M0 36 V60" strokeWidth="1.1" />
+            {Array.from({ length: 24 }, (_, i) => {
+              const a = (i / 24) * Math.PI * 2;
+              const L = i % 6 === 0 ? 8 : 4;
+              return (
+                <line key={i}
+                      x1={Math.cos(a) * 30} y1={Math.sin(a) * 30}
+                      x2={Math.cos(a) * (30 + L)} y2={Math.sin(a) * (30 + L)} strokeWidth="0.8" />
+              );
+            })}
+          </g>
+          <g transform="translate(462 166)">
+            <rect x="-52" y="-26" width="104" height="52" strokeWidth="0.9" />
+            <path d="M-52 -12 H52 M-52 0 H52 M-52 12 H52" strokeWidth="0.6" opacity="0.7" />
+            <path d="M-26 -26 V26 M0 -26 V26 M26 -26 V26" strokeWidth="0.6" opacity="0.7" />
+            <path d="M-52 -26 l10 0 M-52 -26 l0 10 M52 26 l-10 0 M52 26 l0 -10" strokeWidth="1.6" />
+          </g>
+        </g>
+        <g fill="#3a4d7d" opacity="0.55" fontFamily="'Courier New', ui-monospace, monospace" fontSize="7.5" letterSpacing="2">
+          <text x="168" y="374" textAnchor="middle">SYS.READY</text>
+          <text x="410" y="212">RGB 32 BIT</text>
+        </g>
 
         {/* 後光。細い光条を放射する。楽観の絵なので、光は上へ広がる */}
         <g transform="translate(392 380)" opacity="0.08">
@@ -287,7 +345,7 @@ export default function Plate() {
           </g>
         </g>
         <text x="50" y="196" fill="#243468" fontFamily="'Courier New', ui-monospace, monospace"
-              fontSize="10.5" letterSpacing="5.4" opacity="0.72">
+              fontSize="10.5" letterSpacing="5.4" opacity="0.95">
           01.01.2000 — OK
         </text>
 
@@ -307,10 +365,13 @@ export default function Plate() {
           ))}
         </g>
 
-        <text x="46" y="778" fill="#3a4570" fontFamily="'Courier New', ui-monospace, monospace"
-              fontSize="9.5" letterSpacing="3" opacity="0.6">
+        <text x="46" y="778" fill="#28345c" fontFamily="'Courier New', ui-monospace, monospace"
+              fontSize="9.5" letterSpacing="3" opacity="0.9">
           CHROME / TRANSLUCENT RESIN / SPARKLE
         </text>
+
+        {/* 四隅の沈み。ここまでの明るさは中央に残る */}
+        <rect width="600" height="800" fill={`url(#${P}-vig)`} style={{ mixBlendMode: "multiply" }} />
 
         {/* 紙目はごく薄く。銀を汚さない */}
         <rect width="600" height="800" filter={`url(#${ATLAS.grain})`} opacity="0.09" style={{ mixBlendMode: "multiply" }} />

@@ -74,15 +74,25 @@ const clamp = (v: number) => Math.max(0, Math.min(1, v));
 
 /**
  * 洋梨の半幅。
+ *
  * 初稿は2つの球のメタボールで作ったが、径が近いと融けて一個の卵になった。
- * 上下2つの円の半幅を「柔らかい最大値」で繋ぐと、
- * 継ぎ目にわずかな凹みが残る。この凹みが洋梨の首になる。
+ * 2稿目は上の球を細くして首を立てたら、今度は首が切れすぎて雪だるまになった。
+ * 球を2つ足す限り、必ず「卵」か「雪だるま」のどちらかに転ぶ（検分で両方を見た）。
+ *
+ * 洋梨の輪郭は球の合成ではなく、上から下へ一本で太っていく曲線である。
+ * だから鐘形 sin(πu) に「重心を下へ寄せる係数」を掛けた1つの式にした。
+ *   ・指数 p を上下で変える。肩は尖り気味（0.82）、尻は丸く（0.5）
+ *   ・belly が u^1.6 で効くので、最大幅が高さの7割の位置に来る
+ * これで首が切れずに、しかも卵にならない。
  */
+const PEAR_TOP = -172, PEAR_H = 378;
 function pearW(ly: number) {
-  const wt = Math.sqrt(Math.max(0, 74 * 74 - (ly + 92) * (ly + 92)));
-  const wb = Math.sqrt(Math.max(0, 126 * 126 - (ly - 80) * (ly - 80)));
-  if (wt <= 0 && wb <= 0) return 0;
-  return Math.pow(Math.pow(wt, 2.6) + Math.pow(wb, 2.6), 1 / 2.6);
+  const u = (ly - PEAR_TOP) / PEAR_H;
+  if (u <= 0 || u >= 1) return 0;
+  const p = u < 0.55 ? 0.82 : 0.5;
+  const bell = Math.pow(Math.sin(Math.PI * u), p);
+  const belly = 0.3 + 0.7 * Math.pow(u, 1.6);
+  return 210 * bell * belly;
 }
 const inPear = (lx: number, ly: number) => Math.abs(lx) <= pearW(ly);
 

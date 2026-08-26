@@ -24,12 +24,12 @@ const P = "pc";
 const PALE = "#e2e6e8";
 const STEEL = "#6f8a9c";
 const RUST = "#c07a4a";
-const DARK = "#2b3540";
+const DARK = "#1e2831"; // 一段深く。前は影が中間調に留まって画面が眠かった
 const SAND = "#d9c9a8";
 /* 5色から作った段 */
-const HI = "#f2f4f5";
+const HI = "#fbfcfc"; // 陽の面はほぼ白まで上げる
 const EDGE = "#8fa0ac";
-const MID = "#3d4a56";
+const MID = "#31404d";
 const SKY1 = "#5c7787";
 const SKY2 = "#7d95a4";
 const SKY3 = "#a9bcc6";
@@ -264,9 +264,15 @@ export default function Plate() {
         </g>
 
         {/* ── 光線。物を無視して版面を横切る。この様式の指紋 ───────── */}
+        {/* 広い光の面を2枚。線だけだと紙の引っかき傷に見えた。
+            プレシジョニズムの光は「線」であると同時に「透明な面」でもある */}
+        <g>
+          <path d="M-40 -40 L128 -40 L440 800 L96 800 Z" fill={HI} opacity="0.11" />
+          <path d="M620 40 L620 -40 L390 -40 L96 800 L330 800 Z" fill={DARK} opacity="0.07" />
+        </g>
         <g strokeLinecap="butt">
-          {Array.from({ length: 13 }, (_, i) => {
-            const a = -0.62 + i * 0.055 + r(-0.008, 0.008);
+          {Array.from({ length: 8 }, (_, i) => {
+            const a = -0.62 + i * 0.09 + r(-0.008, 0.008);
             const L = 1500;
             return (
               <line
@@ -275,13 +281,13 @@ export default function Plate() {
                 x2={-180 + Math.cos(a) * L} y2={-160 + Math.sin(a) * L}
                 stroke={i % 3 === 0 ? DARK : PALE}
                 strokeWidth={i % 3 === 0 ? 1.2 : 1.8}
-                opacity={i % 3 === 0 ? 0.3 : 0.55}
+                opacity={i % 3 === 0 ? 0.22 : 0.34}
               />
             );
           })}
           {/* 逆向きにもう一群。交点が面を切り直す */}
-          {Array.from({ length: 7 }, (_, i) => {
-            const a = 2.05 + i * 0.06;
+          {Array.from({ length: 4 }, (_, i) => {
+            const a = 2.05 + i * 0.1;
             return (
               <line
                 key={`ry2${i}`}

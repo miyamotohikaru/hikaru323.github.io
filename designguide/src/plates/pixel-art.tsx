@@ -10,6 +10,14 @@
  *   2. 色数を絞ること。ここでは14色。中間色は作らずディザで作る。
  *   3. 稜線をなめらかな関数から作ること。手で刻むとギザギザの塊になる。
  *   4. 暖色を1点だけ置くこと。全部寒色だと絵が沈む。
+ *
+ * ■ 検分で直したこと
+ *   題字だけ本物の書体で刷ってあり、ここだけ画素の格子から外れて
+ *   滑らかだった。ドット絵の版で文字がアンチエイリアスされているのは、
+ *   網点の版に写真を貼るのと同じ種類の嘘になる。3×5 の字母を起こして
+ *   題字も同じマスに乗せた。
+ *   ついでに「14 COLOURS」も嘘だった（実際は20色）ので、
+ *   数を刷るのをやめ、使った色をそのまま帯に並べた。数えれば分かる。
  */
 import { ATLAS, rand } from "@/lib/plate";
 
@@ -38,6 +46,45 @@ const C = {
 
 const Px = ({ x, y, w = 1, h = 1, fill, o }: { x: number; y: number; w?: number; h?: number; fill: string; o?: number }) => (
   <rect x={x * CELL} y={y * CELL} width={w * CELL} height={h * CELL} fill={fill} opacity={o} />
+);
+
+/** 3×5 の字母。
+    絵と同じ48マスで字を組むと、たった9文字で版面の3/4を占めてしまう。
+    実機も同じ問題を抱えていて、答えは決まっていた——
+    **文字だけ倍の解像度の面に持つ**（アーケード基板やX68000のテキスト面）。
+    ここでも字は 1/2 マスの格子に置く。格子から外れてはいないので、
+    アンチエイリアスは一切かからない。 */
+const FONT: Record<string, string[]> = {
+  A: ["###", "#.#", "###", "#.#", "#.#"],
+  C: ["###", "#..", "#..", "#..", "###"],
+  E: ["###", "#..", "###", "#..", "###"],
+  I: ["###", ".#.", ".#.", ".#.", "###"],
+  L: ["#..", "#..", "#..", "#..", "###"],
+  P: ["###", "#.#", "###", "#..", "#.."],
+  R: ["##.", "#.#", "##.", "#.#", "#.#"],
+  T: ["###", ".#.", ".#.", ".#.", ".#."],
+  X: ["#.#", "#.#", ".#.", "#.#", "#.#"],
+  "4": ["#.#", "#.#", "###", "..#", "..#"],
+  "6": ["###", "#..", "###", "#.#", "###"],
+  "8": ["###", "#.#", "###", "#.#", "###"],
+  " ": ["...", "...", "...", "...", "..."],
+};
+
+/** 字母をマスに置く。字送りは4マス（字3＋あき1） */
+const Word = ({ s, x, y, fill, o }: { s: string; x: number; y: number; fill: string; o?: number }) => (
+  <>
+    {s.split("").flatMap((ch, i) => {
+      const g = FONT[ch];
+      if (!g) return [];
+      return g.flatMap((row, ry) =>
+        row
+          .split("")
+          .map((c, rx) =>
+            c === "#" ? <Px key={`${i}_${ry}_${rx}`} x={x + i * 4 + rx} y={y + ry} fill={fill} o={o} /> : null,
+          ),
+      );
+    })}
+  </>
 );
 
 /** なめらかな稜線。2つの正弦を重ねてマスに丸める */
@@ -192,25 +239,23 @@ export default function Plate() {
         {/* 走査線 */}
         <rect width="600" height="800" fill={`url(#${ATLAS.scanlines})`} opacity="0.12" />
 
-        {/* 題字。マスの格子に乗せる */}
-        <text
-          x={CELL * 2} y={ROWS * CELL - CELL * 2.4}
-          fill={C.moon}
-          fontFamily="'Courier New', ui-monospace, monospace"
-          fontSize="22" fontWeight="700" letterSpacing="7"
-          opacity="0.9"
-        >
-          PIXEL ART
-        </text>
-        <text
-          x={CELL * 2} y={ROWS * CELL - CELL * 1.1}
-          fill={C.waterLit}
-          fontFamily="'Courier New', ui-monospace, monospace"
-          fontSize="11" fontWeight="700" letterSpacing="3.5"
-          opacity="0.72"
-        >
-          48 x 64 — 14 COLOURS
-        </text>
+        {/* 題字。字母もマスに乗せる。ここだけ滑らかだと版が崩れる。
+            影を1マスずらして敷くのは、当時の題字の作法そのもの */}
+        <g transform={`scale(${0.5})`}>
+          <Word s="PIXEL ART" x={5} y={105} fill="#070812" o={0.8} />
+          <Word s="PIXEL ART" x={4} y={104} fill={C.moon} />
+          <Word s="48X64" x={4} y={114} fill={C.waterLit} o={0.9} />
+        </g>
+        {/* 使った色の帯。数を刷るより、並べたほうが確かめられる。
+            初稿は「14 COLOURS」と刷ってあったが、実際は20色だった */}
+        {[C.sky[0], C.sky[1], C.sky[2], C.sky[3], C.sky[4], C.sky[5],
+          C.near, C.nearLit, C.far, C.farLit,
+          C.waterDeep, C.water, C.waterLit,
+          C.starDim, C.star, C.moonDark, C.moonMid, C.moon,
+          C.warm, C.red].map((c, i) => (
+          <Px key={`pal${i}`} x={26 + i} y={58} w={1} h={3} fill={c} />
+        ))}
+        <Px x={26} y={57} w={20} h={1} fill="#070812" o={0.5} />
       </g>
     </svg>
   );

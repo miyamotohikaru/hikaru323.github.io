@@ -75,9 +75,11 @@ function Volute({ x, y, s, rot, flip = 1, dim = 0 }: { x: number; y: number; s: 
   const edge = shift(NIGHT, 0.06);
   return (
     <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${s * flip} ${s})`}>
-      <path d={ACANTHUS} transform="translate(-4 8) rotate(16) scale(1.05)" fill={dark} />
-      <path d={ACANTHUS} transform="translate(-10 2) rotate(16) scale(0.95)" fill={mid} />
-      <path d={ACANTHUS} transform="translate(-15 -3) rotate(16) scale(0.66)" fill={lit} />
+      {/* 葉は小さくする。大きいと楓の葉の束を貼ったように見え、
+          渦（volute）本体が読めなくなる。主役は巻きのほう */}
+      <path d={ACANTHUS} transform="translate(-4 8) rotate(16) scale(0.82)" fill={dark} />
+      <path d={ACANTHUS} transform="translate(-9 3) rotate(16) scale(0.72)" fill={mid} />
+      <path d={ACANTHUS} transform="translate(-13 -1) rotate(16) scale(0.5)" fill={lit} />
       {/* 葉脈。彫りの線 */}
       <g stroke={edge} strokeWidth="1.1" fill="none" opacity="0.7">
         <path d="M-8 4 C 4 -12 10 -30 9 -48" />
@@ -154,12 +156,28 @@ export default function Plate() {
         <clipPath id={`${P}-page`}>
           <rect width="600" height="800" />
         </clipPath>
-        <radialGradient id={`${P}-light`} cx="24%" cy="10%" r="98%">
-          <stop offset="0%" stopColor={shift(BROWN, 0.3)} />
-          <stop offset="32%" stopColor={BROWN} />
-          <stop offset="64%" stopColor={shift(NIGHT, 0.12)} />
-          <stop offset="100%" stopColor={NIGHT} />
+        {/* 明暗の幅。前の版は全域が中間の焦茶で、看板に CHIAROSCVRO と
+            書いてあるのに明暗が無かった。いちばん明るい所と暗い所の差を倍にする */}
+        <radialGradient id={`${P}-light`} cx="22%" cy="8%" r="96%">
+          <stop offset="0%" stopColor={shift(BROWN, 0.54)} />
+          <stop offset="24%" stopColor={shift(BROWN, 0.14)} />
+          <stop offset="52%" stopColor={shift(NIGHT, 0.14)} />
+          <stop offset="78%" stopColor={shift(NIGHT, 0.03)} />
+          <stop offset="100%" stopColor="#0b0806" />
         </radialGradient>
+        {/* 斜めに差す一条。バロックの構図は必ず斜めに動く。
+            対称の舞台のままだと、動き（motus）が絵に入らない */}
+        <linearGradient id={`${P}-shaft`} x1="0" y1="0" x2="0.86" y2="1">
+          <stop offset="0" stopColor={shift(GOLD, 0.5)} stopOpacity="0.3" />
+          <stop offset="0.42" stopColor={shift(GOLD, 0.2)} stopOpacity="0.11" />
+          <stop offset="1" stopColor={GOLD} stopOpacity="0" />
+        </linearGradient>
+        {/* 額の中も平らに塗らない。左上が明るく、右下が沈む */}
+        <linearGradient id={`${P}-panel`} x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stopColor={shift(CREAM, 0.26)} />
+          <stop offset="0.46" stopColor={shift(CREAM, -0.06)} />
+          <stop offset="1" stopColor={shift(CREAM, -0.42)} />
+        </linearGradient>
         {/* 銅版のハッチ。影も光も、全部この線でできている */}
         <pattern id={`${P}-h1`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
           <rect width="6" height="1.6" fill={NIGHT} />
@@ -195,9 +213,20 @@ export default function Plate() {
         <line x1="82" y1="336" x2="82" y2="800" stroke={shift(BROWN, 0.24)} strokeWidth="4" />
         <line x1="518" y1="336" x2="518" y2="800" stroke={shift(BROWN, -0.42)} strokeWidth="4" />
 
-        {/* ── 帳。左は大きく明るく、右は細く暗く ─────────────────── */}
-        <Curtain side={1} n={9} top={[-30, 196]} pinch={[54, 176]} bot={[-30, 244]} shade={0} />
-        <Curtain side={-1} n={7} top={[-30, 148]} pinch={[36, 132]} bot={[-30, 186]} shade={0.24} />
+        {/* 斜めの一条。左上の高みから右下へ抜ける。
+            これがないと、対称の舞台に置いた飾りにしか見えない */}
+        <polygon points="-40,60 214,-20 560,690 300,800" fill={`url(#${P}-shaft)`} />
+
+        {/* ── 帳。**左右で開き方をはっきり変える。**
+               扉絵の枠組みが左右対称なのは当時の作法どおりで構わないが、
+               対称のまま何も動かないと、バロックではなく19世紀の額縁になる。
+               斜めの光（上の一条）と、この帳の開き差の2つで画面を動かす。
+               ・左：大きく引き開けて明るい。舞台の奥が見える
+               ・右：ほとんど閉じたまま暗い。襞も多く重い
+               銘帯を斜めに渡す案も試したが、白い棒が題字の前に寝ている
+               ようにしか見えなかったので捨てた ─────────────────── */}
+        <Curtain side={1} n={8} top={[-30, 172]} pinch={[42, 150]} bot={[-30, 216]} shade={0} />
+        <Curtain side={-1} n={11} top={[-30, 232]} pinch={[62, 214]} bot={[-30, 286]} shade={0.34} />
 
         {/* ── 上の横幕。裾を五つの弧で刻む ───────────────────── */}
         <path
@@ -306,7 +335,7 @@ export default function Plate() {
             const ey = 424 - Math.cos(a) * 184;
             return <line key={i} x1={sx} y1={sy} x2={ex} y2={ey} stroke={shift(NIGHT, 0.06)} strokeWidth="1" opacity={0.2 + Math.max(0, Math.cos(a - 2.6)) * 0.5} />;
           })}
-          <ellipse cx="300" cy="424" rx="132" ry="158" fill={shift(CREAM, -0.06)} />
+          <ellipse cx="300" cy="424" rx="132" ry="158" fill={`url(#${P}-panel)`} />
         </g>
 
         {/* ── 額の中。彫りのハッチと題字 ─────────────────────── */}
@@ -348,6 +377,9 @@ export default function Plate() {
             <rect x="-13" y="16" width="26" height="1.6" fill={shift(BROWN, 0.4)} />
           </g>
         </g>
+
+        {/* 右下の闇。バロックの画面はここが必ずいちばん沈む */}
+        <path d="M600 300 L600 800 L250 800 C 430 690 540 500 600 300 Z" fill="#0b0806" opacity="0.42" />
 
         {/* ── 台石。下の縁を締める ───────────────────────────── */}
         <path d="M64 720 L536 720 L560 762 L40 762 Z" fill={shift(BROWN, -0.2)} />

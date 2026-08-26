@@ -223,21 +223,65 @@ export default function Plate() {
           })}
         </g>
 
-        {/* 空洞。奥に2つ */}
+        {/* 空洞。奥に2つ。
+            検分で直したところ：初稿はここが「黒く塗った楕円＋細い縁」
+            だけだったので、器官ではなく耳当てに見えていた。
+            穴が穴に見えるには、中に**奥行き**と、縁に**分節**が要る。
+              ・同心の環を消失点へ寄せながら縮めて、奥へ抜ける筒にする
+              ・縁に放射の節を回す。機械の絞りにも、生き物の口にも読める形 */}
         <ellipse cx="112" cy="238" rx="76" ry="98" fill={`url(#${P}-hole)`} />
         <ellipse cx="488" cy="238" rx="76" ry="98" fill={`url(#${P}-hole)`} />
-        {/* 縁。上側に明部、下側に暗部を回すと、塗り潰しではなく穴に見える */}
-        {[112, 488].map((cx) => (
-          <g key={cx}>
-            <path d={`M ${cx - 76} 238 A 76 98 0 0 1 ${cx + 76} 238`} fill="none" stroke="#0a0c0f"
-                  strokeWidth="6" opacity="0.9" />
-            <path d={`M ${cx - 74} 232 A 74 96 0 0 1 ${cx + 74} 232`} fill="none" stroke={BONE}
-                  strokeWidth="1.4" opacity="0.16" />
-            <path d={`M ${cx - 76} 238 A 76 98 0 0 0 ${cx + 76} 238`} fill="none" stroke={PALE}
-                  strokeWidth="2.4" opacity="0.16" />
-            <ellipse cx={cx} cy="238" rx="76" ry="98" fill="none" stroke="#0a0c0f" strokeWidth="1.4" />
-          </g>
-        ))}
+        {[112, 488].map((cx) => {
+          const dir = cx < AX ? 1 : -1;   // 消失点は正中側へ寄せる
+          return (
+            <g key={cx}>
+              {/* 縁の節。外縁から内へ食い込む楔。上側を明るくする */}
+              {Array.from({ length: 26 }, (_, i) => {
+                const a = (i / 26) * Math.PI * 2;
+                const ox = Math.cos(a);
+                const oy = Math.sin(a);
+                const x0 = cx + ox * 76;
+                const y0 = 238 + oy * 98;
+                const x1 = cx + ox * 64;
+                const y1 = 238 + oy * 82;
+                const tx = -oy * 7.4;
+                const ty = ox * 5.6;
+                return (
+                  <polygon
+                    key={`s${i}`}
+                    points={`${x0 + tx},${y0 + ty} ${x0 - tx},${y0 - ty} ${x1 - tx * 0.34},${y1 - ty * 0.34} ${x1 + tx * 0.34},${y1 + ty * 0.34}`}
+                    fill={i % 2 ? DEEP : STEEL}
+                    opacity={oy < 0 ? 0.72 : 0.38}
+                  />
+                );
+              })}
+              {/* 奥へ抜ける筒 */}
+              {Array.from({ length: 6 }, (_, i) => {
+                const t = (i + 1) / 7;
+                const k = 0.78 * (1 - t * 0.8);
+                return (
+                  <ellipse
+                    key={`t${i}`}
+                    cx={cx + dir * 26 * t} cy={238 - 22 * t}
+                    rx={76 * k} ry={98 * k}
+                    fill="none" stroke={PALE} strokeWidth={1.7 - i * 0.2}
+                    opacity={0.22 - i * 0.03}
+                  />
+                );
+              })}
+              {/* 筒の底。ここだけ完全に潰す */}
+              <ellipse cx={cx + dir * 24} cy="218" rx="8" ry="10" fill="#04060a" />
+              {/* 縁。上側に明部、下側に暗部を回すと、塗り潰しではなく穴に見える */}
+              <path d={`M ${cx - 76} 238 A 76 98 0 0 1 ${cx + 76} 238`} fill="none" stroke="#0a0c0f"
+                    strokeWidth="6" opacity="0.9" />
+              <path d={`M ${cx - 74} 232 A 74 96 0 0 1 ${cx + 74} 232`} fill="none" stroke={BONE}
+                    strokeWidth="1.4" opacity="0.22" />
+              <path d={`M ${cx - 76} 238 A 76 98 0 0 0 ${cx + 76} 238`} fill="none" stroke={PALE}
+                    strokeWidth="2.4" opacity="0.18" />
+              <ellipse cx={cx} cy="238" rx="76" ry="98" fill="none" stroke="#0a0c0f" strokeWidth="1.4" />
+            </g>
+          );
+        })}
 
         {/* ── 器官。右半分を組み、折り返す ─────────────────── */}
         {HALF}

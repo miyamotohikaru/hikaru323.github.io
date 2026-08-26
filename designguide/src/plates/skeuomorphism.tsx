@@ -158,6 +158,29 @@ export default function Plate() {
             );
           })}
         </g>
+        {/* 銀面のシワ。毛穴を撒いただけでは「ざらついた茶色」のままだった（検分）。
+            本物の革は毛穴と毛穴のあいだが細かい多角形の網になっていて、
+            その稜線が光を拾う。短い曲線を影と光の対で引いて、その網を作る */}
+        <g fill="none" strokeLinecap="round">
+          {Array.from({ length: 210 }, (_, i) => {
+            const x = rp(0, 600);
+            const y = rp(0, 800);
+            const a = rp(0, Math.PI * 2);
+            const len = rp(9, 28);
+            const bow = rp(-7, 7);
+            const x2 = x + Math.cos(a) * len;
+            const y2 = y + Math.sin(a) * len;
+            const mx = (x + x2) / 2 - Math.sin(a) * bow;
+            const my = (y + y2) / 2 + Math.cos(a) * bow;
+            const d = `M${x.toFixed(1)} ${y.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+            return (
+              <g key={`w${i}`}>
+                <path d={d} stroke={LEATHER_D} strokeWidth={rp(0.6, 1.5)} opacity={0.16 + rp() * 0.22} />
+                <path d={d} stroke={LEATHER_L} strokeWidth={rp(0.5, 1.1)} opacity={0.1 + rp() * 0.16} transform="translate(0 1.2)" />
+              </g>
+            );
+          })}
+        </g>
 
         {/* 縁の彫り込み。糸はこの溝の底に通る */}
         <rect

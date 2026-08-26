@@ -57,52 +57,67 @@ type BarDef = { du: number; dv: number; len: number; th: number; fill: string; a
  * 一辺 64 の正方形まで、比を 10 倍以上ばらけさせている。
  */
 const BARS: BarDef[] = [
-  { du: 170, dv: -170, len: 64, th: 64, fill: INK }, // 黒の正方形。マレーヴィチの原点
-  { du: -70, dv: -126, len: 224, th: 6, fill: INK },
-  { du: 72, dv: -72, len: 250, th: 17, fill: INK },
-  { du: -30, dv: -8, len: 418, th: 33, fill: INK }, // 主役
-  { du: -110, dv: 54, len: 290, th: 50, fill: RED },
-  { du: 150, dv: 98, len: 140, th: 9, fill: INK },
-  { du: -190, dv: 118, len: 176, th: 26, fill: BLUE },
-  { du: -250, dv: 182, len: 98, th: 34, fill: YELLOW },
+  { du: 196, dv: -186, len: 76, th: 76, fill: INK, a: A + 12 }, // 黒の正方形。マレーヴィチの原点
+  { du: -76, dv: -140, len: 246, th: 7, fill: INK },
+  { du: 78, dv: -80, len: 268, th: 20, fill: INK },
+  { du: -34, dv: -6, len: 452, th: 44, fill: INK }, // 主役。ここが画面を決める
+  { du: -120, dv: 60, len: 316, th: 56, fill: RED },
+  { du: 162, dv: 106, len: 152, th: 10, fill: INK },
+  { du: -206, dv: 130, len: 192, th: 30, fill: BLUE },
+  { du: -272, dv: 198, len: 108, th: 38, fill: YELLOW },
 ];
 
-/* 直交する帯。2本だけ。多いと格子になってしまう。
-   赤の方形は主役の黒帯の外に置く。半分だけ重ねると事故に見えた */
+/* 主軸に乗らない要素。
+   主軸1本だけに全部を乗せた前の版は、画面が**吹き流し**に見えた。
+   マレーヴィチの構図には必ず、主軸から外した帯が2〜3枚ある。
+   それが画面に捻れ（トルク）を作る。均等に散らすのではなく、
+   「外した」ものを数枚だけ置くのが正しい */
 const CROSS: BarDef[] = [
-  { du: 118, dv: 30, len: 250, th: 8, fill: YELLOW, a: A2 },
-  { du: 228, dv: 64, len: 42, th: 42, fill: RED, a: A2 },
+  { du: 128, dv: 26, len: 288, th: 9, fill: YELLOW, a: A2 },
+  { du: 244, dv: 70, len: 48, th: 48, fill: RED, a: A2 },
+  // 左中に置いたら主役の黒帯と鋭角に噛み合い、山形（チェック印）に見えた。
+  // 右下の虚空へ移す。ここなら主軸から外れた重さとして効く
+  { du: 43, dv: 325, len: 178, th: 16, fill: INK, a: A + 46 },
+  { du: 46, dv: 176, len: 130, th: 22, fill: BLUE, a: A - 38 },
 ];
 
 /* 虚空に取り残された小片。マレーヴィチはこれを必ず置く。
    u/v で置くと縁からはみ出したので、ここだけ絶対座標で置く。
    細い片は本体の細帯の真横に置くと二重に見えたので、右下の虚空へ移した */
 const MOTES: { x: number; y: number; len: number; th: number; fill: string }[] = [
-  { x: 86, y: 214, len: 15, th: 15, fill: INK },
+  { x: 84, y: 186, len: 17, th: 17, fill: INK },
   { x: 455, y: 700, len: 52, th: 5, fill: INK },
-  { x: 462, y: 92, len: 22, th: 22, fill: BLUE },
+  { x: 486, y: 84, len: 24, th: 24, fill: BLUE },
   { x: 150, y: 690, len: 10, th: 10, fill: INK },
-  { x: 534, y: 618, len: 13, th: 13, fill: INK },
 ];
 
-function Bar({ du, dv, len, th, fill, a = A }: BarDef) {
+/**
+ * 帯ひとつ。
+ * rect で描くと辺が定規の直線になり、印刷された図案に見える。
+ * マレーヴィチは筆で塗っている。四隅を1px前後だけ揺らし、
+ * 辺をわずかに反らせた多角形として引く。
+ * この1pxが「絵」と「図案」を分ける。
+ */
+function Bar({ du, dv, len, th, fill, a = A, seed = 3 }: BarDef & { seed?: number }) {
   const [cx, cy] = at(du, dv);
+  const j = rand(seed * 977 + 13);
+  const hx = len / 2;
+  const hy = th / 2;
+  const p = (x: number, y: number) => `${(x + j(-1.1, 1.1)).toFixed(1)},${(y + j(-1.1, 1.1)).toFixed(1)}`;
+  const d =
+    `M${p(-hx, -hy)} Q${p(0, -hy - j(0.3, 1.4))} ${p(hx, -hy)}` +
+    ` L${p(hx, hy)} Q${p(0, hy + j(0.3, 1.4))} ${p(-hx, hy)} Z`;
   return (
-    <rect
-      x={cx - len / 2}
-      y={cy - th / 2}
-      width={len}
-      height={th}
-      fill={fill}
-      transform={`rotate(${a} ${cx.toFixed(2)} ${cy.toFixed(2)})`}
-    />
+    <g transform={`translate(${cx.toFixed(2)} ${cy.toFixed(2)}) rotate(${a})`}>
+      <path d={d} fill={fill} />
+    </g>
   );
 }
 
 export default function Plate() {
   /* 貫入。折れながら伸びる細い割れを、黒帯と赤帯の中だけに引く */
   const rc = rand(1915);
-  const cracks = Array.from({ length: 64 }, () => {
+  const cracks = Array.from({ length: 96 }, () => {
     let x = rc(60, 520);
     let y = rc(80, 560);
     let ang = rc(0, 360);
@@ -115,7 +130,7 @@ export default function Plate() {
       y += Math.sin(rad(ang)) * l;
       d += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
     }
-    return { d, o: rc(0.14, 0.38) };
+    return { d, o: rc(0.22, 0.55) };
   });
 
   /* 白地の刷毛。マレーヴィチの白は塗った白で、紙の白ではない */
@@ -129,7 +144,7 @@ export default function Plate() {
         </clipPath>
         {/* 貫入を落とし込む先。大きい2枚の帯だけ */}
         <clipPath id={`${P}-crack`}>
-          {[BARS[3], BARS[4], BARS[0]].map((b, i) => {
+          {[BARS[3], BARS[4], BARS[0], BARS[6]].map((b, i) => {
             const [cx, cy] = at(b.du, b.dv);
             return (
               <rect
@@ -138,7 +153,7 @@ export default function Plate() {
                 y={cy - b.th / 2}
                 width={b.len}
                 height={b.th}
-                transform={`rotate(${A} ${cx.toFixed(2)} ${cy.toFixed(2)})`}
+                transform={`rotate(${b.a ?? A} ${cx.toFixed(2)} ${cy.toFixed(2)})`}
               />
             );
           })}
@@ -172,11 +187,11 @@ export default function Plate() {
 
         {/* 階段 */}
         {BARS.map((b, i) => (
-          <Bar key={`b${i}`} {...b} />
+          <Bar key={`b${i}`} {...b} seed={i + 1} />
         ))}
         {/* 直交する2本 */}
         {CROSS.map((b, i) => (
-          <Bar key={`c${i}`} {...b} />
+          <Bar key={`c${i}`} {...b} seed={i + 41} />
         ))}
         {/* 虚空の小片 */}
         {MOTES.map((m, i) => (

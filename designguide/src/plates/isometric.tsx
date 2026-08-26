@@ -218,8 +218,11 @@ export default function Plate() {
             </g>
           ))}
         </g>
+        {/* 検分で直した：x=10 だと、上に載る版3の張り出しに
+            頭の3文字が食われて「PH LAYER Z=122」に見えていた。
+            隠れる幅ぶん右へ送る */}
         <g transform={mRightTxt(A, ZB1)}>
-          <text x="10" y="11" fill="#ffffff" fontFamily="'Courier New', ui-monospace, monospace" fontSize="9" fontWeight="700" letterSpacing="1.6" opacity="0.9">
+          <text x="44" y="11" fill="#ffffff" fontFamily="'Courier New', ui-monospace, monospace" fontSize="9" fontWeight="700" letterSpacing="1.6" opacity="0.9">
             GRAPH LAYER Z=122
           </text>
         </g>

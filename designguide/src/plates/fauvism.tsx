@@ -138,7 +138,9 @@ function field(r: Rnd, box: [number, number, number, number], o: FieldOpt): S[] 
     for (let col = 0; col < o.cols; col++) {
       const x = bx + gx * (col + 0.5) + r(-gx * j, gx * j);
       const y = by + gy * (row + 0.5) + r(-gy * j, gy * j);
-      const len = o.len * r(0.72, 1.32);
+      // 長さの振れを大きく取る。近い長さで揃えると、筆跡ではなく
+      // 同じ形の粒（豆）が並んだ模様に見える
+      const len = o.len * r(0.66, 1.42);
       const deg = o.deg + r(-o.degJit, o.degJit);
       const w = o.wid * r(0.7, 1.3);
       const bend = (o.bend ?? 0) * r(-1, 1);
@@ -173,10 +175,12 @@ function foliage(r: Rnd, box: [number, number, number, number], lobes: Lobe[], o
           lobe = l;
         }
       }
-      if (dens <= 0 || r() > Math.min(1, dens * 3.4)) continue;
+      // 密度を落として、房のなかに地（塗り残し）を残す。
+      // 隙間なく埋めるとモザイクになり、フォーヴの「地が見える」筆致から外れる
+      if (dens <= 0 || r() > Math.min(1, dens * 2.9)) continue;
       // 房の内側ほど筆を大きく、縁ほど小さく。塊と縁ができる
       const scale = 0.6 + dens * 0.75;
-      const len = o.len * scale * r(0.78, 1.26);
+      const len = o.len * scale * r(0.66, 1.44);
       const deg = o.deg + r(-o.degJit, o.degJit);
       const w = o.wid * scale * r(0.78, 1.22);
       const c = lobe.colors[Math.floor(r(0, lobe.colors.length)) % lobe.colors.length];
@@ -243,12 +247,12 @@ export default function Plate() {
   /* 幹。幹の傾き（垂直から約12度）ぶん剪断した座標に2本の帯を置き、
      重ねて明暗の境目をぼかす。切り抜きで割るとマスクの直線が出る */
   const trunkDark = field(r, [156, 176, 72, 660], {
-    cols: 3, rows: 15, len: 72, wid: 20, deg: 88, degJit: 8, bend: 5,
+    cols: 3, rows: 13, len: 88, wid: 18, deg: 88, degJit: 7, bend: 5,
     colors: [PURPLE_D, RED_D, PURPLE_D, PURPLE],
     impasto: 0.16,
   });
   const trunkLit = field(r, [206, 176, 64, 660], {
-    cols: 3, rows: 15, len: 70, wid: 18, deg: 88, degJit: 8, bend: 5,
+    cols: 3, rows: 13, len: 86, wid: 17, deg: 88, degJit: 7, bend: 5,
     colors: [RED_D, ORANGE, RED, PURPLE, ORANGE, YELLOW],
     impasto: 0.42,
   });
@@ -266,7 +270,7 @@ export default function Plate() {
       { x: 550, y: 36, rx: 106, ry: 76, colors: [TEAL_D, PURPLE, RED_D, TEAL] },
       { x: 374, y: 172, rx: 76, ry: 50, colors: [PURPLE_D, RED, PURPLE] },
     ],
-    { cols: 30, rows: 17, len: 32, wid: 15, deg: 30, degJit: 82, bend: 5, impasto: 0.18, colors: [RED] },
+    { cols: 30, rows: 17, len: 38, wid: 14, deg: 30, degJit: 82, bend: 5, impasto: 0.18, colors: [RED] },
   );
 
   /* 水面の照り返し。家と舟の真下に縦に切る */

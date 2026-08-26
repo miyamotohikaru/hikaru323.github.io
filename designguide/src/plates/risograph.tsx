@@ -11,6 +11,13 @@
  *   2. 重なりが濃い紫に沈むこと（multiply）。蛍光ピンク×青の定番。
  *   3. 網の粗さが場所で変わること。孔版はベタが出ない代わり、
  *      ベタに近い密な網と、薄いアミとを刷り分けて濃淡を作る。
+ *   4. **重なりそのものを主役にすること。** 検分で「青い丘の上のピンクの丸」
+ *      ＝図柄として凡庸、と指摘された。孔版の楽しさは2版が交差した所に
+ *      third colour が生まれる点にあるので、大きな2円を深く重ね、
+ *      その交わり（紫のレンズ）を版面の中心に据えた。
+ *      一度、羽状の葉を何枚も交差させる案を試したが、小葉が潰れて
+ *      藪に見え、縮小するとただの染みになったので捨てた。
+ *      孔版は形が単純なほど強い。
  *
  * ■ 歪みフィルタ（ATLAS.rough）はここでは使わない
  *   網を敷いたあとに変位をかけると、点が崩れて落書きになる（2稿目でそうなった）。
@@ -58,34 +65,31 @@ export default function Plate() {
 
         {/* ── ピンク版。左上へ3px。先に刷る ─────────────────────── */}
         <g transform="translate(-3 -3)" fill={PINK} style={{ mixBlendMode: "multiply" }}>
-          {/* 大きな陽 */}
-          <circle cx="348" cy="376" r="182" mask={`url(#${P}-m-mid)`} opacity="0.95" />
-          {/* 陽の芯。網を密にして濃く */}
-          <circle cx="348" cy="376" r="96" mask={`url(#${P}-m-solid)`} opacity="0.85" />
+          {/* 左の大円。中間のアミ。芯だけ密にして厚みを出す */}
+          <circle cx="238" cy="352" r="176" mask={`url(#${P}-m-mid)`} opacity="0.95" />
+          <circle cx="238" cy="352" r="92" mask={`url(#${P}-m-solid)`} opacity="0.72" />
+          {/* 版面の下側にもう一度ピンクを効かせる細い帯 */}
+          <rect x="-20" y="712" width="640" height="22" mask={`url(#${P}-m-tint)`} opacity="0.75" />
           {/* 散らした点。孔版のゴミ・インクの飛び */}
-          {[[92, 262, 9], [128, 318, 5], [536, 214, 7], [500, 168, 4], [72, 470, 5], [548, 520, 4]].map(([x, y, r], i) => (
+          {[[496, 186, 9], [538, 232, 5], [86, 610, 6], [58, 208, 5], [418, 736, 4]].map(([x, y, r], i) => (
             <circle key={i} cx={x} cy={y} r={r} opacity="0.8" />
           ))}
         </g>
 
-        {/* ── 青版。右下へ3px。陽に食い込ませて紫を作る ───────────── */}
+        {/* ── 青版。右下へ3px。ピンクの円に深く食い込ませ、
+               交わりを紫のレンズにする。ここが版面の主役 ─────────── */}
         <g transform="translate(3 3)" fill={BLUE} style={{ mixBlendMode: "multiply" }}>
-          {/* 手前のなだらかな丘。陽の下半分と重なる */}
+          {/* 奥の丘。2円を地面に着地させる */}
           <path
-            d="M-20 742 L-20 512 Q 140 430 318 486 Q 476 536 620 470 L620 742 Z"
-            mask={`url(#${P}-m-solid)`}
-            opacity="0.9"
-          />
-          {/* 丘の上に薄いアミをもう1枚。奥行きが出る */}
-          <path
-            d="M-20 742 L-20 560 Q 160 500 330 546 Q 480 588 620 540 L620 742 Z"
+            d="M-20 800 L-20 664 Q 160 614 340 650 Q 490 680 620 632 L620 800 Z"
             mask={`url(#${P}-m-tint)`}
-            opacity="0.8"
+            opacity="0.85"
           />
-          {/* 左上の輪。線だけの円 */}
-          <circle cx="152" cy="252" r="74" fill="none" stroke={BLUE} strokeWidth="16" mask={`url(#${P}-m-mid)`} opacity="0.9" />
-          {/* 右へ抜ける細い帯 */}
-          <rect x="392" y="212" width="228" height="12" mask={`url(#${P}-m-solid)`} opacity="0.9" />
+          {/* 右の大円。半径はピンクと同じ。中心距離は半径の1.1倍まで寄せる */}
+          <circle cx="400" cy="404" r="176" mask={`url(#${P}-m-mid)`} opacity="0.92" />
+          <circle cx="400" cy="404" r="92" mask={`url(#${P}-m-solid)`} opacity="0.7" />
+          {/* 右へ抜ける細い帯。版面の上を横に締める */}
+          <rect x="404" y="176" width="216" height="11" mask={`url(#${P}-m-solid)`} opacity="0.9" />
         </g>
 
         {/* ── 文字。青版→ピンク版の順で2度刷る ───────────────────── */}
@@ -114,13 +118,14 @@ export default function Plate() {
         >
           2 COLOUR — FLUORESCENT PINK / BLUE
         </text>
-        {/* 版面の地。丘は742で止め、下に紙を残して文字を置く */}
+        {/* 註は丘（青ベタ）の上に乗る。孔版は白を刷れないので、
+            紙の色で抜いたように見せる */}
         <text
-          x="55" y="778" fill={INK}
+          x="55" y="768" fill={PAPER}
           fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-          fontSize="10" fontWeight="600" letterSpacing="3.6" opacity="0.6"
+          fontSize="10.5" fontWeight="700" letterSpacing="3.4" opacity="0.92"
         >
-          MISREGISTERED BY 3PX — ON PURPOSE
+          MISREGISTERED BY 3PX — OVERPRINT MAKES THE THIRD COLOUR
         </text>
 
         {/* ざら紙。孔版は上質紙には刷らない */}

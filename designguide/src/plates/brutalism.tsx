@@ -30,12 +30,12 @@ import { ATLAS, rand, shift } from "@/lib/plate";
 
 const P = "bru";
 
-const CONC = "#b8b5ad"; // 手前の面（陽）
+const CONC = "#c1bdb4"; // 手前の面（陽）。一段上げる
 const CONC_B = "#a6a39c"; // 引っ込んだ面
-const CONC_LIT = "#cdcac2";
-const SIDE = "#76736c"; // 側面（陰）
-const RETURN = "#4a4842"; // 右向きの返し。逆光で最も暗い
-const PLAZA = "#4f4c47";
+const CONC_LIT = "#dedad0"; // 陽の当たる小口。明暗の幅を広げないと灰一色になる
+const SIDE = "#6a6760"; // 側面（陰）。一段落とす
+const RETURN = "#3e3c37"; // 右向きの返し。逆光で最も暗い
+const PLAZA = "#46433e";
 const DARK = "#2e2c28";
 const INK = "#141312";
 

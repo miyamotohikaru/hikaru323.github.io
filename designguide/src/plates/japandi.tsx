@@ -19,6 +19,14 @@
  *   初稿は家具と小物を置いただけで、わびさびと同じ「ベージュの静物」だった。
  *   通り芯・寸法線・目盛りという**製図の言語**を足した瞬間に、
  *   別の様式として立った。ジャパンディの正体は素材ではなく整理の作法。
+ *
+ * ■ 検分で直したこと
+ *   上の1/4（天井まわり）が完全に空だった。立面図なのだから、
+ *   そこに入るべきものは決まっている——**天井のレベル線と、
+ *   左端の高さ寸法**である。飾りを足して埋めるのではなく、
+ *   図面としてまだ描いていなかったものを描いた。
+ *   結果、天井高2400・台高450という寸法が版面に入り、
+ *   「整理の作法」という主題がもう一段強くなった。
  */
 import { ATLAS, rand } from "@/lib/plate";
 
@@ -110,6 +118,33 @@ export default function Plate() {
                     fontSize="11" letterSpacing="0.5">{"ABC"[i]}</text>
             </g>
           ))}
+        </g>
+
+        {/* ── 天井のレベル線。立面図なら必ず引く線。
+               ここが空いていたのは、飾りが足りないのではなく
+               図面として描き落としていたということ ───────────────── */}
+        <g stroke={MID} opacity="0.4">
+          <line x1="0" y1="78" x2="600" y2="78" strokeWidth="0.9" />
+          <line x1="0" y1="81" x2="600" y2="81" strokeWidth="0.4" opacity="0.6" />
+        </g>
+        {/* 右寄せにすると C 通りの吊りコードと重なった。左端に逃がす */}
+        <text x="44" y="72" fill={MID}
+              fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontSize="8"
+              letterSpacing="2" opacity="0.55">CEILING · FL +2400</text>
+
+        {/* 左端の高さ寸法。天井から床まで、台の天端で一度切る */}
+        <g stroke={MID} strokeWidth="0.9" opacity="0.55">
+          <line x1="28" y1="78" x2="28" y2={FLOOR_Y} />
+          <line x1="21" y1="78" x2="35" y2="78" />
+          <line x1="21" y1="474" x2="35" y2="474" strokeDasharray="2 2" />
+          <line x1="21" y1={FLOOR_Y} x2="35" y2={FLOOR_Y} />
+          {/* 台の天端。ここに寸法を切ると「載っている」ことが図で言える */}
+          <line x1="35" y1="474" x2="196" y2="474" strokeWidth="0.5" strokeDasharray="3 4" opacity="0.6" />
+        </g>
+        <g fill={MID} fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
+           fontSize="8.5" letterSpacing="1.4" opacity="0.6">
+          <text transform="translate(22 276) rotate(-90)" textAnchor="middle">2400</text>
+          <text transform="translate(22 546) rotate(-90)" textAnchor="middle">450</text>
         </g>
 
         {/* ── 障子。B 通りの左に納める ───────────────────────── */}

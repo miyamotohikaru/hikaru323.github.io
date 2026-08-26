@@ -26,7 +26,10 @@ import { ATLAS, shift, onCircle } from "@/lib/plate";
 const P = "nm";
 const BG = "#e6e7ee";
 const LIGHT = "#ffffff";
-const SHADE = shift("#c8cad4", -0.2); // #c8cad4 のままでは地に沈んで影に見えない
+// 影の色。#c8cad4 のままでは地に沈んで影に見えない。
+// 検分で 185px まで縮めたとき凹凸がほぼ消えていたので、-0.2 から -0.32 へ落とした。
+// この様式はもともと明度差が原理的に小さいが、図版としては読めなければ意味がない
+const SHADE = shift("#c8cad4", -0.32);
 const ACCENT = "#5a6b8c";
 const INK = "#3a3f52";
 
@@ -86,11 +89,11 @@ export default function Plate() {
     <svg viewBox="0 0 600 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ニューモーフィズム様式の図版">
       <defs>
         <clipPath id={`${P}-page`}><rect width="600" height="800" /></clipPath>
-        <Out id={`${P}-out-l`} d={9} b={7} />
-        <Out id={`${P}-out-m`} d={7} b={6} />
+        <Out id={`${P}-out-l`} d={11} b={9} />
+        <Out id={`${P}-out-m`} d={9} b={7.5} />
         <Out id={`${P}-out-s`} d={4} b={3.4} />
-        <In id={`${P}-in-l`} d={9} b={8} />
-        <In id={`${P}-in-m`} d={6} b={5} />
+        <In id={`${P}-in-l`} d={10} b={9} />
+        <In id={`${P}-in-m`} d={7.5} b={6} />
         <In id={`${P}-in-s`} d={3.4} b={3} />
         {/* 弧のにじみ。彩度のあるものは必ず柔らかく光る */}
         <filter id={`${P}-glow`} x="-60%" y="-60%" width="220%" height="220%">
@@ -138,7 +141,7 @@ export default function Plate() {
           />
         </g>
         <path d={arc} fill="none" stroke={ACCENT} strokeWidth="12" strokeLinecap="round" opacity="0.34" filter={`url(#${P}-glow)`} />
-        <path d={arc} fill="none" stroke={ACCENT} strokeWidth="9" strokeLinecap="round" opacity="0.92" />
+        <path d={arc} fill="none" stroke={ACCENT} strokeWidth="10.5" strokeLinecap="round" />
         <g filter={`url(#${P}-out-m)`}>
           <circle cx="444" cy="252" r="46" fill={BG} />
         </g>
@@ -230,7 +233,7 @@ export default function Plate() {
         {([
           [LIGHT, "#FFFFFF", "HIGHLIGHT"],
           [BG, "#E6E7EE", "SURFACE"],
-          [SHADE, "#A0A2AA", "SHADOW"],
+          [SHADE, "#8A8C95", "SHADOW"],
         ] as const).map(([c, hex, name], i) => (
           <g key={hex} transform={`translate(${48 + i * 132} 730)`}>
             <g filter={`url(#${P}-out-s)`}>

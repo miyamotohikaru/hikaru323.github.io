@@ -25,6 +25,14 @@
  *     紙を #fafafa のままにしたら、はじめて高さが読めるようになった。
  *   ・FAB を紙の隅に小さく置くと、そこだけ「画面のスクショ」に見えた。
  *     版面から切り離して大きく1つだけ浮かせたら、円と影の絵になった。
+ *
+ * ■ 検分で足したこと
+ *   ・185px まで縮めると、青い帯と白い面しか見えず「空っぽの紙」に見えた。
+ *     地を grey300 相当まで落として紙との差を開き、
+ *     2dp の紙にインクの波紋（ripple）を大きく1つ入れた。
+ *     波紋は部品ではない。「material は紙で、その上をインクが広がる」という
+ *     この様式の物理そのもので、しかもマテリアル以外では絶対に出てこない。
+ *     色の塊が版面の左上に入るので、縮小しても何の絵か分かるようになる。
  */
 import { ATLAS, shift } from "@/lib/plate";
 
@@ -34,7 +42,7 @@ const INDIGO = "#3f51b5";
 const RED = "#ff5252";
 const AMBER = "#ffc107";
 const INK = "#212121";
-const FIELD = shift(INK, 0.88); // 地。紙が浮いて見えるための下地
+const FIELD = shift(INK, 0.815); // 地。grey300 相当。ここを明るくすると紙が地に溶ける
 const RULE = shift(INK, 0.72);
 const WHITE = "#ffffff";
 
@@ -75,6 +83,9 @@ export default function Plate() {
         </clipPath>
         <clipPath id={`${P}-s2`}>
           <rect x={S2.x} y={S2.y} width={S2.w} height={S2.h} rx="4" />
+        </clipPath>
+        <clipPath id={`${P}-s1`}>
+          <rect x={S1.x} y={S1.y} width={S1.w} height={S1.h} rx="4" />
         </clipPath>
 
         {/* 高さごとの影。key と ambient を別々に作って重ねる。
@@ -148,8 +159,40 @@ export default function Plate() {
 
         {/* 2dp。地にほとんど貼りついた紙 */}
         <rect x={S1.x} y={S1.y} width={S1.w} height={S1.h} rx="4" fill={PAPER} filter={`url(#${P}-e2)`} />
+        {/* インクの波紋。触れた点から紙の上をインクが広がる。
+            紙の縁で必ず切れる（紙の外へは出ない）のが要で、
+            だから clipPath で紙の内側に閉じ込めてある。
+            この物理はマテリアル以外のどの様式にも無い */}
+        <g clipPath={`url(#${P}-s1)`}>
+          <circle cx="98" cy="258" r="104" fill={INDIGO} opacity="0.92" />
+          <circle cx="98" cy="258" r="126" fill="none" stroke={INDIGO} strokeWidth="1.6" opacity="0.34" />
+          <circle cx="98" cy="258" r="148" fill="none" stroke={INDIGO} strokeWidth="1.2" opacity="0.18" />
+          {/* 触れた点。ここが波紋の中心 */}
+          <circle cx="98" cy="258" r="9" fill="none" stroke={WHITE} strokeWidth="2" opacity="0.85" />
+          <circle cx="98" cy="258" r="2.6" fill={WHITE} opacity="0.9" />
+          {/* 註は波紋の外（紙の白い側）へ右詰めで逃がす。
+              左詰めにすると青い面と白い面を跨いで、字が半分消えた */}
+          <text
+            x={S1.x + S1.w - 12} y={S1.y + 24} textAnchor="end" fill={INK} opacity="0.5"
+            fontFamily={SANS} fontSize="7.5" fontWeight="700" letterSpacing="1.8"
+          >
+            RIPPLE
+          </text>
+          <text
+            x={S1.x + S1.w - 12} y={S1.y + 37} textAnchor="end" fill={INK} opacity="0.32"
+            fontFamily={SANS} fontSize="7" fontWeight="700" letterSpacing="1.2"
+          >
+            INK STOPS
+          </text>
+          <text
+            x={S1.x + S1.w - 12} y={S1.y + 49} textAnchor="end" fill={INK} opacity="0.32"
+            fontFamily={SANS} fontSize="7" fontWeight="700" letterSpacing="1.2"
+          >
+            AT THE EDGE
+          </text>
+        </g>
         <text
-          x={S1.x + 16} y={S1.y + S1.h - 18} fill={INK} opacity="0.3"
+          x={S1.x + 16} y={S1.y + S1.h - 18} fill={WHITE} opacity="0.6"
           fontFamily={SANS} fontSize="8" fontWeight="700" letterSpacing="2"
         >
           1 dp THICK
@@ -200,6 +243,33 @@ export default function Plate() {
         <rect x={S3.x} y={S3.y} width={S3.w} height={S3.h} rx="4" fill={PAPER} filter={`url(#${P}-e24)`} />
         <g clipPath={`url(#${P}-s3)`}>
           <rect x={S3.x} y={S3.y} width={S3.w} height="34" fill={INDIGO} />
+          {/* 24dp は仕様上いちばん高い紙＝ダイアログ。
+              白い面が何なのか分からないと、ただの空白に見えたので註を入れた */}
+          <text
+            x={S3.x + 14} y={S3.y + 22} fill={WHITE} opacity="0.9"
+            fontFamily={SANS} fontSize="9" fontWeight="700" letterSpacing="2.2"
+          >
+            DIALOG
+          </text>
+          <text
+            x={S3.x + 14} y={S3.y + 62} fill={INK} opacity="0.38"
+            fontFamily={SANS} fontSize="8" fontWeight="700" letterSpacing="1.6"
+          >
+            THE HIGHEST SHEET
+          </text>
+          <text
+            x={S3.x + 14} y={S3.y + 78} fill={INK} opacity="0.26"
+            fontFamily={SANS} fontSize="7.5" fontWeight="700" letterSpacing="1.4"
+          >
+            NOTHING SITS ABOVE 24 dp
+          </text>
+          <rect x={S3.x + 14} y={S3.y + 100} width={S3.w - 28} height="1" fill={INK} opacity="0.12" />
+          <text
+            x={S3.x + S3.w - 14} y={S3.y + 126} textAnchor="end" fill={INDIGO} opacity="0.85"
+            fontFamily={SANS} fontSize="8.5" fontWeight="700" letterSpacing="1.8"
+          >
+            OK
+          </text>
         </g>
         <g stroke={AMBER} strokeWidth="1.4">
           <line x1={S3.x + 150} y1={S3.y + S3.h} x2={S3.x + 150} y2={S3.y + S3.h + 26} />

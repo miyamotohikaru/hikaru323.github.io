@@ -22,6 +22,15 @@
  *   初稿は全面を淡い雲で埋めて、白い靄の四角にしかならなかった。
  *   門・水平線・同心円という「読める形」を先に置き、
  *   そのあとで溶かす順に変えたら、初めて絵になった。
+ *
+ * ■ 検分で直したこと
+ *   それでもまだ「白い滲みが1つあるだけ」だった。185pxに落とすと
+ *   地の紙（#eeebe4）と見分けがつかない。原因は2つある。
+ *     ・明度の幅が5%しかなかった。四隅を沈めて幅を作った。
+ *     ・門のほかに見るものが無かった。薄衣（ヴェール）を2枚渡して
+ *       版面に横の骨を通し、門の縁に光の分散（桃／水色のずれ）を入れ、
+ *       ぼけていない蛾を1匹だけ置いた。
+ *   蛾は「硬いもの」の役。これが1つ入るだけで、ほかが溶けて見える。
  */
 import { ATLAS, rand } from "@/lib/plate";
 
@@ -31,6 +40,10 @@ const LILAC = "#e3d5ee";
 const AQUA = "#cfe3ea";
 const BLUSH = "#f6e0e6";
 const SMOKE = "#8a7f96";
+/* 分散用。桃と水色をそれぞれ一段だけ濃くしたもの。
+   光が縁で割れるのを描くのに、淡いままだと見えない */
+const BLUSH_D = "#e7b5c5";
+const AQUA_D = "#a6ccdb";
 
 const CX = 300;
 const HORIZON = 596;
@@ -74,12 +87,25 @@ export default function Plate() {
           <feGaussianBlur stdDeviation="1.6" />
         </filter>
 
-        {/* 地。上が薄紫、下が桜色 */}
+        {/* 地。上が薄紫、下が桜色。初稿より両端を一段沈めてある。
+            淡いままでは地の紙に溶けて、版面の輪郭が消えた */}
         <linearGradient id={`${P}-sky`} x1="0.2" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stopColor="#efe8f4" />
+          <stop offset="0" stopColor="#ddd0e8" />
           <stop offset="0.42" stopColor={AIR} />
-          <stop offset="0.78" stopColor="#f9f0f3" />
-          <stop offset="1" stopColor="#eee8f0" />
+          <stop offset="0.78" stopColor="#f6e9ef" />
+          <stop offset="1" stopColor="#d9cee6" />
+        </linearGradient>
+        {/* 四隅の沈み。中心の光を出すために外を落とす */}
+        <radialGradient id={`${P}-vig`} cx="0.5" cy="0.42" r="0.78">
+          <stop offset="0.42" stopColor="#c8bad8" stopOpacity="0" />
+          <stop offset="1" stopColor="#b8a8cc" stopOpacity="0.68" />
+        </radialGradient>
+        {/* 薄衣の面。中ほどだけ濃くして、端で消す */}
+        <linearGradient id={`${P}-veil`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="0.3" stopColor="#ffffff" stopOpacity="0.85" />
+          <stop offset="0.72" stopColor="#ffffff" stopOpacity="0.7" />
+          <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
         {/* 門の中の光。上ほど白い */}
         <linearGradient id={`${P}-gate`} x1="0" y1="0" x2="0" y2="1">
@@ -152,6 +178,25 @@ export default function Plate() {
         {/* 門の縁。細い線を1本だけ、弱くぼかして残す */}
         <path d={arch(ARCH_W, ARCH_TOP, HORIZON)} fill="none" stroke="#ffffff" strokeWidth="2.4"
               opacity="0.9" filter={`url(#${P}-b4)`} />
+        {/* 光の分散。強い光が縁を通ると、桃と水色に割れる。
+            白い線を1本引くより、ずらした2本のほうが「光」に見える */}
+        <g fill="none" filter={`url(#${P}-b4)`} style={{ mixBlendMode: "multiply" }}>
+          <path d={arch(ARCH_W + 5, ARCH_TOP - 5, HORIZON)} stroke={BLUSH_D} strokeWidth="3.4" opacity="0.62" />
+          <path d={arch(ARCH_W - 5, ARCH_TOP + 5, HORIZON)} stroke={AQUA_D} strokeWidth="3.4" opacity="0.62" />
+        </g>
+
+        {/* ── 薄衣。版面に横の骨を通す。
+               門が1つあるだけの絵は、縮小すると滲みにしか見えない。
+               上の1枚は門の奥、下の1枚は手前を通す ───────────────── */}
+        <g style={{ mixBlendMode: "multiply" }} opacity="0.55">
+          <path d="M -40,196 C 90,132 200,224 300,202 C 400,180 520,236 640,172
+                   L 640,246 C 520,310 400,254 300,276 C 200,298 90,206 -40,270 Z"
+                fill={LILAC} filter={`url(#${P}-b2)`} />
+        </g>
+        <g fill="none" stroke="#ffffff" strokeWidth="1.4" opacity="0.75" filter={`url(#${P}-b4)`}>
+          <path d="M -40,196 C 90,132 200,224 300,202 C 400,180 520,236 640,172" />
+          <path d="M -40,240 C 90,178 200,266 300,244 C 400,222 520,278 640,214" opacity="0.5" />
+        </g>
 
         {/* ── 水面。門を映して版面を上下に割る ─────────────────── */}
         <rect y={HORIZON} width="600" height={800 - HORIZON} fill={`url(#${P}-water)`} />
@@ -183,6 +228,49 @@ export default function Plate() {
           <circle key={i} cx={m.x} cy={m.y} r={m.r} fill={m.hue} opacity={m.o}
                   filter={m.soft ? `url(#${P}-b3)` : undefined} />
         ))}
+
+        {/* 手前の薄衣。門と水面をまたいで垂れる。奥の1枚より濃くして、
+            前後を作る。同じ濃さで2枚置くと、ただの縞になる */}
+        <g style={{ mixBlendMode: "multiply" }} opacity="0.5">
+          <path d="M -40,470 C 80,522 190,436 300,458 C 410,480 540,412 640,458
+                   L 640,536 C 540,492 410,558 300,536 C 190,514 80,600 -40,548 Z"
+                fill={BLUSH} filter={`url(#${P}-b2)`} />
+        </g>
+        <g fill="none" stroke="#ffffff" strokeWidth="1.6" opacity="0.8" filter={`url(#${P}-b4)`}>
+          <path d="M -40,470 C 80,522 190,436 300,458 C 410,480 540,412 640,458" />
+        </g>
+
+        {/* ── 四隅の沈み。中心を明るくするより、外を落とすほうが効く ── */}
+        <rect width="600" height="800" fill={`url(#${P}-vig)`} style={{ mixBlendMode: "multiply" }} />
+
+        {/* ── 蛾。この一匹だけが、ぼけていない。
+               硬いものが隣にあって初めて、ほかが溶けて見える ───────── */}
+        <g transform="translate(452 424) rotate(-12) scale(0.92)" fill={SMOKE}>
+          {/* 前翅は三角に後退させ、後翅は小さく下に置く。
+              丸い羽4枚だと蝶になり、蛾に見えない */}
+          <g opacity="0.46">
+            <path d="M -2,-11 L -47,-31 C -54,-24 -52,-9 -45,-3 L -3,3 Z" />
+            <path d="M -3,2 L -35,15 C -39,21 -33,28 -27,25 L -3,11 Z" />
+            <path d="M 2,-11 L 47,-31 C 54,-24 52,-9 45,-3 L 3,3 Z" />
+            <path d="M 3,2 L 35,15 C 39,21 33,28 27,25 L 3,11 Z" />
+          </g>
+          <g opacity="0.8">
+            <ellipse cx="0" cy="1" rx="3" ry="13" />
+            <circle cx="0" cy="-13" r="3.2" />
+          </g>
+          {/* 翅の脈。近寄ったときの取っ掛かり */}
+          <g fill="none" stroke={SMOKE} strokeWidth="0.6" opacity="0.6">
+            <path d="M -4,-9 L -44,-26" />
+            <path d="M -4,-5 L -46,-15" />
+            <path d="M 4,-9 L 44,-26" />
+            <path d="M 4,-5 L 46,-15" />
+          </g>
+          {/* 触角。蛾は羽根状。ここは細くても引いておく */}
+          <g fill="none" stroke={SMOKE} strokeWidth="1" strokeLinecap="round" opacity="0.8">
+            <path d="M -1.5,-15 C -6,-23 -12,-27 -19,-28" />
+            <path d="M 1.5,-15 C 6,-23 12,-27 19,-28" />
+          </g>
+        </g>
 
         {/* ── ぼけていない線。これが無いと全部が「ピンぼけ」になる ── */}
         <g fill="none" stroke={SMOKE} opacity="0.3">

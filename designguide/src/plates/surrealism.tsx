@@ -133,8 +133,23 @@ export default function Plate() {
           <stop offset="1" stopColor="#a08350" />
         </radialGradient>
         <linearGradient id={`${P}-fade`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor={SHADOW} stopOpacity="0.62" />
-          <stop offset="1" stopColor={SHADOW} stopOpacity="0" />
+          <stop offset="0" stopColor={SHADOW} stopOpacity="0.72" />
+          <stop offset="0.55" stopColor={SHADOW} stopOpacity="0.4" />
+          <stop offset="1" stopColor={SHADOW} stopOpacity="0.08" />
+        </linearGradient>
+        {/* 地平の靄。シュールレアリスムの技法は「学院派の写実」であって
+            平塗りではない。空気遠近（遠くほど白く霞む）が入っていないと、
+            どれだけ変な物を置いても、平らなイラストにしか見えない */}
+        <linearGradient id={`${P}-haze`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#eef0e4" stopOpacity="0" />
+          <stop offset="0.55" stopColor="#eef0e4" stopOpacity="0.62" />
+          <stop offset="1" stopColor="#eef0e4" stopOpacity="0" />
+        </linearGradient>
+        {/* 手前を沈める。近景が明るいままだと、視線が画面の外へ滑り落ちる */}
+        <linearGradient id={`${P}-near`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={SHADOW} stopOpacity="0" />
+          <stop offset="0.62" stopColor={SHADOW} stopOpacity="0.1" />
+          <stop offset="1" stopColor={SHADOW} stopOpacity="0.3" />
         </linearGradient>
         <clipPath id={`${P}-ground-clip`}>
           <rect x="-20" y={SEA} width="640" height="340" />
@@ -176,6 +191,17 @@ export default function Plate() {
             d={`M${DX + DW - JAMB} ${SEA} L${DX + DW - JAMB + DH * SH * 1.9} ${SEA + 300} L${DX + DW + DH * SH * 1.9} ${SEA + 300} L${DX + DW} ${SEA} Z`}
             fill={`url(#${P}-fade)`}
           />
+          {/* 楣（まぐさ）の影。いちばん遠い所に落ちる。
+              これが無いと、扉の影が2本の縞にしか見えない */}
+          <path
+            d={`M${DX + DH * SH * 1.62} ${SEA + 256} L${DX + DW + DH * SH * 1.62} ${SEA + 256}
+                L${DX + DW + DH * SH * 1.9} ${SEA + 300} L${DX + DH * SH * 1.9} ${SEA + 300} Z`}
+            fill={SHADOW} opacity="0.2"
+          />
+          {/* 柱の根元の接地影。ここが無いと柱が地面に載らない */}
+          <ellipse cx={DX + JAMB / 2} cy={SEA + 2} rx={JAMB * 0.9} ry="4" fill={SHADOW} opacity="0.5" />
+          <ellipse cx={DX + DW - JAMB / 2} cy={SEA + 2} rx={JAMB * 0.9} ry="4" fill={SHADOW} opacity="0.5" />
+
           {/* 球の影。ここだけ立方体の影が落ちている。この版の核。
              菱形に明暗をつけた初稿は「地面の穴」に見えたので、
              六角形（立方体を低い光で潰した形）を一様の濃さで置いた */}
@@ -210,6 +236,9 @@ export default function Plate() {
             </g>
           ))}
         </g>
+
+        {/* 地平の靄。空と地面をまたいで1枚かける */}
+        <rect x="-20" y={SEA - 54} width="640" height="108" fill={`url(#${P}-haze)`} />
 
         {/* ── 扉。石の枠だけが立っている ───────────────────────────── */}
         {/* 枠の内側。別の時刻の空が見える */}
@@ -339,6 +368,10 @@ export default function Plate() {
           {/* 札の影 */}
           <path d="M48 626 L208 626 L268 640 L104 640 Z" fill={SHADOW} opacity="0.3" />
         </g>
+
+        {/* 近景を沈める。いちばん手前が明るいままだと、
+            視線が下辺から滑り落ちて、下三分の一が死ぬ */}
+        <rect x="-20" y={SEA + 120} width="640" height="220" fill={`url(#${P}-near)`} />
 
         {/* 紙の目。薄く。精密な描写を殺さない程度に */}
         <rect

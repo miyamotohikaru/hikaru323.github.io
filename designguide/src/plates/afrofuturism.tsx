@@ -16,6 +16,18 @@
  *   3. 金・青緑・朱。土の色ではなく、鉱物と炎の色を使う。
  *      地は黒ではなく藍。完全な黒に落とすと宇宙が平らになる。
  *   4. 星は等間隔にしない。等間隔の点は「柄」であって星空ではない。
+ *
+ * ■ 検分で直したこと（重要）
+ *   初稿は横顔を地の生成色（#f4e9d8）で抜いていた。
+ *   影絵のつもりでも、黒人の未来を描く様式で肌が生成色に見えるのは
+ *   端的に間違いである。肌は褐色（SKIN）に置き換え、
+ *   背後の太陽からの逆光を金の縁取りで入れて、遠目の抜けを確保した。
+ *   生成色は衣に移し、縮小したときの塊は衣が受け持つ。
+ *   横顔も鼻梁と唇を作り直した（初稿は西洋の側面線だった）。
+ *   肩の布は4段→2段に減らした。下のケンテ帯と二重に効いて、
+ *   「アフリカ柄の見本帳」に寄っていたため。
+ *   ケンテ帯そのものは残す。実在の織（経糸の帯に緯を打つ）を
+ *   構造ごと書いているので、これは異国趣味の飾りではない。
  */
 import { ATLAS, rand, onCircle } from "@/lib/plate";
 
@@ -26,6 +38,11 @@ const TEAL = "#00c2a8";
 const RED = "#e8452a";
 const CREAM = "#f4e9d8";
 const DEEP = "#161230"; // 惑星の内側。地よりわずかに明るい藍
+/* 肌。5色の軸から外へ出した3色。朱(#e8452a)と藍(#0d0a1f)のあいだに置いて、
+   版面の色相からは離れないようにしてある */
+const SKIN = "#6f3c1f";      // 頬。主
+const SKIN_DK = "#3d1f10";   // 髪の巻き・影
+const SKIN_LT = "#96552c";   // 逆光側のわずかな起こし
 
 const DX = 302; // 惑星の中心
 const DY = 330;
@@ -171,67 +188,111 @@ export default function Plate() {
             <circle cx="8" cy="-206" r="7" fill={RED} />
           </g>
 
-          {/* 顔。切り抜きの側面 */}
+          {/* 髪。冠の下に巻き毛を回す。地肌がそのまま出ていると仮面に見えて、
+              人（人格）に見えない。ここは省略してはいけない部分 */}
+          <g fill={SKIN_DK}>
+            {Array.from({ length: 22 }, (_, i) => {
+              const a = -1.30 + (i / 21) * 3.16;   // 生え際から後頭、うなじまで回す
+              const rr = 62 - Math.abs(i - 9) * 0.55;
+              return <circle key={i} cx={6 + Math.sin(a) * rr} cy={-58 - Math.cos(a) * rr * 1.04} r="9.8" />;
+            })}
+          </g>
+
+          {/* 衣。生成色はここに置く。縮小したときの塊は顔ではなく衣が受け持つ */}
           <path
-            d="M 10,-122 C -14,-122 -38,-108 -50,-86 C -56,-74 -58,-64 -60,-54
-               C -61,-48 -58,-44 -60,-40 C -64,-34 -76,-24 -77,-19
-               C -78,-14 -70,-14 -64,-15 C -60,-15 -63,-9 -64,-5
-               C -65,-1 -60,-1 -58,-2 C -55,-3 -60,4 -61,8
-               C -62,14 -58,19 -54,21 C -48,24 -40,30 -34,36
-               C -26,44 -16,48 -8,50 C -6,56 -6,60 -8,64
-               C -24,80 -72,98 -112,116 C -136,127 -150,146 -150,172
+            d="M -10,70 C -26,84 -72,100 -112,116 C -136,127 -150,146 -150,172
                L -150,232 L 150,232 L 150,172
-               C 150,146 136,127 112,116 C 74,98 54,82 48,64
-               C 46,52 48,38 52,22 C 58,0 66,-24 66,-52
-               C 66,-84 44,-112 10,-122 Z"
+               C 150,146 136,127 112,116 C 76,100 54,84 50,70 Z"
             fill={CREAM}
           />
-          {/* 目。切り抜きの中に落とす */}
-          <path d="M -46,-38 C -38,-44 -26,-44 -20,-38 C -26,-31 -38,-31 -46,-38 Z" fill={NIGHT} />
-          <circle cx="-33" cy="-37" r="4.6" fill={GOLD} />
-          <circle cx="-33" cy="-37" r="2" fill={NIGHT} />
-          <path d="M -50,-46 C -40,-54 -24,-53 -17,-46" fill="none" stroke={NIGHT} strokeWidth="2.6" strokeLinecap="round" />
-          {/* 口と鼻の際 */}
-          <path d="M -63,-14 C -57,-12 -52,-13 -48,-16" fill="none" stroke={NIGHT} strokeWidth="1.8" strokeLinecap="round" />
-          <path d="M -60,1 C -54,3 -48,3 -43,1" fill="none" stroke={NIGHT} strokeWidth="2.2" strokeLinecap="round" />
+
+          {/* 顔。褐色の側面。鼻梁を出し、唇に厚みを付け直した */}
+          <path
+            d="M 10,-122 C -14,-122 -38,-108 -50,-86 C -56,-74 -58,-64 -60,-54
+               C -61,-48 -58,-44 -61,-40 C -66,-34 -80,-26 -82,-20
+               C -83,-15 -76,-12 -70,-13 C -66,-13 -70,-7 -71,-3
+               C -72,1 -66,2 -63,1 C -60,0 -68,7 -69,12
+               C -70,18 -63,22 -57,23 C -50,26 -41,31 -34,36
+               C -26,44 -16,48 -8,50 C -7,60 -7,68 -10,76
+               L 50,76 C 47,58 46,40 48,22
+               C 54,-2 66,-24 66,-52 C 66,-84 44,-112 10,-122 Z"
+            fill={SKIN}
+          />
+          {/* 頬骨。起こす面は1つだけ。多くすると彫刻になる。
+              輪郭に沿わせないと、ただの染みに見える */}
+          <path d="M -50,-30 C -34,-22 -24,-2 -30,22 C -38,30 -46,20 -50,4 Z"
+                fill={SKIN_LT} opacity="0.34" />
+          {/* 逆光。太陽は背後にある。褐色は藍地に沈むので、
+              この金の一本が縮小時の可読性をぜんぶ持っている */}
+          <path
+            d="M 10,-122 C -14,-122 -38,-108 -50,-86 C -56,-74 -58,-64 -60,-54
+               C -61,-48 -58,-44 -61,-40 C -66,-34 -80,-26 -82,-20
+               C -83,-15 -76,-12 -70,-13 C -66,-13 -70,-7 -71,-3
+               C -72,1 -66,2 -63,1 C -60,0 -68,7 -69,12
+               C -70,18 -63,22 -57,23 C -50,26 -41,31 -34,36
+               C -26,44 -16,48 -8,50"
+            fill="none" stroke={GOLD} strokeWidth="3.4" strokeLinecap="round" opacity="0.95"
+          />
+          {/* 目。白目を生成色で抜く。褐色の面にそのまま黒を置くと穴になる。
+              白目を出しすぎると驚いた顔になるので、上瞼を深く落とす */}
+          <path d="M -46,-37 C -39,-43 -26,-43 -20,-37 C -26,-31 -39,-31 -46,-37 Z" fill={CREAM} />
+          <circle cx="-33" cy="-36.5" r="4.4" fill={GOLD} />
+          <circle cx="-33" cy="-36.5" r="1.9" fill={SKIN_DK} />
+          <path d="M -46,-37 C -39,-44 -26,-44 -20,-37" fill="none" stroke={SKIN_DK} strokeWidth="3" strokeLinecap="round" />
+          <path d="M -50,-48 C -40,-56 -24,-55 -17,-48" fill="none" stroke={SKIN_DK} strokeWidth="3" strokeLinecap="round" />
+          {/* 小鼻と口の合わせ */}
+          <path d="M -69,-15 C -63,-12 -57,-13 -53,-17" fill="none" stroke={SKIN_DK} strokeWidth="2" strokeLinecap="round" />
+          <path d="M -68,1 C -60,4 -52,4 -46,1" fill="none" stroke={SKIN_DK} strokeWidth="2.4" strokeLinecap="round" />
           {/* 耳 */}
-          <path d="M 12,-24 C 24,-30 34,-22 32,-8 C 30,2 20,6 14,2" fill="none" stroke={NIGHT} strokeWidth="2.6" />
+          <path d="M 12,-24 C 24,-30 34,-22 32,-8 C 30,2 20,6 14,2" fill="none" stroke={SKIN_DK} strokeWidth="2.6" />
           {/* 耳飾り。金の環と朱の玉 */}
           <circle cx="22" cy="14" r="10" fill="none" stroke={GOLD} strokeWidth="4" />
           <circle cx="22" cy="28" r="5" fill={RED} />
-          {/* 額の帯。玉を並べる */}
-          <path d="M -52,-84 C -34,-104 -6,-114 18,-112 C 40,-110 56,-96 62,-76 L 52,-70 C 46,-88 32,-100 14,-101 C -6,-102 -30,-92 -46,-76 Z" fill={GOLD} />
+          {/* 額の帯。生え際に沿わせる。短すぎると髪留めに見えたので、
+              巻き毛の際までは伸ばす */}
+          <path d="M -52,-84 C -36,-102 -12,-113 14,-113 L 16,-102 C -8,-101 -30,-91 -46,-76 Z" fill={GOLD} />
           <g fill={NIGHT}>
-            {Array.from({ length: 9 }, (_, i) => {
-              const t = i / 8;
-              const a = -0.72 + t * 1.5;
-              return <circle key={i} cx={4 + Math.sin(a) * 58} cy={-88 - Math.cos(a) * 14} r="2.7" />;
+            {Array.from({ length: 7 }, (_, i) => {
+              const a = -0.95 + (i / 6) * 0.86;
+              return <circle key={i} cx={4 + Math.sin(a) * 58} cy={-90 - Math.cos(a) * 16} r="2.6" />;
             })}
           </g>
-          {/* 首の環。3本。近寄ったときの取っ掛かり */}
-          <g fill="none" stroke={GOLD} strokeWidth="5">
-            <path d="M -14,62 C -2,70 22,72 44,66" />
-            <path d="M -19,73 C -4,82 24,84 48,77" />
-            <path d="M -26,85 C -8,95 26,97 54,89" />
+          {/* 首飾り。環を3本重ねると「民族衣装の首輪」に読まれる。
+              分節した金の襟にして、機械の側へ寄せた */}
+          <g>
+            <path d="M -12,56 C 2,66 26,68 46,62" fill="none" stroke={GOLD} strokeWidth="4.5" />
+            <path d="M -14,68 C 1,79 27,81 48,74" fill="none" stroke={GOLD} strokeWidth="1.8" opacity="0.8" />
+            {Array.from({ length: 7 }, (_, i) => {
+              const t = i / 6;
+              return (
+                <rect key={i} x={-8 + t * 50 - 2.6} y={59 + Math.sin(t * Math.PI) * 4 + t * 2}
+                      width="5.2" height="9" rx="1.4" fill={GOLD} opacity={i % 2 ? 1 : 0.6} />
+              );
+            })}
           </g>
-          {/* 肩の布。段を4本重ねて織りにする。1列だけだと飾りにしかならない */}
-          <rect x="-150" y="124" width="300" height="6" fill={RED} />
+          {/* 肩の布。段は4本→2本。下のケンテ帯と二重に効いて
+              「アフリカ柄の見本帳」に寄っていた */}
+          <rect x="-150" y="126" width="300" height="6" fill={RED} />
           <g fill={TEAL}>
             {Array.from({ length: 13 }, (_, i) => (
-              <polygon key={i} points="0,0 22,0 11,22" transform={`translate(${-146 + i * 23} 136)`} opacity={i % 2 ? 1 : 0.55} />
+              <polygon key={i} points="0,0 22,0 11,22" transform={`translate(${-146 + i * 23} 140)`} opacity={i % 2 ? 1 : 0.55} />
             ))}
           </g>
-          <rect x="-150" y="164" width="300" height="4.5" fill={GOLD} />
-          <g>
-            {Array.from({ length: 15 }, (_, i) => (
-              <polygon key={i} points="0,-11 10,0 0,11 -10,0" fill={i % 2 ? RED : GOLD} transform={`translate(${-140 + i * 20} 188)`} />
-            ))}
-          </g>
-          <rect x="-150" y="206" width="300" height="4.5" fill={TEAL} />
-          <g fill={NIGHT}>
-            {Array.from({ length: 19 }, (_, i) => (
-              <rect key={i} x={-146 + i * 15.5} y="218" width="8" height="8" opacity={i % 2 ? 1 : 0.45} />
-            ))}
+          <rect x="-150" y="176" width="300" height="4.5" fill={GOLD} />
+          <rect x="-150" y="226" width="300" height="3" fill={RED} opacity="0.8" />
+          {/* 織り目。無地のままだと衣が板になる。経糸の縦線も入れて、
+              下のケンテ帯と同じ織り方であることを見せる */}
+          <g stroke={SKIN} opacity="0.2">
+            <g strokeWidth="0.9">
+              {Array.from({ length: 15 }, (_, i) => (
+                <line key={i} x1="-150" y1={190 + i * 2.5} x2="150" y2={190 + i * 2.5} />
+              ))}
+            </g>
+            <g strokeWidth="0.7" opacity="0.6">
+              {Array.from({ length: 25 }, (_, i) => (
+                <line key={i} x1={-146 + i * 12} y1="182" x2={-146 + i * 12} y2="226" />
+              ))}
+            </g>
           </g>
         </g>
 

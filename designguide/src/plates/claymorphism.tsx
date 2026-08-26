@@ -17,6 +17,14 @@
  *   丸ゴシックの欧文フォントは外部から読めないので、CLAY の4文字を
  *   線の端を丸めた太いストロークで作字した。書体を指定して済ませると、
  *   文字だけ粘土でなくなって版面が割れる（初稿でそうなった）。
+ *
+ * ■ 検分で直したこと
+ *   塊用の内側の光（下へ16ずらして10ぼかす）を、そのまま文字にも掛けていた。
+ *   塊は一辺が146あるので問題ないが、文字の線は太さ40しかないので、
+ *   白い光が線幅のほとんどを食って、L と A が上半分から消えていた。
+ *   縮小すると「CLAY」が「C _ _ Y」に読めてしまう。
+ *   細い物には細い物用の光がいる。文字専用に、
+ *   ずらし9・ぼかし6・白70% の弱い版（-t*）を用意して掛け分けた。
  */
 import { ATLAS, shift } from "@/lib/plate";
 
@@ -26,7 +34,8 @@ const INDIGO = "#a5b4fc";
 const PINK = "#fbcfe8";
 const YELLOW = "#fde68a";
 const INK = "#4c4a68";
-const LILAC = shift(INDIGO, 0.36); // 5色から作った4つめのパステル
+const LILAC = shift(INDIGO, 0.18); // 5色から作った4つめのパステル。
+// 0.36 まで白へ寄せると Y の一文字だけ地に溶けたので、明度を戻した
 
 const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
@@ -85,6 +94,36 @@ export default function Plate() {
             </feMerge>
           </filter>
         ))}
+
+        {/* 文字用。線が細いので、内側の光と影を塊用より小さく取る。
+            ここを塊と同じ値にすると、線幅を光が食い切って字が消える */}
+        {CLAY.map(({ id, s }) => (
+          <filter key={`t${id}`} id={`${P}-t${id}`} x="-70%" y="-70%" width="240%" height="260%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="9" result="ds" />
+            <feOffset in="ds" dy="17" result="dso" />
+            <feFlood floodColor={s} floodOpacity="0.6" result="dsc" />
+            <feComposite in="dsc" in2="dso" operator="in" result="drop" />
+
+            <feOffset in="SourceAlpha" dy="9" result="l1" />
+            <feGaussianBlur in="l1" stdDeviation="6" result="l2" />
+            <feComposite in="SourceAlpha" in2="l2" operator="out" result="lsh" />
+            <feFlood floodColor="#ffffff" floodOpacity="0.7" result="lc" />
+            <feComposite in="lc" in2="lsh" operator="in" result="lite" />
+
+            <feOffset in="SourceAlpha" dy="-10" result="d1" />
+            <feGaussianBlur in="d1" stdDeviation="6.5" result="d2" />
+            <feComposite in="SourceAlpha" in2="d2" operator="out" result="dsh" />
+            <feFlood floodColor={s} floodOpacity="0.58" result="dc" />
+            <feComposite in="dc" in2="dsh" operator="in" result="dark" />
+
+            <feMerge>
+              <feMergeNode in="drop" />
+              <feMergeNode in="SourceGraphic" />
+              <feMergeNode in="lite" />
+              <feMergeNode in="dark" />
+            </feMerge>
+          </filter>
+        ))}
       </defs>
 
       <g clipPath={`url(#${P}-page)`}>
@@ -93,7 +132,7 @@ export default function Plate() {
         <g filter={`url(#${P}-glow)`} opacity="0.34">
           <circle cx="30" cy="300" r="210" fill={INDIGO} />
           <circle cx="570" cy="390" r="190" fill={PINK} />
-          <circle cx="300" cy="780" r="200" fill={YELLOW} />
+          <circle cx="300" cy="812" r="150" fill={YELLOW} opacity="0.5" />
         </g>
 
         <text x="48" y="70" fill={INK} opacity="0.7" fontFamily={SANS} fontSize="9.5" fontWeight="800" letterSpacing="4.4">
@@ -109,9 +148,9 @@ export default function Plate() {
         {LETTERS.map((paths, i) => {
           const clay = CLAY[i % CLAY.length];
           return (
-            <g key={i} transform={`translate(${64 + i * 124} 196)`} filter={`url(#${P}-f${clay.id})`}>
+            <g key={i} transform={`translate(${64 + i * 124} 196)`} filter={`url(#${P}-t${clay.id})`}>
               {paths.map((d, j) => (
-                <path key={j} d={d} fill="none" stroke={clay.c} strokeWidth="37" strokeLinecap="round" strokeLinejoin="round" />
+                <path key={j} d={d} fill="none" stroke={clay.c} strokeWidth="40" strokeLinecap="round" strokeLinejoin="round" />
               ))}
             </g>
           );

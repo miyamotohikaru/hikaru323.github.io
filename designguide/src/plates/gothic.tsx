@@ -207,14 +207,25 @@ export default function Plate() {
           <circle cx="12" cy="12" r="3" fill={shift(CREAM, -0.44)} />
         </pattern>
         <pattern id={`${P}-quarryBlue`} width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect width="24" height="24" fill={shift(BLUE, -0.1)} />
+          <rect width="24" height="24" fill="#2f63b8" />
           <rect width="24" height="24" fill="none" stroke={shift(STONE, 0.12)} strokeWidth="2.2" />
-          <circle cx="12" cy="12" r="3" fill={shift(BLUE, 0.22)} />
+          <circle cx="12" cy="12" r="3" fill="#79a6e0" />
         </pattern>
-        <radialGradient id={`${P}-glow`} cx="50%" cy="52%" r="62%">
-          <stop offset="0%" stopColor={alpha(CREAM, 0.62)} />
-          <stop offset="50%" stopColor={alpha(CREAM, 0.2)} />
+        {/* ステンドグラスの技法は「色を塗る」ことではなく「光を通す」こと。
+            前の版は色板を並べただけで、**裏から光が来ていなかった。**
+            ガラスの上に光を起こし、その光を周りの石まで零す。
+            この零れ（spill）が入って初めて、窓が窓に見える */}
+        <radialGradient id={`${P}-glow`} cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stopColor={alpha(CREAM, 0.6)} />
+          <stop offset="34%" stopColor={alpha(CREAM, 0.3)} />
+          <stop offset="72%" stopColor={alpha(CREAM, 0.1)} />
           <stop offset="100%" stopColor={alpha(CREAM, 0)} />
+        </radialGradient>
+        {/* 石に零れる光。窓より一回り大きく、青みを帯びる */}
+        <radialGradient id={`${P}-spill`} cx="50%" cy="48%" r="58%">
+          <stop offset="0%" stopColor={alpha("#7fa8d8", 0.34)} />
+          <stop offset="46%" stopColor={alpha("#7fa8d8", 0.13)} />
+          <stop offset="100%" stopColor={alpha("#7fa8d8", 0)} />
         </radialGradient>
         <clipPath id={`${P}-outer`}>
           <path d={`${pointed(126, 474, 380).d} L474 ${SILL + 20} L126 ${SILL + 20} Z`} />
@@ -299,7 +310,7 @@ export default function Plate() {
             <g key={i} clipPath={`url(#${P}-l${i})`}>
               <rect x={x0} y={l.yA - 10} width={x1 - x0} height={700} fill={`url(#${P}-quarry)`} />
               {/* 色帯。白ガラスの中に色を差すのが13世紀の割り付け */}
-              <rect x={x0} y={l.yA + 26} width={x1 - x0} height="24" fill={i === 0 ? BLUE : WINE} />
+              <rect x={x0} y={l.yA + 26} width={x1 - x0} height="24" fill={i === 0 ? "#2f63b8" : "#9c2440"} />
               <rect x={x0} y={l.yA + 26} width={x1 - x0} height="24" fill="none" stroke={shift(STONE, 0.1)} strokeWidth="4" />
               <rect x={x0} y="600" width={x1 - x0} height="30" fill={`url(#${P}-quarryBlue)`} />
               <rect x={x0} y="600" width={x1 - x0} height="30" fill="none" stroke={shift(STONE, 0.1)} strokeWidth="4" />
@@ -328,8 +339,13 @@ export default function Plate() {
           ))}
         </g>
 
-        {/* 窓の光。ガラスの上から中心を起こす */}
-        <ellipse cx="300" cy="420" rx="180" ry="290" fill={`url(#${P}-glow)`} style={{ mixBlendMode: "screen" }} />
+        {/* 窓の光。ガラスの上から中心を起こし、石まで零す */}
+        <ellipse cx="300" cy="418" rx="190" ry="300" fill={`url(#${P}-glow)`} style={{ mixBlendMode: "screen" }} />
+        {/* 零れは窓の外周までに留める。控壁まで届かせたら、
+            石が明るくなって夜の聖堂ではなく昼の建物に見えた */}
+        <g clipPath={`url(#${P}-outer)`}>
+          <ellipse cx="300" cy="414" rx="260" ry="360" fill={`url(#${P}-spill)`} style={{ mixBlendMode: "screen" }} />
+        </g>
 
         {/* ── 窓台。控壁の間に渡す ───────────────────────── */}
         <path d={`M118 ${SILL + 12} L482 ${SILL + 12} L494 ${SILL + 32} L106 ${SILL + 32} Z`} fill={shift(STONE, 0.34)} />

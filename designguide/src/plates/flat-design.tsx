@@ -1,58 +1,67 @@
 /**
  * フラットデザイン。
  *
- * iOS 7（2013）の割り切り。奥行きの比喩を全部捨てた。
- * 影・面取り・光沢・グラデーション・質感のどれも使わず、
- * 純色の面と、円・矩形・三角という単純な図形だけで絵を作る。
+ * ■ 前稿の失敗（検分でここを作り直した）
+ *   前稿は帆船・太陽・雲・三角の山を並べた風景画だった。
+ *   フラットな塗りではあるが、絵として幼児向け教材にしか見えない。
+ *   フラットデザインは「割り切りの思想」であって「稚拙」ではない。
+ *   Metro（Windows Phone 2010）と iOS 7 が捨てたのは装飾であって、
+ *   組版の厳密さはむしろ強めている。だから版面そのもので見せる形に替えた。
  *
- * ■ ここで作っている「らしさ」
- *   1. 階調がゼロであること。色は一段しかない。遠くの丘と手前の丘は
- *      「暗くした同じ緑」ではなく、別々に決めた2つの純色として置く。
- *      絵の中では opacity も使わない。波の白も海の白も別々の実色。
- *   2. 重なりが「重ね順」だけで表されること。半透明も影も使わない。
- *      雲は太陽の上に白ベタで乗るだけ。それで前後が分かる。
- *   3. 形が単純な原型に還元されること。雲＝円3つ＋角丸矩形、
- *      波＝角丸矩形、帆＝三角形。だから下の凡例に原型を並べた。
+ * ■ この版で「らしさ」を作っているもの
+ *   1. 8の倍数だけで組んだタイル。単位84・間隔8。位置も大きさも
+ *      その格子から外れない。フラットの根拠は影の不在ではなく格子にある。
+ *   2. 右の余白を8しか取らず、格子を紙の外へ送り出している。
+ *      左48・右8という非対称の版面が Metro の一番の特徴。
+ *      左右均等に置いた時点でこの様式ではなくなる。
+ *   3. 階調・透明度をひとつも使っていない。薄い文字は「黒の50%」ではなく
+ *      #92a0a8 という別の実色。前稿は註に「0 ALPHA」と書きながら
+ *      本文で opacity を使っていて、絵が自分の宣言に嘘をついていた。
+ *   4. アイコンは全部おなじ太さ（4）の線。塗りつぶしと線を混ぜない。
+ *   5. 空いたタイルを1枚わざと残す。フラットでは余白も部品のひとつ。
  *
- * ■ 初稿・2稿目の失敗
- *   ・海に太陽の映り込みをグラデーションで入れたら、その一箇所だけが
- *     フラットでなくなって全体が嘘になった。段を3つに割った矩形に直した。
- *     影ゼロは「影を薄くする」ではなく「1つも置かない」という意味。
- *   ・丘を同じ高さの三角で3つ並べたら、版面が左右対称になって
- *     絵が止まった。左に大きな塊、中央を低く落とし、右で受ける形に組み直した。
- *   ・下の帯で題字の副題と色票がぶつかった。左右2列に分けて縦位置をずらした。
+ * ■ 直近で踏んだこと
+ *   ・題字を細ウェイトで組んだら、上のタイルに負けて版面の重心が
+ *     上に張りついた。太いジオメトリックに替えて下側に重さを戻した。
+ *   ・タイルを色で埋め尽くしたら色見本になった。白のタイルを2枚混ぜて
+ *     「面の色で境目を作る」という原理が見えるようにした。
  */
-import { ATLAS, shift } from "@/lib/plate";
+import { ATLAS } from "@/lib/plate";
 
 const P = "fd";
+
+/* spine の5色。ここから外れる色相は足さない */
 const PAPER = "#f5f6f8";
 const BLUE = "#2d9cdb";
 const RED = "#eb5757";
 const YELLOW = "#f2c94c";
 const GREEN = "#27ae60";
 
-/* 派生色。5色から作った純色で、階調ではなく「別の色」として置く */
-const SKY = shift(BLUE, 0.8);
-const SEA = shift(BLUE, -0.14);
-const FOAM = shift(SEA, 0.66); // 波。海に白を透かすのではなく、実色を1つ足す
-const HILL_FAR = shift(GREEN, 0.34);
-const HILL_NEAR = GREEN;
-const HILL_DARK = shift(GREEN, -0.32);
-const DARK = shift(BLUE, -0.7); // 文字と船体。青の家族から外れない濃色
+/* 派生は「濃淡」ではなく別の実色として置く。opacity は最後まで使わない */
+const INK = "#0d2c3d"; // 青の家族を暗くした墨。文字とタイル
+const GREY = "#92a0a8"; // 副次の文字。黒の透過ではない
+const RULE = "#dfe3e8"; // 罫。紙より一段だけ暗い実色
 const WHITE = "#ffffff";
-const RULE = "#dfe3e8";
 
-const HORIZON = 462; // 水平線
-const BAND = 636; // ここから下が凡例の帯
+/* ── 8の倍数の格子。全部の座標をここから引く ────────────────── */
+const U = 84; // タイル1枚
+const G = 8; // 間隔
+const L = 48; // 左の版面。右は8しか取らない（非対称が Metro の骨）
+const col = (i: number) => L + i * (U + G); // 48 140 232 324 416 508
+const row = (i: number) => 104 + i * (U + G); // 104 196 288 380
+const span = (n: number) => n * U + (n - 1) * G; // 84 176 268 360
 
-/** フラットな雲。円3つと角丸矩形の合成。輪郭線も影もない */
-const Cloud = ({ x, y, s }: { x: number; y: number; s: number }) => (
-  <g transform={`translate(${x} ${y}) scale(${s})`} fill={WHITE}>
-    <rect x="-52" y="-14" width="104" height="28" rx="14" />
-    <circle cx="-24" cy="-16" r="24" />
-    <circle cx="14" cy="-23" r="33" />
-    <circle cx="45" cy="-6" r="20" />
-  </g>
+const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+
+/** タイル。角は立てる。影も枠も持たない。空のタイルだけ1pxの罫を持つ */
+const Tile = ({
+  cx, cy, w, h, fill, outline,
+}: { cx: number; cy: number; w: number; h: number; fill: string; outline?: boolean }) => (
+  <rect
+    x={col(cx)} y={row(cy)} width={w} height={h}
+    fill={fill}
+    stroke={outline ? RULE : "none"} strokeWidth={outline ? 1 : 0}
+  />
 );
 
 export default function Plate() {
@@ -62,139 +71,174 @@ export default function Plate() {
         <clipPath id={`${P}-page`}>
           <rect width="600" height="800" />
         </clipPath>
-        {/* 海の内側だけを切る。波が水平線と帯をはみ出さないように */}
-        <clipPath id={`${P}-sea`}>
-          <rect x="0" y={HORIZON} width="600" height={BAND - HORIZON} />
-        </clipPath>
-        <clipPath id={`${P}-sky`}>
-          <rect x="0" y="0" width="600" height={HORIZON} />
-        </clipPath>
       </defs>
 
       <g clipPath={`url(#${P}-page)`}>
         <rect width="600" height="800" fill={PAPER} />
 
-        {/* ── 空。純色1枚 ────────────────────────────────────── */}
-        <g clipPath={`url(#${P}-sky)`}>
-          <rect x="0" y="0" width="600" height={HORIZON} fill={SKY} />
+        {/* ── 見出しの行。細い罫1本で版面の天を決める ─────────── */}
+        <text x={L} y="46" fill={INK} fontFamily={SANS} fontSize="11" fontWeight="700" letterSpacing="4.4">
+          FLAT DESIGN
+        </text>
+        <text x="592" y="46" textAnchor="end" fill={GREY} fontFamily={SANS} fontSize="9" fontWeight="600" letterSpacing="2.2">
+          METRO 2010 — iOS 7 · 2013
+        </text>
+        <rect x={L} y="62" width={592 - L} height="1" fill={RULE} />
 
-          {/* 太陽。右上の角で断ち切る。版面の重心を対角に振る */}
-          <circle cx="512" cy="112" r="176" fill={YELLOW} />
-
-          {/* 雲。太陽の上に白ベタで乗せる。前後は重ね順だけで示す */}
-          <Cloud x={404} y={236} s={1.18} />
-          <Cloud x={104} y={104} s={0.7} />
-
-          {/* 遠い丘。左に大きな塊、中央を低く落として空を抜く */}
-          <polygon points={`-40,${HORIZON} 128,236 300,${HORIZON}`} fill={HILL_FAR} />
-          <polygon points={`232,${HORIZON} 346,368 452,${HORIZON}`} fill={HILL_FAR} />
-
-          {/* 手前の丘。別の純色。暗くした遠景ではない */}
-          <polygon points={`-40,${HORIZON} 74,318 190,${HORIZON}`} fill={HILL_NEAR} />
-          <polygon points={`386,${HORIZON} 528,300 660,${HORIZON}`} fill={HILL_NEAR} />
-          {/* 稜線の陰にあたる面も、階調ではなく3つ目の純色で置く */}
-          <polygon points={`74,318 190,${HORIZON} 132,${HORIZON}`} fill={HILL_DARK} />
-          <polygon points={`528,300 660,${HORIZON} 596,${HORIZON}`} fill={HILL_DARK} />
+        {/* 8刻みの目盛り。この絵の全部の寸法がここに乗っている、という註。
+            近くで見ると格子が実在することが分かる */}
+        <g fill={RULE}>
+          {Array.from({ length: 69 }, (_, i) => L + i * 8).filter((x) => x <= 592).map((x, i) => (
+            <rect key={i} x={x} y="76" width="1" height={i % 5 === 0 ? 10 : 5} />
+          ))}
         </g>
 
-        {/* ── 海 ────────────────────────────────────────────── */}
-        <rect x="0" y={HORIZON} width="600" height={BAND - HORIZON} fill={SEA} />
+        {/* ── タイルの組。ここが図版の本体 ───────────────────── */}
 
-        <g clipPath={`url(#${P}-sea)`}>
-          {/* 波。角丸矩形の列。太陽の映り込みが立つ右側は空けておく */}
-          <g fill={FOAM}>
-            {[
-              [36, 486, 46], [116, 500, 26], [214, 520, 38], [300, 546, 22],
-              [58, 552, 58], [162, 568, 30], [352, 494, 30], [22, 600, 36],
-              [116, 612, 50], [252, 594, 28], [340, 618, 44], [438, 592, 26],
-              [512, 610, 40], [196, 622, 34], [396, 560, 20], [512, 550, 30],
-            ].map(([x, y, w], i) => (
-              <rect key={i} x={x} y={y} width={w} height="7" rx="3.5" />
-            ))}
-          </g>
+        {/* 大 2×2。青。線アイコンは全部おなじ太さ4で通す */}
+        <Tile cx={0} cy={0} w={span(2)} h={span(2)} fill={BLUE} />
+        <g stroke={WHITE} strokeWidth="4" fill="none" strokeLinecap="square">
+          <path d={`M${col(0) + 34} ${row(0) + 88} H${col(0) + 138}`} />
+          <path d={`M${col(0) + 112} ${row(0) + 62} L${col(0) + 138} ${row(0) + 88} L${col(0) + 112} ${row(0) + 114}`} />
+        </g>
+        {/* 註はタイルの内側で完結させる。前は文字がはみ出して隣の黄へ乗った */}
+        <text x={col(0) + 16} y={row(0) + 166} fill={WHITE} fontFamily={SANS} fontSize="8.5" fontWeight="700" letterSpacing="2">
+          ONE ACCENT PER TILE
+        </text>
 
-          {/* 太陽の映り込み。グラデーションが使えないので3段の矩形で表す。
-              太陽の真下に軸を合わせないと、無関係な棒に見える */}
-          <g fill={YELLOW}>
-            <rect x="470" y={HORIZON + 16} width="86" height="11" rx="5.5" />
-            <rect x="484" y={HORIZON + 44} width="58" height="11" rx="5.5" />
-            <rect x="496" y={HORIZON + 74} width="34" height="11" rx="5.5" />
-          </g>
+        {/* 横長 2×1。緑。チェックも同じ線幅 */}
+        <Tile cx={2} cy={0} w={span(2)} h={U} fill={GREEN} />
+        <path
+          d={`M${col(2) + 30} ${row(0) + 44} L${col(2) + 46} ${row(0) + 60} L${col(2) + 80} ${row(0) + 26}`}
+          stroke={WHITE} strokeWidth="4" fill="none" strokeLinecap="square"
+        />
+        <text x={col(2) + 100} y={row(0) + 48} fill={WHITE} fontFamily={SANS} fontSize="10" fontWeight="700" letterSpacing="1.8">
+          2px
+        </text>
+        <text x={col(2) + 100} y={row(0) + 62} fill={WHITE} fontFamily={SANS} fontSize="7" fontWeight="600" letterSpacing="1.2">
+          EVERY STROKE
+        </text>
 
-          {/* 船。赤はこの一点だけ。左三分の一に置いて太陽と対角で釣り合わせる */}
-          <g transform="translate(186 546) scale(1.34)">
-            <rect x="-1.6" y="-62" width="3.2" height="64" fill={DARK} />
-            <polygon points="5,-60 50,-4 5,-4" fill={RED} />
-            <polygon points="-7,-48 -37,-4 -7,-4" fill={WHITE} />
-            <path d="M-50 0 H54 L38 26 H-34 Z" fill={DARK} />
-          </g>
+        {/* 小 1×1 ×2。赤と墨。原型の図形をそのまま置く */}
+        <Tile cx={4} cy={0} w={U} h={U} fill={RED} />
+        <g stroke={WHITE} strokeWidth="4" fill="none">
+          <path d={`M${col(4) + 42} ${row(0) + 24} V${row(0) + 60}`} />
+          <path d={`M${col(4) + 24} ${row(0) + 42} H${col(4) + 60}`} />
         </g>
 
-        {/* ── 凡例の帯。ここだけ地の紙にもどす ───────────────── */}
-        <rect x="0" y={BAND} width="600" height={800 - BAND} fill={PAPER} />
+        <Tile cx={5} cy={0} w={U} h={U} fill={INK} />
+        <g stroke={WHITE} strokeWidth="4" fill="none" strokeLinecap="square">
+          <circle cx={col(5) + 38} cy={row(0) + 38} r="15" />
+          <path d={`M${col(5) + 49} ${row(0) + 49} L${col(5) + 62} ${row(0) + 62}`} />
+        </g>
 
-        {/* 左の列。題字は iOS 7 の極細ウェイトを大きく組む */}
-        <text
-          x="44" y={BAND + 84}
-          fill={DARK}
-          fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-          fontSize="72" fontWeight="200" letterSpacing="9"
-        >
+        {/* 横長 3×1。黄。文字は面の上に直接。囲みも影も置かない */}
+        <Tile cx={2} cy={1} w={span(3)} h={U} fill={YELLOW} />
+        <text x={col(2) + 22} y={row(1) + 50} fill={INK} fontFamily={SANS} fontSize="26" fontWeight="700" letterSpacing="1.5">
+          SOLID FILLS
+        </text>
+        <text x={col(2) + 22} y={row(1) + 68} fill={INK} fontFamily={SANS} fontSize="8" fontWeight="600" letterSpacing="2.6">
+          COLOUR IS THE ONLY EDGE
+        </text>
+
+        {/* 空のタイル。フラットでは余白も部品なので1枚わざと残す */}
+        <Tile cx={5} cy={1} w={U} h={U} fill={PAPER} outline />
+        <rect x={col(5) + 26} y={row(1) + 26} width="32" height="32" fill="none" stroke={RULE} strokeWidth="1" strokeDasharray="4 4" />
+
+        {/* 横長 3×1。墨。反転した白文字 */}
+        <Tile cx={0} cy={2} w={span(3)} h={U} fill={INK} />
+        <text x={col(0) + 22} y={row(2) + 52} fill={WHITE} fontFamily={SANS} fontSize="28" fontWeight="700" letterSpacing="1">
+          NO SHADOW
+        </text>
+
+        {/* 原型3つ。円・三角・四角。塗りだけ、線だけ、を混ぜない */}
+        <Tile cx={3} cy={2} w={U} h={U} fill={YELLOW} />
+        <polygon
+          points={`${col(3) + 42},${row(2) + 24} ${col(3) + 62},${row(2) + 60} ${col(3) + 22},${row(2) + 60}`}
+          fill={INK}
+        />
+        <Tile cx={4} cy={2} w={U} h={U} fill={GREEN} />
+        <circle cx={col(4) + 42} cy={row(2) + 42} r="19" fill={WHITE} />
+        <Tile cx={5} cy={2} w={U} h={U} fill={RED} />
+        <rect x={col(5) + 24} y={row(2) + 24} width="36" height="36" fill={WHITE} />
+
+        {/* 横長 2×1。白。文字の段は2つだけ、という註を棒で示す */}
+        <Tile cx={0} cy={3} w={span(2)} h={U} fill={PAPER} outline />
+        <rect x={col(0) + 20} y={row(3) + 26} width="88" height="12" fill={INK} />
+        <rect x={col(0) + 20} y={row(3) + 48} width="52" height="5" fill={GREY} />
+        <text x={col(0) + 120} y={row(3) + 36} fill={GREY} fontFamily={SANS} fontSize="8" fontWeight="700" letterSpacing="1.4">
+          TWO
+        </text>
+        <text x={col(0) + 120} y={row(3) + 55} fill={GREY} fontFamily={SANS} fontSize="8" fontWeight="700" letterSpacing="1.4">
+          SIZES
+        </text>
+
+        {/* 横長 4×1。青。右端は紙の外へ8で切れる */}
+        <Tile cx={2} cy={3} w={span(4)} h={U} fill={BLUE} />
+        <text x={col(2) + 22} y={row(3) + 52} fill={WHITE} fontFamily={SANS} fontSize="28" fontWeight="700" letterSpacing="1">
+          NO GRADIENT
+        </text>
+        <g stroke={WHITE} strokeWidth="4" fill="none" strokeLinecap="square">
+          <path d={`M${col(5) + 40} ${row(3) + 28} L${col(5) + 58} ${row(3) + 46} L${col(5) + 40} ${row(3) + 64}`} />
+        </g>
+
+        {/* ── 題字。上のタイルに負けないよう太く大きく組む ───────── */}
+        <text x={L - 4} y="600" fill={INK} fontFamily={SANS} fontSize="150" fontWeight="700" letterSpacing="-4">
           FLAT
         </text>
-        <text
-          x="46" y={BAND + 116}
-          fill={DARK}
-          fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-          fontSize="8.5" fontWeight="600" letterSpacing="2.5" opacity="0.6"
-        >
-          NO SHADOW · NO GRADIENT · 2013
+        <text x={L} y="640" fill={GREY} fontFamily={SANS} fontSize="24" fontWeight="300" letterSpacing="16">
+          DESIGN
         </text>
 
-        {/* 右の列。上に原型、下に刷り色。縦位置を左とずらして衝突を避ける */}
-        <line x1="340" y1={BAND + 16} x2="340" y2={BAND + 140} stroke={RULE} strokeWidth="1" />
-
-        <g transform={`translate(370 ${BAND + 22})`}>
-          {/* 絵に使った図形はこの4つだけ、という註 */}
-          <circle cx="16" cy="16" r="16" fill={BLUE} />
-          <rect x="52" y="0" width="32" height="32" rx="9" fill={RED} />
-          <polygon points="120,0 136,32 104,32" fill={YELLOW} />
-          <rect x="156" y="0" width="32" height="32" fill={GREEN} />
-          <g
-            fill={DARK} opacity="0.5"
-            fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-            fontSize="7" fontWeight="600" letterSpacing="1.2"
-          >
-            <text x="16" y="46" textAnchor="middle">CIRCLE</text>
-            <text x="68" y="46" textAnchor="middle">ROUND</text>
-            <text x="120" y="46" textAnchor="middle">TRIANGLE</text>
-            <text x="172" y="46" textAnchor="middle">SQUARE</text>
-          </g>
+        {/* 右の註。題字と縦位置をずらして衝突を避ける */}
+        <g fill={GREY} fontFamily={SANS} fontSize="9" fontWeight="600" letterSpacing="1.6">
+          <text x="592" y="542" textAnchor="end">GRID 8 — TILE 84 — GAP 8</text>
+          <text x="592" y="560" textAnchor="end">MARGIN 48 LEFT, 8 RIGHT</text>
+          <text x="592" y="578" textAnchor="end">FIVE FILLS, ELEVEN TILES</text>
         </g>
+        <text x="592" y="640" textAnchor="end" fill={INK} fontFamily={SANS} fontSize="11" fontWeight="700" letterSpacing="2">
+          DEPTH REMOVED ON PURPOSE
+        </text>
 
-        {/* 色票。刷り色をそのまま並べる。混色も網も使っていない証拠 */}
-        <g transform={`translate(370 ${BAND + 96})`}>
-          {[PAPER, SKY, SEA, GREEN, YELLOW, RED].map((c, i) => (
-            <rect
-              key={i} x={i * 32} y="0" width="24" height="11" fill={c}
-              stroke={c === PAPER ? RULE : "none"}
-            />
+        {/* ── 下の帯。刷り色と目盛り ─────────────────────────── */}
+        <rect x={L} y="700" width={592 - L} height="1" fill={RULE} />
+
+        <g>
+          {[BLUE, RED, YELLOW, GREEN, INK].map((c, i) => (
+            <rect key={i} x={L + i * 56} y="720" width="40" height="14" fill={c} />
           ))}
-          <text
-            x="0" y="26"
-            fill={DARK} opacity="0.5"
-            fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-            fontSize="7" fontWeight="600" letterSpacing="1.3"
-          >
-            SOLID FILLS ONLY — 0 TINTS, 0 ALPHA
+          {["2D9CDB", "EB5757", "F2C94C", "27AE60", "0D2C3D"].map((h, i) => (
+            <text
+              key={h} x={L + i * 56} y="748"
+              fill={GREY} fontFamily={SANS} fontSize="6.5" fontWeight="700" letterSpacing="0.6"
+            >
+              {h}
+            </text>
+          ))}
+          <text x={L} y="768" fill={GREY} fontFamily={SANS} fontSize="8" fontWeight="600" letterSpacing="2">
+            FIVE FILLS · NO TINTS · NO ALPHA
           </text>
         </g>
 
-        {/* 紙の目。刷り物としての最低限。絵の平坦さは壊さない薄さで */}
+        {/* 8刻みの物差し。上の目盛りと対にして、格子が本物だと示す */}
+        <g>
+          <rect x="392" y="726" width="200" height="1" fill={GREY} />
+          {Array.from({ length: 26 }, (_, i) => 392 + i * 8).map((x, i) => (
+            <rect key={i} x={x} y="726" width="1" height={i % 5 === 0 ? 9 : 5} fill={GREY} />
+          ))}
+          <text x="592" y="752" textAnchor="end" fill={GREY} fontFamily={SANS} fontSize="8" fontWeight="600" letterSpacing="2">
+            8 · 16 · 24 · 32 · 40 …
+          </text>
+          <text x="592" y="768" textAnchor="end" fill={GREY} fontFamily={SANS} fontSize="8" fontWeight="600" letterSpacing="2">
+            NOTHING OFF THE MODULE
+          </text>
+        </g>
+
+        {/* 紙の目。刷り物としての最低限。面の平坦さは壊さない薄さ */}
         <rect
           width="600" height="800"
           filter={`url(#${ATLAS.grain})`}
-          opacity="0.09"
+          opacity="0.07"
           style={{ mixBlendMode: "multiply" }}
         />
       </g>

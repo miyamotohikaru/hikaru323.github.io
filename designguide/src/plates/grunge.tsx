@@ -74,10 +74,40 @@ export default function Plate() {
   const r = rand(19910924);
 
   /* 傷の伏せ。細かい擦れはタイルで、大きな筋は一点物で。
-     タイルだけだと繰り返しが見える */
-  const dust = Array.from({ length: 340 }, () => ({
-    x: r(0, 200), y: r(0, 200), w: r(0.6, 4.2), h: r(0.5, 1.8), o: r(0.3, 1),
-  }));
+     タイルだけだと繰り返しが見える。
+
+     初稿は一様乱数で340粒を撒いていたが、大きさの揃った白い粒が
+     等間隔に散るだけで、近くで見ると「紙吹雪」にしか見えなかった。
+     コピー機のトナーの落ちは必ず塊で来て、しかも欠けの大きさが
+     二桁ちがう。だから核を46個作り、中心ほど密に、
+     大きい欠けほど稀になるよう分布を歪めてある。 */
+  const dust = (() => {
+    const out: { x: number; y: number; w: number; h: number; o: number }[] = [];
+    const wrap = (v: number) => ((v % 200) + 200) % 200;
+    for (let c = 0; c < 46; c++) {
+      const cx = r(0, 200);
+      const cy = r(0, 200);
+      const n = Math.round(r(3, 13));
+      const spread = r(4, 28);
+      for (let i = 0; i < n; i++) {
+        const a = r(0, Math.PI * 2);
+        const d = r(0, 1) ** 1.7 * spread; // 中心ほど密
+        const s = r(0, 1) ** 2.4; // 大きい欠けは稀
+        out.push({
+          x: wrap(cx + Math.cos(a) * d),
+          y: wrap(cy + Math.sin(a) * d),
+          w: 0.6 + s * 9,
+          h: 0.5 + s * 3.6,
+          o: r(0.35, 1),
+        });
+      }
+    }
+    /* まばらな単発。塊だけだと塊と塊のあいだが綺麗すぎる */
+    for (let i = 0; i < 90; i++) {
+      out.push({ x: r(0, 200), y: r(0, 200), w: r(0.5, 1.9), h: r(0.4, 1.2), o: r(0.25, 0.85) });
+    }
+    return out;
+  })();
   const scratches = Array.from({ length: 20 }, (_, i) => {
     const x = r(-40, 620);
     const y = r(20, 780);

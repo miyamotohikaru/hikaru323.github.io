@@ -66,16 +66,38 @@ function Scrap({
   );
 }
 
-/** 新聞の段。読める文字ではなく細い横棒の列で組む。遠目には文章に見える */
+/**
+ * 新聞の段。
+ * 前の版は行を1本の実線で引いていた。等間隔の実線が並ぶと、
+ * それは文章ではなく**罫線**であり、読み込み中のプレースホルダに見える。
+ * 実際の活版は語ごとに切れていて、語間の空きが行ごとに違う位置に来る。
+ * 語の長さを変え、空きを入れ、1行目だけ太くする（見出しの入り）。
+ * これだけで、同じ抽象度のまま「組んだ文字」に見える。
+ */
 function Lines({
   x, y, w, rows, lh, seed, fill = INK, th = 2.6, op = 0.62,
 }: { x: number; y: number; w: number; rows: number; lh: number; seed: number; fill?: string; th?: number; op?: number }) {
   const r = rand(seed);
   return (
     <g fill={fill} opacity={op}>
-      {Array.from({ length: rows }, (_, i) => (
-        <rect key={i} x={x} y={y + i * lh} width={w * r(0.62, 1)} height={th} />
-      ))}
+      {Array.from({ length: rows }, (_, i) => {
+        const full = w * (i === rows - 1 ? r(0.4, 0.72) : r(0.9, 1)); // 最終行は短い
+        const words: { x: number; w: number }[] = [];
+        let cur = 0;
+        while (cur < full - 6) {
+          const wl = Math.min(full - cur, r(10, 42));
+          words.push({ x: cur, w: wl });
+          cur += wl + r(3.5, 6.5); // 語間
+        }
+        const h = i === 0 ? th * 1.7 : th; // 1行目は見出しの入りで太い
+        return (
+          <g key={i}>
+            {words.map((v, k) => (
+              <rect key={k} x={x + v.x} y={y + i * lh} width={v.w} height={h} />
+            ))}
+          </g>
+        );
+      })}
     </g>
   );
 }
@@ -136,7 +158,9 @@ export default function Plate() {
             </g>
           </g>
         </Scrap>
-        <Scrap x={30} y={596} w={214} h={176} rot={4} fill={PAPER_D} seed={17} />
+        <Scrap x={30} y={596} w={214} h={176} rot={4} fill={PAPER_D} seed={17}>
+          <Lines x={48} y={622} w={178} rows={7} lh={14} seed={23} op={0.5} />
+        </Scrap>
 
         {/* ── 罫。太さを揃えない。この一番太い1本だけが版面を束ねる ── */}
         <g fill={INK}>

@@ -27,9 +27,9 @@ import { ATLAS, rand, shift } from "@/lib/plate";
 
 const P = "ecb";
 
-const CONC = "#a8a399";
-const CONC_LIT = "#cac5b8";
-const SOFFIT = "#3d3a34";
+const CONC = "#a5a096";
+const CONC_LIT = "#d6d1c2"; // 陽の当たる小口を上げ、コンクリートに厚みを出す
+const SOFFIT = "#302e29"; // 軒裏。深く落とさないと庇が板に見える
 const INK = "#2a2a26";
 
 /* 緑は spine の #6e7f5c を軸に明暗7段。別の色相は足さない */

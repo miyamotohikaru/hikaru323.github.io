@@ -42,11 +42,50 @@ const BRANCHES: Branch[] = [
   { y: 362, r: 41, up: 54, br: 18 },
 ];
 
-/** 花。同心の輪と点だけで作る。花弁を描かないのが幾何寄りの作法 */
-function Blossom({ x, y, r, alt }: { x: number; y: number; r: number; alt?: boolean }) {
+/**
+ * 花。
+ * 前の版は同心円の的（ターゲット）を9つ、全部同じ形で並べていた。
+ * 同じ紋が等間隔で9回出ると、それは図案ではなく**壁紙**になる。
+ * モーザーやホフマンの図案は、円・角・蕾を混ぜて、
+ * ひとつの茎の上で形を変えていく。3種を用意して段ごとに替えた。
+ *   kind 0 = 同心の輪（開いた花）
+ *   kind 1 = 角の薔薇（正方形の入れ子。ホフマンの常套）
+ *   kind 2 = 蕾（横から見た形。萼まで描く）
+ */
+function Blossom({ x, y, r, alt, kind = 0 }: { x: number; y: number; r: number; alt?: boolean; kind?: number }) {
   const outer = alt ? GOLD : RED;
   const ring = alt ? RED : GOLD;
   const core = alt ? GREEN : GOLD;
+
+  if (kind === 1) {
+    return (
+      <g transform={`translate(${x} ${y})`}>
+        <rect x={-r} y={-r} width={r * 2} height={r * 2} fill={outer} stroke={INK} strokeWidth="2.4" />
+        <rect x={-r * 0.62} y={-r * 0.62} width={r * 1.24} height={r * 1.24}
+              fill="none" stroke={ring} strokeWidth={r * 0.16} transform="rotate(45)" />
+        <rect x={-r * 0.28} y={-r * 0.28} width={r * 0.56} height={r * 0.56} fill={core} stroke={INK} strokeWidth="1.6" />
+        {[0, 1, 2, 3].map((i) => (
+          <circle key={i} cx={Math.sin((Math.PI / 2) * i) * r * 0.78} cy={-Math.cos((Math.PI / 2) * i) * r * 0.78}
+                  r={r * 0.08} fill={INK} opacity="0.8" />
+        ))}
+      </g>
+    );
+  }
+  if (kind === 2) {
+    return (
+      <g transform={`translate(${x} ${y})`}>
+        {/* 蕾。萼が下から包む */}
+        <path d={`M0 ${-r * 1.25} C ${r * 0.78} ${-r * 0.8} ${r * 0.66} ${r * 0.3} 0 ${r * 0.62}
+                  C ${-r * 0.66} ${r * 0.3} ${-r * 0.78} ${-r * 0.8} 0 ${-r * 1.25} Z`}
+              fill={outer} stroke={INK} strokeWidth="2.2" />
+        <path d={`M0 ${-r * 1.1} C ${r * 0.3} ${-r * 0.7} ${r * 0.26} ${r * 0.1} 0 ${r * 0.4}`}
+              fill="none" stroke={ring} strokeWidth={r * 0.15} />
+        <path d={`M${-r * 0.6} ${r * 0.24} C ${-r * 0.3} ${r * 0.86} ${r * 0.3} ${r * 0.86} ${r * 0.6} ${r * 0.24}
+                  C ${r * 0.3} ${r * 0.6} ${-r * 0.3} ${r * 0.6} ${-r * 0.6} ${r * 0.24} Z`}
+              fill={GREEN} stroke={INK} strokeWidth="2" />
+      </g>
+    );
+  }
   return (
     <g transform={`translate(${x} ${y})`}>
       <circle r={r} fill={outer} stroke={INK} strokeWidth="2.4" />
@@ -58,6 +97,17 @@ function Blossom({ x, y, r, alt }: { x: number; y: number; r: number; alt?: bool
         const a = (Math.PI / 6) * i;
         return <circle key={i} cx={Math.sin(a) * r * 0.84} cy={-Math.cos(a) * r * 0.84} r={r * 0.055} fill={INK} opacity="0.75" />;
       })}
+    </g>
+  );
+}
+
+/** 葉。菱に近い幾何の葉。茎に必ず付ける（宙に浮かせない） */
+function Leaf({ x, y, r, flip }: { x: number; y: number; r: number; flip: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${flip} 1)`}>
+      <path d={`M0 0 L${r * 0.9} ${-r * 0.5} L${r * 1.7} 0 L${r * 0.9} ${r * 0.5} Z`}
+            fill={GREEN} stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+      <path d={`M0 0 L${r * 1.7} 0`} stroke={INK} strokeWidth="1.1" opacity="0.7" />
     </g>
   );
 }
@@ -134,12 +184,20 @@ export default function Plate() {
             })}
           </g>
 
-          {BRANCHES.map((b, i) => (
-            <g key={i}>
-              <Blossom x={300 + b.r} y={b.y - b.r - b.up - b.br + 6} r={b.br} alt={i % 2 === 1} />
-              <Blossom x={300 - b.r} y={b.y - b.r - b.up - b.br + 6} r={b.br} alt={i % 2 === 1} />
-            </g>
-          ))}
+          {BRANCHES.map((b, i) => {
+            const by = b.y - b.r - b.up - b.br + 6;
+            const kind = [0, 2, 1, 2][i];
+            return (
+              <g key={i}>
+                <Blossom x={300 + b.r} y={by} r={b.br} alt={i % 2 === 1} kind={kind} />
+                <Blossom x={300 - b.r} y={by} r={b.br} alt={i % 2 === 1} kind={kind} />
+                {/* 茎の途中に葉。花の下端よりさらに下げる。
+                    近づけると花の縁に瘤が付いたように見えた */}
+                <Leaf x={300 + b.r} y={by + b.br + b.up * 0.5} r={b.br * 0.5} flip={1} />
+                <Leaf x={300 - b.r} y={by + b.br + b.up * 0.5} r={b.br * 0.5} flip={-1} />
+              </g>
+            );
+          })}
           {/* 冠の花。いちばん大きい。中心軸を締める */}
           <Blossom x={300} y={168} r={36} />
 

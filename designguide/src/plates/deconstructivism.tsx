@@ -35,70 +35,121 @@ const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 type Pt = [number, number];
 
 /* 軸測投影。+x は右下、+y は左下、+z は真上 */
-const U = 42;
-const OX = 336;
-const OY = 462;
+const U = 54;
+const OX = 320;
+const OY = 452;
 const iso = (x: number, y: number, z: number): Pt => [
   OX + (x - y) * U * 0.866,
   OY + (x + y) * U * 0.5 - z * U,
 ];
 
+const rad = (d: number) => (d * Math.PI) / 180;
+
+/** 色を黒／白へ寄せる。面の向きから明るさを作るのに使う */
+function shade(hex: string, t: number) {
+  const n = parseInt(hex.slice(1), 16);
+  const to = t >= 0 ? 255 : 0;
+  const k = Math.abs(t);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => Math.round(c + (to - c) * k));
+  return `#${ch.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * 破片。
+ * **rz（自分の中心まわりのヨー）と、上面のずれ（lx, ly）を持たせた。**
+ * 前の版はすべて軸に正対した直方体だったので、
+ * 台の上に箱を並べただけの絵になり、ミニマリズムの立体作品に見えた。
+ * デコンストラクティビズムの形は、**どれも他と平行でない**のが条件。
+ * ハディドやリベスキンドの図面で、平行な辺が2本あることはまずない。
+ */
 type Slab = {
   x: number; y: number; z: number; w: number; d: number; h: number;
+  rz: number; lx: number; ly: number;
   dx: number; dy: number; dz: number;
-  top: string; left: string; right: string;
+  base: string;
   label?: string;
 };
 
-/* 破片。奥から手前の順に並べる（軸測なので描画順がそのまま前後になる） */
+/* 破片。奥から手前の順（軸測なので描画順がそのまま前後になる） */
 const SLABS: Slab[] = [
-  { x: 0, y: 0, z: 0, w: 3.2, d: 3.2, h: 0.45, dx: 0, dy: 0, dz: 0,
-    top: "#e2e0d9", left: "#b6bcc2", right: "#7f8b95" },
-  { x: 0, y: 0, z: 0.45, w: 1.25, d: 3.2, h: 1.7, dx: -1.15, dy: 0.1, dz: 0.15,
-    top: "#dedbd3", left: "#aeb6bd", right: SLATE, label: "A" },
-  { x: 0, y: 2.0, z: 2.15, w: 3.2, d: 1.2, h: 0.4, dx: -0.25, dy: 1.05, dz: 1.15,
-    top: "#e4e2db", left: "#c0c5ca", right: "#8b959d", label: "C" },
-  { x: 1.95, y: 0, z: 0.45, w: 1.25, d: 1.35, h: 2.5, dx: 0.75, dy: -0.95, dz: 0.3,
-    top: "#dcd9d1", left: "#a7b0b8", right: "#4e5c69", label: "B" },
-  /* 断面の黒塗り。切り口だけ潰す */
-  { x: 1.35, y: 1.4, z: 0.45, w: 0.55, d: 0.55, h: 1.5, dx: 0, dy: 0, dz: 0,
-    top: INK, left: INK, right: INK },
-  { x: 0.25, y: 1.15, z: 2.15, w: 2.7, d: 0.16, h: 1.3, dx: 0.45, dy: 1.5, dz: 0.55,
-    top: "#e57c7c", left: RED, right: "#a83a3a", label: "D" },
-  { x: 1.2, y: 1.2, z: 2.6, w: 1.0, d: 1.0, h: 1.0, dx: 1.55, dy: 0.7, dz: 1.5,
-    top: "#e4e2db", left: "#b6bcc2", right: "#77838d", label: "E" },
+  /* 台。これだけは水平だが、それ自体も 13 度ふってある */
+  { x: -0.4, y: -0.4, z: 0, w: 3.9, d: 3.9, h: 0.34, rz: 13, lx: 0, ly: 0,
+    dx: 0, dy: 0, dz: 0, base: "#a9b0b6" },
+  /* A。壁。傾いで滑り出す */
+  { x: -0.1, y: -0.1, z: 0.34, w: 1.05, d: 3.2, h: 1.9, rz: -24, lx: 0.42, ly: -0.12,
+    dx: -1.25, dy: 0.2, dz: 0.2, base: "#7c8892", label: "A" },
+  /* C。片持ちの梁。下に何も無いところまで出す */
+  { x: -0.2, y: 1.9, z: 2.25, w: 3.6, d: 0.95, h: 0.34, rz: 8, lx: -0.2, ly: 0.3,
+    dx: -0.35, dy: 1.15, dz: 1.1, base: "#b4babf", label: "C" },
+  /* B。核。34度まわして、台を貫く */
+  { x: 1.9, y: -0.15, z: 0.1, w: 1.15, d: 1.25, h: 2.75, rz: 34, lx: -0.3, ly: 0.24,
+    dx: 0.85, dy: -1.0, dz: 0.3, base: "#44525f", label: "B" },
+  /* 断面の黒塗り（ポシェ）。切り口だけ潰す製図の作法 */
+  { x: 1.3, y: 1.35, z: 0.34, w: 0.5, d: 0.5, h: 1.7, rz: -16, lx: 0.1, ly: 0.1,
+    dx: 0, dy: 0, dz: 0, base: "#141414" },
+  /* D。赤い鰭。ほとんど厚みのない面。ここだけ彩度を持つ */
+  { x: 0.2, y: 1.1, z: 2.1, w: 3.0, d: 0.14, h: 1.45, rz: -48, lx: 0.5, ly: 0.42,
+    dx: 0.5, dy: 1.35, dz: 0.5, base: "#d64545", label: "D" },
+  /* E。空隙の箱。宙に浮かせる */
+  { x: 1.15, y: 1.15, z: 2.7, w: 0.95, d: 0.95, h: 0.95, rz: 52, lx: 0.22, ly: -0.3,
+    dx: 1.6, dy: 0.75, dz: 1.55, base: "#b9c0c5", label: "E" },
 ];
 
-/** 箱ひとつ。見えるのは天・左・右の3面 */
+/** 破片の8頂点。ヨーと上面のずれを効かせてから投影する */
+function corners(s: Slab, ghost: boolean) {
+  const X = s.x + (ghost ? 0 : s.dx);
+  const Y = s.y + (ghost ? 0 : s.dy);
+  const Z = s.z + (ghost ? 0 : s.dz);
+  const cx = X + s.w / 2;
+  const cy = Y + s.d / 2;
+  const c = Math.cos(rad(s.rz));
+  const si = Math.sin(rad(s.rz));
+  const local: Pt[] = [[-s.w / 2, -s.d / 2], [s.w / 2, -s.d / 2], [s.w / 2, s.d / 2], [-s.w / 2, s.d / 2]];
+  const base: Pt[] = local.map(([a, b]) => [cx + a * c - b * si, cy + a * si + b * c]);
+  return {
+    base,
+    bot: base.map(([a, b]) => iso(a, b, Z)),
+    top: base.map(([a, b]) => iso(a + s.lx, b + s.ly, Z + s.h)),
+  };
+}
+
+/** 箱ひとつ。4つの側面を奥から順に描き、最後に天面 */
 function Box({ s, ghost }: { s: Slab; ghost?: boolean }) {
-  const o = ghost ? { dx: 0, dy: 0, dz: 0 } : { dx: s.dx, dy: s.dy, dz: s.dz };
-  const X = s.x + o.dx;
-  const Y = s.y + o.dy;
-  const Z = s.z + o.dz;
+  const { base, bot, top } = corners(s, !!ghost);
   const f = (pts: Pt[]) => pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
-  const top = f([
-    iso(X, Y, Z + s.h), iso(X + s.w, Y, Z + s.h), iso(X + s.w, Y + s.d, Z + s.h), iso(X, Y + s.d, Z + s.h),
-  ]);
-  const right = f([
-    iso(X + s.w, Y, Z), iso(X + s.w, Y + s.d, Z), iso(X + s.w, Y + s.d, Z + s.h), iso(X + s.w, Y, Z + s.h),
-  ]);
-  const left = f([
-    iso(X, Y + s.d, Z), iso(X + s.w, Y + s.d, Z), iso(X + s.w, Y + s.d, Z + s.h), iso(X, Y + s.d, Z + s.h),
-  ]);
   if (ghost) {
     return (
-      <g fill="none" stroke={SLATE} strokeWidth="0.75" strokeDasharray="5 3" opacity="0.75">
-        <polygon points={top} />
-        <polygon points={right} />
-        <polygon points={left} />
+      <g fill="none" stroke={SLATE} strokeWidth="0.75" strokeDasharray="5 3" opacity="0.7">
+        <polygon points={f(top)} />
+        <polygon points={f(bot)} />
+        {bot.map((p, i) => (
+          <line key={i} x1={p[0]} y1={p[1]} x2={top[i][0]} y2={top[i][1]} />
+        ))}
       </g>
     );
   }
+  /* 側面。模型座標での外向き法線から明るさを作る。光は北西から */
+  const faces = [0, 1, 2, 3].map((i) => {
+    const j = (i + 1) % 4;
+    const ex = base[j][0] - base[i][0];
+    const ey = base[j][1] - base[i][1];
+    const m = Math.hypot(ex, ey) || 1;
+    const nx = ey / m;
+    const ny = -ex / m;
+    const lit = 0.5 + 0.5 * (nx * -0.42 + ny * -0.91);
+    return {
+      pts: f([bot[i], bot[j], top[j], top[i]]),
+      depth: base[i][0] + base[i][1] + base[j][0] + base[j][1],
+      fill: shade(s.base, -0.42 + 0.62 * lit),
+    };
+  });
+  faces.sort((a, b) => a.depth - b.depth);
   return (
-    <g stroke={INK} strokeWidth="0.8" strokeLinejoin="round">
-      <polygon points={right} fill={s.right} />
-      <polygon points={left} fill={s.left} />
-      <polygon points={top} fill={s.top} />
+    <g stroke={INK} strokeWidth="0.85" strokeLinejoin="round">
+      {faces.map((v, i) => (
+        <polygon key={i} points={v.pts} fill={v.fill} />
+      ))}
+      <polygon points={f(top)} fill={shade(s.base, 0.34)} />
     </g>
   );
 }
@@ -119,7 +170,7 @@ const NOTES: { x: number; y: number; t: string; sub: string; slab: string; rot: 
 /** 破片の芯（動かしたあと）の画面座標 */
 function anchor(label: string): Pt {
   const s = SLABS.find((v) => v.label === label)!;
-  return iso(s.x + s.dx + s.w / 2, s.y + s.dy + s.d / 2, s.z + s.dz + s.h / 2);
+  return iso(s.x + s.dx + s.w / 2 + s.lx / 2, s.y + s.dy + s.d / 2 + s.ly / 2, s.z + s.dz + s.h / 2);
 }
 
 export default function Plate() {
@@ -190,6 +241,13 @@ export default function Plate() {
             const b = iso(s.x + s.dx + s.w / 2, s.y + s.dy + s.d / 2, s.z + s.dz + s.h / 2);
             return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} />;
           })}
+        </g>
+
+        {/* 台に落ちる影。無いと破片が紙の上に浮いて、
+            185pxの一覧では地の紙に溶けた */}
+        <g fill={INK} opacity="0.1">
+          <polygon points="150,470 330,392 520,466 340,566" />
+          <polygon points="206,556 318,506 452,556 336,616" />
         </g>
 
         {/* 破片 */}

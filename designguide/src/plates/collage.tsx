@@ -116,7 +116,8 @@ function Tape({ r, x, y, w, rot }: { r: Rnd; x: number; y: number; w: number; ro
 type Letter = { ch: string; font: string; size: number; bg: string; fg: string; rot: number; w: number; h: number; tear: Tear; italic?: boolean };
 
 export default function Plate() {
-  const r = rand19();
+  /* 種を固定。破れ方は毎回同じでなければならない */
+  const r = rand(19121012);
 
   const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif";
   const SERIF = "Georgia, 'Times New Roman', serif";
@@ -379,9 +380,4 @@ export default function Plate() {
       </g>
     </svg>
   );
-}
-
-/** 種を固定した乱数。破れ方は毎回同じでなければならない */
-function rand19() {
-  return rand(19121012);
 }

@@ -172,15 +172,31 @@ export default function Plate() {
           {/* 胴。渦がほぼ全面 */}
           <path d="M8 22 L236 22 L228 128 L16 128 Z" fill="#f2eee6" />
           <path d="M8 22 L236 22 L228 128 L16 128 Z" fill="none" stroke={INK} strokeWidth="2.2" />
-          <g stroke={INK} strokeWidth="5" fill="none" strokeLinecap="round">
-            <path d={spiral(58, 74, 44, 2.2, 1)} />
-            <path d={spiral(186, 74, 44, 2.2, -1)} />
+          <g fill="none" strokeLinecap="round">
+            {/* 太い巻きの下に細い巻きを重ねて、彫りの深さを出す */}
+            <g stroke={INK} strokeWidth="6.5">
+              <path d={spiral(58, 74, 44, 1.35, 1)} />
+              <path d={spiral(186, 74, 44, 1.35, -1)} />
+            </g>
+            <g stroke={INK} strokeWidth="3.4">
+              <path d={spiral(58, 74, 30, 1.9, 1)} />
+              <path d={spiral(186, 74, 30, 1.9, -1)} />
+            </g>
           </g>
-          {/* 卵鏃。渦と渦の間の帯 */}
-          <path d="M104 42 C 122 66 122 66 140 42" stroke={INK} strokeWidth="2.6" fill="none" />
-          <g fill={INK} opacity="0.75">
-            {[0, 1, 2].map((i) => (
-              <ellipse key={i} cx={106 + i * 16} cy={96} rx="5" ry="8" />
+          {/* 渦の目。彫り込みなので中心に穴が要る。
+              ここが抜けていないと、渦が「@」に見えて柱頭にならない */}
+          <g>
+            <circle cx="58" cy="74" r="7" fill={INK} />
+            <circle cx="186" cy="74" r="7" fill={INK} />
+          </g>
+          {/* 渦と渦の間。初稿は卵鏃（縦の楕円3つ）と眉のような弧を置いたら、
+              渦が目、弧が眉、楕円が嘴になって梟の顔に見えた。
+              実物の柱頭にならって、中央は縦の樋（フルート）とパルメットにした */}
+          <g stroke={INK} fill="none">
+            <path d="M122 34 C 112 48 112 58 122 70 C 132 58 132 48 122 34 Z" strokeWidth="2" />
+            <path d="M122 36 L122 68" strokeWidth="1.2" opacity="0.5" />
+            {[-16, 0, 16].map((dx) => (
+              <path key={dx} d={`M${122 + dx} 78 L${122 + dx} 122`} strokeWidth="2.4" opacity="0.55" />
             ))}
           </g>
           {/* 座布団。柔らかい発泡樹脂であることを1つだけ匂わせる */}
@@ -190,7 +206,7 @@ export default function Plate() {
 
         {/* 2. サボテンの洋服掛け。緑の柱 */}
         <g transform="translate(346 292)">
-          <ellipse cx="34" cy="320" rx="72" ry="12" fill={INK} opacity="0.13" />
+          <ellipse cx="34" cy="341" rx="62" ry="11" fill={INK} opacity="0.13" />
           <g stroke={GREEN} fill="none" strokeLinecap="round">
             <path d="M34 316 L34 44" strokeWidth="54" />
             <path d="M34 196 C -12 196 -20 162 -20 128" strokeWidth="34" />

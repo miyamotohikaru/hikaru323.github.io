@@ -114,7 +114,14 @@ export default function Plate() {
     for (let col = 0; col < 4; col++) {
       const x = 4 + col * 50 - row * 3;
       const y = 18 + row * 60;
-      const p: Pt[] = [[x, y], [x + 28, y + 2], [x + 29, y + 42], [x, y + 44]];
+      // 前の版は完全な格子で、市松模様に見えた。窓は1つずつ歪ませる。
+      // 木版で彫った窓が揃うことはない
+      const p: Pt[] = [
+        [x + r(-4, 4), y + r(-4, 4)],
+        [x + 28 + r(-4, 4), y + 2 + r(-4, 4)],
+        [x + 29 + r(-4, 4), y + 42 + r(-5, 5)],
+        [x + r(-4, 4), y + 44 + r(-5, 5)],
+      ];
       winL.push({ p, lit: (row * 4 + col) % 7 === 2 });
     }
   }
@@ -123,7 +130,12 @@ export default function Plate() {
     for (let col = 0; col < 3; col++) {
       const x = 476 + col * 52 + row * 2;
       const y = 14 + row * 64;
-      const p: Pt[] = [[x, y], [x + 30, y - 4], [x + 31, y + 38], [x, y + 44]];
+      const p: Pt[] = [
+        [x + r(-4, 4), y + r(-4, 4)],
+        [x + 30 + r(-4, 4), y - 4 + r(-4, 4)],
+        [x + 31 + r(-4, 4), y + 38 + r(-5, 5)],
+        [x + r(-4, 4), y + 44 + r(-5, 5)],
+      ];
       winR.push({ p, lit: (row * 3 + col) % 5 === 1 });
     }
   }
@@ -291,9 +303,12 @@ export default function Plate() {
         <path d={jag(mCoat, r, 36, 2.4)} fill="none" stroke={INK} strokeWidth="5" strokeLinejoin="miter" />
         <path d={jag(mFace, r, 18, 1.6)} fill={ORANGE} transform="translate(4 -3)" />
         <path d={jag(mFace, r, 18, 1.6)} fill="none" stroke={INK} strokeWidth="4" strokeLinejoin="miter" />
-        <path d={jag([[228, 384], [244, 381], [245, 391], [229, 393]], r, 10, 0.9)} fill={INK} />
-        <path d={jag([[252, 380], [264, 378], [265, 388], [253, 390]], r, 9, 0.9)} fill={INK} />
-        <path d={jag([[234, 410], [256, 407], [255, 413], [234, 415]], r, 10, 0.8)} fill={INK} />
+        {/* 目・鼻・口。水平の黒い四角を並べると仮面ではなくロボットになる。
+            キルヒナーの顔は**斜めの切れ目**と楔の鼻でできている */}
+        <path d={jag([[227, 386], [245, 379], [246, 388], [228, 394]], r, 10, 0.9)} fill={INK} />
+        <path d={jag([[252, 377], [267, 382], [265, 390], [251, 386]], r, 9, 0.9)} fill={INK} />
+        <path d={jag([[246, 384], [252, 404], [240, 406]], r, 9, 0.9)} fill={INK} opacity="0.85" />
+        <path d={jag([[235, 411], [257, 406], [252, 416], [237, 417]], r, 10, 0.8)} fill={INK} />
         <path d={jag(mHat, r, 20, 2)} fill={INK} />
 
         {/* ── 手前の女 ──────────────────────────────────────────── */}
@@ -320,8 +335,8 @@ export default function Plate() {
         {/* 顔。塗りを輪郭から5px ずらす */}
         <path d={jag(face, r, 18, 1.7)} fill={ORANGE} transform="translate(5 -4)" />
         <path d={jag(face, r, 18, 1.7)} fill="none" stroke={INK} strokeWidth="4.4" strokeLinejoin="miter" />
-        <path d={jag([[384, 334], [404, 330], [406, 342], [386, 345]], r, 11, 1)} fill={INK} />
-        <path d={jag([[414, 330], [430, 327], [431, 340], [415, 342]], r, 10, 1)} fill={INK} />
+        <path d={jag([[383, 336], [405, 328], [407, 338], [385, 345]], r, 11, 1)} fill={INK} />
+        <path d={jag([[414, 327], [432, 333], [430, 342], [413, 337]], r, 10, 1)} fill={INK} />
         <path d={jag([[402, 344], [398, 362], [410, 364]], r, 11, 1.1, false)} fill="none" stroke={INK} strokeWidth="2.8" />
         <path d={jag([[390, 370], [422, 366], [420, 377], [390, 380]], r, 11, 1)} fill={RED} />
         <g fill={INK} opacity="0.55">
@@ -339,8 +354,13 @@ export default function Plate() {
           <path d={jag(hatBrim, r, 20, 1.8)} fill="none" stroke={PAPER} strokeWidth="1.8" opacity="0.5" />
         </g>
 
-        {/* ── 題字。左上の壁に打ち込む。傾けて画面と揃える ──────────── */}
+        {/* ── 題字。ブリュッケの刷り物は活字ではなく、**板に彫った字**。
+               滑らかな輪郭のヘルベチカを置いていた前の版は、
+               1910年代のドレスデンではなく現代のポスターに見えた。
+               ぎざぎざに切った黒い板を敷き、字を地色で抜き、
+               その上を彫り跡（明るい細い溝）が横切る ──────────── */}
         <g transform="rotate(-6 40 96)">
+          <path d={jag([[10, 50], [326, 42], [332, 108], [14, 116]], r, 22, 3.4)} fill={INK} />
           <text
             x="24" y="92"
             fill={PAPER}
@@ -348,15 +368,27 @@ export default function Plate() {
             fontSize="44"
             fontWeight="800"
             letterSpacing="-1"
-            style={{ paintOrder: "stroke" }}
-            stroke={INK}
-            strokeWidth="7"
           >
             DIE BRÜCKE
           </text>
+          {/* 彫り跡。板を横切る溝。刀が滑った所だけ地が出る */}
+          <g fill={PAPER} opacity="0.9">
+            {Array.from({ length: 7 }, (_, i) => {
+              const y0 = 50 + i * 9.4 + r(-2, 2);
+              const w = r(70, 300);
+              const x0 = r(10, 330 - w);
+              return (
+                <path key={i}
+                  d={jag([[x0, y0], [x0 + w, y0 + r(-3, 3)], [x0 + w, y0 + r(1.2, 2.6)], [x0, y0 + r(1.2, 2.6)]], r, 10, 0.9)} />
+              );
+            })}
+          </g>
+          {/* 副題。前は橙の空の上に橙で置いていて、右半分が消えていた。
+              黒い細帯を敷いて地色で抜く */}
+          <path d={jag([[14, 120], [300, 113], [302, 138], [16, 145]], r, 18, 1.6)} fill={INK} />
           <text
-            x="28" y="116"
-            fill={ORANGE}
+            x="28" y="134"
+            fill={PAPER}
             fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
             fontSize="10.5"
             fontWeight="700"

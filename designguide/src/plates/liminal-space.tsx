@@ -17,6 +17,15 @@
  *
  * ■ 遠近は t=k/(k+1.6) で刻む
  *   等間隔にすると床が坂に見える。1/z で詰めると、奥に吸い込まれる。
+ *
+ * ■ 検分で直したこと
+ *   ・隅の文字が地とほぼ同じ明度で、原寸でも読めなかった。
+ *     ビデオカメラの焼き込み文字は必ず黒い影を連れている。影を敷いた。
+ *   ・四隅の沈みを深くした。淡い5枚は185pxで地の紙に溶けるので、
+ *     中央の明かりと隅の暗がりの差だけが版面の輪郭を作る。
+ *   ・非常口の札を緑にした。この廊下で「本当の色」を持つのは
+ *     この札だけ、という状態にすると、無人であることが強く出る。
+ *     縮小したときに版面に1点だけ色が残るのも効く。
  */
 import { ATLAS, rand, lerp } from "@/lib/plate";
 
@@ -84,8 +93,9 @@ export default function Plate() {
           <stop offset="1" stopColor="#e8f0c8" stopOpacity="0" />
         </radialGradient>
         <radialGradient id={`${P}-vig`} cx="0.5" cy="0.52">
-          <stop offset="0.4" stopColor="#000000" stopOpacity="0" />
-          <stop offset="1" stopColor="#2a2718" stopOpacity="0.52" />
+          <stop offset="0.34" stopColor="#000000" stopOpacity="0" />
+          <stop offset="0.74" stopColor="#2a2718" stopOpacity="0.34" />
+          <stop offset="1" stopColor="#222014" stopOpacity="0.7" />
         </radialGradient>
         <filter id={`${P}-soft`} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="7" />
@@ -233,29 +243,40 @@ export default function Plate() {
           <rect x="316" y="396" width="7" height="94" fill="#0e0d08" />
           <rect x="323" y="396" width="1.6" height="94" fill="#f6f2de" opacity="0.5" />
           <circle cx="313" cy="446" r="1.6" fill={DARK} />
-          {/* 非常口の札。読めるが役に立たない */}
-          <rect x="284" y="374" width="32" height="12" fill={DARK} opacity="0.85" />
-          <text x="300" y="383" textAnchor="middle" fill="#e6e2cc" fontFamily="sans-serif" fontSize="7.4" letterSpacing="0.5">
+          {/* 非常口の札。読めるが役に立たない。
+              この廊下で本当の色を持つのはこの札だけにする */}
+          <rect x="283" y="373" width="34" height="13.5" fill="#4f5c3c" />
+          <rect x="284" y="374" width="32" height="11.5" fill="#5d6f45" />
+          <rect x="284" y="374" width="32" height="4" fill="#6b7f50" opacity="0.7" />
+          <text x="300" y="383" textAnchor="middle" fill="#eef3e2" fontFamily="sans-serif" fontSize="7.4" letterSpacing="0.5">
             非常口
           </text>
+          {/* 札の下に落ちる緑の照り返し。札が光っていることの証拠 */}
+          <ellipse cx="300" cy="392" rx="26" ry="7" fill="#6b7f50" opacity="0.28" filter={`url(#${P}-soft`.concat(")")} />
         </g>
 
         {/* 奥の靄。廊下が終わらないことにする */}
         <ellipse cx="300" cy="440" rx="120" ry="86" fill="#f2eed8" opacity="0.3" filter={`url(#${P}-soft)`} />
 
         {/* ── 文字。写真の隅に焼き込まれた日付のように置く ─────────── */}
-        <text x="44" y="760" fill={PALE} fontFamily="'Courier New', ui-monospace, monospace"
-              fontSize="11.5" letterSpacing="4.6" opacity="0.8">
-          LIMINAL SPACE
-        </text>
-        <text x="44" y="777" fill={PALE} fontFamily="'Courier New', ui-monospace, monospace"
-              fontSize="9" letterSpacing="2.6" opacity="0.62">
-          NO ONE HAS BEEN HERE FOR A WHILE
-        </text>
-        <text x="556" y="777" textAnchor="end" fill={PALE} fontFamily="'Courier New', ui-monospace, monospace"
-              fontSize="9" letterSpacing="2.2" opacity="0.6">
-          03:14
-        </text>
+        {/* 焼き込み文字は必ず黒い影を連れている。
+            影を敷かないと、白い字が黄ばんだ壁に沈んで読めない */}
+        <g fontFamily="'Courier New', ui-monospace, monospace">
+          <g fill="#16150c" opacity="0.5" transform="translate(1.3 1.3)">
+            <text x="44" y="760" fontSize="11.5" letterSpacing="4.6">LIMINAL SPACE</text>
+            <text x="44" y="777" fontSize="9" letterSpacing="2.6">NO ONE HAS BEEN HERE FOR A WHILE</text>
+            <text x="556" y="777" textAnchor="end" fontSize="9" letterSpacing="2.2">03:14</text>
+          </g>
+          <text x="44" y="760" fill={PALE} fontSize="11.5" letterSpacing="4.6" opacity="0.97">
+            LIMINAL SPACE
+          </text>
+          <text x="44" y="777" fill={PALE} fontSize="9" letterSpacing="2.6" opacity="0.82">
+            NO ONE HAS BEEN HERE FOR A WHILE
+          </text>
+          <text x="556" y="777" textAnchor="end" fill={PALE} fontSize="9" letterSpacing="2.2" opacity="0.8">
+            03:14
+          </text>
+        </g>
 
         {/* 質感。粒を強めに。撮られた写真であってほしい */}
         <rect width="600" height="800" fill={`url(#${P}-vig)`} />

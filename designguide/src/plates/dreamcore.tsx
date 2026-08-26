@@ -196,10 +196,24 @@ export default function Plate() {
           {/* 開いた口 */}
           <rect x="66" y="6" width="54" height="230" fill="#150c28" />
           <rect x="66" y="6" width="54" height="230" fill={`url(#${P}-inside)`} opacity="0.95" />
-          {/* 向こう側の地平線と、そこに立つもう一枚の扉 */}
-          <rect x="66" y="150" width="54" height="86" fill="#bff0f4" opacity="0.9" />
-          <rect x="66" y="148" width="54" height="2" fill="#ffffff" opacity="0.9" />
-          <rect x="88" y="120" width="13" height="30" fill="#e8dcc4" stroke="#b9a382" strokeWidth="0.7" />
+          {/* 向こう側の地平線と、そこに立つもう一枚の扉。
+              検分で直したところ：地面と空が同じ水色で、地平線が
+              ただの分割線に見え、奥の扉も宙に浮いた札に見えていた。
+              地面を明るい側へ振り、扉に枠と影を付けて「立たせた」。
+              さらに小さい扉をもう1枚置く。この向こうにも同じ景色が
+              続いている、というのがドリームコアの怖さの中身 */}
+          <rect x="66" y="150" width="54" height="86" fill="#dff7f0" opacity="0.95" />
+          <rect x="66" y="206" width="54" height="30" fill="#b6e4e2" opacity="0.55" />
+          <rect x="66" y="148" width="54" height="2.4" fill="#ffffff" opacity="0.95" />
+          {/* 奥の扉。枠・隙間・影の3つが揃って初めて扉に見える */}
+          <rect x="87" y="119" width="15" height="31" fill="#b9a382" />
+          <rect x="88" y="120" width="13" height="30" fill="#e8dcc4" />
+          <rect x="97" y="121" width="3" height="29" fill="#3b2f4a" opacity="0.8" />
+          <rect x="88" y="150" width="17" height="1.6" fill="#8fa8a6" opacity="0.6" />
+          {/* もっと奥の扉。この先も同じ景色が続いている */}
+          <rect x="107" y="136" width="7" height="14" fill="#d8cbb2" />
+          <rect x="111.5" y="137" width="1.6" height="13" fill="#3b2f4a" opacity="0.7" />
+          <rect x="107" y="150" width="8" height="1" fill="#8fa8a6" opacity="0.5" />
           <g filter={`url(#${P}-glow)`}>
             <rect x="66" y="6" width="4" height="230" fill="#ffffff" opacity="0.9" />
           </g>

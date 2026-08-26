@@ -182,10 +182,13 @@ export default function Plate() {
         </filter>
 
         {/* 釉。左肩から右腰へ落ちる窯変。均一に塗ると陶に見えない */}
+        {/* 釉。検分で直した：灰色一色だったので陶器に見えなかった。
+            井戸茶碗の釉は枇杷色（黄褐）に焼ける。途中に黄を1段挟む */}
         <linearGradient id={`${P}-glaze`} x1="0.14" y1="0.05" x2="0.9" y2="1">
-          <stop offset="0" stopColor="#8f8474" />
-          <stop offset="0.38" stopColor={EARTH} />
-          <stop offset="1" stopColor="#463f33" />
+          <stop offset="0" stopColor="#9a8c74" />
+          <stop offset="0.22" stopColor="#8a7a5e" />
+          <stop offset="0.5" stopColor={EARTH} />
+          <stop offset="1" stopColor="#443c30" />
         </linearGradient>
         {/* 器の中。手前の内壁が暗く、向こうの内壁が少し明るい */}
         <linearGradient id={`${P}-in`} x1="0" y1="0" x2="0" y2="1">
@@ -218,11 +221,19 @@ export default function Plate() {
           <path d="M 388 176.5 L 434 177" strokeWidth="0.8" opacity="0.2" />
         </g>
 
-        {/* 置いた跡の輪染み。器がもうひとつ「あった」時間 */}
-        <g opacity="0.6">
-          <path d={wobbleRing(340, 258, 74, 27, 0.1, 61)} fill={WASH} opacity="0.45" filter={`url(#${P}-soft2)`} />
-          <path d={wobbleRing(340, 258, 74, 27, 0.1, 61)} fill="none" stroke={CLAY} strokeWidth="2.8" />
-          <path d={wobbleRing(340, 258, 65, 22, 0.13, 199)} fill="none" stroke={CLAY} strokeWidth="0.9" opacity="0.65" />
+        {/* 置いた跡の輪染み。器がもうひとつ「あった」時間。
+            検分で直した：初稿は 2.8px の実線で囲っていて、
+            染みではなく「描き忘れた楕円」に見えていた。
+            染みは縁が濃く中が薄い（コーヒーリング効果）。
+            外周をぼかした太い環にして、内側を薄く残す */}
+        <g opacity="0.62">
+          <path d={wobbleRing(340, 258, 76, 28, 0.1, 61)} fill={WASH} opacity="0.5" filter={`url(#${P}-soft)`} />
+          <path d={wobbleRing(340, 258, 74, 27, 0.1, 61)} fill="none" stroke={CLAY} strokeWidth="4.5"
+                opacity="0.7" filter={`url(#${P}-soft2)`} />
+          <path d={wobbleRing(340, 258, 74, 27, 0.1, 61)} fill="none" stroke="#a99b81" strokeWidth="1.1"
+                opacity="0.5" strokeDasharray="26 9 13 21 34 7" />
+          <path d={wobbleRing(340, 258, 63, 21, 0.13, 199)} fill="none" stroke={CLAY} strokeWidth="0.8"
+                opacity="0.4" strokeDasharray="18 12 30 8" />
         </g>
 
         {/* 床の線。かすれた一筆 */}
@@ -258,7 +269,13 @@ export default function Plate() {
                   fill="#4d463a" opacity="0.88" />
               );
             })}
-            <g stroke="#2c281f" strokeWidth="0.5" fill="none" opacity="0.17">
+            {/* 貫入。0.17 では見えず、いちばんわびさびらしい肌が
+                無いのと同じだった。濃淡2枚に分けて起こす */}
+            <g stroke="#26221a" strokeWidth="0.55" fill="none" opacity="0.34">
+              {crackles.map((d, i) => <path key={i} d={d} />)}
+            </g>
+            <g stroke="#cdbe9c" strokeWidth="0.4" fill="none" opacity="0.22"
+               transform="translate(0.7 0.7)">
               {crackles.map((d, i) => <path key={i} d={d} />)}
             </g>
             {specks.map((s, i) => <circle key={i} cx={s.x} cy={s.y} r={s.r} fill={INK} opacity={s.o} />)}
@@ -275,10 +292,17 @@ export default function Plate() {
           {/* 茶の残り線。内壁に一本だけ。近くで見たときの物語 */}
           <path d={wobbleRing(CX, RIM_Y + 8, RIM_RX - 30, RIM_RY - 12, 0.06, 424)} fill="none"
                 stroke="#6b6046" strokeWidth="1.2" opacity="0.4" />
-          {/* 向こうの内壁。ここに光を入れないと、口が黒い板に見える */}
-          <path d={wobbleRing(CX, RIM_Y - 6, RIM_RX - 22, RIM_RY - 9, 0.05, 1717)} fill="#6a6049"
-                opacity="0.5" filter={`url(#${P}-soft2)`} />
-          <path d={wobbleRing(CX, RIM_Y + 6, RIM_RX - 18, RIM_RY - 8, 0.055, 1717)} fill="#231f18" opacity="0.85" />
+          {/* 向こうの内壁。ここに光を入れないと、口が黒い板に見える。
+              検分で直した：手前の暗がりが強すぎて、光がぜんぶ潰れていた。
+              向こう側を起こし、手前を一段だけ弱めて、深さを出す */}
+          <path d={wobbleRing(CX, RIM_Y - 7, RIM_RX - 20, RIM_RY - 8, 0.05, 1717)} fill="#8c8062"
+                opacity="0.85" filter={`url(#${P}-soft2)`} />
+          <path d={wobbleRing(CX, RIM_Y - 2, RIM_RX - 26, RIM_RY - 11, 0.05, 1717)} fill="#5f5741"
+                opacity="0.7" filter={`url(#${P}-soft2)`} />
+          <path d={wobbleRing(CX, RIM_Y + 8, RIM_RX - 18, RIM_RY - 8, 0.055, 1717)} fill="#231f18" opacity="0.78" />
+          {/* 溜まった茶の照り。器の底に一点だけ光を返す */}
+          <ellipse cx={CX - 26} cy={RIM_Y + 12} rx="34" ry="6" fill="#a2916b" opacity="0.3"
+                   filter={`url(#${P}-soft2)`} />
           <path d={rimPath} fill="none" stroke={CLAY} strokeWidth="3" opacity="0.9" />
         </g>
 

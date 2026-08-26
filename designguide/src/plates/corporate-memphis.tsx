@@ -15,6 +15,9 @@
  *   3. 肌の色が自然色でない。菫・珊瑚・薄荷。
  *      人種を描かないための決まりごとで、この様式の核心でもある。
  *   4. 平面。影も立体も付けない。唯一許すのは足元の平たい楕円だけ。
+ *      （検分で直した：それでも版面に「NO SHADOWS」と刷ってあったので、
+ *      絵と刷り文句が矛盾していた。文句のほうを「FLAT COLOUR」に改めた。
+ *      足元の楕円は接地を示すために要る）
  *   5. 背景は大きな幾何と観葉植物。モンステラはほぼ義務。
  */
 import { ATLAS } from "@/lib/plate";
@@ -167,7 +170,7 @@ export default function Plate() {
         <text x="556" y="692" textAnchor="end" fill={NAVY}
           fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
           fontSize="10.5" fontWeight="600" letterSpacing="2.6" opacity="0.62">
-          NO FACES — NO SHADOWS
+          NO FACES — FLAT COLOUR
         </text>
         <text x="556" y="710" textAnchor="end" fill={NAVY}
           fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"

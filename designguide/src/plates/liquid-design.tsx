@@ -20,6 +20,14 @@
  *      1つの連続した body に見える。円ごとに塗ると継ぎ目が出る。
  *   3. 硬いハイライトが1点あること。艶のある液体には必ず鋭い写り込みが出る。
  *      柔らかい光だけだと、粘土（クレイ）になってしまう。
+ *
+ * ■ 前稿の失敗（検分でここを組み直した）
+ *   前稿は円を17個、一本の背骨に沿って並べていた。
+ *   メタボールとしては正しく融合するのだが、細長い管になってしまい、
+ *   出来上がった絵はアメーバか彗星にしか見えなかった。
+ *   液体らしさは「太い塊どうしが噛み合ったときに出る凹んだ隅（フィレット）」
+ *   にある。だから大きな葉を5枚、互いに 15〜40 だけ食い込ませて配置し、
+ *   境目ごとに凹みが立つようにした。そこから滴が首を細めて落ちる。
  */
 import { ATLAS } from "@/lib/plate";
 
@@ -33,19 +41,26 @@ const LIGHT = "#f0eeff";
 const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 const MONO = "'Courier New', ui-monospace, monospace";
 
-/** 流れの背骨。上から降りてきて溜まり、下で千切れる */
+/**
+ * 塊。大きな葉を5枚、中心の1枚に 15〜40 だけ食い込ませる。
+ * 食い込ませる量がここより浅いと離れ、深いと1個の丸になる。
+ * この幅のときだけ、境目に液体特有の凹んだ隅が立つ。
+ */
 const FLOW: [number, number, number][] = [
-  [402, 108, 24], [394, 148, 29], [380, 188, 34], [358, 226, 41],
-  [328, 264, 51], [292, 300, 62], [252, 336, 73], [212, 374, 81],
-  [180, 416, 78], [164, 458, 66], [170, 496, 51], [192, 528, 38],
-  [222, 552, 28],
-  // 脇の膨らみ。左右対称だと管に見える
-  [272, 388, 46], [116, 436, 42], [246, 490, 38], [330, 250, 30],
+  [252, 330, 104], // 中心の主塊
+  [372, 254, 66], // 右上
+  [386, 420, 72], // 右下
+  [148, 402, 62], // 左下
+  [172, 246, 48], // 左上
+  [300, 470, 58], // 下。ここから滴が落ちる
 ];
 
-/** 千切れて落ちる滴。間隔を広げるほど首が細くなり、やがて切れる */
+/**
+ * 千切れて落ちる滴。上から順に
+ *   つながっている → 首が細る → 切れた、の3段になるよう間隔を開けてある。
+ */
 const DROPS: [number, number, number][] = [
-  [258, 578, 19], [300, 606, 13], [336, 628, 8.5], [364, 644, 5],
+  [318, 552, 34], [340, 612, 19], [358, 656, 10], [372, 688, 5.5],
 ];
 
 export default function Plate() {
@@ -85,12 +100,12 @@ export default function Plate() {
           <stop offset="1" stopColor={DARK} />
         </linearGradient>
         {/* 塊ではなく版面に張るグラデーション。継ぎ目を出さないための要 */}
-        <linearGradient id={`${P}-body`} gradientUnits="userSpaceOnUse" x1="410" y1="90" x2="180" y2="640">
+        <linearGradient id={`${P}-body`} gradientUnits="userSpaceOnUse" x1="392" y1="196" x2="168" y2="600">
           <stop offset="0" stopColor={CYAN} />
           <stop offset="0.42" stopColor={VIOLET} />
           <stop offset="1" stopColor={PINK} />
         </linearGradient>
-        <linearGradient id={`${P}-rim`} gradientUnits="userSpaceOnUse" x1="410" y1="90" x2="180" y2="640">
+        <linearGradient id={`${P}-rim`} gradientUnits="userSpaceOnUse" x1="392" y1="196" x2="168" y2="600">
           <stop offset="0" stopColor={LIGHT} stopOpacity="0.9" />
           <stop offset="0.5" stopColor={LIGHT} stopOpacity="0.5" />
           <stop offset="1" stopColor={PINK} stopOpacity="0.8" />
@@ -106,9 +121,9 @@ export default function Plate() {
         <rect width="600" height="800" fill={`url(#${P}-bg)`} />
         {/* 液体の裏の光。これが無いと黒地に貼った切り紙に見える */}
         <g filter={`url(#${P}-b50)`} opacity="0.28" style={{ mixBlendMode: "screen" }}>
-          <ellipse cx="250" cy="400" rx="150" ry="190" fill={VIOLET} />
-          <circle cx="392" cy="160" r="76" fill={CYAN} />
-          <circle cx="210" cy="540" r="96" fill={PINK} />
+          <ellipse cx="262" cy="352" rx="190" ry="170" fill={VIOLET} />
+          <circle cx="368" cy="238" r="92" fill={CYAN} />
+          <circle cx="322" cy="536" r="96" fill={PINK} />
         </g>
 
         {/* 縁の明かり。本体より一回り大きい同じ形を先に刷る */}
@@ -124,23 +139,40 @@ export default function Plate() {
           ))}
         </g>
         {/* 上左の縁に沿う照り。
-            ここは半径の取り方が難しかった。大きすぎると内側にもう1つ
-            別の塊が浮いて見え、小さすぎると円が1個ずつ斑点として残る。
-            隣の円と首がつながる大きさ（半径の 0.55 倍）が下限だった */}
-        <g filter={`url(#${P}-goo-s)`} opacity="0.3" style={{ mixBlendMode: "screen" }}>
-          {FLOW.map(([x, y, r], i) => (
-            <circle key={i} cx={x - r * 0.3} cy={y - r * 0.36} r={r * 0.55} fill={LIGHT} />
-          ))}
+            円ごとに小さい光を置くと、塊の中に丸い斑点が浮いて、
+            何個の円で出来ているか数えられてしまった（検分で指摘）。
+            そこで「本体と同じ輪郭を 0.88 倍に縮めて左上へずらした一枚」に替えた。
+            外周と内側の差がそのまま光の帯になるので、continuous body のまま照る */}
+        <g transform="translate(18.6 25.6) scale(0.88)">
+          <g filter={`url(#${P}-goo)`} opacity="0.2" style={{ mixBlendMode: "screen" }}>
+            {[...FLOW, ...DROPS].map(([x, y, r], i) => (
+              <circle key={i} cx={x} cy={y} r={r} fill={LIGHT} />
+            ))}
+          </g>
         </g>
         {/* 硬い写り込み。液体の艶はこの数点で決まる */}
         <g fill={LIGHT}>
-          <ellipse cx="186" cy="382" rx="17" ry="11" transform="rotate(-28 186 382)" opacity="0.9" />
-          <ellipse cx="146" cy="440" rx="9" ry="6" transform="rotate(-24 146 440)" opacity="0.62" />
-          <ellipse cx="336" cy="248" rx="8" ry="5" transform="rotate(-34 336 248)" opacity="0.75" />
-          <ellipse cx="386" cy="132" rx="6" ry="4" transform="rotate(-30 386 132)" opacity="0.7" />
-          <circle cx="252" cy="571" r="4.4" opacity="0.8" />
-          <circle cx="296" cy="601" r="3" opacity="0.7" />
+          <ellipse cx="206" cy="284" rx="21" ry="13" transform="rotate(-28 206 284)" opacity="0.92" />
+          <ellipse cx="150" cy="226" rx="10" ry="6" transform="rotate(-26 150 226)" opacity="0.7" />
+          <ellipse cx="348" cy="222" rx="12" ry="7.5" transform="rotate(-32 348 222)" opacity="0.8" />
+          <ellipse cx="362" cy="390" rx="10" ry="6.5" transform="rotate(-30 362 390)" opacity="0.72" />
+          <ellipse cx="128" cy="378" rx="8" ry="5" transform="rotate(-24 128 378)" opacity="0.6" />
+          <circle cx="308" cy="536" r="5" opacity="0.85" />
+          <circle cx="332" cy="600" r="3.2" opacity="0.72" />
         </g>
+
+        {/* 首を指す註。右上が空くので、ここで版面を締める。
+            液体の「らしさ」は首の細さで決まる、という一番大事な数字 */}
+        <g stroke={LIGHT} strokeWidth="0.8" opacity="0.45" fill="none">
+          <path d="M 344 296 L 452 236 L 542 236" />
+          <circle cx="344" cy="296" r="2.6" fill={LIGHT} stroke="none" />
+        </g>
+        <text x="542" y="228" textAnchor="end" fill={LIGHT} opacity="0.72" fontFamily={SANS} fontSize="9" fontWeight="700" letterSpacing="2.2">
+          NECK
+        </text>
+        <text x="542" y="252" textAnchor="end" fill={LIGHT} opacity="0.45" fontFamily={MONO} fontSize="7.5">
+          fillet r ≈ 0.18 R
+        </text>
 
         {/* ── 題字。液体を避けて左上に置く ─────────────────────── */}
         <text x="46" y="112" fill={LIGHT} fontFamily={SANS} fontSize="58" fontWeight="200" letterSpacing="11">
@@ -180,7 +212,7 @@ export default function Plate() {
         <g fill={LIGHT} opacity="0.45" fontFamily={MONO} fontSize="7">
           <text x="452" y="724">#00D4FF</text>
           <text x="554" y="724" textAnchor="end">#FF5CAE</text>
-          <text x="554" y="742" textAnchor="end">1 GRADIENT, 17 CIRCLES</text>
+          <text x="554" y="742" textAnchor="end">1 GRADIENT, 10 CIRCLES</text>
           <text x="554" y="760" textAnchor="end">blur → alpha contrast ×24</text>
         </g>
 
