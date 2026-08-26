@@ -122,9 +122,9 @@ export default function Plate() {
           <stop offset="1" stopColor="#ffffff" stopOpacity="0.05" />
         </linearGradient>
         <linearGradient id={`${P}-swoosh`} x1="0" y1="0" x2="1" y2="0.6">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.62" />
-          <stop offset="0.5" stopColor="#8fd8f5" stopOpacity="0.45" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0.2" />
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.9" />
+          <stop offset="0.5" stopColor="#bfeaff" stopOpacity="0.8" />
+          <stop offset="1" stopColor="#ffffff" stopOpacity="0.45" />
         </linearGradient>
         <linearGradient id={`${P}-type`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ffffff" />
@@ -170,14 +170,11 @@ export default function Plate() {
         <g filter={`url(#${P}-drop2)`}>
           <circle cx="390" cy="352" r="138" fill={`url(#${P}-orb)`} />
           <g clipPath={`url(#${P}-orbclip)`}>
-            {/* 中に映る風景。玉は「向こう側」を上下反転して映す */}
-            <g transform="translate(0 704) scale(1 -1)" opacity="0.5">
-              <rect x="252" y="352" width="278" height="138" fill="#a8e2f8" />
-              <ellipse cx="360" cy="400" rx="90" ry="26" fill={WHITE} opacity="0.8" filter={`url(#${P}-soft2)`} />
-              <rect x="252" y="452" width="278" height="60" fill={GREEN} opacity="0.75" />
-            </g>
+            {/* 中に映るもの。空の白と、下の草の緑。境目は作らない */}
+            <ellipse cx="386" cy="244" rx="176" ry="90" fill="#d8f2ff" opacity="0.75" filter={`url(#${P}-soft2)`} />
+            <ellipse cx="394" cy="486" rx="152" ry="76" fill="#a8e88a" opacity="0.5" filter={`url(#${P}-soft)`} />
             {/* 下の縁に集まる光 */}
-            <ellipse cx="392" cy="452" rx="104" ry="42" fill={WHITE} opacity="0.55" filter={`url(#${P}-soft2)`} />
+            <ellipse cx="392" cy="452" rx="104" ry="40" fill={WHITE} opacity="0.6" filter={`url(#${P}-soft2)`} />
             {/* 上半分の艶 */}
             <ellipse cx="382" cy="272" rx="112" ry="72" fill={`url(#${P}-gloss)`} />
           </g>
@@ -234,8 +231,6 @@ export default function Plate() {
                 fontSize="92" fontWeight="300" letterSpacing="2">
             aero
           </text>
-          {/* 字の上半分の艶。硝子と同じ処理を字にも掛ける */}
-          <path d="M52 52 C104 40 170 40 222 52 C172 62 106 64 52 52 Z" fill={WHITE} opacity="0.5" />
         </g>
         <text x="50" y="146" fill={DEEP} fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
               fontSize="10.5" fontWeight="500" letterSpacing="5.6" opacity="0.85">

@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BuildForm from "@/components/BuildForm";
-import { PLATES } from "@/plates";
+import PlateImage from "@/components/PlateImage";
 import { STYLES } from "@/data/styles";
 
 export const metadata = {
@@ -23,9 +23,7 @@ export default async function BuildPage({
    */
   const picker = (
     <>
-      {STYLES.map((s) => {
-        const P = PLATES[s.slug];
-        return (
+      {STYLES.map((s) => (
           <button
             key={s.slug}
             type="button"
@@ -35,11 +33,12 @@ export default async function BuildPage({
             data-q={`${s.ja} ${s.en} ${s.slug} ${s.era} ${s.origin}`.toLowerCase()}
             title={`${s.ja}（${s.en}）`}
           >
-            <span className="plate-frame">{P ? <P /> : null}</span>
+            <span className="plate-frame">
+              <PlateImage slug={s.slug} alt="" />
+            </span>
             <span className="pick__n">{s.ja}</span>
           </button>
-        );
-      })}
+      ))}
     </>
   );
 

@@ -222,13 +222,19 @@ export default function Plate() {
             <path d="M 442 506 a 24 24 0 0 1 48 0 Z" />
             <rect x="440" y="504" width="52" height="34" />
           </g>
-          {/* 窓の灯り。黒い塊のままだと都市に見えない */}
+          {/* 窓の灯り。黒い塊のままだと都市に見えない。
+              初稿は矩形の範囲に撒いたので、地平線より上の空にも点が浮いた。
+              地面の曲線を解いて、その下にだけ置く */}
           <g fill={YELLOW}>
-            {Array.from({ length: 34 }, (_, i) => {
+            {Array.from({ length: 38 }, (_, i) => {
               const q = rand(600 + i);
-              const x = q(88, 500);
-              const y = q(478, 540);
-              return <rect key={i} x={x} y={y} width="3.4" height="5" opacity={q(0.5, 1)} />;
+              const x = q(80, 512);
+              const t = (x - 40) / 520;
+              const gy = (1 - t) * (1 - t) * 520 + 2 * t * (1 - t) * 470 + t * t * 520;
+              return (
+                <rect key={i} x={x} y={q(gy + 8, gy + 52)} width="3.4" height="5"
+                      opacity={q(0.5, 1)} />
+              );
             })}
           </g>
 

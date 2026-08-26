@@ -14,13 +14,17 @@
  *      3行ずらす。最後の行は版面の外へ出す。TM誌の表紙の作り。
  *   2. **極端な字間。** WAVE の字間は 26。読みやすさより間の造形を採る。
  *   3. **太さの階段の罫。** 0.6 から 14 まで9本。ヴァインガルトの署名。
+ *      上げすぎると網点に、下げすぎると黒帯に食われる。
+ *      網点の下端（左端で y=537）と黒帯の上端（左端で y=668）の間、
+ *      556〜649 にちょうど9本入る。
  *   4. **網点の拡大。** 写真製版のアミを、点が見える大きさまで引き伸ばす。
  *      点の径を位置の関数で変えているので、拡大した「写真」に見える。
  *   5. **版の掛け合わせ。** 青のアミ・赤の帯・黄の面を multiply で重ねる。
  *      オフセットで版が重なると出る紫と緑を、意図して作っている。
  *   6. **行を途中で落とす。** 1行の後半だけベースラインを下げる。
  */
-import { ATLAS, rad } from "@/lib/plate";
+import type { ReactElement } from "react";
+import { ATLAS } from "@/lib/plate";
 
 const P = "nw";
 const PAPER = "#f2f0ea";
@@ -125,16 +129,16 @@ export default function Plate() {
 
         {/* ── 太さの階段の罫。9本 ──────────────────────────── */}
         <g fill={INK}>
-          {RULES.reduce<{ y: number; els: React.ReactElement[] }>(
+          {RULES.reduce<{ y: number; els: ReactElement[] }>(
             (acc, w, i) => {
               acc.els.push(<rect key={i} x={M} y={acc.y} width={252} height={w} />);
-              acc.y += w + 9;
+              acc.y += w + 6;
               return acc;
             },
-            { y: 566, els: [] },
+            { y: 556, els: [] },
           ).els}
         </g>
-        <text x={M} y="562" fill={INK} fontFamily={SANS} fontSize="7.5" fontWeight="700" letterSpacing="2.2" opacity="0.7">
+        <text x={M} y="550" fill={INK} fontFamily={SANS} fontSize="7.5" fontWeight="700" letterSpacing="2.2" opacity="0.7">
           0,6 — 14 PT
         </text>
 

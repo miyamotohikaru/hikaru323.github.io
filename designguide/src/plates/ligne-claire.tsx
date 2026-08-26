@@ -149,9 +149,7 @@ export default function Plate() {
               <rect x="176" y="-2" width="20" height="10" rx="5" fill={PAPER} />
               <rect x="-196" y="-4" width="18" height="10" rx="5" fill={PAPER} />
               <circle cx="-166" cy="-22" r="8" fill={YELLOW} />
-              {/* 反射鏡と昇降板 */}
-              <path d="M 106,-44 L 118,-54" />
-              <circle cx="121" cy="-58" r="6" fill={PAPER} />
+              {/* 昇降板 */}
               <rect x="-100" y="6" width="96" height="8" fill={INK} />
               {/* 車輪。輪心はきちんと描く。遠近で省略しない */}
               {[-112, 108].map((x) => (

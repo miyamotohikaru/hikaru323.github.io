@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PlateCard from "@/components/PlateCard";
 import AtlasControls from "@/components/AtlasControls";
-import { PLATES } from "@/plates";
+import PlateImage from "@/components/PlateImage";
 import { STYLES, STYLE_BY_SLUG } from "@/data/styles";
 
 /** 帯に流す図版。強い絵を選んで、色が続けて似ないように並べる */
@@ -17,7 +17,7 @@ const STRIP = [
 const FRONT = ["bauhaus", "risograph"];
 
 export default function Home() {
-  const strip = STRIP.filter((s) => PLATES[s]);
+  const strip = STRIP.filter((s) => STYLE_BY_SLUG[s]);
 
   return (
     <>
@@ -64,33 +64,28 @@ export default function Home() {
           {/* 机に置いた刷り物のように、2枚を重ねる。
               表紙の右が空くと、ただの大きい文字の看板に見えてしまう */}
           <div className="hero__plates" aria-hidden>
-            {FRONT.map((slug, i) => {
-              const P = PLATES[slug];
-              if (!P) return null;
-              return (
-                <span className={`hero__plate hero__plate--${i}`} key={slug}>
-                  <span className="plate-frame"><P /></span>
-                  <span className="hero__cap">
-                    <b>{STYLE_BY_SLUG[slug]?.ja ?? slug}</b>
-                    <i>{STYLE_BY_SLUG[slug]?.en ?? ""}</i>
-                  </span>
+            {FRONT.map((slug, i) => (
+              <span className={`hero__plate hero__plate--${i}`} key={slug}>
+                <span className="plate-frame">
+                  <PlateImage slug={slug} alt="" priority />
                 </span>
-              );
-            })}
+                <span className="hero__cap">
+                  <b>{STYLE_BY_SLUG[slug]?.ja ?? slug}</b>
+                  <i>{STYLE_BY_SLUG[slug]?.en ?? ""}</i>
+                </span>
+              </span>
+            ))}
           </div>
         </div>
 
         {/* 図版の帯。横に流して、中身を先に見せてしまう */}
         <div className="strip" aria-hidden>
           <div className="strip__run">
-            {[...strip, ...strip].map((slug, i) => {
-              const P = PLATES[slug];
-              return (
-                <span className="strip__cell plate-frame" key={`${slug}-${i}`}>
-                  <P />
-                </span>
-              );
-            })}
+            {[...strip, ...strip].map((slug, i) => (
+              <span className="strip__cell plate-frame" key={`${slug}-${i}`}>
+                <PlateImage slug={slug} alt="" priority={i < 8} />
+              </span>
+            ))}
           </div>
         </div>
       </section>

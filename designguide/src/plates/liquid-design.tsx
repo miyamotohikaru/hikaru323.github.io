@@ -80,9 +80,9 @@ export default function Plate() {
         </filter>
 
         <linearGradient id={`${P}-bg`} x1="0" y1="0" x2="0.4" y2="1">
-          <stop offset="0" stopColor="#080714" />
-          <stop offset="0.6" stopColor={DARK} />
-          <stop offset="1" stopColor="#120d22" />
+          <stop offset="0" stopColor="#050409" />
+          <stop offset="0.6" stopColor="#0a0814" />
+          <stop offset="1" stopColor={DARK} />
         </linearGradient>
         {/* 塊ではなく版面に張るグラデーション。継ぎ目を出さないための要 */}
         <linearGradient id={`${P}-body`} gradientUnits="userSpaceOnUse" x1="410" y1="90" x2="180" y2="640">
@@ -105,10 +105,10 @@ export default function Plate() {
       <g clipPath={`url(#${P}-page)`}>
         <rect width="600" height="800" fill={`url(#${P}-bg)`} />
         {/* 液体の裏の光。これが無いと黒地に貼った切り紙に見える */}
-        <g filter={`url(#${P}-b50)`} opacity="0.5" style={{ mixBlendMode: "screen" }}>
-          <ellipse cx="250" cy="380" rx="230" ry="270" fill={VIOLET} />
-          <circle cx="392" cy="150" r="110" fill={CYAN} />
-          <circle cx="200" cy="560" r="120" fill={PINK} />
+        <g filter={`url(#${P}-b50)`} opacity="0.28" style={{ mixBlendMode: "screen" }}>
+          <ellipse cx="250" cy="400" rx="150" ry="190" fill={VIOLET} />
+          <circle cx="392" cy="160" r="76" fill={CYAN} />
+          <circle cx="210" cy="540" r="96" fill={PINK} />
         </g>
 
         {/* 縁の明かり。本体より一回り大きい同じ形を先に刷る */}

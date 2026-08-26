@@ -24,12 +24,12 @@ import { ATLAS, rand } from "@/lib/plate";
 
 const P = "jp";
 const WALL = "#eae5db";
-const FLOOR = "#e0d9cd";
+const FLOOR = "#d5ccbc";
 const WOOD = "#b9ab97";
 const WOOD_D = "#9c8f7c";
 const MID = "#6f6656";
 const DARK = "#2f2c26";
-const LINEN = "#c8bfae";
+const LINEN = "#bdb2a0";
 
 const FLOOR_Y = 618;   // 壁と床の境。版面を割る線
 const AXES = [128, 300, 452]; // 通り芯
@@ -87,12 +87,12 @@ export default function Plate() {
         <rect y={FLOOR_Y} width="600" height={800 - FLOOR_Y} fill={FLOOR} />
         <rect y={FLOOR_Y - 120} width="600" height="120" fill={`url(#${P}-wallfoot)`} />
         {/* 幅木。ここで版面が上下に割れる。無いと壁と床が同じ紙に見える */}
-        <rect y={FLOOR_Y - 9} width="600" height="9" fill="#d9d2c5" />
+        <rect y={FLOOR_Y - 10} width="600" height="10" fill="#cec5b5" />
         <line x1="0" y1={FLOOR_Y - 9} x2="600" y2={FLOOR_Y - 9} stroke={MID} strokeWidth="1" opacity="0.4" />
-        <line x1="0" y1={FLOOR_Y} x2="600" y2={FLOOR_Y} stroke={MID} strokeWidth="1.4" opacity="0.55" />
+        <line x1="0" y1={FLOOR_Y} x2="600" y2={FLOOR_Y} stroke={MID} strokeWidth="1.6" opacity="0.7" />
 
         {/* 壁の目地。40の倍数。整理の下地はここに敷いておく */}
-        <g stroke={MID} strokeWidth="0.5" opacity="0.13">
+        <g stroke={MID} strokeWidth="0.6" opacity="0.16">
           {Array.from({ length: 15 }, (_, i) => (
             <line key={i} x1="0" y1={40 + i * 40} x2="600" y2={40 + i * 40} />
           ))}
@@ -114,35 +114,35 @@ export default function Plate() {
 
         {/* ── 障子。B 通りの左に納める ───────────────────────── */}
         <g>
-          <rect x="56" y="104" width="196" height="348" fill={`url(#${P}-shoji)`} />
-          <g stroke={MID} strokeWidth="1.4" opacity="0.62">
+          <rect x="48" y="88" width="220" height="386" fill={`url(#${P}-shoji)`} />
+          <g stroke={MID} strokeWidth="1.8" opacity="0.72">
             {Array.from({ length: 2 }, (_, i) => (
-              <line key={`v${i}`} x1={56 + (196 / 3) * (i + 1)} y1="104" x2={56 + (196 / 3) * (i + 1)} y2="452" />
+              <line key={`v${i}`} x1={48 + (220 / 3) * (i + 1)} y1="88" x2={48 + (220 / 3) * (i + 1)} y2="474" />
             ))}
             {Array.from({ length: 5 }, (_, i) => (
-              <line key={`h${i}`} x1="56" y1={104 + (348 / 6) * (i + 1)} x2="252" y2={104 + (348 / 6) * (i + 1)} />
+              <line key={`h${i}`} x1="48" y1={88 + (386 / 6) * (i + 1)} x2="268" y2={88 + (386 / 6) * (i + 1)} />
             ))}
           </g>
-          <rect x="56" y="104" width="196" height="348" fill="none" stroke={MID} strokeWidth="3.2" />
+          <rect x="48" y="88" width="220" height="386" fill="none" stroke={DARK} strokeWidth="3.6" opacity="0.72" />
           {/* 框の内側にもう1本。framing が締まる */}
-          <rect x="61" y="109" width="186" height="338" fill="none" stroke="#ffffff" strokeWidth="1" opacity="0.5" />
+          <rect x="54" y="94" width="208" height="374" fill="none" stroke="#ffffff" strokeWidth="1.2" opacity="0.55" />
         </g>
 
         {/* ── 提灯。C 通りに吊る ─────────────────────────────── */}
         <line x1="452" y1="0" x2="452" y2="198" stroke={DARK} strokeWidth="1.4" />
         <rect x="444" y="192" width="16" height="9" fill={DARK} />
         {/* 紙の笠。上が細く下が広い切頭円錐 */}
-        <path d="M 434 201 L 470 201 L 508 316 Q 452 328 396 316 Z" fill={`url(#${P}-shade)`} />
+        <path d="M 430 198 L 474 198 L 518 330 Q 452 344 386 330 Z" fill={`url(#${P}-shade)`} />
         <g stroke="#b3a894" strokeWidth="0.8" opacity="0.5">
           {Array.from({ length: 7 }, (_, i) => {
             const t = (i + 1) / 8;
-            const half = 18 + t * 38;
-            const y = 201 + t * 115;
+            const half = 22 + t * 44;
+            const y = 198 + t * 132;
             return <line key={i} x1={452 - half} y1={y} x2={452 + half} y2={y} />;
           })}
         </g>
-        <path d="M 434 201 L 470 201 L 508 316 Q 452 328 396 316 Z" fill="none" stroke={MID}
-              strokeWidth="1.2" opacity="0.55" />
+        <path d="M 430 198 L 474 198 L 518 330 Q 452 344 386 330 Z" fill="none" stroke={MID}
+              strokeWidth="1.5" opacity="0.7" />
         {/* 灯りの落ちる範囲。台の上で消す */}
         {/* 天板を照らす楕円も足したが、台の右端からはみ出して
             白い円盤が浮いて見えたので消した。滲みは笠の下だけ */}
@@ -150,66 +150,66 @@ export default function Plate() {
 
         {/* ── 低い飾り台 ─────────────────────────────────────── */}
         {/* 天板 */}
-        <rect x="96" y="486" width="382" height="15" fill={`url(#${P}-wood)`} />
-        <rect x="96" y="499" width="382" height="3" fill={WOOD_D} opacity="0.7" />
+        <rect x="88" y="478" width="398" height="17" fill={`url(#${P}-wood)`} />
+        <rect x="88" y="493" width="398" height="3.4" fill={WOOD_D} opacity="0.8" />
         {/* 胴。引き出し2杯。目地は左右対称に割る */}
-        <rect x="110" y="502" width="354" height="64" fill={WOOD} />
+        <rect x="102" y="496" width="370" height="76" fill={WOOD} />
         <g stroke={WOOD_D} strokeWidth="1.2" opacity="0.8">
-          <line x1="287" y1="502" x2="287" y2="566" />
-          <line x1="110" y1="566" x2="464" y2="566" />
+          <line x1="287" y1="496" x2="287" y2="572" />
+          <line x1="102" y1="572" x2="472" y2="572" />
         </g>
         {/* 木目。横に流す。縦だと突板に見えない */}
         <g stroke="#a89a86" strokeWidth="0.6" opacity="0.45">
           {Array.from({ length: 13 }, (_, i) => {
-            const y = 506 + i * 4.6 + rg(-1, 1);
-            return <line key={i} x1="112" y1={y} x2="462" y2={y + rg(-0.8, 0.8)} />;
+            const y = 502 + i * 5.2 + rg(-1, 1);
+            return <line key={i} x1="104" y1={y} x2="470" y2={y + rg(-0.8, 0.8)} />;
           })}
         </g>
         {/* 掘り込みの取手。金物を出さないのがこの様式 */}
         <g fill={WOOD_D} opacity="0.8">
-          <rect x="182" y="528" width="46" height="5" rx="2.5" />
-          <rect x="346" y="528" width="46" height="5" rx="2.5" />
+          <rect x="176" y="528" width="52" height="6" rx="3" />
+          <rect x="346" y="528" width="52" height="6" rx="3" />
         </g>
         {/* 開いた脚。北欧側の作法 */}
         <g fill={WOOD_D}>
-          <path d="M 126 566 L 137 566 L 121 618 L 112 618 Z" />
-          <path d="M 448 566 L 459 566 L 470 618 L 461 618 Z" />
-          <path d="M 236 566 L 245 566 L 236 618 L 228 618 Z" opacity="0.75" />
-          <path d="M 340 566 L 349 566 L 354 618 L 346 618 Z" opacity="0.75" />
+          <path d="M 118 572 L 131 572 L 112 618 L 101 618 Z" />
+          <path d="M 443 572 L 456 572 L 473 618 L 462 618 Z" />
+          <path d="M 232 572 L 242 572 L 232 618 L 223 618 Z" opacity="0.75" />
+          <path d="M 342 572 L 352 572 L 358 618 L 349 618 Z" opacity="0.75" />
         </g>
         {/* 接地の影。細く、短く */}
         <g fill={MID} opacity="0.18">
-          <rect x="104" y="617" width="30" height="3" rx="1.5" />
-          <rect x="222" y="617" width="24" height="3" rx="1.5" />
-          <rect x="340" y="617" width="24" height="3" rx="1.5" />
-          <rect x="452" y="617" width="30" height="3" rx="1.5" />
+          <rect x="95" y="617" width="30" height="3.4" rx="1.7" />
+          <rect x="217" y="617" width="24" height="3.4" rx="1.7" />
+          <rect x="345" y="617" width="24" height="3.4" rx="1.7" />
+          <rect x="456" y="617" width="30" height="3.4" rx="1.7" />
         </g>
 
         {/* ── 台の上。3点だけ。左から花器・鉢・冊子 ───────────── */}
         {/* 花器。黒はここに集める */}
-        <path d="M 152 486 L 156 404 L 186 404 L 190 486 Z" fill={DARK} />
-        <rect x="154" y="404" width="34" height="4" fill="#3d3931" />
-        <rect x="158" y="416" width="6" height="52" fill="#4a463d" opacity="0.55" />
+        <path d="M 146 478 L 151 380 L 191 380 L 196 478 Z" fill={DARK} />
+        <rect x="149" y="380" width="44" height="5" fill="#3d3931" />
+        <rect x="156" y="394" width="8" height="66" fill="#4a463d" opacity="0.55" />
         {/* 枝。1本、葉は4枚。左右に散らさない */}
         <g stroke={MID} strokeWidth="1.6" fill="none" strokeLinecap="round">
-          <path d="M 171 404 L 178 356 L 196 312 L 212 286" />
-          <path d="M 180 348 L 200 336" strokeWidth="1.1" />
-          <path d="M 190 322 L 172 316" strokeWidth="1.1" />
+          <path d="M 171 380 L 178 330 L 198 288 L 216 260" />
+          <path d="M 181 322 L 203 310" strokeWidth="1.1" />
+          <path d="M 192 296 L 172 290" strokeWidth="1.1" />
         </g>
         <g fill={MID} opacity="0.85">
-          <ellipse cx="204" cy="332" rx="11" ry="4.6" transform="rotate(-22 204 332)" />
-          <ellipse cx="168" cy="313" rx="10" ry="4.2" transform="rotate(16 168 313)" />
-          <ellipse cx="216" cy="288" rx="9" ry="4" transform="rotate(-34 216 288)" />
-          <ellipse cx="186" cy="368" rx="9.5" ry="4" transform="rotate(24 186 368)" />
+          <ellipse cx="207" cy="306" rx="13" ry="5.4" transform="rotate(-22 207 306)" />
+          <ellipse cx="168" cy="287" rx="12" ry="5" transform="rotate(16 168 287)" />
+          <ellipse cx="220" cy="262" rx="11" ry="4.6" transform="rotate(-34 220 262)" />
+          <ellipse cx="187" cy="344" rx="11" ry="4.6" transform="rotate(24 187 344)" />
         </g>
         {/* 浅い鉢 */}
-        <path d="M 254 466 L 314 466 Q 308 486 284 486 Q 260 486 254 466 Z" fill="#d9d1c2" />
-        <ellipse cx="284" cy="466" rx="30" ry="5" fill="#c5bcaa" />
-        <ellipse cx="284" cy="466" rx="23" ry="3.4" fill="#b3a894" opacity="0.6" />
+        <path d="M 252 454 L 320 454 Q 313 478 286 478 Q 259 478 252 454 Z" fill="#d3cabb" />
+        <ellipse cx="286" cy="454" rx="34" ry="5.6" fill="#bfb5a3" />
+        <ellipse cx="286" cy="454" rx="26" ry="3.8" fill="#a89b86" opacity="0.7" />
         {/* 平積みの冊子。角は揃える */}
-        <rect x="340" y="474" width="86" height="6" fill={LINEN} />
-        <rect x="344" y="480" width="82" height="6" fill={WOOD} />
-        <line x1="340" y1="477" x2="426" y2="477" stroke={MID} strokeWidth="0.6" opacity="0.5" />
+        <rect x="346" y="464" width="94" height="7" fill={LINEN} />
+        <rect x="350" y="471" width="90" height="7" fill={WOOD} />
+        <line x1="346" y1="467.5" x2="440" y2="467.5" stroke={MID} strokeWidth="0.7" opacity="0.6" />
 
         {/* ── 敷物。麻の織り。房を左右に出す ─────────────────── */}
         <rect x="72" y={FLOOR_Y + 4} width="428" height="74" fill={`url(#${P}-linen)`} />
@@ -228,10 +228,10 @@ export default function Plate() {
 
         {/* ── 寸法線。この一本が様式を決める ─────────────────── */}
         <g stroke={MID} strokeWidth="0.9" opacity="0.65">
-          <line x1="96" y1="726" x2="252" y2="726" />
-          <line x1="322" y1="726" x2="478" y2="726" />
-          <line x1="96" y1="718" x2="96" y2="734" />
-          <line x1="478" y1="718" x2="478" y2="734" />
+          <line x1="88" y1="726" x2="252" y2="726" />
+          <line x1="322" y1="726" x2="486" y2="726" />
+          <line x1="88" y1="718" x2="88" y2="734" />
+          <line x1="486" y1="718" x2="486" y2="734" />
           <line x1="287" y1="710" x2="287" y2="742" strokeDasharray="3 3" opacity="0.7" />
         </g>
         <text x="287" y="730" textAnchor="middle" fill={MID}

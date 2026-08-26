@@ -47,7 +47,7 @@ const GND = 640; // 地面
 const BAND: [number, number][] = [
   [0, 0.067], [0.067, 0.25], [0.25, 0.5], [0.5, 0.75], [0.75, 0.933], [0.933, 1],
 ];
-const TONE = [EDGE, HI, SAND, STEEL, MID, DARK];
+const TONE = ["#8fa0ac", "#f0ece0", "#d9c9a8", "#8ba0ae", "#55666f", "#313c46"];
 /** ステンシルの数字も同じ割りで陰る。躯体に刷られた文字だから */
 const TONE_RUST = ["#a8683e", "#e0975c", "#c07a4a", "#8a5330", "#6b4026", "#4e2f1d"];
 
@@ -91,10 +91,10 @@ export default function Plate() {
         <mask id={`${P}-five`}>
           <rect width="600" height="800" fill="#000" />
           <text
-            x="374" y="510"
+            x="374" y="590"
             fill="#fff"
             fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-            fontSize="196"
+            fontSize="168"
             fontWeight="800"
             textAnchor="middle"
           >
@@ -153,6 +153,25 @@ export default function Plate() {
         <Silo x={374} w={63} top={254} />
         <Silo x={437} w={63} top={254} />
 
+        {/* 点検回廊。縦縞を横で断つ。円筒の列は横の帯が1本入るだけで建物になる */}
+        <rect x="240" y="424" width="256" height="15" fill={MID} />
+        <rect x="240" y="424" width="256" height="4" fill={SAND} />
+        <rect x="240" y="439" width="256" height="3" fill={DARK} opacity="0.55" />
+        <g stroke={MID} strokeWidth="2">
+          {Array.from({ length: 15 }, (_, i) => (
+            <line key={`rl${i}`} x1={246 + i * 17} y1={406} x2={246 + i * 17} y2={424} />
+          ))}
+          <line x1="240" y1="407" x2="496" y2="407" strokeWidth="2.4" />
+          <line x1="240" y1="415" x2="496" y2="415" strokeWidth="1.6" />
+        </g>
+
+        {/* 基礎。円筒が地面で切り落とされると宙に浮く */}
+        <rect x="238" y="598" width="260" height={GND - 598} fill={SAND} />
+        <rect x="238" y="598" width="260" height="6" fill="#f0ece0" />
+        <rect x="238" y={GND - 12} width="260" height="12" fill={MID} />
+        <rect x="440" y="598" width="58" height={GND - 598} fill={STEEL} />
+        <rect x="474" y="598" width="24" height={GND - 598} fill={MID} />
+
         {/* ステンシルの数字。躯体に刷られた「5」。デムスの《黄金の5》。
            初稿は数字の上に半透明の矩形を重ねて陰らせたので、四角い染みが出た。
            マスクを切り、数字の中身を円筒と同じ割りの朱で塗り分ける */}
@@ -161,7 +180,7 @@ export default function Plate() {
             BAND.map(([a, b], i) => (
               <rect
                 key={`f${sx}-${i}`}
-                x={sx + 63 * a} y={330} width={63 * (b - a) + 0.4} height={190}
+                x={sx + 63 * a} y={446} width={63 * (b - a) + 0.4} height={152}
                 fill={TONE_RUST[i]}
               />
             )),
@@ -186,11 +205,11 @@ export default function Plate() {
           {BAND.map(([a, b], i) => (
             <rect key={`tk${i}`} x={512 + 108 * a} y={306} width={108 * (b - a) + 0.4} height={68} fill={TONE[i]} />
           ))}
-          <path d="M508 308 L624 308 L604 272 L528 272 Z" fill={SAND} />
-          <path d="M572 308 L624 308 L604 272 L572 272 Z" fill={STEEL} />
-          <path d="M600 308 L624 308 L604 272 L596 272 Z" fill={MID} />
-          <rect x="508" y="304" width="116" height="5" fill={HI} />
-          <rect x="558" y="248" width="7" height="26" fill={DARK} />
+          <path d="M506 308 L626 308 L602 284 L530 284 Z" fill={SAND} />
+          <path d="M572 308 L626 308 L602 284 L572 284 Z" fill={STEEL} />
+          <path d="M598 308 L626 308 L602 284 L594 284 Z" fill={MID} />
+          <rect x="506" y="304" width="120" height="5" fill={HI} />
+          <rect x="560" y="262" width="7" height="24" fill={DARK} />
         </g>
 
         {/* ── 搬送橋。煙突とサイロを斜めに結ぶ ───────────────────── */}

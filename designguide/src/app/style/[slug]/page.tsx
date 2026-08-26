@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import PromptBlock from "@/components/PromptBlock";
 import Copy from "@/components/Copy";
 import Jp from "@/components/Jp";
+import PlateImage from "@/components/PlateImage";
 import { PLATES } from "@/plates";
 import { STYLES, STYLE_BY_SLUG, STYLE_NO } from "@/data/styles";
 import { CATEGORY_LABEL } from "@/data/types";
@@ -136,10 +137,11 @@ export default async function StylePage({
             <p className="label">近いもの</p>
             <div className="sty__relgrid">
               {related.map((r) => {
-                const RP = PLATES[r.slug];
                 return (
                   <Link key={r.slug} href={`/style/${r.slug}`} className="card">
-                    <div className="plate-frame card__plate">{RP ? <RP /> : null}</div>
+                    <div className="plate-frame card__plate">
+                      <PlateImage slug={r.slug} alt={`${r.ja}様式の図版`} />
+                    </div>
                     <div className="card__body">
                       <h3 className="card__ja">{r.ja}</h3>
                       <p className="card__en">{r.en}</p>

@@ -253,7 +253,7 @@ export default function Plate() {
         </g>
 
         {/* ── 品名札。淡々と間違える ────────────────────────── */}
-        <Label x={148} y={640} tx={252} ty={520} text="POLTRONA" />
+        <Label x={148} y={640} tx={300} ty={516} text="POLTRONA" anchor="end" />
         <Label x={382} y={340} tx={318} ty={286} text="APPENDIABITI" anchor="end" />
         <Label x={430} y={724} tx={560} ty={668} text="DIVANO 2 POSTI" anchor="end" />
 

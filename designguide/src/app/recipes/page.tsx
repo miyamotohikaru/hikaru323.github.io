@@ -5,7 +5,7 @@ import Copy from "@/components/Copy";
 import Jp from "@/components/Jp";
 import { RECIPES } from "@/data/recipes";
 import { STYLE_BY_SLUG } from "@/data/styles";
-import { PLATES } from "@/plates";
+import PlateImage from "@/components/PlateImage";
 
 export const metadata = {
   title: "レシピ",
@@ -67,11 +67,12 @@ export default function RecipesPage() {
                   <div className="rc__styles">
                     {r.styles.map((s) => {
                       const st = STYLE_BY_SLUG[s];
-                      const P = PLATES[s];
                       if (!st) return null;
                       return (
                         <Link key={s} href={`/style/${s}`} className="rc__chip">
-                          <span className="plate-frame">{P ? <P /> : null}</span>
+                          <span className="plate-frame">
+                            <PlateImage slug={s} alt="" />
+                          </span>
                           {st.ja}
                         </Link>
                       );
