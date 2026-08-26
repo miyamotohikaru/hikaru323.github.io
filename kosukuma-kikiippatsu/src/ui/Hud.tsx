@@ -108,15 +108,22 @@ export default function Hud() {
 
   return (
     <div className="hud">
-      {/* ── 上部バー ── */}
+      {/* ── 上部バー ──
+          スマホでは月がいちばん大事なので、常に出すのは1枚だけにしている。
+          「第N代」(いま誰がここにいるか)と「みんなで N本」(世界中が同じ月を
+          つついている実感)は残し、自分の本数は したく引き出しへ移した。 */}
       <div className="hud-top">
         <div className="hud-badges">
-          <div className="hud-badge hud-badge-gen">
-            第<b>{genNo}</b>代 こすくまくん
+          <div className="hud-badge hud-badge-world">
+            <span className="hb-gen">
+              第<b>{genNo}</b>代
+            </span>
+            <span className="hb-sep" aria-hidden="true" />
+            <span className="hb-all">
+              みんなで <b>{stabCount.toLocaleString()}</b>本
+            </span>
           </div>
-          <div className="hud-badge">
-            みんなの ちょうせん <b>{stabCount.toLocaleString()}</b>回
-          </div>
+          {/* 自分の記録は、遊ぶのに要らない。広い画面のときだけ添える */}
           {myTotal > 0 && (
             <div className="hud-badge hud-badge-mine">
               <span

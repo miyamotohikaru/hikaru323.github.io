@@ -53,8 +53,10 @@ export default function CooldownPill() {
           transform="rotate(-90 12 12)"
         />
       </svg>
+      {/* 減っていくリングが「待ち」を伝えているので、スマホでは前置きを畳んで
+          「あとN びょう」だけにする(読み上げ用の文は aria-label が持っている) */}
       <span>
-        つぎに刺せるまで あと<b>{sec}</b>びょう
+        <span className="cd-lead">つぎに刺せるまで </span>あと<b>{sec}</b>びょう
       </span>
     </div>
   );

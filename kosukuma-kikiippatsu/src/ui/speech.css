@@ -1,10 +1,17 @@
 /* ============================================================
    こすくまくんの吹き出し
    こすくまくんは目が点で口がない。だから吹き出しが「声」になる。
-   - 暗い宇宙の上でも読めるよう、地色はほぼ白・線は濃紺・文字は太字
-   - 尻尾はJSがフレームごとに描き直して、いつも頭を指している
-   - 位置(transform)はJSが .sb-root/.sb-wrap に、動きのくせ(CSSアニメ)は
-     .sb-body に。同じ要素の transform を奪い合わせないための分業
+
+   かたちの作り(2026-08 作り直し):
+     **輪郭は1本の閉じたSVGパス**。角丸の本体と尻尾を1周でつないで描く。
+     以前は「CSSのborderを持つ箱」「尻尾のSVG」「継ぎ目を隠す板」の3枚重ねで、
+     輪郭が別々に引かれていたため、本体と尻尾の境目に段(ズレ)が出ていた。
+     いまは fill と stroke が1回しかかからないので、継ぎ目が原理的に存在しない。
+     パスを組み立てるのは SpeechBubble.tsx(大きさが文字量で変わるため)。
+
+   ここ(CSS)が持つのは **tone ごとの地色・角の丸み・動き** と、文字の大きさ。
+   位置(transform)はJSが .sb-root/.sb-wrap に、動きのくせ(CSSアニメ)は
+   .sb-body に。同じ要素の transform を奪い合わせないための分業。
    ============================================================ */
 
 .sb-layer {
@@ -28,7 +35,7 @@
   transition: opacity 0.14s linear;
 }
 
-/* 吹き出し本体のオフセット。画面のはしでは内側へずれる(尻尾が伸びて追う) */
+/* 吹き出し本体のオフセット。画面のはしでは内側へずれる(尻尾が向きを追う) */
 .sb-wrap {
   position: absolute;
   left: 0;
@@ -36,14 +43,20 @@
 }
 
 /* ── 本体 ────────────────────────────────────────────── */
+/* ここは「大きさの持ち主」。文字量で決まった実寸(offsetWidth/Height)を
+   JSが読んで、そのまま輪郭パスの寸法にする。
+   border は持たない(輪郭はSVGの stroke が1本だけ引く)。 */
 .sb-body {
   position: absolute;
   left: 0;
   top: 0;
   width: max-content;
-  min-width: 3.4em;
-  max-width: min(58vw, 250px);
-  padding: 9px 15px 10px;
+  min-width: 3.6em;
+  /* スマホ縦(390px)で 1行あたり13〜14文字。lines.ts の \n(最長13文字)が
+     そのまま1行に収まる幅。ここを狭めると勝手に3行へ折れて背が高くなり、
+     上のUIとぶつかりやすくなる */
+  max-width: min(64vw, 300px);
+  padding: 10px 16px 11px;
   /* transform-origin は尻尾の付け根にJSが合わせる(頭から生えて見せる) */
   transform-origin: 16px 100%;
   /* 出たあとも止まって見えないよう、ごくゆっくり息をする */
@@ -55,43 +68,25 @@
   --sb-fill: #fffef2;
   --sb-line: #10163a;
   --sb-ink: #35322b;
+  /* 角の丸み。CSSの border-radius と同じ並び(左上/右上/右下/左下)で書くと、
+     SpeechBubble.tsx がそのまま読んでパスの角丸にする */
   --sb-radius: 20px;
 }
 
-/* 尻尾+地色のかたまり。影はここに落とす(尻尾だけ暗くならないように)。
-   本体より四方に 160px 大きく取ってあるのが要点。尻尾は本体の外へ出るので、
+/* 輪郭。本体の角丸 + 尻尾を1本の閉じたパスで描いた、ただ1枚の絵。
+   影もこれ1枚に落ちるので、尻尾だけ暗く沈むことがない。
+
+   本体より四方に広げてあるのが要点。尻尾と影は本体の外へ出るので、
    この箱が小さいと filter がつくる合成グループのはんいから外れて、
    尻尾が(とくに左右むきのときに)まるごと消える。
-   広げた値は SpeechBubble.tsx の TAIL_PAD と合わせること */
+   広げた値は SpeechBubble.tsx の SHAPE_PAD と合わせること。 */
 .sb-shape {
   position: absolute;
-  inset: -160px;
+  inset: -96px;
+  overflow: visible;
   filter: drop-shadow(0 5px 11px rgba(5, 7, 26, 0.55));
 }
-
-/* まるい地色。尻尾の付け根をこれで隠すので、必ず不透明にすること。
-   .sb-shape を広げたぶん、ここで本体のサイズへ戻す */
-.sb-fill {
-  position: absolute;
-  inset: 160px;
-  border: 3px solid var(--sb-line);
-  border-radius: var(--sb-radius);
-  background: var(--sb-fill);
-  box-shadow: inset 0 -4px 0 rgba(16, 22, 58, 0.05);
-}
-
-/* 尻尾。広げた .sb-shape いっぱいに置くので、1x1+overflow に頼らずに描ける。
-   path 側を translate(160,160) してあるぶん、座標は本体ローカルのまま書ける
-   (0,0 = 本体の左上)。overflow:visible は 160px を超える長い尻尾の保険 */
-.sb-tail {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.sb-tail path {
+.sb-shape path {
   fill: var(--sb-fill);
   stroke: var(--sb-line);
   stroke-width: 3;
@@ -99,21 +94,17 @@
   stroke-linecap: round;
 }
 
-/* 継ぎ目かくし。地色だけを塗って、本体のふちの線が尻尾の口を横切るのを消す。
-   線は絶対に引かない(引いたら元の木阿弥) */
-.sb-join path {
-  fill: var(--sb-fill);
-  stroke: none;
-}
-
-/* セリフ。position:relative で .sb-fill より前面に置く。
+/* セリフ。position:relative で輪郭より前面に置く(パスの中には入れない)。
    改行は wrapJa.ts が決めて \n で渡してくる(日本語の禁則と文節を見て折る)。
    pre-wrap はその \n を守るための指定。それでも入りきらないときだけ、
-   CSSの折り返しが保険として働く(text-wrap:balance はJSに任せたので使わない) */
+   CSSの折り返しが保険として働く(text-wrap:balance はJSに任せたので使わない)。
+
+   下限を 15px にしてあるのは、スマホでは追従スケールが 0.95 まで落ちるため。
+   15 x 0.95 = 14.3px が実機で読める下限になる */
 .sb-text {
   position: relative;
   color: var(--sb-ink);
-  font-size: clamp(13.5px, 3.9vw, 16px);
+  font-size: clamp(15px, 4.1vw, 17px);
   font-weight: 800;
   line-height: 1.5;
   letter-spacing: 0.01em;
@@ -166,72 +157,23 @@
 }
 
 /* ── tone: shock(びっくり) ─────────────────────────── */
-/* ギザギザは clip-path。境界線は border では出せないので drop-shadow で描く */
+/* ギザギザは輪郭パスそのものが折れている(clip-path でも drop-shadow の
+   多重がけでもない)。角丸は使わないので radius は 0 にしておく。
+   ふちが内側へ食い込むぶん、文字まわりの余白を少し多めに取る */
 .sb-shock {
   --sb-fill: #fff1f0;
   --sb-line: #7a1220;
   --sb-ink: #7a1f2a;
-  padding: 13px 19px 14px;
+  --sb-radius: 0px;
+  padding: 14px 20px 15px;
   animation:
     sb-pop-hard 0.36s var(--sb-spring) both,
     sb-quake 0.4s ease-in-out 0.36s 3;
 }
-/* ギザギザの縁取りは、尻尾もふくめたシルエット全体にかける。
-   そのぶん尻尾じたいの線は消す(二重にならないように) */
-.sb-shock .sb-tail path {
-  stroke: none;
-}
-.sb-shock .sb-shape {
-  filter:
-    drop-shadow(2px 0 0 var(--sb-line)) drop-shadow(-2px 0 0 var(--sb-line))
-    drop-shadow(0 2px 0 var(--sb-line)) drop-shadow(0 -2px 0 var(--sb-line))
-    drop-shadow(0 5px 12px rgba(5, 7, 26, 0.5));
-}
-.sb-shock .sb-fill {
-  border-color: transparent;
-  border-radius: 0;
-  box-shadow: none;
-  clip-path: polygon(
-    0% 6px,
-    7% 0px,
-    14% 5px,
-    21% 0px,
-    29% 5px,
-    36% 0px,
-    43% 5px,
-    50% 0px,
-    57% 5px,
-    64% 0px,
-    71% 5px,
-    79% 0px,
-    86% 5px,
-    93% 0px,
-    100% 6px,
-    calc(100% - 5px) 25%,
-    100% 50%,
-    calc(100% - 5px) 75%,
-    100% calc(100% - 6px),
-    93% 100%,
-    86% calc(100% - 5px),
-    79% 100%,
-    71% calc(100% - 5px),
-    64% 100%,
-    57% calc(100% - 5px),
-    50% 100%,
-    43% calc(100% - 5px),
-    36% 100%,
-    29% calc(100% - 5px),
-    21% 100%,
-    14% calc(100% - 5px),
-    7% 100%,
-    0% calc(100% - 6px),
-    5px 75%,
-    0% 50%,
-    5px 25%
-  );
-}
 
 /* ── tone: sleepy(ねむい) ──────────────────────────── */
+/* 尻尾は本体から離れた「考えごと」風のまるい玉。輪郭パスの中に、
+   本体とは別の閉じた部分パスとして入っている(離れているのが正しい形) */
 .sb-sleepy {
   --sb-fill: #f3f1ff;
   --sb-line: #2a2450;

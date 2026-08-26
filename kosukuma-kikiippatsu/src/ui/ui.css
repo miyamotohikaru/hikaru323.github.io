@@ -187,8 +187,19 @@
   font-size: 1.25em;
   margin: 0 1px;
 }
-.hud-badge-gen {
+/* いつも出している ただ1枚の札。「第N代」と「みんなで N本」を1行に並べる */
+.hud-badge-world {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: 12px;
+}
+.hb-sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255, 254, 242, 0.35);
+  flex: none;
 }
 .hud-top-right {
   display: flex;
@@ -196,8 +207,9 @@
 }
 .icon-btn {
   pointer-events: auto;
-  width: 42px;
-  height: 42px;
+  /* 指のあたりは44px以上(iOS/Androidのガイドライン) */
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(255, 254, 242, 0.18);
@@ -1444,6 +1456,13 @@
   letter-spacing: 0.05em;
   color: rgba(58, 55, 48, 0.5);
 }
+/* HUDから引っ越してきた「きみの記録」の数字だけ、読める大きさに起こす */
+.kk-preview-cap b {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(58, 55, 48, 0.8);
+  margin: 0 1px;
+}
 .kk-preview-name {
   font-size: 15px;
   font-weight: 800;
@@ -2482,5 +2501,41 @@ button.kk-charm-btn:active .kk-charm-cell {
   .feed-live-dot,
   .feed-row.feed-live {
     animation: none;
+  }
+}
+
+/* ── スマホ縦(主戦場)では、出すものをさらに削る ─────────
+   ねらいは「UIが月を覆う面積を減らす」こと。遊ぶのに要らない数字は消し、
+   世界の気配(フィード)は行を減らしても必ず残す。ここが このゲームの芯なので。 */
+@media (max-width: 520px) {
+  /* 自分の記録は「したく」引き出しへ移した。遊んでいる最中には要らない */
+  .hud-badge-mine {
+    display: none;
+  }
+  /* フィードは3行まで。4行目はもう読まれていない(いちばん薄い行) */
+  .feed-row:nth-child(4) {
+    display: none;
+  }
+  /* 穴の番号は遊びに効かない。どの穴かは3Dの剣と、光る行が教えてくれる */
+  .feed-hole {
+    display: none;
+  }
+  .feed-row {
+    max-width: min(72vw, 300px);
+  }
+  /* クールダウンの前置きは、減っていくリングが語っている */
+  .cd-lead {
+    display: none;
+  }
+  /* 上の札は 右上のボタン3つ(148px)との あいだで折り返さない大きさに。
+     実測: 375px幅で「第7代 ・ みんなで 120,480本」まで1行(高さ29px)。
+     100万を超えたら2行になるが、それでも他のUIとはぶつからない */
+  .hud-badge-world {
+    font-size: 11px;
+    gap: 5px;
+    padding: 5px 10px;
+  }
+  .hud-badge-world b {
+    font-size: 1.15em;
   }
 }

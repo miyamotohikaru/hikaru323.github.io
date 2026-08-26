@@ -80,6 +80,7 @@ export function SwordPreview() {
   const swordColor = useGameStore((s) => s.swordColor);
   const swordSkin = useGameStore((s) => s.swordSkin);
   const myTotal = useGameStore((s) => s.myTotal);
+  const myStabs = useGameStore((s) => s.myStabs);
   const hasEarth = useGameStore((s) => s.hasEarthCharm);
   const hung = useEquippedCharms();
   const owned = ownedCharms(myTotal, hasEarth).length;
@@ -109,7 +110,20 @@ export function SwordPreview() {
       </div>
 
       <div className="kk-preview-txt">
-        <span className="kk-preview-cap">いまの きみの けん</span>
+        {/* ここはもともと「いまの きみの けん」という見出しだったが、引き出しの
+            題が すでに「けんの したく」で、絵も剣なので言い直しになっていた。
+            スマホのHUDから外した自分の記録を、その1行に引っ越してある
+            (遊ぶのに要らない数字は、開いたときだけ見せる) */}
+        <span className="kk-preview-cap">
+          {myTotal > 0 ? (
+            <>
+              この代 <b>{myStabs.length}</b>本 ・ ぜんぶで{" "}
+              <b>{myTotal.toLocaleString()}</b>回
+            </>
+          ) : (
+            "いまの きみの けん"
+          )}
+        </span>
         <b className="kk-preview-name">{label}</b>
         {hung.length > 0 ? (
           <>
