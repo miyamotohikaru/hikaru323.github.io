@@ -35,16 +35,9 @@ export function Hero() {
                    md:min-h-[100svh] md:pb-[clamp(5rem,12vh,9rem)]"
       >
         <div className="relative z-10 max-w-[34rem]">
-          <hr className="rule mb-6 w-14 border-t-[var(--rule-firm)]" />
-          <p className="label">
-            {site.lotLabel}
-            <span className="mx-2 text-[var(--sep)]">／</span>
-            <span className="label-jp align-baseline">{site.lotKind}</span>
-          </p>
-
           {/* 括弧はフォントで打たず、キービジュアルの比率で組む（Bracket.tsx）。
               あいだの空白が、そのまま作品の名前になっている。 */}
-          <h1 className="mt-9 md:mt-11">
+          <h1>
             <Bracket
               gap={8}
               title={site.title}
@@ -55,6 +48,19 @@ export function Hero() {
           <div className="prose-jp mt-12 space-y-[0.35em] md:mt-16">
             {hero.lines.map((line) => (
               <p key={line}>{line}</p>
+            ))}
+          </div>
+
+          {/* いま何が行われているのか。ポスターの四行より一段落として、
+              罫を挟んで注記の調子で置く */}
+          <div className="mt-11 max-w-[30rem] border-t border-[var(--rule)] pt-6 md:mt-14">
+            {hero.note.map((line) => (
+              <p
+                key={line}
+                className="text-[0.8125rem] leading-[2] tracking-[0.03em] text-ink/78"
+              >
+                {line}
+              </p>
             ))}
           </div>
         </div>
