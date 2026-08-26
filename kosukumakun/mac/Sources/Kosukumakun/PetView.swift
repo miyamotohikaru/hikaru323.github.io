@@ -67,7 +67,7 @@ final class PetView: NSView, EffectHost {
     private let spriteLayer = CALayer()
     private let shadowLayer = CAShapeLayer()
 
-    /// 本体の他に載せたいもの（金平糖・湯気・吹き出し）を入れる場所
+    /// 本体の他に載せたいもの（梅干し・湯気・吹き出し）を入れる場所
     let effectLayer = CALayer()
 
     // マウス操作（スクリーン座標で返す）
@@ -198,7 +198,7 @@ final class PetView: NSView, EffectHost {
     }
 
     /// 体を基準にした (前へ, 壁から離れる) を、立っている面に合わせて画面のずれに直す。
-    /// 金平糖やZの置き場所でも同じ計算がいるので、ここに1つだけ置く。
+    /// 梅干しやZの置き場所でも同じ計算がいるので、ここに1つだけ置く。
     static func toScreen(_ ahead: CGFloat, _ up: CGFloat, _ turn: Int) -> CGPoint {
         switch ((turn % 4) + 4) % 4 {
         case 1:  return CGPoint(x: -up, y: ahead)

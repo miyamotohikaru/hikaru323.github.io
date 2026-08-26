@@ -1,6 +1,6 @@
 import AppKit
 
-/// 追加のふるまい（金平糖・つぶやき・通知など）を差し込む口。
+/// 追加のふるまい（梅干し・つぶやき・通知など）を差し込む口。
 protocol PetBehavior: AnyObject {
     var priority: Int { get }              // 大きいほど強い。演出の取り合いを決める
     func update(dt: CGFloat, brain: Brain, activity: Activity)
@@ -65,7 +65,7 @@ final class Brain {
     private var scrollT: CGFloat = 0        // 反応が続く残り時間
     private var scrollDir = 0
     private var scrollBob: CGFloat = 0
-    /// 金平糖を転がしている向き（-1 うしろ / +1 前 / 0 転がしていない）と、転がりの位相
+    /// 梅干しを転がしている向き（-1 うしろ / +1 前 / 0 転がしていない）と、転がりの位相
     private(set) var rollDir = 0
     private(set) var rollPhase: CGFloat = 0
     /// いま画面のどの縁を伝っているか。0=下 1=右 2=上 3=左（反時計回り）。
@@ -482,7 +482,7 @@ final class Brain {
         let wantLift: CGFloat = (typing && state == .idle) ? KeyboardBehavior.liftFor(scale: pixelScale) : 0
         lift = approach(lift, wantLift, rate: 9, dt: dt)
 
-        // スクロールしている間だけ、大きい金平糖を糞転がしのように押していく。
+        // スクロールしている間だけ、大きい梅干しを糞転がしのように押していく。
         //   下へスクロール → 右へ転がす / 上へ → 左へ
         // **動いた距離のぶんだけ転がす。** 一定の速さで動かすと、
         // ちょっとスクロールしただけで遠くまで行ってしまう。
@@ -587,7 +587,7 @@ final class Brain {
 
     // MARK: - 画面のまわりを一周する
 
-    /// 金平糖を押しながら画面の縁を伝って進む。
+    /// 梅干しを押しながら画面の縁を伝って進む。
     ///
     /// 端まで来たら止まるのではなく **角で90度まがって次の縁へ移る**。
     /// 下→右→上→左 の反時計回りで、こすくまくんも同じだけ回った姿になる
@@ -767,7 +767,7 @@ final class Brain {
     ///
     /// 窓の縁のぞきと違って **隠れているのは画面の外側** なので、
     /// 左右は窓のときと逆になる（画面の右のはしなら、見えているのは体の左半分）。
-    /// のぞきモードと、金平糖を壁で止めたときの両方から呼ぶ。
+    /// のぞきモードと、梅干しを壁で止めたときの両方から呼ぶ。
     private func edgeLook(_ f: inout PetFrame, _ kind: ScreenPeek, closed: Bool) {
         f.shadow = 0
         switch kind {
@@ -881,7 +881,7 @@ final class Brain {
                 // 右へ進むときだけ反転する。
                 f.sprite = "turn"
                 f.faceRight = rollDir < 0
-                // 押している間はカーソルではなく金平糖を見ている＝視線は動かさない。
+                // 押している間はカーソルではなく梅干しを見ている＝視線は動かさない。
                 // ふりむきの顔は目と鼻が斜めに並んでいるので、ここで目をずらすと
                 // 鼻とくっついて潰れて見える。
                 f.look = 0
@@ -920,7 +920,7 @@ final class Brain {
         // 画面の縁を伝っている間は、その面に立った姿にする。
         if rollSide != 0, state == .idle {
             if scrollT > 0 {
-                // 押している最中。壁に立って金平糖を運んでいる
+                // 押している最中。壁に立って梅干しを運んでいる
                 f.turn = rollSide
                 f.shadow = 0.13      // 壁に接している影。air の計算は床むけなので使わない
             } else {

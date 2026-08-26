@@ -25,7 +25,7 @@ final class Activity {
     /// 向きは権限なしで取れるとは限らないので、**取れたら使う** という扱いにする。
     /// 取れない環境では 0 のままで、こすくまくんは向き無しの反応をする。
     private(set) var scrollDir = 0
-    /// まだ使っていないスクロール量。動いた距離のぶんだけ金平糖を転がすのに使う。
+    /// まだ使っていないスクロール量。動いた距離のぶんだけ梅干しを転がすのに使う。
     /// 取れない環境では 0 のままなので、そのときは一定の速さで転がす。
     private var scrollAccum: CGFloat = 0
     private var scrollMonitor: Any?

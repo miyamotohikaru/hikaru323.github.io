@@ -84,17 +84,21 @@ enum SpriteBank {
     /// - Parameter cols: 0 より大きいと **横に cols 列だけ** を返す。
     ///   ウィンドウの左右の縁からひょこっと顔を出すときに使う。
     ///   `colsFromRight` が true なら右端側を残す。
-    /// - Parameter tint: 面の色を差し替える（金平糖を色ちがいで出すのに使う）。
-    ///   輪郭の黒は変えない。世界の線の色はひとつに保つ。
+    /// - Parameter tint: 面の色を差し替える。
+    /// - Parameter tintLine: 輪郭の色を差し替える。**こすくまくん本体には使わない。**
+    ///   世界の線の色はひとつに保ちたいので、持ち物（梅干し）だけの例外にする。
+    /// - Parameter tintMark: 4色目（`m`）の色を差し替える。梅干しの しわ に使う。
     /// - Parameter turn: 反時計回りに90度ずつ回す回数（0〜3）。画面の縁を伝って
     ///   壁や天井を歩くときに使う。**CALayer の回転ではなくドットごと回す。**
     ///   レイヤを回すと、90度でも縁に半端な画素ができてドットが濁る。
     static func image(_ name: String, look: Int = 0, flip: Bool = false,
                       topRows: Int = 0, cols: Int = 0,
                       colsFromRight: Bool = false, tint: [UInt8]? = nil,
+                      tintLine: [UInt8]? = nil, tintMark: [UInt8]? = nil,
                       turn: Int = 0) -> CGImage? {
         loadIfNeeded()
-        let tk = tint.map { "\($0[0]),\($0[1]),\($0[2])" } ?? "-"
+        func hex(_ c: [UInt8]?) -> String { c.map { "\($0[0]),\($0[1]),\($0[2])" } ?? "-" }
+        let tk = "\(hex(tint))/\(hex(tintLine))/\(hex(tintMark))"
         let tn = ((turn % 4) + 4) % 4
         let key = "\(name)|\(look)|\(flip ? 1 : 0)|\(topRows)|\(cols)|\(colsFromRight ? 1 : 0)|\(tk)|\(tn)"
         if let c = cache[key] { return c }
@@ -125,7 +129,10 @@ enum SpriteBank {
             for x in 0..<cw {
                 let sx = x0 + x
                 let src = cells[y * sp.w + (flip ? (sp.w - 1 - sx) : sx)]
-                let c = (src == 2 && tint != nil) ? tint! : rgba[Int(src)]
+                var c = rgba[Int(src)]
+                if src == 1, let t = tintLine { c = t }
+                if src == 2, let t = tint { c = t }
+                if src == 3, let t = tintMark { c = t }
                 let o = (y * cw + x) * 4
                 buf[o] = c[0]; buf[o + 1] = c[1]; buf[o + 2] = c[2]; buf[o + 3] = c[3]
             }

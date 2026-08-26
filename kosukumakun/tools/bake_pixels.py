@@ -531,76 +531,76 @@ def bake(pose, h, face=True, mole=True, blink=False, squash=1.0, mole_x=None,
     return ["".join(r) for r in grid], eyes, nose
 
 
-def bake_konpeito(h, frames=6, nubs=10, tick=2):
-    """転がる金平糖のコマを作る。
+def bake_umeboshi(h, frames=6):
+    """転がる梅干しのコマを作る。
 
-    **輪郭を波打たせる方式はやめた。** 振幅を小さくすると ただの丸に見え、
-    大きくすると星に見えて、どちらも金平糖にならなかった。
+    **もとは金平糖だった。** こすくまくんの好きな食べ物が梅干しに変わったので
+    差し替えた。金平糖のときの「丸に粒を並べて とげとげを作る」やり方は捨てて、
+    実物の梅干しの見え方＝**ゆるく波打つ丸＋内側の しわ** で組み立てる。
 
-    実物は「丸い核のまわりに、粒がぽこぽこ付いている」。
-    そこで **核の円に、小さな円をぐるりと並べて重ねる**。
-    こうすると粒どうしの間にくびれができて、数えられる粒になる＝金平糖に見える。
+    しわは黒い線で描かない。黒で引くと切れ込みに見えて、金平糖のくびれに逆戻りする。
+    実物のしわは「面より少し濃い赤のくぼみ」なので、**4色目（`m`）** を借りて
+    少し濃い赤で置く。色はアプリ側（RollingBehavior）が3色まとめて差し替える。
 
-    粒は 8個で離して置いていたが、それだと粒がとがって「星」に寄る。
-    本物は粒どうしが隣り合っていて、間に短い切れ込みが入る。そこで
-      - 粒を10個にして となりと接するまで太らせ（＝ふちが波打つ）
-      - **谷（粒と粒のあいだ）から中心へ tick ドットの線を引く**
-    の2つを足した。この「間の線」が入ってはじめて、丸ではなく金平糖に読める。
-    19ドットでは10個が限界で、12個にすると谷が1ドットに満たず点になって散る。
+    しわの形は三日月にする。まっすぐな線だと引っかき傷に見えた。
+    大きい三日月をまんなかに1つ、細いのをまわりに3つ。全部いっしょに回るので、
+    転がると しわも回って、同じ球が回っているように読める。
     """
     import math as _m
     import numpy as np
+
+    def crescent(dr, cx, cy, r_out, off, r_in, ang):
+        """三日月＝大きい円から、少しずらした円を抜いたもの。ang の向きに開く。"""
+        dr.ellipse([cx - r_out, cy - r_out, cx + r_out, cy + r_out], fill=1)
+        ix, iy = cx + _m.cos(ang) * off, cy + _m.sin(ang) * off
+        dr.ellipse([ix - r_in, iy - r_in, ix + r_in, iy + r_in], fill=0)
+
+    # 輪郭のうねり。振幅はごく小さくする。大きくすると、また金平糖に寄る。
+    WOB, WOB2, LOBES = 0.055, 0.03, 3
+    # まんなかの大きい三日月
+    BIG, BIG_OFF, BIG_IN = 0.46, 0.30, 0.465
+    # まわりの細い三日月 (中心からの距離, 向き, 大きさ)
+    SMALLS = ((0.62, 0.9, 0.21), (0.60, 2.5, 0.18), (0.58, 4.4, 0.17))
+    FILL_TH, WRINKLE_TH = 0.42, 0.44
+
     out = []
     R = h / 2.0 * SS
-    core = R * 0.58          # 核（これより大きいと粒のくびれが埋まる）
-    nub = R * 0.30           # 粒ひとつ
-    ring = R * 0.70          # 粒を置く輪の半径（粒の外側が全体の輪郭になる）
     for f in range(frames):
-        rot = 2 * _m.pi * f / frames / nubs
+        rot = 2 * _m.pi * f / frames
         W = H = h
-        img = Image.new("L", (W * SS, H * SS), 0)
-        dr = ImageDraw.Draw(img)
         cx = cy = W * SS / 2
-        dr.ellipse([cx - core, cy - core, cx + core, cy + core], fill=1)
-        for i in range(nubs):
-            a = rot + 2 * _m.pi * i / nubs
-            px, py = cx + _m.cos(a) * ring, cy + _m.sin(a) * ring
-            dr.ellipse([px - nub, py - nub, px + nub, py + nub], fill=1)
 
-        a = np.array(img, dtype=np.uint8).reshape(H, SS, W, SS)
-        cov = (a == 1).mean(axis=(1, 3))
+        body = Image.new("L", (W * SS, H * SS), 0)
+        pts = []
+        for i in range(360):
+            a = 2 * _m.pi * i / 360
+            rr = R * 0.97 * (1 + WOB * _m.sin(LOBES * a + rot * LOBES)
+                             + WOB2 * _m.sin(5 * a - rot * 2))
+            pts.append((cx + _m.cos(a) * rr, cy + _m.sin(a) * rr))
+        ImageDraw.Draw(body).polygon(pts, fill=1)
+
+        wr = Image.new("L", (W * SS, H * SS), 0)
+        d2 = ImageDraw.Draw(wr)
+        crescent(d2, cx, cy, R * BIG, R * BIG_OFF, R * BIG_IN, rot + 2.2)
+        for (dist, ang0, size) in SMALLS:
+            a = ang0 + rot
+            px, py = cx + _m.cos(a) * R * dist, cy + _m.sin(a) * R * dist
+            crescent(d2, px, py, R * size, R * size * 0.78, R * size * 0.92, a + 1.9)
+
+        bcov = (np.array(body, dtype=np.uint8).reshape(H, SS, W, SS) == 1).mean(axis=(1, 3))
+        wcov = (np.array(wr, dtype=np.uint8).reshape(H, SS, W, SS) == 1).mean(axis=(1, 3))
         grid = [[T] * W for _ in range(H)]
         for y in range(H):
             for x in range(W):
-                if cov[y][x] >= 0.42:
+                if bcov[y][x] >= FILL_TH:
                     grid[y][x] = FILL
         grid = close_outline(grid)
         grid = drop_specks(grid)
-
-        # 間の線。谷の向きに外から内へ進み、面に入った所から tick ドットだけ黒くする。
-        # 半径を割合で刻むと飛び飛びの点になったので、0.5ドットずつ詰めて引く。
-        if tick:
-            c = (h - 1) / 2.0
-            for i in range(nubs):
-                a2 = rot + 2 * _m.pi * (i + 0.5) / nubs
-                r = h / 2.0
-                start = None
-                while r > 0:
-                    x, y = int(round(c + _m.cos(a2) * r)), int(round(c + _m.sin(a2) * r))
-                    if 0 <= x < W and 0 <= y < H and grid[y][x] == FILL:
-                        start = r
-                        break
-                    r -= 0.25
-                if start is None:
-                    continue
-                placed, r = 0, start
-                while placed < tick and r > 0:
-                    x, y = int(round(c + _m.cos(a2) * r)), int(round(c + _m.sin(a2) * r))
-                    if 0 <= x < W and 0 <= y < H and grid[y][x] == FILL:
-                        grid[y][x] = INK
-                        placed += 1
-                    r -= 0.5
-
+        # しわは面の上だけに置く。輪郭に食い込ませると、ふちが欠けて見える。
+        for y in range(H):
+            for x in range(W):
+                if grid[y][x] == FILL and wcov[y][x] >= WRINKLE_TH:
+                    grid[y][x] = MOLE
         out.append(["".join(r) for r in grid])
     return out
 
@@ -682,11 +682,11 @@ def main():
         print(f"  {name:9s} {sp['w']:>3}x{sp['h']:<3} ({fn})"
               + (f"  目{sp['eyes']}" if eyes else ""))
 
-    # 転がる金平糖（こすくまくんの約半分）
-    for i, rows in enumerate(bake_konpeito(19)):
-        out["sprites"][f"kon{i}"] = {"w": len(rows[0]), "h": len(rows), "rows": rows}
-    print(f"  {'kon0..5':9s} {len(out['sprites']['kon0']['rows'][0]):>3}x"
-          f"{len(out['sprites']['kon0']['rows']):<3} (転がる金平糖)")
+    # 転がる梅干し（こすくまくんの約半分）
+    for i, rows in enumerate(bake_umeboshi(19)):
+        out["sprites"][f"ume{i}"] = {"w": len(rows[0]), "h": len(rows), "rows": rows}
+    print(f"  {'ume0..5':9s} {len(out['sprites']['ume0']['rows'][0]):>3}x"
+          f"{len(out['sprites']['ume0']['rows']):<3} (転がる梅干し)")
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))

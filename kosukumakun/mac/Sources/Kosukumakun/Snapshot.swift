@@ -201,7 +201,7 @@ enum Snapshot {
         for _ in 0..<40 { brain.update(dt: 1.0 / 30, activity: activity, screen: screen) }
         brain.behaviors = []
 
-        // 金平糖を転がすところ
+        // 梅干しを転がすところ
         let rolling = RollingBehavior()
         brain.behaviors = [rolling]
         for (name, dir, frames) in [("fx4_roll_L", -1, 14), ("fx4_roll_R", 1, 20)] {
@@ -275,7 +275,7 @@ enum Snapshot {
 
     /// `--frames <出力先>` … 「できること」を **コマ送り** で書き出す。
     ///
-    /// 静止画1枚では伝わらないもの（湯気が上がる・金平糖が回る・もちのように伸びる）を
+    /// 静止画1枚では伝わらないもの（湯気が上がる・梅干しが回る・もちのように伸びる）を
     /// 見せるため。ここで出したPNGの束を tools/make_shots.py がGIFにまとめる。
     ///
     /// 30コマ/秒で回して2コマに1枚だけ書き出す（＝15コマ/秒のGIF）。
@@ -307,7 +307,7 @@ enum Snapshot {
             }
         }
 
-        /// 前の場面の演出（キーボード・金平糖・湯気・Z）を消す。
+        /// 前の場面の演出（キーボード・梅干し・湯気・Z）を消す。
         /// ふるまいは自分のレイヤを足すだけで片付けないので、
         /// 消さないと次の場面に全部写り込む（実際にそうなった）。
         func clearEffects() {
@@ -381,14 +381,14 @@ enum Snapshot {
             activity.debugOverride(typingRate: 9, idle: 0, stroke: i % 3 == 0)
         })
 
-        // --- スクロールで 金平糖を転がす -------------------------------------
+        // --- スクロールで 梅干しを転がす -------------------------------------
         // 前半は下スクロール（右へ）、後半は上スクロール（左へ）。
         // 1本で両方向を見せられるし、元の位置に戻るので繰り返しがつながる。
         // 角を曲がるところを見せたいので、右下の角のすこし手前から始める。
         // 前へ48コマ進むと角を越えて右の壁を登り、戻り48コマで元に帰る。
         let rolling = RollingBehavior()
         run("roll", caps: 48, behaviors: [rolling], startX: 313, setup: { brain, activity in
-            // 金平糖が出るところまで空回しし、**位置だけ戻す**。
+            // 梅干しが出るところまで空回しし、**位置だけ戻す**。
             // 空回しのぶん進んだままだと、行って戻ったとき元の場所に帰らず、
             // 繰り返しの継ぎ目で絵が飛ぶ。
             activity.debugOverride(typingRate: 0, idle: 3, scrolling: true, scrollDir: -1)

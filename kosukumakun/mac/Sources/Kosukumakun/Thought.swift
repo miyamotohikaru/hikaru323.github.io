@@ -25,6 +25,10 @@ final class ThoughtBehavior: PetBehavior {
     /// **字形はそのまま**で、粒だけ細かくして全体を小さく見せる。
     private let scaleDiv = 2
     private let pad = 4               // 枠の内側の余白（文字を小さくしたぶん、ここは広く）
+    /// 文字と枠のあいだの余白(pt)。**ドットではなく実寸で持つ。**
+    /// `pad` はドット数なので、粒の大きさ（画面の設定）でここが変わってしまう。
+    /// 文字はドットに落とさず実寸で描いているので、そのすきまも実寸で決める。
+    private let textMargin: CGFloat = 5
     private let border = 2            // 二重枠のぶん
     private let lineGap = 1
     private let tailGap = 1           // 頭と丸のすきま（ドット）
@@ -157,7 +161,8 @@ final class ThoughtBehavior: PetBehavior {
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
 
         // 枠が画面をふさがない最大の文字幅
-        let maxTextPt = max(120, host.stageSize.width - CGFloat((border + pad) * 2) * dot - 24)
+        let maxTextPt = max(120, host.stageSize.width - CGFloat((border + pad) * 2) * dot
+                                 - textMargin * 2 - 24)
         let lines = wrap(text, maxPt: maxTextPt, attrs: attrs)
 
         var textW: CGFloat = 0
@@ -168,8 +173,8 @@ final class ThoughtBehavior: PetBehavior {
         let textH = lineH * CGFloat(lines.count)
 
         // 文字の大きさから枠のドット数を決める（枠はドット絵のまま）
-        let innerW = Int(ceil(textW / dot))
-        let innerH = Int(ceil(textH / dot))
+        let innerW = Int(ceil((textW + textMargin * 2) / dot))
+        let innerH = Int(ceil((textH + textMargin * 2) / dot))
         let boxW = innerW + (border + pad) * 2
         let boxH = innerH + (border + pad) * 2
         let tailH = 8
@@ -202,9 +207,13 @@ final class ThoughtBehavior: PetBehavior {
                              return ps
                          }()])
         textLayer.isWrapped = true
-        textInset = CGSize(width: CGFloat(border + pad) * dot,
-                           height: CGFloat(border + pad) * dot)
-        textSizePt = CGSize(width: CGFloat(innerW) * dot, height: CGFloat(innerH) * dot)
+        // 文字は内側のまんなかに置く。ドット数に切り上げた端数も、上下左右へ均等に配る
+        // （片側だけに寄せると、余白が左右で1〜2ptずれて見える）。
+        let innerWpt = CGFloat(innerW) * dot
+        let innerHpt = CGFloat(innerH) * dot
+        textInset = CGSize(width: CGFloat(border + pad) * dot + (innerWpt - textW) / 2,
+                           height: CGFloat(border + pad) * dot + (innerHpt - textH) / 2)
+        textSizePt = CGSize(width: textW, height: textH)
 
         builtText = text
         builtScale = scale

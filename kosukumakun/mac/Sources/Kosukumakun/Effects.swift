@@ -1,6 +1,6 @@
 import AppKit
 
-/// 演出（金平糖・湯気・吹き出しなど）を載せる先。PetView が実装する。
+/// 演出（梅干し・湯気・吹き出しなど）を載せる先。PetView が実装する。
 ///
 /// 座標は **ステージ座標**（PetWindow の contentView 内、Y上向き、左下原点）で扱う。
 /// こすくまくんの足元は `footInStage`、身長は `petHeight` で取れるので、
@@ -21,7 +21,7 @@ extension EffectHost {
     var headTop: CGPoint {
         CGPoint(x: footInStage.x, y: footInStage.y + petHeight)
     }
-    /// 顔の高さ（金平糖を持っていく先）
+    /// 顔の高さ（梅干しを持っていく先）
     var facePoint: CGPoint {
         CGPoint(x: footInStage.x, y: footInStage.y + petHeight * 0.62)
     }
@@ -53,7 +53,7 @@ enum FX {
         return l
     }
 
-    /// 星（金平糖のきらきら等）
+    /// 星（きらきら等）
     static func star(center c: CGPoint, radius r: CGFloat, points n: Int = 4,
                      inner: CGFloat = 0.34, rotation: CGFloat = 0) -> CGPath {
         let p = CGMutablePath()

@@ -1,8 +1,8 @@
 import AppKit
 
-/// スクロールしている間、こすくまくんが押していく大きい金平糖。
+/// スクロールしている間、こすくまくんが押していく大きい梅干し。
 ///
-/// ドット絵なので絵を回せない。角度ちがいのコマ（kon0..kon5）を順に出して転がして見せる。
+/// ドット絵なので絵を回せない。角度ちがいのコマ（ume0..ume5）を順に出して転がして見せる。
 /// 左へ転がすときはコマを逆順に出す。ここを揃えないと、進む向きと回る向きが
 /// 食い違って「滑っている」ように見える。
 final class RollingBehavior: PetBehavior {
@@ -12,13 +12,12 @@ final class RollingBehavior: PetBehavior {
     private weak var attached: AnyObject?
     private var layer: CALayer?
     private var images: [CGImage] = []
-    /// 金平糖の色。実物にある淡い色から3つ。転がし始めるたびに選び直す。
-    private static let colors: [[UInt8]] = [
-        [0xF7, 0xC3, 0xCE, 255],   // 桃
-        [0xF7, 0xD2, 0x92, 255],   // だいだい
-        [0xBF, 0xDC, 0xE8, 255],   // みずいろ
-    ]
-    private var color = 0
+    /// 梅干しの色。**転がすたびに選び直さない。** 金平糖は淡い3色から選んでいたが、
+    /// 梅干しは赤いものなので、色が変わると別のものに見える。
+    /// 輪郭も黒ではなく濃い赤茶にする（黒だと ただの赤い玉に見えた）。
+    private static let skin:  [UInt8] = [0xC2, 0x63, 0x5B, 255]   // 面
+    private static let line:  [UInt8] = [0x4A, 0x1F, 0x1A, 255]   // 輪郭
+    private static let crease: [UInt8] = [0x97, 0x44, 0x3E, 255]  // しわ
     private var builtScale = 0
     private var shown = false
 
@@ -32,15 +31,6 @@ final class RollingBehavior: PetBehavior {
         if rolling != shown {
             shown = rolling
             l.isHidden = !rolling
-            // 転がし始めるたびに色を選び直す（前と同じ色は避ける）
-            if rolling {
-                var c = Int.random(in: 0..<RollingBehavior.colors.count)
-                if c == color { c = (c + 1) % RollingBehavior.colors.count }
-                color = c
-                images = (0..<6).compactMap {
-                    SpriteBank.image("kon\($0)", tint: RollingBehavior.colors[color])
-                }
-            }
         }
         guard rolling else { return }
 
@@ -68,9 +58,7 @@ final class RollingBehavior: PetBehavior {
 
     private func rebuild(_ host: EffectHost, scale: Int) {
         layer?.removeFromSuperlayer()
-        images = (0..<6).compactMap {
-            SpriteBank.image("kon\($0)", tint: RollingBehavior.colors[color])
-        }
+        images = RollingBehavior.frames()
 
         let l = CALayer()
         l.magnificationFilter = .nearest
@@ -86,5 +74,11 @@ final class RollingBehavior: PetBehavior {
         attached = host
         builtScale = scale
         shown = false
+    }
+
+    private static func frames() -> [CGImage] {
+        (0..<6).compactMap {
+            SpriteBank.image("ume\($0)", tint: skin, tintLine: line, tintMark: crease)
+        }
     }
 }

@@ -6,7 +6,7 @@
 アプリには CALayer をそのまま焼く隠しオプションがあるので、そこから取る:
 
     こすくまくん --snapshot     <dir>   … 立ち姿・寝そべり・縁のぞきなど
-    こすくまくん --snapshot-fx  <dir>   … 湯気・伸び・金平糖・吹き出しなど
+    こすくまくん --snapshot-fx  <dir>   … 湯気・伸び・梅干し・吹き出しなど
     こすくまくん --frames       <dir>   … 動いているところをコマ送りで（GIF用）
 
 そのうえで、画面の中にいる感じを出すために、絵に無いものだけを足す:
@@ -41,9 +41,6 @@ INK = (20, 18, 15)            # サイトの文字の色
 W = 760                       # カードの表示幅は約364pt。Retina で 728px なので等倍で足りる
 H = 460
 
-# 金平糖の色（Rolling.swift と同じ3色）。アプリは転がすたびに選び直すので、
-# 焼くたびに絵の色が変わってしまう。**ここで塗り直して固定する。**
-KON = {"桃": (0xF7, 0xC3, 0xCE), "だいだい": (0xF7, 0xD2, 0x92), "みずいろ": (0xBF, 0xDC, 0xE8)}
 
 
 def card(h=H):
@@ -52,18 +49,6 @@ def card(h=H):
 
 def cursor():
     return Image.open(CURSOR).convert("RGBA")
-
-
-def recolor_kon(im, to):
-    """金平糖の面を to の色に塗り直す。3色のどれで焼かれても同じ絵になる。"""
-    px = im.load()
-    known = set(KON.values())
-    for y in range(im.height):
-        for x in range(im.width):
-            r, g, b, a = px[x, y]
-            if a > 0 and (r, g, b) in known:
-                px[x, y] = to + (a,)
-    return im
 
 
 def display(dst, box=(144, 34, 616, 426)):
@@ -91,9 +76,8 @@ def build_tips(fx):
         return Image.open(os.path.join(fx, n + ".png")).convert("RGBA")
 
     os.makedirs(OUT, exist_ok=True)
-    # 金平糖は3色ずつ塗り分ける。アプリが色を選び直すのが、絵からも読める。
-    tips = [recolor_kon(img("fx3_tip%d" % i), c3)
-            for i, c3 in zip((1, 2, 3), (KON["だいだい"], KON["桃"], KON["みずいろ"]))]
+    # 転がすものは梅干し1色になったので、ここで塗り直す必要はもう無い。
+    tips = [img("fx3_tip%d" % i) for i in (1, 2, 3)]
     boxes = [t.getbbox() for t in tips]
     th = max(b[3] - b[1] for b in boxes)
     gap, pad = 26, 30
@@ -114,7 +98,6 @@ def build_tips(fx):
 # --------------------------------------------------------------------------
 
 FRAME_W, FRAME_H = 460, 380     # --frames が出すコマの大きさ
-KON_SCENES = {"roll", "think", "stretch"}
 
 
 def gif_scene(mo, name, marks):
@@ -126,9 +109,6 @@ def gif_scene(mo, name, marks):
     d = os.path.join(mo, name)
     files = sorted(f for f in os.listdir(d) if f.endswith(".png"))
     raw = [Image.open(os.path.join(d, f)).convert("RGBA") for f in files]
-    if name in KON_SCENES:
-        raw = [recolor_kon(im, KON["だいだい"]) for im in raw]
-
     over = [Image.new("RGBA", (FRAME_W, FRAME_H), (0, 0, 0, 0)) for _ in raw]
     if marks and marks[0].get("cursor"):
         cur = cursor()
