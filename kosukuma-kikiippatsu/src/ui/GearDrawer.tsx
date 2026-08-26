@@ -11,9 +11,12 @@
 // 縦が足りないときは本文がスクロールするが、プレビューだけは sticky で
 // residentにして、どの棚をいじっていても完成形が目に入るようにしている。
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { NAME_MAX_LEN } from "@/lib/config";
+import { useGameStore } from "@/game/store";
 import { SkinRack, SwordPreview, SwordRack } from "./SwordRack";
 import { CharmShelf } from "./CharmShelf";
+import "./nick.css";
 
 interface GearDrawerProps {
   open: boolean;
@@ -21,6 +24,15 @@ interface GearDrawerProps {
 }
 
 export default function GearDrawer({ open, onClose }: GearDrawerProps) {
+  const nickname = useGameStore((s) => s.nickname);
+  const setNickname = useGameStore((s) => s.setNickname);
+  // 開くたびに保存済みの名前から始める。閉じるときに確定するので、
+  // 打っている途中の名前が世界に出ることはない
+  const [name, setName] = useState(nickname ?? "");
+  useEffect(() => {
+    if (open) setName(useGameStore.getState().nickname ?? "");
+  }, [open]);
+
   // キーボードでも閉じられるように(PCでさわる人むけ)
   useEffect(() => {
     if (!open) return;
@@ -33,10 +45,15 @@ export default function GearDrawer({ open, onClose }: GearDrawerProps) {
 
   if (!open) return null;
 
+  const closeAndSave = () => {
+    setNickname(name);
+    onClose();
+  };
+
   return (
     <>
       {/* 背景タップでも閉じる。3Dの操作はここで止める */}
-      <div className="kk-drawer-back" onClick={onClose} aria-hidden="true" />
+      <div className="kk-drawer-back" onClick={closeAndSave} aria-hidden="true" />
       <div
         className="kk-drawer"
         role="dialog"
@@ -51,7 +68,7 @@ export default function GearDrawer({ open, onClose }: GearDrawerProps) {
             type="button"
             className="kk-drawer-x"
             aria-label="とじる"
-            onClick={onClose}
+            onClick={closeAndSave}
           >
             ✕
           </button>
@@ -71,6 +88,29 @@ export default function GearDrawer({ open, onClose }: GearDrawerProps) {
           </section>
           <section className="kk-sec">
             <CharmShelf />
+          </section>
+          {/* 名前はタイトルで入れそびれる人が多いので、ここでも変えられる。
+              いちばん下でいい(剣を見に来た人の邪魔をしない) */}
+          <section className="kk-sec">
+            <p className="kk-sec-label">なまえ</p>
+            <div className="nick nick-in-drawer">
+              <input
+                className="nick-input"
+                type="text"
+                inputMode="text"
+                autoComplete="off"
+                maxLength={NAME_MAX_LEN}
+                placeholder="ニックネーム"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={() => setNickname(name)}
+              />
+              <span className="nick-preview">
+                {name.trim()
+                  ? `「${name.trim()}が 刺した」と のこるよ`
+                  : "いれると「だれかが」のかわりに 名前がのこるよ"}
+              </span>
+            </div>
           </section>
         </div>
       </div>

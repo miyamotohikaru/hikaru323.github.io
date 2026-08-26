@@ -3,7 +3,7 @@
 // 同時アクセスが増えてもDBへの問い合わせが増えないようにする。
 
 import { NextResponse } from "next/server";
-import { maskToBase64 } from "@/lib/bitmask";
+import { maskToBase64, u16ToBase64 } from "@/lib/bitmask";
 import type { StateResponse } from "@/lib/types";
 import { getStore } from "@/server/store";
 
@@ -31,7 +31,7 @@ async function loadState(): Promise<StateResponse> {
           stabCount: snap.stabCount,
           holesBase64: maskToBase64(snap.mask),
           stabColorsBase64: maskToBase64(snap.stabColors),
-          stabStylesBase64: maskToBase64(snap.stabStyles),
+          stabStylesBase64: u16ToBase64(snap.stabStyles),
           recent: snap.recent,
           prevWinner: snap.prevWinner,
         };

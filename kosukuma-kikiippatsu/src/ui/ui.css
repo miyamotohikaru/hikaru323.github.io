@@ -302,6 +302,22 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: pop-in 0.35s var(--spring) both;
+
+  /* 残り5秒の助走ぐあい(0 = まだ待ち / 1 = 金色)。Reactが毎フレーム渡す。
+     色も光もぜんぶこの1つの数から作るので、どこかだけ先に金色になる、
+     ということが起きない */
+  --cd-warm: 0;
+  /* 待っているあいだのリングの色。月の色から借りている。
+     ここを最初から金色にすると「金色になった＝どうぞ」の合図が効かない */
+  --cd-cool: #94a6e0;
+  /* is-ready の灯りへ、そのまま連続でつながる明るさ(warm=1 で同じ値になる) */
+  box-shadow: 0 0 calc(var(--cd-warm) * 18px)
+    rgba(255, 217, 61, calc(var(--cd-warm) * 0.28));
+  border-color: color-mix(
+    in oklab,
+    rgba(255, 217, 61, 0.55) calc(var(--cd-warm) * 100%),
+    rgba(255, 254, 242, 0.16)
+  );
 }
 /* 待ちが明けた合図。一拍だけ金色に灯って、ふわっと消える。
    同じ瞬間にこすくまくんが伸び上がって鈴が鳴るので、色と動きをそちらに寄せる */
@@ -346,10 +362,60 @@
 }
 .cooldown-ring .ring-fg {
   fill: none;
+  /* color-mix が使えない環境むけの置きみやげ。下の行が採れれば上書きされる */
   stroke: var(--accent);
+  stroke: color-mix(
+    in oklab,
+    var(--accent) calc(var(--cd-warm) * 100%),
+    var(--cd-cool)
+  );
   stroke-width: 3;
   stroke-linecap: round;
+  /* 色は transition にのせない。助走のあいだは --cd-warm を60msごとに
+     渡していて、それ自体がもう滑らかだから。のせると「どうぞ」で金色に
+     灯る一拍まで鈍って、こすくまくんが伸び上がる瞬間とずれてしまう */
   transition: stroke-dashoffset 0.25s linear;
+}
+
+/* ── 残り5秒の助走 ─────────────────────────────────────
+   数字は毎秒 1回だけ、はっきり脈打つ。カウントの音が鳴っているように
+   見せたいので、跳ねたあとに必ず「ため」を作る(0.66秒鳴って0.34秒休む)。
+   再生し直しはReact側の key=残り秒でやっている。 */
+.cooldown-pill .cd-num {
+  display: inline-block;
+  transform-origin: 50% 58%;
+}
+.cooldown-pill .cd-num.is-tick {
+  animation: cd-tick 0.66s ease-out both;
+}
+@keyframes cd-tick {
+  0% {
+    transform: scale(1);
+  }
+  18% {
+    transform: scale(1.62);
+  }
+  46% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+/* 動きを減らす設定では、拡大縮小はやめて色だけで刻む。
+   数字が白へ抜けて金色にもどる = 1秒の区切りは伝わる */
+@keyframes cd-tick-tone {
+  0% {
+    color: var(--ui);
+  }
+  100% {
+    color: var(--accent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cooldown-pill .cd-num.is-tick {
+    animation: cd-tick-tone 0.66s ease-out both;
+  }
 }
 
 /* ── 確認シート(この あなに 刺す…？) ─────────────────── */
@@ -2564,5 +2630,138 @@ button.kk-charm-btn:active .kk-charm-cell {
   }
   .hud-badge-world b {
     font-size: 1.15em;
+  }
+}
+
+/* ── 待ちのあいだの誘い(WaitDeck) ─────────────────────────
+   30秒を「ただ待つ」から「したくをする時間」に変えるための小さな札。
+   自分では z-index を持たない(重ね順の入れ物を作らない)のがここの肝。
+   そうしておくと、中の札は .hud(z-index:10)の下・引き出しは上、と
+   1本の重ね順の中でふりわけられる。誘いは HUD に隠れてよく、
+   引き出しは HUD を覆わないと使えない。 */
+.wait-deck {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-game);
+}
+
+/* 下に置かれているもの(ピル+フィードの束・したくボタン)のすぐ上に出す。
+   その高さは行数で変わるので、JSが測って --wd-lift で渡してくる。
+   既定値はスマホ縦でいちばん高くなるとき(3行のフィード)の実測値 */
+.wd-invite {
+  position: absolute;
+  right: calc(12px + env(safe-area-inset-right));
+  bottom: calc(var(--wd-lift, 181px) + 12px);
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  animation: wd-invite-in 0.42s var(--spring) both;
+}
+@keyframes wd-invite-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 見た目は したくボタンと同じクリームの札にそろえる。
+   HUDの黒い札の仲間にすると「お知らせ」に見えて、押せると気づかれない */
+.wd-invite-go {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 8px 12px 8px 10px;
+  border: 0;
+  border-radius: 17px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 254, 242, 0.97),
+    rgba(232, 226, 202, 0.97)
+  );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    0 3px 0 rgba(88, 82, 62, 0.55),
+    0 8px 18px rgba(5, 7, 26, 0.45);
+  font-family: var(--font-game);
+  color: var(--ui-text);
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.14s var(--spring),
+    box-shadow 0.14s ease;
+}
+.wd-invite-go:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 rgba(88, 82, 62, 0.55),
+    0 4px 10px rgba(5, 7, 26, 0.45);
+}
+.wd-invite-sword {
+  display: block;
+  flex: none;
+  width: 17px;
+}
+/* 改行はJSXの<br>が決める(読点で切る)。自動折り返しには任せない */
+.wd-invite-txt {
+  white-space: nowrap;
+}
+.wd-invite-arrow {
+  flex: none;
+  font-size: 13px;
+  color: rgba(58, 55, 48, 0.5);
+}
+
+/* ことわるボタン。見た目は小さく、指のあたりは44pxに広げておく */
+.wd-invite-x {
+  position: relative;
+  pointer-events: auto;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 254, 242, 0.18);
+  border-radius: 999px;
+  background: rgba(5, 7, 26, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: rgba(255, 254, 242, 0.75);
+  font-family: var(--font-game);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.15s var(--spring),
+    background 0.15s ease;
+}
+.wd-invite-x::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}
+.wd-invite-x:active {
+  transform: scale(0.88);
+  background: rgba(5, 7, 26, 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-invite {
+    animation: fade-in 0.3s ease both;
   }
 }

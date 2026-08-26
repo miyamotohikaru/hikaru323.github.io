@@ -152,7 +152,12 @@ export type CharmShape =
   | "plate" // ネームプレート
   | "tassel" // ひものタッセル
   | "bear" // こすくまくん(全身。公式ロゴのポーズ)
-  | "earth"; // ちきゅう(隠し)
+  | "earth" // ちきゅう(隠し)
+  // ── ここから下は、月の向こうを横切るものをつかまえて手に入れる ──
+  | "comet" // ながれぼし
+  | "rocket" // ロケット
+  | "satellite" // じんこうえいせい
+  | "ufo"; // UFO
 
 /** チャームの素材。見た目(金属感・透け・つや)を決める */
 export type CharmMaterial =
@@ -296,6 +301,48 @@ export const CHARMS: readonly Charm[] = [
     material: "glass",
     secret: true,
   },
+  // ── 空を横切るものをタップしてつかまえるチャーム ──
+  // 刺し本数では絶対に増えない。並び順は SKY_KINDS と対応させること。
+  {
+    need: Infinity,
+    name: "ながれぼし",
+    emoji: "☄️",
+    shape: "comet",
+    hex: "#eaf1ff",
+    accentHex: "#7fb6ff",
+    material: "glass",
+    secret: true,
+  },
+  {
+    need: Infinity,
+    name: "ロケット",
+    emoji: "🚀",
+    shape: "rocket",
+    hex: "#f2f4f8",
+    accentHex: "#e8402f",
+    material: "resin",
+    secret: true,
+  },
+  {
+    need: Infinity,
+    name: "えいせい",
+    emoji: "🛰",
+    shape: "satellite",
+    hex: "#cdd3de",
+    accentHex: "#f5c400",
+    material: "chrome",
+    secret: true,
+  },
+  {
+    need: Infinity,
+    name: "ユーフォー",
+    emoji: "🛸",
+    shape: "ufo",
+    hex: "#c7d6cf",
+    accentHex: "#6ef0c0",
+    material: "chrome",
+    secret: true,
+  },
 ] as const;
 
 /** 刺して手に入るチャームの数(= 隠しチャームを除いた本数)。棚の分母にもなる */
@@ -303,6 +350,44 @@ export const NORMAL_CHARM_COUNT = CHARMS.filter((c) => !c.secret).length;
 
 /** 地球を壊した人だけが手に入れる隠しチャーム(CHARMS の index) */
 export const EARTH_CHARM_INDEX = CHARMS.findIndex((c) => c.secret);
+
+// ── 月の向こうを横切るもの ────────────────────────────
+// 待っているあいだ、ときどき背景を何かが通る。タップするとチャームになる。
+// **並び順が style のビット順(bit 8..11)そのもの。並べ替え・削除は禁止。**
+export const SKY_KINDS = ["comet", "rocket", "satellite", "ufo"] as const;
+export type SkyKind = (typeof SKY_KINDS)[number];
+
+/** SKY_KINDS の index → CHARMS の index */
+export const SKY_CHARM_INDEX: readonly number[] = SKY_KINDS.map((k) =>
+  CHARMS.findIndex((c) => c.shape === k),
+);
+
+/**
+ * 空のものを「通算で何こ つかまえたら」チャームが開くか。SKY_KINDS と同じ並び。
+ * 昇順で並べること(skyCharmLevelOf が前提にしている)。
+ *
+ * 1タップ1こだと軽すぎて、チャームがただの参加賞になってしまう。
+ * かといって最初の1つが遠すぎると「タップしても何も起きない」で終わるので、
+ * 最初だけは1回の待ち時間の積み重ねで届く距離に置いてある。
+ */
+export const SKY_CATCH_NEED = [10, 30, 50, 100] as const;
+
+/** 通算のつかまえた数から、開いた空のチャームの数(0..SKY_KINDS.length) */
+export function skyCharmLevelOf(catches: number): number {
+  let n = 0;
+  for (const need of SKY_CATCH_NEED) {
+    if (catches >= need) n++;
+    else break;
+  }
+  return n;
+}
+
+/** 空のものが飛んでくる間隔(ms)。この幅でランダムに次が決まる */
+export const SKY_GAP_MS: [number, number] = [9000, 22000];
+/** 待ち時間(クールダウン)中は、退屈しないように間隔を詰める */
+export const SKY_GAP_WAITING_MS: [number, number] = [3500, 9000];
+/** 1機が画面を横切りきるまで(ms) */
+export const SKY_CROSS_MS = 7000;
 
 /** 通算の刺し本数から「刺して手に入れたチャームの数」(0..NORMAL_CHARM_COUNT) */
 export function charmLevelOf(total: number): number {

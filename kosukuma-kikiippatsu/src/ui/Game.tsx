@@ -9,6 +9,7 @@ import AudioDirector from "@/game/audio/AudioDirector";
 import SpeechDirector from "@/game/speech/SpeechDirector";
 import TitleScreen from "./TitleScreen";
 import Hud from "./Hud";
+import WaitDeck from "./WaitDeck";
 import NameModal from "./NameModal";
 import Toast from "./Toast";
 
@@ -32,6 +33,7 @@ export default function Game() {
       {/* 吹き出しは3Dの上・HUDの下(speech.css の z-index:5) */}
       <SpeechBubble />
       <Hud />
+      <WaitDeck />
       <TitleScreen />
       <NameModal />
       <Toast />

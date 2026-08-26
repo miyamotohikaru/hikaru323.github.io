@@ -3,6 +3,8 @@
 /** 直近の刺しイベント(フィード表示用) */
 export interface StabEvent {
   holeId: number;
+  /** 刺した人のニックネーム。未登録は null → 「だれかが」表示 */
+  name: string | null;
   /** ISO 3166-1 alpha-2 (Vercelのgeoヘッダ由来)。不明はnull */
   country: string | null;
   /** ISO8601 */
@@ -61,6 +63,10 @@ export interface StabRequest {
   charm?: number;
   /** 隠しチャーム(地球をこわした人)を持っているか。省略時は false */
   earthCharm?: boolean;
+  /** つかまえた「空のもの」チャームのフラグ(SKY_KINDS の順)。省略時は0 */
+  skyCharms?: number;
+  /** 左下のフィードに出す名前。省略・空なら「だれかが」のまま */
+  nickname?: string;
 }
 
 /** POST /api/stab のレスポンス(discriminated union) */

@@ -1020,6 +1020,142 @@ function buildEarth(bag: Bag): void {
   put(bag, crackGeometry(r * EARTH_CRACK_LIFT), "dark");
 }
 
+// ── 空を横切るものをつかまえて手に入れる4種 ──────────────
+// 剣にぶら下がると豆粒になるので、どれも **シルエットひとつで種類が分かる**
+// ことを最優先にしてある(頭+尾 / とがった機首とフィン / 横に張った板 /
+// つばの広い皿)。作りと密度は上の12種とそろえた。
+
+/** ながれぼし: 光る頭 + 引きずる尾。頭から吊るので、尾が斜め下へ流れる */
+function buildComet(bag: Bag): void {
+  const HEAD = new THREE.Vector3(0.2, 0.22, 0);
+  const R = 0.25;
+  put(bag, xf(ball(R, 16), [HEAD.x, HEAD.y, HEAD.z]), "body");
+
+  // 尾。円錐の底を頭へ埋めて、先を左下へ伸ばす
+  const streak = (dx: number, dy: number, len: number, wide: number, dz = 0) => {
+    const d = new THREE.Vector3(dx, dy, 0).normalize();
+    const g = new THREE.ConeGeometry(wide, len, 10);
+    // 円錐は +Y が先端。進みたい向きへ倒してから、底を頭の中心へ置く
+    _quat.setFromUnitVectors(_up, d);
+    _obj.position.copy(HEAD).addScaledVector(d, len * 0.5 - R * 0.55);
+    _obj.position.z += dz;
+    _obj.quaternion.copy(_quat);
+    _obj.scale.setScalar(1);
+    _obj.updateMatrix();
+    g.applyMatrix4(_obj.matrix);
+    put(bag, g, "accent");
+    return _obj.position.clone().addScaledVector(d, len * 0.5);
+  };
+  const tip = streak(-0.62, -0.72, 0.96, 0.225);
+  // 2本目は少し手前(+Z)へずらす。同じ面に置くと1本目に食われて見えない
+  streak(-0.9, -0.34, 0.52, 0.085, 0.075);
+
+  // ちぎれて遅れる粒。尾を1本の三角で終わらせない
+  for (const [k, r] of [
+    [0.26, 0.055],
+    [0.52, 0.036],
+  ] as [number, number][]) {
+    const d = tip.clone().sub(HEAD).normalize();
+    put(
+      bag,
+      xf(ball(r, 8), [
+        tip.x + d.x * k * 0.4 + 0.05,
+        tip.y + d.y * k * 0.4 - 0.02,
+        0,
+      ]),
+      "body"
+    );
+  }
+}
+
+/** ロケット: とがった機首 + フィン3枚 + ノズル。まっすぐ立てて吊る */
+function buildRocket(bag: Bag): void {
+  // 胴
+  const hull = new THREE.CylinderGeometry(0.2, 0.215, 0.58, 14);
+  put(bag, xf(hull, [0, 0, 0]), "body");
+  // 機首(差し色。ここが赤いだけで、遠目にもロケットだと分かる)
+  const nose = new THREE.ConeGeometry(0.2, 0.34, 14);
+  put(bag, xf(nose, [0, 0.46, 0]), "accent");
+  // 胴の帯
+  const belt = new THREE.TorusGeometry(0.205, 0.032, 5, 16);
+  put(bag, xf(belt, [0, 0.16, 0], [Math.PI / 2, 0, 0]), "accent");
+  // フィン3枚。板を押し出さず、ふくらませて面取りの照りを出す
+  const finPts = resample(
+    v2([
+      [0, 0.02],
+      [0.25, -0.31],
+      [0, -0.31],
+    ]),
+    20
+  );
+  for (let i = 0; i < 3; i++) {
+    const fin = inflate(finPts, 0.024, 2, 0.8);
+    xf(fin, [0.15, 0, 0]);
+    xf(fin, undefined, [0, (i / 3) * Math.PI * 2, 0]);
+    put(bag, fin, "accent");
+  }
+  // ノズル
+  const nozzle = new THREE.CylinderGeometry(0.13, 0.185, 0.13, 12);
+  put(bag, xf(nozzle, [0, -0.35, 0]), "chrome");
+  // まる窓(クロムの縁 + 黒いガラス)
+  const ring = new THREE.TorusGeometry(0.075, 0.026, 5, 14);
+  put(bag, xf(ring, [0, 0.05, 0.185], [0.35, 0, 0]), "chrome");
+  const pane = new THREE.CylinderGeometry(0.062, 0.062, 0.05, 10);
+  put(bag, xf(pane, [0, 0.05, 0.185], [Math.PI / 2 - 0.35, 0, 0]), "dark");
+}
+
+/** えいせい: 太陽電池パネル2枚 + 箱。横にぴんと張った形がそのまま目印 */
+function buildSatellite(bag: Bag): void {
+  // 本体の箱
+  put(bag, xf(roundedBox(0.3, 0.4, 0.3, 0.055), [0, -0.02, 0]), "body");
+
+  for (const s of [-1, 1]) {
+    // 支柱
+    const boom = new THREE.CylinderGeometry(0.026, 0.026, 0.12, 6);
+    put(bag, xf(boom, [s * 0.21, -0.02, 0], [0, 0, Math.PI / 2]), "body");
+    // パネル。**面は正面(+Z)へ向ける**。寝かせると、正面から見たとき
+    // 厚みしか見えず「黄色い棒」になってしまう
+    const panel = new THREE.BoxGeometry(0.34, 0.26, 0.042);
+    put(bag, xf(panel, [s * 0.44, -0.02, 0]), "accent");
+    // セルの目地。1枚の板のままだと、小さくすると ただの色の面に見える
+    for (const d of [-0.11, 0.11]) {
+      const bar = new THREE.BoxGeometry(0.024, 0.26, 0.05);
+      put(bag, xf(bar, [s * 0.44 + d, -0.02, 0]), "dark");
+    }
+  }
+
+  // 前を向いたパラボラアンテナ
+  const dish = new THREE.SphereGeometry(0.088, 14, 7, 0, Math.PI * 2, 0, Math.PI / 2);
+  dish.scale(1, 0.5, 1);
+  put(bag, xf(dish, [0, 0.03, 0.17], [Math.PI / 2, 0, 0]), "chrome");
+  // 上に立てたアンテナ(先の玉まで入れて「衛星」の記号になる)
+  const mast = new THREE.CylinderGeometry(0.018, 0.018, 0.14, 6);
+  put(bag, xf(mast, [0, 0.25, 0]), "chrome");
+  put(bag, xf(ball(0.042, 8), [0, 0.32, 0]), "chrome");
+}
+
+/** UFO: つばの広い円盤 + ドーム。まる窓は下のふちに並べる */
+function buildUfo(bag: Bag): void {
+  // 円盤(球を潰す)
+  const saucer = ball(0.5, 22);
+  saucer.scale(1, 0.22, 1);
+  put(bag, saucer, "body");
+  // ふちの輪。これがあると、真横から見ても「皿」だと分かる
+  const rim = new THREE.TorusGeometry(0.455, 0.055, 5, 22);
+  put(bag, xf(rim, [0, 0, 0], [Math.PI / 2, 0, 0]), "body");
+  // ドーム
+  const dome = new THREE.SphereGeometry(0.235, 16, 9, 0, Math.PI * 2, 0, Math.PI / 2);
+  put(bag, xf(dome, [0, 0.07, 0]), "accent");
+  // まる窓。ふちの下側に等間隔で埋める
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const g = stud(0.042, 0.6);
+    onSphere(g, new THREE.Vector3(Math.cos(a), -0.42, Math.sin(a)), 0.47);
+    g.scale(1, 0.5, 1);
+    put(bag, g, "dark");
+  }
+}
+
 // ── 仕上げ ──────────────────────────────────────────
 
 /** カン(いちばん上の輪)の大きさ。単位空間での半径 */
@@ -1127,6 +1263,19 @@ export function makeCharmParts(shape: CharmShape, size = 0.085): CharmBuild {
     case "earth":
       buildEarth(bag);
       return finish(bag, size * 1.06, { spin: true });
+    case "comet":
+      // 頭から吊る(重心の真上ではない = 尾が斜め下へ流れる)
+      buildComet(bag);
+      return finish(bag, size, { anchorX: 0.2, bail: 0.09 });
+    case "rocket":
+      buildRocket(bag);
+      return finish(bag, size, { bail: 0.095 });
+    case "satellite":
+      buildSatellite(bag);
+      return finish(bag, size, { bail: 0.095 });
+    case "ufo":
+      buildUfo(bag);
+      return finish(bag, size, { bail: 0.1 });
     default:
       buildDice(bag);
       return finish(bag, size);

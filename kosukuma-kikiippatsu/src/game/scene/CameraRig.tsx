@@ -3,12 +3,19 @@
 // フェーズ駆動のカメラ演出。title/idleはOrbitControlsでユーザー操作、
 // それ以外は controls を無効化して easing.damp3 でカメラを運ぶ。
 // "impact" イベントと sharedRefs.requestShake() で減衰振動のカメラシェイク。
+// 待ち時間(クールダウン)中の idle だけは、他の人が刺した穴へゆっくり振り向く。
 
-import { useEffect, useRef, type ComponentRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type ComponentRef,
+} from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { damp3 } from "maath/easing";
+import { damp, damp3, dampAngle } from "maath/easing";
 import { MOON_RADIUS } from "@/lib/config";
 import { useGameStore } from "@/game/store";
 import { onGameEvent } from "@/game/events";
@@ -44,6 +51,83 @@ const smooth01 = (x: number): number => {
   return t * t * (3 - 2 * t);
 };
 
+// ── 待っているあいだ、他の人が刺した穴を見に行く ──────────────
+// 30秒のクールダウンで手持ちぶさたにならないように、月の裏で刺さった1本の
+// ほうへ「ゆっくり」振り向く。酔わせない・主役を見失わせないのが最優先なので、
+// 月を回すのではなく**カメラの周回角(方位角・極角)だけ**を補間する。
+// 距離と注視点にはさわらない = ユーザーのズームと構図をそのまま残す。
+/** 振り向きのなめらかさ(smoothTime)。見た目では1.2秒ほどで振り終わる */
+const FOLLOW_SMOOTH = 0.8;
+/** 振り向きの速度上限(rad/秒)。真裏の穴でも「ぐるん」と回さない */
+const FOLLOW_MAX_RATE = 1.3;
+/** 既定カメラとおなじ見下ろし角(rad)。穴の緯度をここへ少し寄せる */
+const FOLLOW_EQ_PHI = 1.35;
+/** 寄せる強さ(0 = 穴の真正面 / 1 = つねに既定の見下ろし角)。
+ *  真下まで回り込むと北極のこすくまくんが月の裏に隠れてしまうので、
+ *  穴が見える範囲(法線から70度以内)を保ったまま、少しだけ引き戻す */
+const FOLLOW_TILT = 0.3;
+/** 極に寄りすぎない安全マージン(rad)。OrbitControls の制限より内側に置く */
+const FOLLOW_PHI_MARGIN = 0.2;
+/** OrbitControls のズーム範囲。追従で使う距離もこの範囲に収める */
+const MIN_DIST = 8;
+const MAX_DIST = 24;
+/** これ以上動いたら「ユーザーが自分で回した」とみなす(rad / units)。
+ *  穴を選ぶだけのタップでも OrbitControls の start は飛んでくるので、
+ *  押した/離したではなく「実際に角度か距離が動いたか」で判定する */
+const MANUAL_ANGLE_EPS = 0.02;
+const MANUAL_DIST_EPS = 0.15;
+
+const _foff = new THREE.Vector3();
+const _fsph = new THREE.Spherical();
+
+/** -π..π に畳んだ角度差 */
+function wrapPi(a: number): number {
+  const t = (((a + Math.PI) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  return t - Math.PI;
+}
+
+/** 「動きを減らす」設定なら true。そのときは自動で視点を動かさない */
+function prefersReducedMotion(): boolean {
+  try {
+    return (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * その穴が正面に来るカメラの周回角を求めて out に書く。
+ * 注視点(ORIGIN)は月の中心より少し上にあるので、「法線の延長線上に
+ * カメラを置く」ためには注視点から見た極角へ直す必要がある。
+ * 半径 out.radius の球と、注視点から法線方向へ伸ばした線の交点を解く。
+ */
+function aimAtHole(
+  holeId: number,
+  targetY: number,
+  out: { theta: number; phi: number; radius: number }
+): void {
+  const n = getHoleWorld(holeId).normal;
+  const nPhi = Math.acos(Math.max(-1, Math.min(1, n.y)));
+  const phiC = nPhi + (FOLLOW_EQ_PHI - nPhi) * FOLLOW_TILT;
+  const cos = Math.cos(phiC);
+  const sin = Math.sin(phiC);
+  // |r*dir - T| = radius を r について解く(T は y 軸上なので dir·T = cos*targetY)
+  const dot = cos * targetY;
+  const r =
+    dot +
+    Math.sqrt(
+      Math.max(0, dot * dot - targetY * targetY + out.radius * out.radius)
+    );
+  out.theta = Math.atan2(n.x, n.z); // 方位角は注視点をずらしても変わらない
+  out.phi = Math.min(
+    Math.PI - FOLLOW_PHI_MARGIN,
+    Math.max(FOLLOW_PHI_MARGIN, Math.atan2(sin * r, cos * r - targetY))
+  );
+}
+
 // 3/4アングル計算用のスクラッチ
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 const WORLD_X = new THREE.Vector3(1, 0, 0);
@@ -64,6 +148,34 @@ export default function CameraRig() {
   const launchSnapped = useRef(false); // launch開始時の「引きへのカット」を1回だけ
   const launchDir = useRef(new THREE.Vector3(0, 0, 1)); // 引きショットの水平方向
 
+  // ── 待ち時間の自動追従(クールダウン中の idle 専用) ──
+  const follow = useRef({
+    /** 補間中か(この待ち時間で1本でも追いはじめたか) */
+    active: false,
+    /** いま追いかけている刺しの目印 "holeId:startAt" */
+    key: "",
+    /** 目標の周回角 */
+    theta: 0,
+    phi: FOLLOW_EQ_PHI,
+    /** 追従中は距離を固定する(勝手に寄ったり引いたりしない) */
+    radius: MAX_DIST,
+  });
+  /** 現在の周回角。maath の damp は速度を __damp に持つので、
+   *  追いはじめるたびに作り直して前の勢いを持ち込まない */
+  const followAng = useRef<{ theta: number; phi: number }>({
+    theta: 0,
+    phi: FOLLOW_EQ_PHI,
+  });
+  /** この待ち時間でユーザーが自分で回したか(回したらもう自動で動かさない) */
+  const userTook = useRef(false);
+  /** いま指(ポインタ)が乗っているか。乗っているあいだは絶対に横取りしない */
+  const dragging = useRef(false);
+  /** ドラッグ開始時の (方位角, 極角, 距離) */
+  const dragFrom = useRef(new THREE.Vector3());
+  /** 待ち時間の切り替わりを見る目印。クールダウンごとに手動フラグを戻す */
+  const seenCooldown = useRef(-1);
+  const reduceMotion = useMemo(prefersReducedMotion, []);
+
   // 刺さった瞬間のカメラシェイク
   useEffect(
     () =>
@@ -72,6 +184,53 @@ export default function CameraRig() {
       }),
     []
   );
+
+  // ── ユーザーの手動操作の検出 ──
+  // 「押した瞬間」ではなく「実際に周回角か距離が動いたか」で判定する。
+  // 穴を選ぶタップでも start は飛んでくるので、それで追従を止めたくない。
+  const onControlsStart = useCallback(() => {
+    dragging.current = true;
+    const f = follow.current;
+    if (f.active) {
+      // 自動追従中は、こちらが最後に書いた値が正。OrbitControls の内部角は
+      // 1フレーム古いので、それを基準にすると自分の動きを誤検知してしまう
+      dragFrom.current.set(
+        followAng.current.theta,
+        followAng.current.phi,
+        f.radius
+      );
+      return;
+    }
+    const c = controlsRef.current;
+    if (c) {
+      dragFrom.current.set(
+        c.getAzimuthalAngle(),
+        c.getPolarAngle(),
+        c.getDistance()
+      );
+    }
+  }, []);
+
+  const onControlsChange = useCallback(() => {
+    if (!dragging.current || userTook.current) return;
+    const c = controlsRef.current;
+    if (!c) return;
+    const dAz = Math.abs(wrapPi(c.getAzimuthalAngle() - dragFrom.current.x));
+    const dPol = Math.abs(c.getPolarAngle() - dragFrom.current.y);
+    const dDist = Math.abs(c.getDistance() - dragFrom.current.z);
+    if (
+      dAz > MANUAL_ANGLE_EPS ||
+      dPol > MANUAL_ANGLE_EPS ||
+      dDist > MANUAL_DIST_EPS
+    ) {
+      userTook.current = true;
+      follow.current.active = false;
+    }
+  }, []);
+
+  const onControlsEnd = useCallback(() => {
+    dragging.current = false;
+  }, []);
 
   useFrame((state, delta) => {
     const s = useGameStore.getState();
@@ -214,6 +373,81 @@ export default function CameraRig() {
       cam.lookAt(lookRef.current);
     }
 
+    // ── 待っているあいだ、他の人が刺した穴を見に行く ──────────
+    // クールダウン中の idle だけ。ほかのフェーズではこの節に入らないので、
+    // 既存のカメラ演出(カットシーン)には一切さわらない。
+    if (seenCooldown.current !== s.cooldownUntil) {
+      // 待ち時間が変わった = 新しい待ちの始まり。手動フラグを戻す
+      seenCooldown.current = s.cooldownUntil;
+      userTook.current = false;
+      follow.current.active = false;
+      follow.current.key = "";
+    }
+    const waiting = phase === "idle" && s.cooldownUntil > Date.now();
+    if (!waiting) {
+      follow.current.active = false;
+      follow.current.key = "";
+    } else if (
+      controls &&
+      !reduceMotion &&
+      !userTook.current &&
+      !dragging.current
+    ) {
+      const f = follow.current;
+      const tgt = controls.target;
+
+      // 最新の1本を追う。次々に届いても追従先を差し替えるだけで、
+      // 補間(と勢い)はそのまま続くのでカクつかない
+      let newestHole = -1;
+      let newestAt = -1;
+      for (const r of s.remoteStabs) {
+        if (r.startAt >= newestAt) {
+          newestAt = r.startAt;
+          newestHole = r.holeId;
+        }
+      }
+      if (newestHole >= 0) {
+        const key = `${newestHole}:${newestAt}`;
+        if (key !== f.key) {
+          f.key = key;
+          if (!f.active) {
+            // いまの向き・いまの距離から始める(ズームは動かさない)
+            _foff.subVectors(cam.position, tgt);
+            _fsph.setFromVector3(_foff);
+            f.radius = Math.min(MAX_DIST, Math.max(MIN_DIST, _fsph.radius));
+            followAng.current = { theta: _fsph.theta, phi: _fsph.phi };
+            f.active = true;
+          }
+          aimAtHole(newestHole, tgt.y, f);
+        }
+      }
+
+      // 刺さり終わって remoteStabs が空になっても、その向きに留まる
+      if (f.active) {
+        // 方位角は近いほうまわり。速度上限つきなので真裏でも振り回さない
+        dampAngle(
+          followAng.current,
+          "theta",
+          f.theta,
+          FOLLOW_SMOOTH,
+          delta,
+          FOLLOW_MAX_RATE
+        );
+        damp(
+          followAng.current,
+          "phi",
+          f.phi,
+          FOLLOW_SMOOTH,
+          delta,
+          FOLLOW_MAX_RATE
+        );
+        _fsph.set(f.radius, followAng.current.phi, followAng.current.theta);
+        cam.position.setFromSpherical(_fsph).add(tgt);
+        // OrbitControls は update() のあとに走るので、向きもここで合わせ直す
+        cam.lookAt(tgt);
+      }
+    }
+
     // ── 地球の爆発中だけ、地球へ寄る(ごほうびを大きく見せる) ──
     // OrbitControls の内部状態には触らないので、重みを0に戻せば
     // ユーザーが回していた元の絵にそのまま戻る。
@@ -264,14 +498,17 @@ export default function CameraRig() {
       makeDefault
       target={[0, 4.6, 0]}
       enablePan={false}
-      minDistance={8}
-      maxDistance={24}
+      minDistance={MIN_DIST}
+      maxDistance={MAX_DIST}
       enableDamping
       dampingFactor={0.08}
       rotateSpeed={0.8}
       autoRotateSpeed={0.5}
       minPolarAngle={0.12}
       maxPolarAngle={Math.PI - 0.12}
+      onStart={onControlsStart}
+      onChange={onControlsChange}
+      onEnd={onControlsEnd}
     />
   );
 }

@@ -11,8 +11,13 @@ import {
   EARTH_CHARM_INDEX,
   NORMAL_CHARM_COUNT,
   COOLDOWN_SEC,
+  SKY_CATCH_NEED,
   EARTH_BOOM_CLICKS,
   HOLE_COUNT,
+  NAME_MAX_LEN,
+  SKY_CHARM_INDEX,
+  SKY_KINDS,
+  skyCharmLevelOf,
   POLL_MS,
   REMOTE_MAX,
   REMOTE_STAGGER,
@@ -28,7 +33,13 @@ import {
   T_SUSPENSE,
   T_TROPHY,
 } from "@/lib/config";
-import { base64ToMask, emptyMask, getBit, maskToBase64 } from "@/lib/bitmask";
+import {
+  base64ToMask,
+  base64ToU16,
+  emptyMask,
+  getBit,
+  maskToBase64,
+} from "@/lib/bitmask";
 import { charmOf, packStyle, skinOf } from "@/lib/style";
 import type {
   ClaimResponse,
@@ -106,7 +117,7 @@ interface GameState {
   /** 各穴の剣の色(0=デフォルト金, 1..N=SWORD_COLORSのindex+1) */
   stabColors: Uint8Array;
   /** 各穴の剣のスキン+チャーム(詰め方は src/lib/style.ts)。0=情報なし */
-  stabStyles: Uint8Array;
+  stabStyles: Uint16Array;
   recent: StateResponse["recent"];
   prevWinner: WinnerInfo | null;
   connected: boolean;
@@ -158,6 +169,25 @@ interface GameState {
   /** 爆発した時刻(epoch ms)。null なら地球は無事 */
   earthBoomAt: number | null;
 
+  /**
+   * 月の向こうを横切るものを、通算で何こ つかまえたか。
+   * チャームはこの数のしきい値(SKY_CATCH_NEED)で開く。
+   */
+  skyCatches: number;
+
+  /**
+   * 開いた「空のチャーム」。SKY_KINDS の順に立てたビット。
+   * **skyCatches から導くもので、単独では増やさない。**
+   * 刺し本数では絶対に増えない。
+   */
+  caughtSky: number;
+
+  /**
+   * 左下のフィードに出す名前。未登録は null(「だれかが 刺した」のまま)。
+   * 最初のタイトルで任意入力。刺すたびに送るので、変えれば次から反映される。
+   */
+  nickname: string | null;
+
   /** こすくまくんの吹き出し */
   speech: Speech | null;
 
@@ -183,6 +213,14 @@ interface GameState {
   clearNewCharm: () => void;
   /** 地球をつつく。EARTH_BOOM_CLICKS 回で爆発 */
   tapEarth: () => void;
+  /**
+   * 月の向こうを横切るものをつかまえた。kind は SKY_KINDS の index。
+   * 数を1つ増やし、しきい値に届いたときだけチャームが開く。
+   * (kind は「何をつかまえたか」の記録用。どのチャームが開くかは数で決まる)
+   */
+  catchSky: (kind: number) => void;
+  /** ニックネームを決める。空文字なら未登録に戻す */
+  setNickname: (name: string) => void;
   /** こすくまくんにしゃべらせる */
   say: (text: string, tone?: SpeechTone, ms?: number) => void;
 }
@@ -308,10 +346,26 @@ function saveMyStabs(roundNo: number, holes: number[]): void {
  * 持っているチャームの index 一覧(刺して集めたぶん + 隠し)。
  * 「つけている」ではなく「持っている」。
  */
-export function ownedCharms(myTotal: number, earth: boolean): number[] {
+/**
+ * つかまえた数 → 開いたチャームのビット。開く順は SKY_KINDS の並びどおりで、
+ * 途中が飛ぶことはないので、いつでも下から詰まった形になる。
+ */
+export function skyMask(catches: number): number {
+  return (1 << skyCharmLevelOf(catches)) - 1;
+}
+
+export function ownedCharms(
+  myTotal: number,
+  earth: boolean,
+  caughtSky = 0,
+): number[] {
   const out: number[] = [];
   for (let i = 0; i < charmLevelOf(myTotal); i++) out.push(i);
   if (earth && EARTH_CHARM_INDEX >= 0) out.push(EARTH_CHARM_INDEX);
+  for (let i = 0; i < SKY_KINDS.length; i++) {
+    const ci = SKY_CHARM_INDEX[i];
+    if (caughtSky & (1 << i) && ci >= 0) out.push(ci);
+  }
   return out;
 }
 
@@ -334,8 +388,14 @@ function loadEquipped(): number[] {
 }
 
 /** 未保存(=一度もつけ外ししていない)なら、持っているもの全部を既定にする */
-function defaultEquipped(myTotal: number, earth: boolean): number[] {
-  return LS.get("kk-charms") === null ? ownedCharms(myTotal, earth) : [];
+function defaultEquipped(
+  myTotal: number,
+  earth: boolean,
+  caughtSky = 0,
+): number[] {
+  return LS.get("kk-charms") === null
+    ? ownedCharms(myTotal, earth, caughtSky)
+    : [];
 }
 
 /** とばした回数から、いま使えるスキンのindex一覧 */
@@ -392,11 +452,20 @@ function applyPreviewParams(set: (p: Partial<GameState>) => void): void {
     const normal = Math.min(want, NORMAL_CHARM_COUNT);
     const total = normal === 0 ? 0 : CHARMS[normal - 1].need;
     const earth = want > NORMAL_CHARM_COUNT;
+    // ちきゅうより後ろは「空を横切るものをつかまえたぶん」。順に開いていく
+    const skyWant = Math.min(
+      Math.max(0, want - NORMAL_CHARM_COUNT - 1),
+      SKY_KINDS.length,
+    );
+    const skyCatches = skyWant === 0 ? 0 : SKY_CATCH_NEED[skyWant - 1];
+    const sky = skyMask(skyCatches);
     set({
       myTotal: total,
       hasEarthCharm: earth,
+      skyCatches,
+      caughtSky: sky,
       // 見せるための状態なので、つけ外しの保存は無視して全部つけた姿にする
-      equippedCharms: ownedCharms(total, earth),
+      equippedCharms: ownedCharms(total, earth, sky),
     });
   }
 
@@ -427,7 +496,7 @@ export const useGameStore = create<GameState>((set, get) => {
     cur: GameState,
     rawMask: Uint8Array,
     colors: Uint8Array,
-    styles: Uint8Array
+    styles: Uint16Array
   ): RemoteStab[] => {
     const now = Date.now();
     // 取りこぼしの保険: 演出コンポーネントが外れた等で残った古い分は畳む
@@ -480,8 +549,8 @@ export const useGameStore = create<GameState>((set, get) => {
       ? base64ToMask(s.stabColorsBase64)
       : new Uint8Array(HOLE_COUNT);
     const styles = s.stabStylesBase64
-      ? base64ToMask(s.stabStylesBase64)
-      : new Uint8Array(HOLE_COUNT);
+      ? base64ToU16(s.stabStylesBase64, HOLE_COUNT)
+      : new Uint16Array(HOLE_COUNT);
     let stabCount = s.stabCount;
     let remoteStabs: RemoteStab[] = [];
     if (s.roundNo === cur.roundNo) {
@@ -679,6 +748,8 @@ export const useGameStore = create<GameState>((set, get) => {
   const initialWins = Math.max(0, Number(LS.get("kk-wins") ?? 0) || 0);
   const initialTotal = Math.max(0, Number(LS.get("kk-my-total") ?? 0) || 0);
   const initialEarthCharm = LS.get("kk-earth-charm") === "1";
+  const initialSkyCatches = Math.max(0, Number(LS.get("kk-sky-n") ?? 0) || 0);
+  const initialCaughtSky = skyMask(initialSkyCatches);
 
   return {
     phase: "boot",
@@ -687,7 +758,7 @@ export const useGameStore = create<GameState>((set, get) => {
     stabCount: 0,
     mask: emptyMask(),
     stabColors: new Uint8Array(HOLE_COUNT),
-    stabStyles: new Uint8Array(HOLE_COUNT),
+    stabStyles: new Uint16Array(HOLE_COUNT),
     recent: [],
     prevWinner: null,
     connected: true,
@@ -723,9 +794,12 @@ export const useGameStore = create<GameState>((set, get) => {
     // 一度もつけ外ししていない人は「持っているもの全部」がついている状態
     equippedCharms: [
       ...loadEquipped(),
-      ...defaultEquipped(initialTotal, initialEarthCharm),
+      ...defaultEquipped(initialTotal, initialEarthCharm, initialCaughtSky),
     ],
     earthBoomAt: null,
+    skyCatches: initialSkyCatches,
+    caughtSky: initialCaughtSky,
+    nickname: (LS.get("kk-nick") || "").slice(0, NAME_MAX_LEN) || null,
     speech: null,
 
     init: () => {
@@ -818,7 +892,15 @@ export const useGameStore = create<GameState>((set, get) => {
       const charmNow = topNormal.length === 0 ? 0 : Math.max(...topNormal) + 1;
       const earthOn =
         cur.hasEarthCharm && equipped.includes(EARTH_CHARM_INDEX);
-      const styleNow = packStyle(cur.swordSkin, charmNow, earthOn);
+      // つかまえたもののうち、いま剣につけているぶんだけを月へ残す
+      let skyOn = 0;
+      for (let i = 0; i < SKY_KINDS.length; i++) {
+        const ci = SKY_CHARM_INDEX[i];
+        if (cur.caughtSky & (1 << i) && ci >= 0 && equipped.includes(ci)) {
+          skyOn |= 1 << i;
+        }
+      }
+      const styleNow = packStyle(cur.swordSkin, charmNow, earthOn, skyOn);
       const body = JSON.stringify({
         holeId,
         roundNo: cur.roundNo,
@@ -827,6 +909,8 @@ export const useGameStore = create<GameState>((set, get) => {
         skin: cur.swordSkin,
         charm: charmNow,
         earthCharm: earthOn,
+        skyCharms: skyOn,
+        nickname: cur.nickname ?? undefined,
       });
 
       // 演出とAPIを並走させる。回線ハングでsuspenseに閉じ込められないよう
@@ -873,7 +957,7 @@ export const useGameStore = create<GameState>((set, get) => {
           // 自分の剣の色/スキンと「自分の刺し」を即時反映(次のポーリングを待たない)
           const colors = new Uint8Array(get().stabColors);
           colors[holeId] = cur.swordColor + 1;
-          const styles = new Uint8Array(get().stabStyles);
+          const styles = new Uint16Array(get().stabStyles);
           styles[holeId] = styleNow;
           const myStabs = [...get().myStabs, holeId];
           const myTotal = get().myTotal + 1;
@@ -1121,7 +1205,7 @@ export const useGameStore = create<GameState>((set, get) => {
 
     toggleCharm: (index: number) => {
       const cur = get();
-      const owned = ownedCharms(cur.myTotal, cur.hasEarthCharm);
+      const owned = ownedCharms(cur.myTotal, cur.hasEarthCharm, cur.caughtSky);
       if (!owned.includes(index)) return; // 持っていないものはつけられない
       const on = cur.equippedCharms.includes(index);
       const next = on
@@ -1175,6 +1259,32 @@ export const useGameStore = create<GameState>((set, get) => {
       LS.set("kk-earth-clicks", String(clicks));
       set({ earthClicks: clicks });
       emitGameEvent("earth-tap");
+    },
+
+    catchSky: (kind: number) => {
+      const cur = get();
+      if (kind < 0 || kind >= SKY_KINDS.length) return;
+      const catches = cur.skyCatches + 1;
+      const before = skyCharmLevelOf(cur.skyCatches);
+      const after = skyCharmLevelOf(catches);
+      LS.set("kk-sky-n", String(catches));
+      set({ skyCatches: catches, caughtSky: skyMask(catches) });
+      if (after === before) return; // まだ届いていない。つかまえた手ごたえだけ
+
+      // しきい値に届いた。開いたチャームは、そのままつけた状態にしておく
+      const ci = SKY_CHARM_INDEX[after - 1];
+      if (ci >= 0) {
+        equipCharm(ci);
+        set({ newCharm: ci });
+        emitGameEvent("charm-get");
+      }
+    },
+
+    setNickname: (name: string) => {
+      const trimmed = name.trim().slice(0, NAME_MAX_LEN);
+      if (trimmed) LS.set("kk-nick", trimmed);
+      else LS.del("kk-nick");
+      set({ nickname: trimmed || null });
     },
 
     say: (text: string, tone: SpeechTone = "normal", ms = T_SPEECH) => {

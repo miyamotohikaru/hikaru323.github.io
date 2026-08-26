@@ -27,11 +27,12 @@ import { CharmDisc, CharmIcon } from "./CharmShelf";
 export function useEquippedCharms(): number[] {
   const myTotal = useGameStore((s) => s.myTotal);
   const hasEarth = useGameStore((s) => s.hasEarthCharm);
+  const caughtSky = useGameStore((s) => s.caughtSky);
   const equipped = useGameStore((s) => s.equippedCharms);
   return useMemo(() => {
-    const has = new Set(ownedCharms(myTotal, hasEarth));
+    const has = new Set(ownedCharms(myTotal, hasEarth, caughtSky));
     return equipped.filter((i) => has.has(i)).sort((a, b) => a - b);
-  }, [equipped, myTotal, hasEarth]);
+  }, [equipped, myTotal, hasEarth, caughtSky]);
 }
 
 /** 選んでいない剣にはチャームを付けない。毎回 [] を作ると無駄に描き直すので固定 */
@@ -82,8 +83,9 @@ export function SwordPreview() {
   const myTotal = useGameStore((s) => s.myTotal);
   const myStabs = useGameStore((s) => s.myStabs);
   const hasEarth = useGameStore((s) => s.hasEarthCharm);
+  const caughtSky = useGameStore((s) => s.caughtSky);
   const hung = useEquippedCharms();
-  const owned = ownedCharms(myTotal, hasEarth).length;
+  const owned = ownedCharms(myTotal, hasEarth, caughtSky).length;
 
   const skin = SWORD_SKINS[swordSkin] ?? SWORD_SKINS[0];
   const colorName = SWORD_COLORS[swordColor]?.name ?? SWORD_COLORS[0].name;

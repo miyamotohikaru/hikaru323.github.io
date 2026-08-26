@@ -5,8 +5,13 @@
 // 待ちが明けた瞬間は、黙って消えるのではなく **一拍だけ「どうぞ」に変わって**
 // から消える。同じ瞬間に3D側のこすくまくんが「はっ」と伸び上がり、鈴が鳴り、
 // セリフが出るので、そちらと合図をそろえるため(`cooldown-ready` を購読する)。
+//
+// 残り5秒からは、その「どうぞ」への助走をつける。
+// 30秒をただ減らして見せると、待っている人は途中で画面から目を離してしまう。
+// 終わりが見えたところで数字が脈打ち、リングが金色へ寄っていけば、
+// 「あと少しだから見ていよう」に変わる。金色に染まりきった先が is-ready。
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useGameStore } from "@/game/store";
 import { onGameEvent } from "@/game/events";
 import { COOLDOWN_SEC } from "@/lib/config";
@@ -18,19 +23,27 @@ const RING_C = 2 * Math.PI * RING_R;
 /** 「どうぞ」を見せている時間(ms)。長いと居座るので、ひと呼吸だけ */
 const READY_MS = 1500;
 
+/** 助走をはじめる残り秒。ここから毎秒1回、数字が脈打つ */
+const RUNUP_SEC = 5;
+
 export default function CooldownPill() {
   const cooldownUntil = useGameStore((s) => s.cooldownUntil);
   const [now, setNow] = useState(() => Date.now());
   /** 明けた合図を出している最中か(0 = 出していない) */
   const [readyAt, setReadyAt] = useState(0);
   const active = cooldownUntil > now;
+  const remainMs = cooldownUntil - now;
+  /** 助走に入っているか(= 数字を脈打たせる区間) */
+  const runup = active && remainMs <= RUNUP_SEC * 1000;
 
-  // 残りがあるあいだだけ 250ms ごとに時刻を進める
+  // 残りがあるあいだだけ時刻を進める。
+  // 助走に入ったら刻みを細かくする。250msのままだと脈が最大1/4秒おくれて、
+  // 「1秒に1回」が目に見えてよれてしまう
   useEffect(() => {
     if (!active) return;
-    const t = setInterval(() => setNow(Date.now()), 250);
+    const t = setInterval(() => setNow(Date.now()), runup ? 60 : 250);
     return () => clearInterval(t);
-  }, [active, cooldownUntil]);
+  }, [active, cooldownUntil, runup]);
 
   // 3D側が待ちあけを見張っていて、明けた瞬間に1回だけ投げてくる
   useEffect(
@@ -51,15 +64,20 @@ export default function CooldownPill() {
   const ready = !active && readyAt !== 0;
   if (!active && !ready) return null;
 
-  const remainMs = cooldownUntil - now;
   const sec = Math.max(1, Math.ceil(remainMs / 1000));
   const frac = ready
     ? 1 // 明けた合図ではリングを満ちきらせる
     : Math.min(1, Math.max(0, remainMs / (COOLDOWN_SEC * 1000)));
+  // 0 = まだ月の色 / 1 = 「どうぞ」の金色。残り5秒からの寄りぐあいを
+  // CSSに渡して、色と光をぜんぶこの1つの数から作る
+  const warm = ready
+    ? 1
+    : Math.min(1, Math.max(0, 1 - remainMs / (RUNUP_SEC * 1000)));
 
   return (
     <div
       className={ready ? "cooldown-pill is-ready" : "cooldown-pill"}
+      style={{ "--cd-warm": warm.toFixed(3) } as CSSProperties}
       role="timer"
       aria-label={ready ? "つぎの1本が刺せるよ" : `つぎに刺せるまで あと${sec}びょう`}
     >
@@ -87,7 +105,13 @@ export default function CooldownPill() {
         /* 減っていくリングが「待ち」を伝えているので、スマホでは前置きを畳んで
            「あとN びょう」だけにする(読み上げ用の文は aria-label が持っている) */
         <span>
-          <span className="cd-lead">つぎに刺せるまで </span>あと<b>{sec}</b>びょう
+          <span className="cd-lead">つぎに刺せるまで </span>あと
+          {/* key を残り秒にして数字ごと作り直す。
+              同じ要素のままでは、脈のアニメが2回目から鳴らない */}
+          <b key={sec} className={runup ? "cd-num is-tick" : "cd-num"}>
+            {sec}
+          </b>
+          びょう
         </span>
       )}
     </div>

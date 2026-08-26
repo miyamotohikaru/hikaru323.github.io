@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import {
   HOLE_COUNT,
   NORMAL_CHARM_COUNT,
+  SKY_KINDS,
   SWORD_COLORS,
   SWORD_SKINS,
 } from "@/lib/config";
@@ -13,6 +14,7 @@ import { maskToBase64 } from "@/lib/bitmask";
 import { packStyle } from "@/lib/style";
 import type { StabRequest, StabResult } from "@/lib/types";
 import { getStore } from "@/server/store";
+import { sanitizeName } from "@/server/names";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,6 +45,16 @@ function parseBody(v: unknown): StabRequest | null {
   const skin = inRange(o.skin, SWORD_SKINS.length);
   const charm = inRange(o.charm, NORMAL_CHARM_COUNT + 1);
   const earthCharm = o.earthCharm === true;
+  const skyCharms = inRange(o.skyCharms, 1 << SKY_KINDS.length) ?? 0;
+  // ニックネームは世界中の画面に出るので、トロフィー名と同じ検閲を通す。
+  // 弾かれたときはエラーにせず「名無し」に落とす(刺し自体は成立させる)
+  const nickname =
+    typeof o.nickname === "string" && o.nickname.trim() !== ""
+      ? (() => {
+          const r = sanitizeName(o.nickname as string);
+          return r.ok ? r.name : undefined;
+        })()
+      : undefined;
   return {
     holeId,
     roundNo,
@@ -51,6 +63,8 @@ function parseBody(v: unknown): StabRequest | null {
     skin,
     charm,
     earthCharm,
+    skyCharms,
+    nickname,
   };
 }
 
@@ -85,11 +99,17 @@ export async function POST(req: Request): Promise<NextResponse> {
       fp: body.fp,
       country,
       color: body.color ?? null,
-      // スキンとチャームは1バイトに詰めて保存する(src/lib/style.ts)
+      // スキンとチャームは2バイトに詰めて保存する(src/lib/style.ts)
       style:
-        body.skin || body.charm || body.earthCharm
-          ? packStyle(body.skin ?? 0, body.charm ?? 0, body.earthCharm === true)
+        body.skin || body.charm || body.earthCharm || body.skyCharms
+          ? packStyle(
+              body.skin ?? 0,
+              body.charm ?? 0,
+              body.earthCharm === true,
+              body.skyCharms ?? 0,
+            )
           : null,
+      nickname: body.nickname ?? null,
     });
 
     switch (outcome.kind) {

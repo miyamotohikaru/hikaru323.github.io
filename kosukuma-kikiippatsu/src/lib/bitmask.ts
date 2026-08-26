@@ -47,3 +47,28 @@ export function base64ToMask(b64: string): Uint8Array {
   for (let i = 0; i < bin.length; i++) mask[i] = bin.charCodeAt(i);
   return mask;
 }
+
+/**
+ * 穴ごとに2バイト持つ配列(いまは style)を base64 へ。リトルエンディアン。
+ * 1000穴で2000バイト → base64 2668文字。ほとんどが 0 なので gzip 後は小さい。
+ */
+export function u16ToBase64(a: Uint16Array): string {
+  const bytes = new Uint8Array(a.length * 2);
+  for (let i = 0; i < a.length; i++) {
+    bytes[i * 2] = a[i] & 0xff;
+    bytes[i * 2 + 1] = (a[i] >> 8) & 0xff;
+  }
+  return maskToBase64(bytes);
+}
+
+/** u16ToBase64 の逆。長さが足りなければ 0 で埋める */
+export function base64ToU16(b64: string, length: number): Uint16Array {
+  const out = new Uint16Array(length);
+  if (!b64) return out;
+  const bytes = base64ToMask(b64);
+  const n = Math.min(length, bytes.length >> 1);
+  for (let i = 0; i < n; i++) {
+    out[i] = bytes[i * 2] | (bytes[i * 2 + 1] << 8);
+  }
+  return out;
+}

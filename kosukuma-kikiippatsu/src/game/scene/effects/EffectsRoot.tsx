@@ -10,6 +10,7 @@ import ImpactDust from "./ImpactDust";
 import LaunchFx from "./LaunchFx";
 import NewRoundBeam from "./NewRoundBeam";
 import RemoteStabs from "./RemoteStabs";
+import SkyTraffic from "./SkyTraffic";
 import TrophyConfetti from "./TrophyConfetti";
 
 export default function EffectsRoot() {
@@ -32,6 +33,13 @@ export default function EffectsRoot() {
         RemoteStabs の中(phase を見て開始を止める)で行う。
       */}
       <RemoteStabs />
+      {/*
+        空を横切るものも常駐させる。4機ぶんのジオメトリを idle に入るたび
+        作り直さないため。出すのは idle のあいだだけで、その判断は
+        SkyTraffic の中(phase を見て飛ばすのをやめる)で行う。
+        つかまえた瞬間の弾けは、カットシーンが始まっても最後まで見せたい。
+      */}
+      <SkyTraffic />
       {phase === "new-round" && <NewRoundBeam />}
       {phase === "trophy" && <TrophyConfetti />}
     </group>

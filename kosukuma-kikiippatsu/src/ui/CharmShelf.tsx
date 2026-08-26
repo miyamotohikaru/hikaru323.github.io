@@ -597,6 +597,33 @@ const BODY: Record<CharmShape, string> = {
     "M3.8 14a8.2 8.2 0 1 0 16.4 0a8.2 8.2 0 1 0-16.4 0Z" +
     "M20.9 8.3L22.5 9.5L21.3 11.1L19.7 9.9Z" +
     "M3.3 20.3L4.7 21.3L3.7 22.7L2.3 21.7Z",
+  // ながれぼし: まるい頭 + 左下へ細くなる尾 + ほどけた粒2つ。
+  // 尾が細いと「虫めがねの柄」に見えてしまうので、
+  // 頭のふちいっぱいの幅から出して先へ細くする
+  comet:
+    "M12.6 8.4a4.4 4.4 0 1 0 8.8 0a4.4 4.4 0 1 0-8.8 0Z" +
+    "M13.4 5.6L2.2 15.2L6.0 15.9L13.9 12.1Z" +
+    "M4.4 18.9L6.1 20.1L4.9 21.8L3.2 20.6Z" +
+    "M8.7 20.5L9.9 21.4L9.0 22.6L7.8 21.7Z",
+  // ロケット: とがった機首 → 胴 → 左右のフィン → ノズル。輪郭は1本
+  rocket:
+    "M12 2.3c2.7 2.4 4.1 5.8 4.1 9.5v3.4l2.6 3.3v2.6l-3.4-2.3" +
+    "l-.4 1.9h-5.8l-.4-1.9l-3.4 2.3v-2.6l2.6-3.3v-3.4" +
+    "C7.9 8.1 9.3 4.7 12 2.3Z",
+  // えいせい: 箱の本体 + 左右のパネル + アンテナ。
+  // 3Dはパネルが横に張り出した形なので、2Dも箱を短くパネルを大きくとる
+  satellite:
+    "M9.6 9.2h4.8v7.6H9.6Z" +
+    "M1.2 10.2h6.6v5.6H1.2Z" +
+    "M16.2 10.2h6.6v5.6h-6.6Z" +
+    "M11.6 6.6h0.8v2.6h-0.8Z" +
+    "M10.2 5.4h3.6v1.4h-3.6Z",
+  // ユーフォー: ドーム + 上下のあるレンズ形の円盤。
+  // 光の脚は3Dに無いので出さない(シルエットが別物になってしまう)
+  ufo:
+    "M8.1 9.4a3.9 3.9 0 0 1 7.8 0Z" +
+    "M2.6 12.9c0-2.5 4.2-4.3 9.4-4.3s9.4 1.8 9.4 4.3" +
+    "s-4.2 4.3-9.4 4.3s-9.4-1.8-9.4-4.3Z",
 };
 
 /**
@@ -1094,13 +1121,14 @@ export function CharmIcon({ index, size = 28, ghost, className }: CharmIconProps
 export function CharmShelf() {
   const myTotal = useGameStore((s) => s.myTotal);
   const hasEarth = useGameStore((s) => s.hasEarthCharm);
+  const caughtSky = useGameStore((s) => s.caughtSky);
   const equipped = useGameStore((s) => s.equippedCharms);
   const toggleCharm = useGameStore((s) => s.toggleCharm);
   const level = charmLevelOf(myTotal);
 
   const owned = useMemo(
-    () => ownedCharms(myTotal, hasEarth),
-    [myTotal, hasEarth]
+    () => ownedCharms(myTotal, hasEarth, caughtSky),
+    [myTotal, hasEarth, caughtSky]
   );
   // store の equippedCharms は端末に残るので、持っていないものが混じることが
   // ありうる(?charm= で見せた状態のあと、など)。表示は必ず「持っている」と交差させる

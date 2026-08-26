@@ -11,7 +11,9 @@ import "./ui.css";
 export default function NameModal() {
   const phase = useGameStore((s) => s.phase);
   const submitName = useGameStore((s) => s.submitName);
-  const [name, setName] = useState("");
+  const nickname = useGameStore((s) => s.nickname);
+  // タイトルで名前を入れている人は、ここでもう一度打たせない
+  const [name, setName] = useState(() => nickname ?? "");
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -21,6 +23,7 @@ export default function NameModal() {
   useEffect(() => {
     if (!open) return;
     setSending(false);
+    setName((v) => v || (useGameStore.getState().nickname ?? ""));
     const t = setTimeout(() => inputRef.current?.focus(), 60);
     return () => clearTimeout(t);
   }, [open]);
