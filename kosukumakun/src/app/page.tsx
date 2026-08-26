@@ -38,15 +38,15 @@ const STEPS = [
 /* 「こんなときは これ」。メニューの並び順ではなく、困りごとの側から引けるようにする。
    使い方が伝わらないのは、たいてい「名前は見えているが、いつ押すのか分からない」から。 */
 const WHEN = [
-  ["じゃまなとき",
-   "「画面のはしからのぞく」。画面のふちへどいて顔だけ出すので、作業しているものの前に立ちません。",
-   "のぞいている間に こすくまくんをタップすると、上 → 右 → 左 → 下 と4か所を順にまわります。つかむと、その縁に沿ってすべらせられます。"],
-  ["見失ったとき",
-   "「定位置にもどす」（⌘R）。画面のいちばん下・右のほうへ帰ってきます。",
-   "ウィンドウの縁に乗ったまま その窓が閉じたときや、別のデスクトップに残ったときも、これで戻ります。"],
-  ["集中したいとき",
-   "「かくれてもらう」。姿も動きも消えて、呼び戻すまで出てきません。",
-   "そのあいだ描き直しも止まるので、Macが静かになります。もう一度押すと戻ってきます。"],
+  { s: "when_peek", t: "じゃまなとき",
+    b: "「画面のはしからのぞく」。画面のふちへどいて顔だけ出すので、作業しているものの前に立ちません。",
+    m: "のぞいている間に こすくまくんをタップすると、上 → 右 → 左 → 下 と4か所を順にまわります。つかむと、その縁に沿ってすべらせられます。" },
+  { s: "when_home", t: "見失ったとき",
+    b: "「定位置にもどす」（⌘R）。画面のいちばん下・右のほうへ帰ってきます。",
+    m: "ウィンドウの縁に乗ったまま その窓が閉じたときや、別のデスクトップに残ったときも、これで戻ります。" },
+  { s: "when_hidden", t: "集中したいとき",
+    b: "「かくれてもらう」。姿も動きも消えて、呼び戻すまで出てきません。",
+    m: "そのあいだ描き直しも止まるので、Macが静かになります。もう一度押すと戻ってきます。" },
 ];
 
 const SPECS = [
@@ -223,11 +223,19 @@ export default function Page() {
 
         <h3 className="mt-16 text-[17px] font-semibold">こんなときは</h3>
         <div className="mt-8 grid gap-x-12 gap-y-9 sm:grid-cols-3">
-          {WHEN.map(([t, b, more]) => (
+          {WHEN.map(({ s, t, b, m }) => (
             <article key={t}>
-              <h4 className="text-[15.5px] font-semibold">{t}</h4>
+              <img
+                src={`/shots/${s}.png`}
+                alt=""
+                width={760}
+                height={460}
+                className="w-full rounded-lg"
+                style={{ border: "1px solid var(--line)", imageRendering: "pixelated" }}
+              />
+              <h4 className="mt-4 text-[15.5px] font-semibold">{t}</h4>
               <p className="mt-2 text-[13.5px]" style={{ color: "var(--muted)" }}>{b}</p>
-              <p className="mt-2 text-[13.5px]" style={{ color: "var(--muted)" }}>{more}</p>
+              <p className="mt-2 text-[13.5px]" style={{ color: "var(--muted)" }}>{m}</p>
             </article>
           ))}
         </div>

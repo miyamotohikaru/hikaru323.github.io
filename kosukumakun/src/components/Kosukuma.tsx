@@ -40,6 +40,18 @@ export function Kosukuma({
   // 輪郭パーツを持たないポーズでは普通に全部描く
   const outline = p.parts.filter((part) => part.id === "silhouette");
   const mono = silhouette && outline.length > 0;
+
+  // **べた塗りでも 目と鼻は抜く。** 全部埋めると のっぺりした熊の形になって、
+  // こすくまくんに見えない。目と鼻のパスを同じ1本の d につないで
+  // `fill-rule="evenodd"` にすると、内側の輪が穴になって地の色が出る
+  // （マスクを使うと id が要るので、同じ絵を何度も置けなくなる）。
+  const holes = mono
+    ? p.parts.filter((part) => part.id === "nose" || part.id.startsWith("eye"))
+    : [];
+  const monoPath = mono
+    ? [outline[0].d, ...holes.map((h) => h.d)].join(" ")
+    : "";
+
   const parts = mono ? outline : p.parts;
 
   return (
@@ -54,16 +66,20 @@ export function Kosukuma({
     >
       {label ? <title>{label}</title> : null}
       <g className={breathe ? "kosu-breathe" : undefined}>
-        {parts.map((part) => (
-          <path
-            key={part.id}
-            d={part.d}
-            fill={mono ? "currentColor" : part.fill}
-            className={
-              blink && part.id.startsWith("eye") ? "kosu-blink" : undefined
-            }
-          />
-        ))}
+        {mono ? (
+          <path d={monoPath} fill="currentColor" fillRule="evenodd" />
+        ) : (
+          parts.map((part) => (
+            <path
+              key={part.id}
+              d={part.d}
+              fill={part.fill}
+              className={
+                blink && part.id.startsWith("eye") ? "kosu-blink" : undefined
+              }
+            />
+          ))
+        )}
       </g>
     </svg>
   );
