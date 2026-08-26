@@ -288,7 +288,7 @@ export default function Page() {
       <footer className="hair mt-16 flex items-center justify-between py-8 text-[12px]"
               style={{ color: "var(--muted)" }}>
         <span>こす.くま</span>
-        <Kosukuma pose="front" silhouette className="h-5 w-auto" />
+        <Kosukuma pose="front" silhouette className="h-8 w-auto" />
         <span>macOS 13 以降 · Intel / Apple Silicon</span>
       </footer>
     </main>

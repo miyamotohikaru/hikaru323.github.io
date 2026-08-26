@@ -15,6 +15,32 @@ type Props = {
   silhouette?: boolean;
 };
 
+/** アイコンのときに穴を何倍にするか。原寸のままだと小さすぎて消える。 */
+const EYE_GROW = 1.85;
+const NOSE_GROW = 2.6;
+
+/**
+ * パスを、それ自身の中心のまわりに拡大する。
+ *
+ * 抽出したパスは「M x y C x y x y x y L x y Z」の形で、
+ * 数値は必ず x, y の順に並ぶ（scripts/build-poses.mjs がそう出している）。
+ * だから数を順に読んで、偶数番目をx・奇数番目をyとして動かせば足りる。
+ * SVGの transform ではなく数値を書き換えるのは、
+ * evenodd で穴にするには **同じ1本の d** に入っていないといけないから。
+ */
+function growPath(d: string, k: number): string {
+  const nums = (d.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+  const xs = nums.filter((_, i) => i % 2 === 0);
+  const ys = nums.filter((_, i) => i % 2 === 1);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  let i = 0;
+  return d.replace(/-?\d+(?:\.\d+)?/g, (m) => {
+    const c = i++ % 2 === 0 ? cx : cy;
+    return (c + (Number(m) - c) * k).toFixed(2);
+  });
+}
+
 /**
  * こすくまくんを inline SVG で描く。
  *
@@ -45,11 +71,19 @@ export function Kosukuma({
   // こすくまくんに見えない。目と鼻のパスを同じ1本の d につないで
   // `fill-rule="evenodd"` にすると、内側の輪が穴になって地の色が出る
   // （マスクを使うと id が要るので、同じ絵を何度も置けなくなる）。
+  //
+  // **そのまま抜いても見えない。** 目は身長の5.1%、鼻は2.2%しかないので、
+  // フッターの20pxだと目が1px・鼻は0.4pxになって消える。
+  // アイコンのときだけ、穴をそれぞれの中心のまわりに大きくする
+  // （文字の級数を落とすと画数を減らすのと同じ、小さいとき用の作り分け）。
   const holes = mono
     ? p.parts.filter((part) => part.id === "nose" || part.id.startsWith("eye"))
     : [];
   const monoPath = mono
-    ? [outline[0].d, ...holes.map((h) => h.d)].join(" ")
+    ? [
+        outline[0].d,
+        ...holes.map((h) => growPath(h.d, h.id === "nose" ? NOSE_GROW : EYE_GROW)),
+      ].join(" ")
     : "";
 
   const parts = mono ? outline : p.parts;
