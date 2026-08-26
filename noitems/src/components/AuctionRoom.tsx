@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuctionState } from "@/lib/auction/types";
 import { fetchAuction, newRequestId, postBid } from "@/lib/auctionClient";
+import { auctionPageUrl, isHandoff } from "@/lib/handoff";
 import { jstDateTime, yen } from "@/lib/format";
 import { legal, site } from "@/lib/lot";
 import { tradeTerms } from "@/lib/tradeTerms";
@@ -146,24 +147,34 @@ export function AuctionRoom({ initial }: { initial: AuctionState }) {
                 {/* 金額 */}
                 <div className="md:pr-[clamp(1.5rem,3vw,3rem)]">
                   <div className="flex items-center gap-2.5">
-                    {!ended && !scheduled && (
+                    {/* 点滅する点は「ここで進行中」の印。逃がすモードでは出さない */}
+                    {!isHandoff && !ended && !scheduled && (
                       <span className="relative flex h-1.5 w-1.5" aria-hidden>
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ink/45" />
                         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-ink" />
                       </span>
                     )}
                     <span className="label-jp">
-                      {ended ? "落札額" : scheduled ? "開始価格" : "現在の入札額"}
+                      {isHandoff
+                        ? "開始価格"
+                        : ended
+                          ? "落札額"
+                          : scheduled
+                            ? "開始価格"
+                            : "現在の入札額"}
                     </span>
                   </div>
                   <p className="num mt-4 text-[clamp(2.375rem,1rem+5.4vw,4.25rem)] font-extralight leading-[0.94] tracking-[-0.025em]">
-                    {yen(scheduled ? state.startPrice : state.currentBid)}
+                    {yen(isHandoff || scheduled ? state.startPrice : state.currentBid)}
                   </p>
-                  <p className="label-jp mt-5">
-                    入札 {state.bidCount} 件
-                    <span className="mx-2 text-[var(--sep)]">／</span>
-                    開始 {yen(state.startPrice)}
-                  </p>
+                  {/* 現在額と件数は Shopify 側にしかないので、逃がすモードでは出さない */}
+                  {!isHandoff && (
+                    <p className="label-jp mt-5">
+                      入札 {state.bidCount} 件
+                      <span className="mx-2 text-[var(--sep)]">／</span>
+                      開始 {yen(state.startPrice)}
+                    </p>
+                  )}
                 </div>
 
                 {/* 残り時間 ── 左と同じ行ボックスで始める（揃わないと主役が半行ずれる） */}
@@ -201,7 +212,11 @@ export function AuctionRoom({ initial }: { initial: AuctionState }) {
             </div>
 
             {/* 終了は「押せないボタン」で表さない。確定した事実として刷る */}
-            {ended ? (
+            {isHandoff ? (
+              <a href={auctionPageUrl} className="btn-solid w-full">
+                入札ページへ進む
+              </a>
+            ) : ended ? (
               <p className="bg-ink px-[clamp(1.5rem,4vw,3.5rem)] py-5 text-[0.875rem] tracking-[0.14em] text-ground-lift">
                 オークションは終了しました
               </p>
@@ -217,7 +232,13 @@ export function AuctionRoom({ initial }: { initial: AuctionState }) {
             )}
           </div>
 
-          <p className="mt-4 max-w-[52rem] text-[0.75rem] leading-[1.9] text-ink/72">
+          {isHandoff && (
+            <p className="mt-4 max-w-[52rem] text-[0.75rem] leading-[1.9] text-ink/72">
+              入札の受付は Shopify のページで行います。
+              <span className="text-ink">入札は取り消せません。</span>
+            </p>
+          )}
+          <p className="mt-4 max-w-[52rem] text-[0.75rem] leading-[1.9] text-ink/72" hidden={isHandoff}>
             入札単位 {yen(state.minIncrement)}
             <span className="mx-1.5 text-[var(--sep)]">／</span>
             一度の上限 {yen(state.maxBid)}。
@@ -262,7 +283,7 @@ export function AuctionRoom({ initial }: { initial: AuctionState }) {
           </p>
 
           {/* 入札の記録 ── 吊り上げを疑われたときの、唯一の反証材料 */}
-          {state.bids.length > 0 && (
+          {!isHandoff && state.bids.length > 0 && (
             <div className="mt-12 max-w-[52rem] md:mt-16">
               <h2 className="label-jp">入札の記録</h2>
               <ol className="mt-4 border-t border-[var(--rule)]">
@@ -329,13 +350,22 @@ export function AuctionRoom({ initial }: { initial: AuctionState }) {
               残り <Countdown endsAt={state.endsAt} offsetMs={offset} />
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => setDialogOpen(true)}
-            className="btn-line shrink-0 border-ink bg-ink text-ground-lift hover:bg-ink"
-          >
-            入札する
-          </button>
+          {isHandoff ? (
+            <a
+              href={auctionPageUrl}
+              className="btn-line shrink-0 border-ink bg-ink text-ground-lift hover:bg-ink"
+            >
+              入札する
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setDialogOpen(true)}
+              className="btn-line shrink-0 border-ink bg-ink text-ground-lift hover:bg-ink"
+            >
+              入札する
+            </button>
+          )}
         </div>
       </div>
 
