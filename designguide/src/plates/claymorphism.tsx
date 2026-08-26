@@ -20,7 +20,7 @@
  */
 import { ATLAS, shift } from "@/lib/plate";
 
-const P = "cm";
+const P = "clay";
 const BG = "#eef0ff";
 const INDIGO = "#a5b4fc";
 const PINK = "#fbcfe8";

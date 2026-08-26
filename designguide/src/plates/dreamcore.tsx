@@ -18,7 +18,7 @@
  */
 import { ATLAS, rand } from "@/lib/plate";
 
-const P = "dc";
+const P = "dream";
 
 const NIGHT = "#1a1030";
 const LILAC = "#8a6bd6";

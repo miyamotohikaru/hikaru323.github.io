@@ -165,6 +165,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   overflow: hidden;
   background: var(--paper-ink);
   box-shadow:
+    /* 内側の毛細線。これが無いと、白地の様式（ミニマリズム・エセリアル・
+       ライトアカデミア等）が地の紙に溶けて、一覧で「空きコマ」に見える */
+    inset 0 0 0 1px #16150f14,
     0 1px 0 0 var(--ink-12),
     0 1px 2px -1px #16150f24,
     0 12px 28px -18px #16150f4d;

@@ -22,7 +22,7 @@
  */
 import { ATLAS, rand } from "@/lib/plate";
 
-const P = "jp";
+const P = "jpd";
 const WALL = "#eae5db";
 const FLOOR = "#d5ccbc";
 const WOOD = "#b9ab97";
