@@ -31,14 +31,27 @@ const WATER = 596; // 水面
 export default function Plate() {
   const r = rand(20210617);
 
-  /* 無限階段。上るほど小さく、右へ流れる。踏面は必ず平行四辺形で描く */
-  const steps = Array.from({ length: 17 }, (_, i) => {
-    const k = i / 16;
-    const w = 176 - k * 122;
-    const x = 118 + k * 150;
-    const y = WATER - 8 - k * 300 - Math.pow(k, 1.7) * 60;
-    return { x, y, w, h: 15 - k * 8.5 };
-  });
+  /* 無限階段。1段ごとに蹴上げと踏面を作り、踏面の奥の角を次の段の起点にする。
+     奥へ行くほど s で縮めると、昇りきらないまま小さくなって消える */
+  const steps: { riser: string; tread: string; edge: [number, number, number, number] }[] = [];
+  {
+    let x = 126, y = 606;
+    for (let i = 0; i < 18; i++) {
+      const s2 = 1 / (1 + i * 0.088);
+      const ax = 23 * s2, ay = -11.5 * s2; // 踏み込み（奥へ）
+      const bx = 13 * s2, by = 6.4 * s2;   // 段の幅方向
+      const W = 9;
+      const rise = 21 * s2;
+      const p2x = x + bx * W, p2y = y + by * W;
+      steps.push({
+        riser: `${x},${y} ${p2x},${p2y} ${p2x},${p2y - rise} ${x},${y - rise}`,
+        tread: `${x},${y - rise} ${p2x},${p2y - rise} ${p2x + ax},${p2y - rise + ay} ${x + ax},${y - rise + ay}`,
+        edge: [x, y - rise, p2x, p2y - rise],
+      });
+      x += ax;
+      y += ay - rise;
+    }
+  }
 
   /* 星と塵。上ほど密に */
   const dust = Array.from({ length: 90 }, () => ({
@@ -77,6 +90,11 @@ export default function Plate() {
           <stop offset="0" stopColor="#fff8e8" />
           <stop offset="0.55" stopColor={CREAM} />
           <stop offset="1" stopColor="#d8c8b0" />
+        </linearGradient>
+        <linearGradient id={`${P}-beam`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.9" />
+          <stop offset="0.45" stopColor={AQUA} stopOpacity="0.55" />
+          <stop offset="1" stopColor={AQUA} stopOpacity="0" />
         </linearGradient>
         {/* 扉の中。ここだけ別の世界の光が漏れる */}
         <linearGradient id={`${P}-inside`} x1="0" y1="0" x2="0.3" y2="1">
@@ -142,17 +160,26 @@ export default function Plate() {
           <rect y={WATER} width="600" height="4" fill="#ffe8f4" opacity="0.7" />
         </g>
 
+        {/* ── 階段の映り。水面で反転させると、上下が決まらなくなる ── */}
+        <g clipPath={`url(#${P}-below)`} opacity="0.3" filter={`url(#${P}-blur2)`}>
+          <g transform={`translate(0 ${WATER * 2}) scale(1 -1)`}>
+            {steps.slice(0, 7).map((st, i) => (
+              <g key={i} opacity={1 - i * 0.13}>
+                <polygon points={st.riser} fill="#a888d4" />
+                <polygon points={st.tread} fill="#f0dcf4" />
+              </g>
+            ))}
+          </g>
+        </g>
+
         {/* ── 無限階段。水の上を昇り、途中で消える ─────────────── */}
         <g>
-          {steps.map((s, i) => (
-            <g key={i} opacity={1 - Math.pow(i / 17, 2.6) * 0.55}>
-              {/* 蹴上げ */}
-              <path d={`M${s.x} ${s.y} L${s.x + s.w} ${s.y - s.w * 0.13} L${s.x + s.w} ${s.y - s.w * 0.13 + s.h} L${s.x} ${s.y + s.h} Z`}
-                    fill="#b795dd" opacity="0.9" />
-              {/* 踏面。上から見えるので明るく */}
-              <path d={`M${s.x} ${s.y} L${s.x + s.w} ${s.y - s.w * 0.13} L${s.x + s.w + 16} ${s.y - s.w * 0.13 - 7} L${s.x + 16} ${s.y - 7} Z`}
-                    fill="#f0dcf4" />
-              <path d={`M${s.x} ${s.y} L${s.x + s.w} ${s.y - s.w * 0.13}`} stroke="#8a6bd6" strokeWidth="0.8" opacity="0.5" />
+          {steps.map((st, i) => (
+            <g key={i} opacity={1 - Math.pow(i / 18, 2.4) * 0.5}>
+              <polygon points={st.riser} fill="#a888d4" />
+              <polygon points={st.tread} fill="#f2e0f6" />
+              <line x1={st.edge[0]} y1={st.edge[1]} x2={st.edge[2]} y2={st.edge[3]}
+                    stroke="#7a5cc0" strokeWidth="0.9" opacity="0.45" />
             </g>
           ))}
         </g>
@@ -160,15 +187,19 @@ export default function Plate() {
         {/* ── 空に立つ扉。版面の主。少しだけ開けて別の光を漏らす ───── */}
         <g transform="translate(376 246)">
           {/* 落ちる光。扉から手前へ伸ばすと、扉が「開いている」ことになる */}
-          <g filter={`url(#${P}-blur)`} opacity="0.55">
-            <path d="M74 30 L112 24 L214 336 L36 350 Z" fill={AQUA} />
+          <g filter={`url(#${P}-blur)`} opacity="0.85">
+            <path d="M70 20 L118 14 L236 372 L20 388 Z" fill={`url(#${P}-beam)`} />
           </g>
           {/* 枠 */}
           <rect x="-8" y="-10" width="140" height="252" rx="3" fill="#c9b49a" />
           <rect x="-4" y="-6" width="132" height="248" rx="2" fill={`url(#${P}-door)`} />
           {/* 開いた口 */}
           <rect x="66" y="6" width="54" height="230" fill="#150c28" />
-          <rect x="66" y="6" width="54" height="230" fill={`url(#${P}-inside)`} opacity="0.92" />
+          <rect x="66" y="6" width="54" height="230" fill={`url(#${P}-inside)`} opacity="0.95" />
+          {/* 向こう側の地平線と、そこに立つもう一枚の扉 */}
+          <rect x="66" y="150" width="54" height="86" fill="#bff0f4" opacity="0.9" />
+          <rect x="66" y="148" width="54" height="2" fill="#ffffff" opacity="0.9" />
+          <rect x="88" y="120" width="13" height="30" fill="#e8dcc4" stroke="#b9a382" strokeWidth="0.7" />
           <g filter={`url(#${P}-glow)`}>
             <rect x="66" y="6" width="4" height="230" fill="#ffffff" opacity="0.9" />
           </g>

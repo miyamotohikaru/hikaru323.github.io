@@ -73,8 +73,8 @@ export default function Plate() {
   }).filter((s) => !s.dim || r() > 0.55);
 
   /* ケンテの帯。縦の経糸ごとに緯の配色を変える */
-  const KENTE_Y = 632;
-  const KENTE_H = 74;
+  const KENTE_Y = 620;
+  const KENTE_H = 66;
   const strips = Array.from({ length: 24 }, (_, i) => {
     const base = i % 2 ? [GOLD, NIGHT, RED, NIGHT, GOLD] : [TEAL, NIGHT, CREAM, NIGHT, TEAL];
     const rows = Array.from({ length: 7 }, (_, k) => base[(k + i) % base.length]);
@@ -179,9 +179,9 @@ export default function Plate() {
                C -65,-1 -60,-1 -58,-2 C -55,-3 -60,4 -61,8
                C -62,14 -58,19 -54,21 C -48,24 -40,30 -34,36
                C -26,44 -16,48 -8,50 C -6,56 -6,60 -8,64
-               C -20,76 -60,90 -92,102 C -104,107 -110,112 -110,124
-               L -110,152 L 110,152 L 110,124
-               C 110,112 104,107 92,102 C 66,92 52,80 48,64
+               C -24,80 -72,98 -112,116 C -136,127 -150,146 -150,172
+               L -150,232 L 150,232 L 150,172
+               C 150,146 136,127 112,116 C 74,98 54,82 48,64
                C 46,52 48,38 52,22 C 58,0 66,-24 66,-52
                C 66,-84 44,-112 10,-122 Z"
             fill={CREAM}
@@ -214,29 +214,47 @@ export default function Plate() {
             <path d="M -19,73 C -4,82 24,84 48,77" />
             <path d="M -26,85 C -8,95 26,97 54,89" />
           </g>
-          {/* 肩の布。三角の織り */}
+          {/* 肩の布。段を4本重ねて織りにする。1列だけだと飾りにしかならない */}
+          <rect x="-150" y="124" width="300" height="6" fill={RED} />
           <g fill={TEAL}>
-            {Array.from({ length: 9 }, (_, i) => (
-              <polygon key={i} points="0,0 22,0 11,20" transform={`translate(${-104 + i * 24} 112)`} opacity={i % 2 ? 1 : 0.55} />
+            {Array.from({ length: 13 }, (_, i) => (
+              <polygon key={i} points="0,0 22,0 11,22" transform={`translate(${-146 + i * 23} 136)`} opacity={i % 2 ? 1 : 0.55} />
             ))}
           </g>
-          <rect x="-110" y="106" width="220" height="5" fill={RED} />
+          <rect x="-150" y="164" width="300" height="4.5" fill={GOLD} />
+          <g>
+            {Array.from({ length: 15 }, (_, i) => (
+              <polygon key={i} points="0,-11 10,0 0,11 -10,0" fill={i % 2 ? RED : GOLD} transform={`translate(${-140 + i * 20} 188)`} />
+            ))}
+          </g>
+          <rect x="-150" y="206" width="300" height="4.5" fill={TEAL} />
+          <g fill={NIGHT}>
+            {Array.from({ length: 19 }, (_, i) => (
+              <rect key={i} x={-146 + i * 15.5} y="218" width="8" height="8" opacity={i % 2 ? 1 : 0.45} />
+            ))}
+          </g>
         </g>
 
         {/* ── 星座。アディンクラの記号を線でつなぐ ────────────────── */}
         <g stroke={GOLD}>
           <g fill="none" strokeWidth="0.9" opacity="0.45">
             <path d="M 60 118 L 118 76 L 96 168 L 60 118" />
-            <path d="M 500 626 L 556 560 L 512 544" />
+            <path d="M 548 150 L 568 244 L 526 206 Z" />
+            <path d="M 54 462 L 86 540" />
+            <path d="M 556 480 L 522 552" />
           </g>
           <g fill={GOLD} strokeLinecap="round">
             {[
               { x: 60, y: 118, k: 0, s: 0.8 },
               { x: 118, y: 76, k: 2, s: 0.7 },
               { x: 96, y: 168, k: 1, s: 0.8 },
-              { x: 540, y: 132, k: 3, s: 0.85 },
-              { x: 556, y: 560, k: 2, s: 0.65 },
-              { x: 62, y: 566, k: 1, s: 0.7 },
+              { x: 548, y: 150, k: 3, s: 0.8 },
+              { x: 568, y: 244, k: 2, s: 0.6 },
+              { x: 526, y: 206, k: 1, s: 0.6 },
+              { x: 54, y: 462, k: 2, s: 0.7 },
+              { x: 86, y: 540, k: 0, s: 0.6 },
+              { x: 556, y: 480, k: 1, s: 0.7 },
+              { x: 522, y: 552, k: 2, s: 0.6 },
             ].map((n, i) => (
               <g key={i} transform={`translate(${n.x} ${n.y}) scale(${n.s})`} stroke={GOLD}>
                 {SIGNS[n.k]}
@@ -269,7 +287,7 @@ export default function Plate() {
 
         {/* ── 文字 ────────────────────────────────────────────── */}
         <text
-          x="300" y="602" textAnchor="middle" fill={GOLD}
+          x="300" y="738" textAnchor="middle" fill={GOLD}
           fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
           fontSize="41" fontWeight="800" letterSpacing="7.5"
         >
@@ -286,18 +304,12 @@ export default function Plate() {
           <line x1="120" y1="74" x2="480" y2="74" />
         </g>
         <text
-          x="300" y="742" textAnchor="middle" fill={CREAM}
+          x="300" y="772" textAnchor="middle" fill={CREAM}
           fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-          fontSize="10.5" fontWeight="700" letterSpacing="4.4" opacity="0.78"
+          fontSize="10" fontWeight="700" letterSpacing="4.2" opacity="0.72"
         >
           NINE WOVEN RINGS — ONE PROFILE — NO HORIZON
         </text>
-        {/* 目盛り。刷り物としての細部 */}
-        <g fill={GOLD} opacity="0.7">
-          {Array.from({ length: 21 }, (_, i) => (
-            <rect key={i} x={192 + i * 11} y="762" width="1.8" height={i % 5 === 0 ? 12 : 6} />
-          ))}
-        </g>
 
         <rect width="600" height="800" filter={`url(#${ATLAS.grain})`} opacity="0.18" style={{ mixBlendMode: "overlay" }} />
       </g>

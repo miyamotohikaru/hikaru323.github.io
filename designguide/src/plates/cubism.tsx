@@ -25,7 +25,7 @@
  *   明暗はセルの位置から決める（中央が暗く、縁が明るい）。
  *   完全な乱数で塗ると、モザイクのノイズになって構成が消える。
  */
-import { ATLAS, rand, rad } from "@/lib/plate";
+import { ATLAS, rand, rad, type Rand } from "@/lib/plate";
 
 const P = "cub";
 const SAND = "#d8cdb8";
@@ -51,7 +51,7 @@ type Cell = { pts: string; fill: string; cx: number; cy: number; ha: number; hat
  * 揺らした格子。頂点を先に作って共有するので、辺が必ず一致する。
  * ang を与えると、その角度で回した格子になる（重ねる2枚目用）。
  */
-function lattice(seed: number, cols: number, rows: number, jx: number, jy: number, tone: (u: number, v: number, j: () => number) => string) {
+function lattice(seed: number, cols: number, rows: number, jx: number, jy: number, tone: (u: number, v: number, j: Rand) => string) {
   const r = rand(seed);
   const V: [number, number][][] = [];
   for (let j = 0; j <= rows; j++) {
@@ -87,7 +87,7 @@ function lattice(seed: number, cols: number, rows: number, jx: number, jy: numbe
  * 明暗。左上が明るく、右下へ沈む。絵画の光の当たり方をそのまま使う。
  * 三稿目は「中央が暗い」にしたら、写真の周辺減光に見えた。
  */
-function tonal(u: number, v: number, j: () => number) {
+function tonal(u: number, v: number, j: Rand) {
   let t = 0.14 + 0.74 * ((u * 0.4 + v * 0.78) / 1.18) + j(-0.15, 0.15);
   t = Math.max(0, Math.min(0.999, t));
   if (j() > 0.972) return RUST;

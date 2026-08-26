@@ -57,7 +57,15 @@ export const ATLAS = {
  *   r();        // 0〜1
  *   r(10, 40);  // 10〜40
  */
-export function rand(seed: number) {
+/**
+ * rand() が返す関数の型。
+ * 引数なし→0〜1、1つ→0〜min、2つ→min〜max。
+ * 図版のなかで受け渡すときは `() => number` ではなくこれを使うこと
+ * （引数つきで呼ぶと型が合わなくなる。cubism で実際に踏んだ）。
+ */
+export type Rand = (min?: number, max?: number) => number;
+
+export function rand(seed: number): Rand {
   let a = seed >>> 0;
   return (min?: number, max?: number) => {
     a += 0x6d2b79f5;
