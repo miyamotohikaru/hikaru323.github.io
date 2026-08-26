@@ -216,8 +216,8 @@ export function SiteFooter() {
           <img
             src="/img/kosukuma-line.webp"
             alt="こす・くま"
-            width={420}
-            height={288}
+            width={290}
+            height={198}
             loading="lazy"
             decoding="async"
             className="h-auto w-[4.25rem] shrink-0"
