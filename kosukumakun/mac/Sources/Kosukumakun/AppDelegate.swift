@@ -400,35 +400,68 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         sender.title = reminders.isRunning ? "ポモドーロをやめる" : "ポモドーロをはじめる"
     }
 
-    /// メニューバー用のアイコン。**寝そべりの姿**のドット絵から作る。
+    /// メニューバーのアイコン。**正面のこすくまくんのシルエット**を、
+    /// ベクターのパスからそのまま描く。
     ///
-    /// 正面の姿だと、メニューバーの高さ(18pt)では ただの縦長の塊にしか見えなかった。
-    /// 寝そべりは横長なので、この細長い場所に置いたときいちばん形が読める。
+    /// 前は寝そべりのドット絵だった。横長なのでメニューバーの細い場所に
+    /// 収まりは良かったが、何の絵なのか読めなかった。
+    /// 正面にして、**目と鼻を穴として抜く**。それだけで急にこすくまくんになる。
+    ///
+    /// ただし目は身長の5.1%・鼻は2.2%しかなく、この大きさだと1pt未満で消える。
+    /// サイトのアイコンと同じだけ穴を大きくする（目×1.85 / 鼻×2.6）。
+    /// **ドット絵ではなくベクターを使う。** ドットに落とすと、目のドットが
+    /// 1ドット未満になって そもそも置けない。
     /// テンプレート画像なので色は system 側で決まる。ここでは形だけ渡す。
     private func menuBarIcon() -> NSImage {
-        SpriteBank.loadIfNeeded()
-        let sp = SpriteBank.sprite("lying")
-        let h: CGFloat = 15
-        let scale = h / CGFloat(sp.h)
-        let w = (CGFloat(sp.w) * scale).rounded()
-        let img = NSImage(size: NSSize(width: w, height: h), flipped: false) { rect in
-            guard let ctx = NSGraphicsContext.current?.cgContext else { return true }
-            ctx.setFillColor(NSColor.black.cgColor)
-            let cw = rect.width / CGFloat(sp.w)
-            let ch = rect.height / CGFloat(sp.h)
-            for y in 0..<sp.h {
-                for x in 0..<sp.w where sp.at(x, y) != 0 {
-                    // ドット絵の行は上から。描画は下からなので反転する
-                    ctx.fill(CGRect(x: CGFloat(x) * cw,
-                                    y: rect.height - CGFloat(y + 1) * ch,
-                                    width: cw + 0.5, height: ch + 0.5))
+        Asset.loadIfNeeded()
+        let pose = Asset.pose("front")
+        let h: CGFloat = 17
+        let w = (h * pose.width / pose.height).rounded()
+
+        /// パーツをCGPathにする。grow を渡すと、そのパーツ自身の中心のまわりに広げる。
+        func path(_ part: VectorPart, grow: CGFloat = 1) -> CGPath {
+            let p = CGMutablePath()
+            for seg in part.segs {
+                switch seg {
+                case .move(let a):  p.move(to: a)
+                case .line(let a):  p.addLine(to: a)
+                case .curve(let c1, let c2, let a):
+                    p.addCurve(to: a, control1: c1, control2: c2)
+                case .close:        p.closeSubpath()
                 }
             }
+            guard grow != 1 else { return p }
+            let b = p.boundingBoxOfPath
+            var t = CGAffineTransform(translationX: b.midX, y: b.midY)
+                .scaledBy(x: grow, y: grow)
+                .translatedBy(x: -b.midX, y: -b.midY)
+            return p.copy(using: &t) ?? p
+        }
+
+        // 外形と、穴にする目・鼻を **1本のパス** にまとめる。
+        // 塗るときに evenOdd を使うと、内側の輪が穴になって地の色が出る。
+        let whole = CGMutablePath()
+        if let sil = pose.part("silhouette") { whole.addPath(path(sil)) }
+        for id in ["eye_l", "eye_r"] {
+            if let e = pose.part(id) { whole.addPath(path(e, grow: 1.85)) }
+        }
+        if let n = pose.part("nose") { whole.addPath(path(n, grow: 2.6)) }
+
+        let img = NSImage(size: NSSize(width: w, height: h), flipped: false) { rect in
+            guard let ctx = NSGraphicsContext.current?.cgContext else { return true }
+            // 素材の座標は「身長1000・原点は絵の中心・Y上向き」。枠の真ん中へ合わせる。
+            let s = rect.height / pose.height
+            ctx.translateBy(x: rect.midX, y: rect.midY)
+            ctx.scaleBy(x: s, y: s)
+            ctx.setFillColor(NSColor.black.cgColor)
+            ctx.addPath(whole)
+            ctx.fillPath(using: .evenOdd)
             return true
         }
         img.isTemplate = true
         return img
     }
+
 }
 
 // MARK: - デバッグ（KOSU_DEBUG=1 で状態を吐く）
