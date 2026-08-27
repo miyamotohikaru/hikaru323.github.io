@@ -66,7 +66,7 @@ export default async function StylePage({
           <figure className="sty__fig">
             <div className="plate-frame">{Plate ? <Plate /> : null}</div>
             <figcaption>
-              <BreakText text={`図版：${s.ja}の作図規則から◆描き起こしたもの。◇実在の作品の複製ではありません。`} />
+              <BreakText text={`図版：${s.ja}の作図規則から描き起こしたもの。実在の作品の複製ではありません。`} />
             </figcaption>
           </figure>
 
@@ -77,8 +77,8 @@ export default async function StylePage({
             <p className="sty__era">{s.era}　／　{s.origin}</p>
 
             {/* 見出しは1文で句点が無い。パソコンでは折らず、携帯だけ読点で折る */}
-            <Jp text={s.tagline} className="sty__tag" max={17} mobileMax={16} />
-            <Jp text={s.description} className="sty__desc" max={23} mobileMax={20} />
+            <Jp text={s.tagline} className="sty__tag" byClause />
+            <Jp text={s.description} className="sty__desc" />
 
             {/* 色 */}
             <div className="sty__pal">
@@ -123,7 +123,7 @@ export default async function StylePage({
             <p className="label">Prompt</p>
             <h2 className="sec__h">この様式で、描かせる。</h2>
             <p className="sec__lead">
-              <BreakText text="比率・色・技法・禁止事項まで◆書き出した仕様書です。◆そのまま貼って送れます。◇主題を自分のものに◆差し替えたいときは、" />
+              <BreakText text="比率・色・技法・禁止事項まで書き出した仕様書です。そのまま貼って送れます。主題を自分のものに差し替えたいときは、" />
               <Link href={`/build?style=${s.slug}`} className="link">プロンプトを組む</Link>
               から作れます。
             </p>

@@ -121,7 +121,7 @@ export default function BuildForm({
             aria-label="主題"
           />
           <p className="fld__note">
-            <BreakText text="空のままでも作れます。◆その場合は、様式そのものを◆主題にした一枚になります。" />
+            <BreakText text="空のままでも作れます。その場合は、様式そのものを主題にした一枚になります。" />
           </p>
           <div className="fld__egs">
             {EXAMPLES.map((e) => (
@@ -184,7 +184,7 @@ export default function BuildForm({
             </label>
           </div>
           <p className="fld__note">
-            <BreakText text="文字を空にすると、◆「文字・ロゴ・透かしを入れない」と◆明示した指示になります。◇画像生成は文字が崩れやすいので、◆要らないときは空のままが安全です。" />
+            <BreakText text="文字を空にすると、「文字・ロゴ・透かしを入れない」と明示した指示になります。画像生成は文字が崩れやすいので、要らないときは空のままが安全です。" />
           </p>
         </section>
       </div>
