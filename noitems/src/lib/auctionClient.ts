@@ -18,12 +18,13 @@ export async function fetchAuction(signal?: AbortSignal): Promise<AuctionState |
 export async function postBid(
   amount: number,
   requestId: string,
+  email?: string,
 ): Promise<PlaceBidResult> {
   try {
     const res = await fetch("/api/bid", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ amount, requestId }),
+      body: JSON.stringify({ amount, requestId, email }),
     });
     return (await res.json()) as PlaceBidResult;
   } catch {

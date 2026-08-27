@@ -10,7 +10,13 @@ import {
   bidCeiling,
   resolveEndsAt,
 } from "./config";
-import type { AuctionProvider, AuctionState, Bid, PlaceBidResult } from "./types";
+import type {
+  AuctionProvider,
+  AuctionState,
+  Bid,
+  BidInput,
+  PlaceBidResult,
+} from "./types";
 import { nextMinimumBid, validateBid } from "./types";
 
 /**
@@ -139,7 +145,7 @@ export const mockAuctionProvider: AuctionProvider = {
     return toPublic(s);
   },
 
-  async placeBid(amount: number, requestId: string): Promise<PlaceBidResult> {
+  async placeBid({ amount, requestId }: BidInput): Promise<PlaceBidResult> {
     const s = current();
     maybeCompete(s);
 

@@ -80,13 +80,23 @@ export type PlaceBidResult =
   /** 失敗時も最新の state を返す。画面の金額が古いまま残らないように */
   | { ok: false; code: BidErrorCode; message: string; state?: AuctionState };
 
+/** 入札の中身 */
+export type BidInput = {
+  amount: number;
+  /** 二重送信を弾くための冪等キー。クライアントが作る */
+  requestId: string;
+  /**
+   * 入札者のメールアドレス。
+   * Webkul は入札に「ストアに登録済みの顧客のメール」を必須で求めるため、
+   * 本番ではここが空だと入札できない。mock では無視される。
+   */
+  email?: string;
+};
+
 export interface AuctionProvider {
   readonly name: string;
   load(): Promise<AuctionState>;
-  /**
-   * @param requestId 二重送信を弾くための冪等キー。クライアントが作る
-   */
-  placeBid(amount: number, requestId: string): Promise<PlaceBidResult>;
+  placeBid(input: BidInput): Promise<PlaceBidResult>;
 }
 
 /** 次に必要な最低入札額 */

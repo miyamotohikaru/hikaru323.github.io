@@ -15,11 +15,13 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   let amount: unknown;
   let requestId: unknown;
+  let email: unknown;
 
   try {
     const body = await request.json();
     amount = body?.amount;
     requestId = body?.requestId;
+    email = body?.email;
   } catch {
     return bad("UNKNOWN", "リクエストを読み取れませんでした。");
   }
@@ -32,7 +34,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await auction.placeBid(Math.floor(amount), requestId);
+    const result = await auction.placeBid({
+      amount: Math.floor(amount),
+      requestId,
+      email: typeof email === "string" && email.length > 0 ? email : undefined,
+    });
     return NextResponse.json(result, {
       status: result.ok ? 200 : 422,
       headers: { "cache-control": "no-store" },
