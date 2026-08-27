@@ -67,7 +67,7 @@ function Download({ label = "ダウンロード" }: { label?: string }) {
       style={{ background: "var(--ink)", color: "var(--paper)" }}
     >
       <span>{label}</span>
-      <span className="text-[12px] opacity-60">713 KB</span>
+      <span className="text-[12px] opacity-60">723 KB</span>
     </a>
   );
 }
