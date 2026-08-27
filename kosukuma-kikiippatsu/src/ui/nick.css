@@ -138,6 +138,11 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   cursor: pointer;
+  /* タイトルの膜は pointer-events:none(後ろの月を回せるように)。
+     ここで auto に戻さないと、タップが3Dへ素通りして押せない */
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
     border-color 0.18s ease,
     background 0.18s ease,
