@@ -221,6 +221,12 @@ final class ThoughtBehavior: PetBehavior {
 
     /// 空白で折る。1語で入りきらない時はそのまま出す（欠けさせない）。
     private func wrap(_ s: String, maxPt: CGFloat, attrs: [NSAttributedString.Key: Any]) -> [String] {
+        // **本文の改行がいちばん強い。** 豆知識は「用語 → 説明」の2行で書いてあるので、
+        // ここで勝手につないでしまうと、どこまでが用語なのか読めなくなる。
+        if s.contains("\n") {
+            return s.split(separator: "\n", omittingEmptySubsequences: false)
+                .flatMap { wrap(String($0), maxPt: maxPt, attrs: attrs) }
+        }
         let words = s.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
         guard words.count > 1 else { return [s] }
         var lines: [String] = []
@@ -277,9 +283,10 @@ final class ThoughtBehavior: PetBehavior {
         nextTip = CGFloat.random(in: 720...1500)     // 手動で出したぶん、次は先送り
     }
 
-    /// 大きい枠で ひとつ出す。パソコン → ひとこと → 世界 → あそび の順で回る。
+    /// 大きい枠で ひとつ出す。
+    /// パソコン → ひとこと → 世界 → あそび → ひっくり返した話 の順で回る。
     private func speakBig(_ brain: Brain) {
-        bigTurn = (bigTurn + 1) % 4
+        bigTurn = (bigTurn + 1) % 5
         let text: String
         switch bigTurn {
         case 0:
@@ -292,9 +299,12 @@ final class ThoughtBehavior: PetBehavior {
         case 2:
             text = WorldTips.pick(avoiding: recentTips)
             brain.think(text, seconds: WorldTips.seconds, big: true)
-        default:
+        case 3:
             text = PlayTips.pick(avoiding: recentTips)
             brain.think(text, seconds: PlayTips.seconds, big: true)
+        default:
+            text = FlipTips.pick(avoiding: recentTips)
+            brain.think(text, seconds: FlipTips.seconds, big: true)
         }
         recentTips.append(text)
         if recentTips.count > 12 { recentTips.removeFirst() }

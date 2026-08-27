@@ -236,9 +236,10 @@ enum Snapshot {
         FileHandle.standardOutput.write("  fx2_pull1..4\n".data(using: .utf8)!)
 
         // 豆知識（大きい字）も焼いてみる
-        for (i, tip) in ["⌘⇧4 のあと スペースで まどだけ 撮れる",
-                         "Finderで ⌘C のあと ⌘⌥V なら 移動になる",
-                         "⌃⌘スペース で 絵文字と 記号が 出る"].enumerated() {
+        // 見本は **区分ごとに1つずつ**。書きぶり（見出し＋説明の2行）が伝わるように選ぶ。
+        for (i, tip) in ["モラベックのパラドックス\nAIに難しいのは推論ではなく、歩く・掴むといった簡単なこと",
+                         "マジックサークル\n「ここから中は別のルール」という見えない線",
+                         "Times Newer Roman\n字の横幅を数%広げただけの書体。同じ文字数で論文が長く見える"].enumerated() {
             var f = PetFrame()
             f.pixelScale = 4
             f.foot = CGPoint(x: size.width / 2, y: 34)
