@@ -42,6 +42,12 @@ export interface StateResponse {
    * 詰め方は `src/lib/style.ts` (bit0-2=skin / bit3-7=charm)。0=情報なし。
    */
   stabStylesBase64: string;
+  /**
+   * 各穴の「つけていたチャームの一覧」。Uint32Array(HOLE_COUNT)をbase64化したもの。
+   * 詰め方は `src/lib/style.ts` の packCharmSet。0=記録なし(古い刺し)で、
+   * そのときは stabStyles の数から組み立てる。
+   */
+  stabCharmsBase64: string;
   /** 新しい順・最大12件 */
   recent: StabEvent[];
   /** 直前のラウンドの勝者(roundNo-1)。初代ならnull */
@@ -65,6 +71,11 @@ export interface StabRequest {
   earthCharm?: boolean;
   /** つかまえた「空のもの」チャームのフラグ(SKY_KINDS の順)。省略時は0 */
   skyCharms?: number;
+  /**
+   * 剣につけていたチャームの一覧(CHARMS の index)。省略時は「記録なし」。
+   * 何を選んだかは数では表せないので、一覧そのものを送る。
+   */
+  charms?: number[];
   /** 左下のフィードに出す名前。省略・空なら「だれかが」のまま */
   nickname?: string;
 }
