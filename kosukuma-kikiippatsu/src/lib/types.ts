@@ -63,7 +63,7 @@ export interface StabRequest {
   fp: string;
   /** 選んだ剣の色(SWORD_COLORSのindex)。省略時はデフォルト(金) */
   color?: number;
-  /** 選んだ剣のスキン(SWORD_SKINSのindex)。省略時は0=プラスチック */
+  /** 選んだ剣のスキン(SWORD_SKINSのindex)。省略時は0=ノーマル */
   skin?: number;
   /** そのとき持っていた「刺して集めたチャーム」の数。省略時は0 */
   charm?: number;

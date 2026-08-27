@@ -34,6 +34,7 @@ import {
 } from "react";
 import {
   CHARMS,
+  MAX_EQUIPPED_CHARMS,
   charmLevelOf,
   NORMAL_CHARM_COUNT,
   type Charm,
@@ -1211,13 +1212,14 @@ export function CharmShelf() {
   const myTotal = useGameStore((s) => s.myTotal);
   const hasEarth = useGameStore((s) => s.hasEarthCharm);
   const caughtSky = useGameStore((s) => s.caughtSky);
+  const hasPoke = useGameStore((s) => s.hasPokeCharm);
   const equipped = useGameStore((s) => s.equippedCharms);
   const toggleCharm = useGameStore((s) => s.toggleCharm);
   const level = charmLevelOf(myTotal);
 
   const owned = useMemo(
-    () => ownedCharms(myTotal, hasEarth, caughtSky),
-    [myTotal, hasEarth, caughtSky]
+    () => ownedCharms(myTotal, hasEarth, caughtSky, hasPoke),
+    [myTotal, hasEarth, caughtSky, hasPoke]
   );
   // store の equippedCharms は端末に残るので、持っていないものが混じることが
   // ありうる(?charm= で見せた状態のあと、など)。表示は必ず「持っている」と交差させる
@@ -1225,7 +1227,9 @@ export function CharmShelf() {
     const has = new Set(owned);
     return new Set(equipped.filter((i) => has.has(i)));
   }, [equipped, owned]);
-  const allOn = owned.length > 0 && on.size === owned.length;
+  // 上限があるので「ぜんぶ」は "つけられるだけ つけた" の意味になる
+  const canWear = Math.min(owned.length, MAX_EQUIPPED_CHARMS);
+  const allOn = owned.length > 0 && on.size >= canWear;
 
   // 一括のつけ外し。store に一括アクションが無いので順に押すが、同時に12回
   // 鳴らすと「バチッ」と割れるので少しずつずらす。見た目も順に灯って気持ちいい
@@ -1240,8 +1244,12 @@ export function CharmShelf() {
   const setAll = (want: boolean) => {
     timers.current.forEach(clearTimeout);
     timers.current = [];
-    // つけるときは古い順(房の上から)、外すときは新しい順(房の下から)
-    const list = want ? [...owned] : [...owned].reverse();
+    // つけるときは古い順(房の上から)、外すときは新しい順(房の下から)。
+    // 上限があるので、つけるのは**新しい方から** MAX_EQUIPPED_CHARMS 個
+    // (手に入れたばかりのものが上限で締め出されるのがいちばん がっかりする)
+    const list = want
+      ? owned.slice(-MAX_EQUIPPED_CHARMS)
+      : [...owned].reverse();
     list.forEach((i, k) => {
       const run = () => {
         const s = useGameStore.getState();
@@ -1272,18 +1280,10 @@ export function CharmShelf() {
     <div className="kk-charms">
       <div className="kk-charms-head">
         <span className="kk-sec-label kk-label-charm">チャーム</span>
-        {/* 分母は「持っている数」。あつめた数は下の進捗の行が言ってくれるので、
-            ここは つけ外しの手ごたえ(いま何個ついているか)に絞る */}
+        {/* 分母は「同時につけられる数」。あつめた数は下の進捗の行が言うので、
+            ここは つけ外しの手ごたえ(あと何個つけられるか)に絞る */}
         <span className="kk-charms-count">
-          {owned.length > 0 ? (
-            <>
-              <b>{on.size}</b>/{owned.length} こ ついてる
-            </>
-          ) : (
-            <>
-              <b>0</b>/{NORMAL_CHARM_COUNT} こ
-            </>
-          )}
+          <b>{on.size}</b>/{MAX_EQUIPPED_CHARMS} こ ついてる
         </span>
         {owned.length > 0 && (
           <button
@@ -1291,7 +1291,11 @@ export function CharmShelf() {
             className="kk-charms-all"
             onClick={() => setAll(!allOn)}
           >
-            {allOn ? "ぜんぶ はずす" : "ぜんぶ つける"}
+            {allOn
+              ? "ぜんぶ はずす"
+              : owned.length > MAX_EQUIPPED_CHARMS
+                ? `${MAX_EQUIPPED_CHARMS}こ つける`
+                : "ぜんぶ つける"}
           </button>
         )}
       </div>

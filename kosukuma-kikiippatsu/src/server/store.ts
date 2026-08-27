@@ -186,6 +186,20 @@ class PostgresStore implements IGameStore {
     await this.sql`ALTER TABLE kk_stabs ADD COLUMN IF NOT EXISTS nickname VARCHAR(24)`;
     // 「どのチャームをつけていたか」の一覧(4バイト)。数では表せないので別の列に持つ
     await this.sql`ALTER TABLE kk_stabs ADD COLUMN IF NOT EXISTS charms INT`;
+    // 当てた瞬間に、その人のニックネームを winner_name へ先置きするようにした
+    // (観客にすぐ「〇〇が とばした！」と出したいため)。そのぶん
+    // 「まだ名前を刻んでいない」の目印を winner_name IS NULL では判定できなく
+    // なるので、専用の列を足す。既存の刻み済みのぶんは won_at で埋めておく
+    const claimedCol = (await this.sql`
+      SELECT data_type FROM information_schema.columns
+      WHERE table_name = 'kk_rounds' AND column_name = 'claimed_at'
+    `) as { data_type: string }[];
+    if (claimedCol.length === 0) {
+      await this.sql`ALTER TABLE kk_rounds ADD COLUMN claimed_at TIMESTAMPTZ`;
+      await this.sql`
+        UPDATE kk_rounds SET claimed_at = won_at
+        WHERE winner_name IS NOT NULL AND claimed_at IS NULL`;
+    }
     // レート制限(直近の刺し検索)用インデックス
     await this.sql`CREATE INDEX IF NOT EXISTS kk_stabs_ip_idx ON kk_stabs (ip_hash, created_at)`;
     await this.sql`CREATE INDEX IF NOT EXISTS kk_stabs_fp_idx ON kk_stabs (fp, created_at)`;
@@ -415,12 +429,16 @@ class PostgresStore implements IGameStore {
     input: StabInput,
   ): Promise<Extract<StabOutcome, { kind: "win" }> | null> {
     const token = newClaimToken();
+    // 名前を刻む前でも、観客の画面に「〇〇が とばした！」と出せるように、
+    // 刺すときに送られてきたニックネームをそのまま置いておく。
+    // 当てた本人はこのあと名前を入れ直せる(claimed_at がその目印)
     const won = (await this.sql`
       UPDATE kk_rounds
       SET won_at = now(),
           claim_token = ${token},
           winner_country = ${input.country},
-          winner_hole = ${input.holeId}
+          winner_hole = ${input.holeId},
+          winner_name = ${input.nickname}
       WHERE round_no = ${roundNo} AND won_at IS NULL
       RETURNING round_no
     `) as { round_no: number }[];
@@ -438,11 +456,11 @@ class PostgresStore implements IGameStore {
     await this.ensureSchema();
     // token一致 & 未クレームのときだけ1行更新される(条件付きUPDATEで排他)
     const rows = (await this.sql`
-      UPDATE kk_rounds SET winner_name = ${name}
+      UPDATE kk_rounds SET winner_name = ${name}, claimed_at = now()
       WHERE round_no = ${roundNo}
         AND claim_token = ${token}
         AND won_at IS NOT NULL
-        AND winner_name IS NULL
+        AND claimed_at IS NULL
       RETURNING round_no
     `) as { round_no: number }[];
     if (rows.length === 0) {
@@ -491,6 +509,8 @@ interface MemRound {
   winnerCountry: string | null;
   winnerHole: number | null;
   claimToken: string | null;
+  /** 名前を刻んだ時刻。null = まだ本人が入れていない(先置きの名前かも) */
+  claimedAt: number | null;
   stabCount: number;
 }
 
@@ -522,6 +542,7 @@ function newMemRound(roundNo: number): MemRound {
     winnerCountry: null,
     winnerHole: null,
     claimToken: null,
+    claimedAt: null,
     stabCount: 0,
   };
 }
@@ -676,6 +697,8 @@ class MemoryStore implements IGameStore {
       active.claimToken = token;
       active.winnerCountry = input.country;
       active.winnerHole = input.holeId;
+      // ニックネームを先置き(本人はこのあと入れ直せる)
+      active.winnerName = input.nickname;
       // 次の代のこすくまくんを用意
       this.data.rounds.push(newMemRound(active.roundNo + 1));
       return { kind: "win", claimToken: token, roundNo: active.roundNo };
@@ -693,10 +716,11 @@ class MemoryStore implements IGameStore {
       (x) => x.roundNo === roundNo && x.wonAt !== null && x.claimToken === token,
     );
     if (!r) return { ok: false, message: "トークンがちがうよ" };
-    if (r.winnerName !== null) {
+    if (r.claimedAt !== null) {
       return { ok: false, message: "もう名前が刻まれているよ" };
     }
     r.winnerName = name;
+    r.claimedAt = Date.now();
     return { ok: true };
   }
 

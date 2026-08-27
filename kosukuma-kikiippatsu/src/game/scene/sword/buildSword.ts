@@ -411,11 +411,12 @@ const SPARKLE_VERTEX_CHUNK = /* glsl */ `
 const SPARKLE_CHUNK = /* glsl */ `
 	{
 		// 刃を上へ流れる細い帯。pow でとがらせて「すっと通る光」にする
-		float sparkBand = sin( vSparkleY * 5.2 - uSwordTime * 1.9 + vSparkleSeed * 6.28318 );
-		float sparkGlint = pow( max( sparkBand, 0.0 ), 16.0 );
+		// 帯は細く。太いと「刃の半分が白い板」に見えて、光ではなく描画のバグに見える
+		float sparkBand = sin( vSparkleY * 11.0 - uSwordTime * 1.9 + vSparkleSeed * 6.28318 );
+		float sparkGlint = pow( max( sparkBand, 0.0 ), 22.0 );
 		// ふちほど強い(金属の反射は輪郭に出る)。まん中だけ光ると板に見える
 		float sparkRim = 1.0 - abs( dot( normalize( normal ), normalize( vViewPosition ) ) );
-		float sparkK = uSparkle * sparkGlint * ( 0.55 + 1.5 * sparkRim );
+		float sparkK = uSparkle * sparkGlint * ( 0.35 + 0.8 * sparkRim );
 		totalEmissiveRadiance += mix( vec3( 1.0 ), diffuseColor.rgb, 0.3 ) * sparkK;
 	}
 `;

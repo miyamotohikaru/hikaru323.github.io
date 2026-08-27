@@ -166,7 +166,7 @@ export default function Swords() {
     [playingStabs]
   );
 
-  // この代に実在するスキンだけメッシュを出す(ふだんは プラスチック1本で済む)
+  // この代に実在するスキンだけメッシュを出す(ふだんは ノーマル1本で済む)
   const presentSkins = useMemo(() => {
     let bits = 0;
     for (let id = 0; id < HOLE_COUNT; id++) {
