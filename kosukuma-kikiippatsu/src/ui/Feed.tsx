@@ -77,9 +77,10 @@ export default function Feed() {
           else if (mine) cls.push("feed-mine");
           if (fresh || falling) cls.push("feed-fresh");
 
-          // 名前があればそれを主語にする。自分の行だけは「きみ」のまま
-          // (自分の名前が並ぶより、自分だと分かる方が読みやすい)
-          const who = mine ? "きみ" : e.name || null;
+          // 名前があれば、自分の行でもそれを主語にする。
+          // 自分だけ「きみ」にしていたら、名前が残っているのかどうかが
+          // 分からなかった。どれが自分かは行の色で分かる
+          const who = e.name || (mine ? "きみ" : null);
           const text = e.win
             ? "あたりを ひいた！！"
             : falling
