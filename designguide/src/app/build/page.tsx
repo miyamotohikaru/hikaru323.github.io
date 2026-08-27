@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import BreakText from "@/components/BreakText";
 import Footer from "@/components/Footer";
 import BuildForm from "@/components/BuildForm";
 import PlateImage from "@/components/PlateImage";
@@ -50,9 +51,7 @@ export default async function BuildPage({
           <p className="label">Prompt Builder</p>
           <h1 className="sec__h">選ぶだけで、指示書になる。</h1>
           <p className="sec__lead">
-            様式と主題を選べば、比率・色・技法・禁止事項まで書き出した指示書ができます。
-            <br />
-            そのままコピーして、ChatGPT や Gemini、Midjourney に貼ってください。
+            <BreakText text="様式と主題を選べば、◆比率・色・技法・禁止事項まで◆書き出した指示書ができます。◇そのままコピーして、◆ChatGPT や Gemini、◆Midjourney に貼ってください。" />
           </p>
         </div>
 

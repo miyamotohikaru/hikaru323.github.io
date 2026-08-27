@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BreakText from "@/components/BreakText";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PlateCard from "@/components/PlateCard";
@@ -38,14 +39,10 @@ export default function Home() {
 
           <div className="hero__lead">
             <p>
-              バウハウスから、ピクセルアート、リゾグラフ、Y2K まで。
-              <br />
-              世界のデザインスタイル80種を、それぞれ一枚の図版にしました。
+              <BreakText text="バウハウスから、◆ピクセルアート、リゾグラフ、Y2K まで。◇世界のデザインスタイル80種を、◆それぞれ一枚の図版にしました。" />
             </p>
             <p>
-              見て、選んで、そのまま画像生成のプロンプトにできます。
-              <br />
-              「なんとなくおしゃれ」を、指定できる言葉に変えるための図鑑です。
+              <BreakText text="見て、選んで、◆そのまま画像生成のプロンプトにできます。◇「なんとなくおしゃれ」を、◆指定できる言葉に変えるための図鑑です。" />
             </p>
           </div>
 
@@ -99,9 +96,7 @@ export default function Home() {
               一目で、見比べる。
             </h2>
             <p className="sec__lead">
-              1スタイルにつき1枚。すべて、そのスタイルの作図規則から描き起こした固有の図版です。
-              <br />
-              気になった一枚をひらくと、成り立ちと、そのまま使えるプロンプトが出ます。
+              <BreakText text="1スタイルにつき1枚。◆すべて、そのスタイルの作図規則から◆描き起こした固有の図版です。◇気になった一枚をひらくと、◆成り立ちと、そのまま使える◆プロンプトが出ます。" />
             </p>
           </div>
 

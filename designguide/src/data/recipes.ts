@@ -135,7 +135,7 @@ export const RECIPES: Recipe[] = [
     slug: "four-panel-study",
     no: "R-03",
     title: "4分割スタイル探究",
-    lead: "1枚の写真を、4つの技法で縦に並べる。原画→線画淡彩→立体折り紙→ミニチュア紙工芸。",
+    lead: "1枚の写真を、4つの技法で縦に並べる。◇原画→線画淡彩→◆立体折り紙→ミニチュア紙工芸。",
     suits: "乗り物、建物、器物、風景。形がはっきりしているもの。",
     styles: ["precisionism", "collage", "wabi-sabi"],
     body: `アップロードした写真を、3:4の縦型4分割ポスターに制作してください。
@@ -293,7 +293,7 @@ export const RECIPES: Recipe[] = [
     slug: "miniature-diorama",
     no: "R-06",
     title: "ミニチュア紙工芸ジオラマ",
-    lead: "上は写真のまま、下はそれを紙で作り直した小さな模型。マクロ撮影の触感で。",
+    lead: "上は写真のまま、◆下はそれを紙で作り直した小さな模型。◇マクロ撮影の触感で。",
     suits: "町並み、山、海岸線、建築。奥行きのあるもの。",
     styles: ["wabi-sabi", "scandinavian", "japandi"],
     body: `アップロードした写真を、1枚の独立したプレミアムデザインポスターに作り変えてください。
@@ -352,7 +352,7 @@ export const RECIPES: Recipe[] = [
     slug: "blueprint-study",
     no: "R-07",
     title: "透明構造ブループリント",
-    lead: "写真の中の物を、線だけで解剖する。設計図と、その余白に書き込まれた手稿として。",
+    lead: "写真の中の物を、線だけで解剖する。◇設計図と、◆その余白に書き込まれた手稿として。",
     suits: "機械、家具、楽器、建築、自転車。構造が見えるもの。",
     styles: ["precisionism", "isometric", "cassette-futurism"],
     body: `アップロードした写真を、1枚の「透明構造研究手稿」に作り変えてください。

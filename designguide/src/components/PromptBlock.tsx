@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Copy from "./Copy";
+import BreakText from "./BreakText";
 
 /**
  * プロンプトの表示。日本語の仕様書と、英語の1文を切り替える。
@@ -31,7 +32,7 @@ export default function PromptBlock({
             className="pb__tab" data-on={tab === "ja" || undefined}
             onClick={() => setTab("ja")}
           >
-            日本語の仕様書
+            <span>日本語の仕様書</span>
             <em>ChatGPT / Gemini / Claude</em>
           </button>
           <button
@@ -39,7 +40,7 @@ export default function PromptBlock({
             className="pb__tab" data-on={tab === "en" || undefined}
             onClick={() => setTab("en")}
           >
-            English
+            <span>English</span>
             <em>Midjourney / SD / Flux</em>
           </button>
         </div>
@@ -49,9 +50,13 @@ export default function PromptBlock({
       <pre className="pb__body" tabIndex={0}>{body}</pre>
 
       <p className="pb__foot">
-        {tab === "ja"
-          ? "そのまま貼って送るだけ。主題の行だけ書き換えれば、別のものが同じ様式で出ます。"
-          : "1行目が本文、— Negative: 以降が除外語です。Midjourney は --no のあとに続けてください。"}
+        <BreakText
+          text={
+            tab === "ja"
+              ? "そのまま貼って送るだけ。◇主題の行だけ書き換えれば、◆別のものが同じ様式で出ます。"
+              : "1行目が本文、◆— Negative: 以降が除外語です。◇Midjourney は --no のあとに◆続けてください。"
+          }
+        />
       </p>
     </div>
   );

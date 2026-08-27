@@ -16,11 +16,11 @@ import type { DesignStyle } from "@/data/types";
 
 /** 判型。比率は必ず本文に書き出す。モデルは比率を言われないと勝手に正方形にする */
 export const FORMATS = {
-  poster: { ja: "ポスター（縦）", ratio: "3:4", en: "vertical poster", note: "縦位置。天地に余白を残す" },
-  square: { ja: "SNS（正方形）", ratio: "1:1", en: "square social post", note: "正方形。四隅まで意図して埋める" },
-  story: { ja: "ストーリー（縦長）", ratio: "9:16", en: "vertical story", note: "縦長。中央に重心を置く" },
-  wide: { ja: "ヘッダー・壁紙（横長）", ratio: "16:9", en: "wide banner", note: "横長。左右に視線を流す" },
-  card: { ja: "ポストカード（横）", ratio: "4:3", en: "horizontal postcard", note: "横位置。地平を1本通す" },
+  poster: { ja: "ポスター", ratio: "3:4", en: "vertical poster", note: "縦位置。天地に余白を残す" },
+  square: { ja: "SNS 正方形", ratio: "1:1", en: "square social post", note: "正方形。四隅まで意図して埋める" },
+  story: { ja: "ストーリー", ratio: "9:16", en: "vertical story", note: "縦長。中央に重心を置く" },
+  wide: { ja: "ヘッダー・壁紙", ratio: "16:9", en: "wide banner", note: "横長。左右に視線を流す" },
+  card: { ja: "ポストカード", ratio: "4:3", en: "horizontal postcard", note: "横位置。地平を1本通す" },
   cover: { ja: "書影・ジャケット", ratio: "2:3", en: "book or album cover", note: "縦。題字の場所を先に決める" },
 } as const;
 
