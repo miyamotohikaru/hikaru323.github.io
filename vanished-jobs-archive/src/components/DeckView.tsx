@@ -7,7 +7,7 @@ import TiltCard from "@/components/TiltCard";
 import { Job } from "@/data/jobs";
 import { useLang } from "@/lib/lang";
 import { readDeckAt, saveDeckAt, saveReturn } from "@/lib/returnNav";
-import { primeTick, spinSound, tapSound, tick } from "@/lib/tick";
+import { primeTick, tapSound, tick } from "@/lib/tick";
 
 /**
  * デッキ表示。151枚を「束」として見せ、指で送る。
@@ -795,9 +795,6 @@ export default function DeckView({
       const from = posRef.current;
       const d = Math.abs(target - from);
       const dur = Math.min(300 + 55 * d, 950);
-      // 何枚も送るときだけ、下に回転音を敷く。
-      // 1〜2枚で鳴らすと、ただ隣へ動かしただけで大袈裟になる
-      if (d >= 3) spinSound(d, dur);
       const t0 = performance.now();
       const tick = (now: number) => {
         const t = Math.min((now - t0) / dur, 1);
