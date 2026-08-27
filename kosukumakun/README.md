@@ -3,6 +3,12 @@
 社内の同僚に「こすくまくん（macOS常駐アプリ）」を配るための1ページのサイト。
 Next.js 16 (App Router) + React 19 + Tailwind CSS 4 + TypeScript。
 
+**人に渡すURL: https://desktopkosukumakun.kosukuma.com**
+
+Cloudflare Worker 越しの独自ドメイン。view-source の1行目に こす.くま宣言文が出る。
+`kosukumakun.vercel.app` も生きているが、そちらは宣言文が出ない。
+仕組みと張り替え手順は `~/99_cloudflare-proxy/README.md`。
+
 ```
 kosukumakun/
 ├── mac/      … アプリ本体（Swift）  ← このサイトからは触らない
