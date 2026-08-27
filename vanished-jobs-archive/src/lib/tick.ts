@@ -245,16 +245,8 @@ export function spinSound(cards: number, durMs: number) {
   osc.start(t);
   osc.stop(t + dur + 0.02);
 
-  // 1オクターブ上を薄く重ねる。上でちらつく成分がないと頭が立たない
-  const hi = ctx.createOscillator();
-  hi.type = "square";
-  hi.detune.value = 8;
-  sweep(hi.frequency, 2);
-  const hg = ctx.createGain();
-  hg.gain.value = 0.16;
-  hi.connect(hg).connect(lp);
-  hi.start(t);
-  hi.stop(t + dur + 0.02);
+  // ここに1オクターブ上の矩形波を薄く重ねていた（頭を立たせるため）が、
+  // 共鳴の山のすぐ上に乗るぶん強く持ち上がり、高く鳴きすぎるので外した
 
   // ここには「回っている空気」としてノイズの層を敷いていたが、
   // カチカチの裏で「しゅんしゅん」と鳴るだけだったので外した。
