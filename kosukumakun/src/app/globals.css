@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* こすくまくん 説明サイト（案2）。
+   考え方: **ページをこすくまくんの色だけで作る。**
+   クリームの紙に黒のインキ。灰色のカードも、別のアクセント色も置かない。
+   余白は案1と同じだけ広く取り、枠のかわりに「間」と細い罫で区切る。 */
+
+:root {
+  --paper: #faf8ea;      /* 体の色より少しだけ淡い紙 */
+  --ink: #14120f;
+  --muted: #6f6959;
+  --line: #ddd7c2;
+  --cream: #fafad3;      /* こすくまくん本体の色 */
+  --soft: #f2efdc;       /* 図の面 */
+  --accent: #14120f;     /* 差し色は置かない。黒で通す */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #16150f;
+    --ink: #f3efdd;
+    --muted: #9d968150;
+    --muted: #9d9681;
+    --line: #33301f;
+    --soft: #211f16;
+  }
+}
+
+html, body { background: var(--paper); color: var(--ink); }
+
+body {
+  font-family: "Hiragino Sans", "Yu Gothic", "Helvetica Neue", system-ui, sans-serif;
+  font-feature-settings: "palt" 1;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.8;
+}
+
+.hair { border-top: 1px solid var(--line); }
+
+/* セクションの見出しに添える通し番号 */
+.sec-no {
+  font-size: 11px;
+  letter-spacing: .3em;
+  color: var(--muted);
+}
+
+/* 手順の大きな数字。塗らずに輪郭だけにして、図の邪魔をしない */
+.bignum {
+  font-size: 62px;
+  line-height: .8;
+  font-weight: 700;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink);
+  letter-spacing: -.02em;
+}
+
+@keyframes breathe { 0%,100% { transform: scaleY(1) } 50% { transform: scaleY(1.02) } }
+.breathe { animation: breathe 4.2s ease-in-out infinite; transform-origin: 50% 100%; }
+@media (prefers-reduced-motion: reduce) { .breathe { animation: none } }
