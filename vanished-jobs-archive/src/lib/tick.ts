@@ -48,7 +48,7 @@ export function primeTick() {
     bus.gain.value = 0.5;
     bus.connect(ctx.destination);
     // 使い回すホワイトノイズ。
-    // 短く取ると回転音の風の層で頭に戻る周期が唸りになるので、1.5秒ぶん持つ。
+    // 短く取ると、めくる音の「シュッ」で頭に戻る周期が唸りになるので長めに持つ。
     // カチッのほうは頭の数十ミリ秒しか使わないので、長くても影響はない
     const len = Math.floor(ctx.sampleRate * 1.5);
     noise = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -191,7 +191,7 @@ let duckUntil = 0;
 export function spinSound(cards: number, durMs: number) {
   if (!enabled) return;
   if (ctx && ctx.state === "suspended") void ctx.resume();
-  if (!ctx || !bus || !noise) return;
+  if (!ctx || !bus) return;
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
   // 前の回転がまだ鳴っているうちは足さない（唸って濁る）
   if (now < spinUntil) return;
@@ -253,18 +253,7 @@ export function spinSound(cards: number, durMs: number) {
   hi.start(t);
   hi.stop(t + dur + 0.02);
 
-  // 回っている空気。これがないと電子音だけになって、物が回っている感じが出ない
-  const src = ctx.createBufferSource();
-  src.buffer = noise;
-  const hp = ctx.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.setValueAtTime(1200, t);
-  hp.frequency.exponentialRampToValueAtTime(500, t + dur);
-  const ng = ctx.createGain();
-  ng.gain.setValueAtTime(0.0001, t);
-  ng.gain.exponentialRampToValueAtTime(peak * 0.35, t + 0.08);
-  ng.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.9);
-  src.connect(hp).connect(ng).connect(bus);
-  src.start(t);
-  src.stop(t + dur + 0.02);
+  // ここには「回っている空気」としてノイズの層を敷いていたが、
+  // カチカチの裏で「しゅんしゅん」と鳴るだけだったので外した。
+  // 鳴りは共鳴の山だけで足りる
 }
