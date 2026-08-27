@@ -10,6 +10,7 @@ import SpeechDirector from "@/game/speech/SpeechDirector";
 import TitleScreen from "./TitleScreen";
 import Hud from "./Hud";
 import WaitDeck from "./WaitDeck";
+import SkyPop from "./SkyPop";
 import NameModal from "./NameModal";
 import Toast from "./Toast";
 
@@ -34,6 +35,7 @@ export default function Game() {
       <SpeechBubble />
       <Hud />
       <WaitDeck />
+      <SkyPop />
       <TitleScreen />
       <NameModal />
       <Toast />

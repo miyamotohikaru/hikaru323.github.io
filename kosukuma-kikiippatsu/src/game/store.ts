@@ -176,6 +176,13 @@ interface GameState {
   skyCatches: number;
 
   /**
+   * つかまえた直後に、指のところへ出す小さな数字。
+   * 「あと何回で開くか」を教えるためだけの、消えもの。
+   * チャームが開いた回はファンファーレに任せるので null。
+   */
+  skyPop: { id: number; text: string } | null;
+
+  /**
    * 開いた「空のチャーム」。SKY_KINDS の順に立てたビット。
    * **skyCatches から導くもので、単独では増やさない。**
    * 刺し本数では絶対に増えない。
@@ -798,6 +805,7 @@ export const useGameStore = create<GameState>((set, get) => {
     ],
     earthBoomAt: null,
     skyCatches: initialSkyCatches,
+    skyPop: null,
     caughtSky: initialCaughtSky,
     nickname: (LS.get("kk-nick") || "").slice(0, NAME_MAX_LEN) || null,
     speech: null,
@@ -1269,7 +1277,21 @@ export const useGameStore = create<GameState>((set, get) => {
       const after = skyCharmLevelOf(catches);
       LS.set("kk-sky-n", String(catches));
       set({ skyCatches: catches, caughtSky: skyMask(catches) });
-      if (after === before) return; // まだ届いていない。つかまえた手ごたえだけ
+
+      if (after === before) {
+        // まだ届いていない。あと何回かを、その場で数字にして返す
+        const need = SKY_CATCH_NEED[after];
+        set({
+          skyPop: {
+            id: Date.now(),
+            text:
+              need === undefined
+                ? `${catches}こめ`
+                : `あと ${need - catches}`,
+          },
+        });
+        return;
+      }
 
       // しきい値に届いた。開いたチャームは、そのままつけた状態にしておく
       const ci = SKY_CHARM_INDEX[after - 1];
