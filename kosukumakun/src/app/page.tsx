@@ -32,8 +32,8 @@ const TIP_KINDS = [
 const STEPS = [
   { d: StepZip,     n: "1", t: "ZIPをダウンロード",       b: "下のボタンから。1MBもありません。" },
   { d: StepApps,    n: "2", t: "アプリケーションに入れる", b: "解凍して出てきた「こすくまくん」を移動します。" },
-  { d: StepBlocked, n: "3", t: "1回目は開けません",       b: "「開けません」と出ます。署名がまだ無いだけで、壊れていません。" },
-  { d: StepAllow,   n: "4", t: "システム設定で許可",       b: "プライバシーとセキュリティ →「このまま開く」を押します。" },
+  { d: StepBlocked, n: "3", t: "1回目は開けません",       b: "「開けません」と出ます。署名がまだ無いだけで、壊れていません。閉じて次へ。" },
+  { d: StepAllow,   n: "4", t: "システム設定で許可",       b: "プライバシーとセキュリティを開き、いちばん下までスクロール。「セキュリティ」の中に「このまま開く」が出ます。" },
   { d: StepMenubar, n: "5", t: "もう一度ひらく",           b: "メニューバーに出たら成功。次からは ふつうに開きます。" },
 ];
 
@@ -176,6 +176,11 @@ export default function Page() {
         <h2 className="mt-3 text-[30px] font-bold tracking-tight">入れかた</h2>
         <p className="mt-2 max-w-[460px] text-[14px]" style={{ color: "var(--muted)" }}>
           はじめの1回だけ ひと手間かかります。2回目からは ふつうに開きます。
+        </p>
+
+        <p className="mt-4 max-w-[520px] text-[13.5px]" style={{ color: "var(--muted)" }}>
+          4 で「このまま開く」が見当たらないときは、<b>直前にブロックされたアプリしか出ない</b>ためです。
+          もう一度こすくまくんをダブルクリックして「開けません」を閉じてから、設定を開き直してください。
         </p>
 
         <ol className="mt-12 space-y-12">
