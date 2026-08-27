@@ -69,8 +69,11 @@ export default function TitleScreen() {
           <br />
           たすけて…いや、飛ばして！
         </p>
-        {/* 名前は任意。ここで入力欄を出すと3Dのこすくまくんに字が重なるので、
-            チップだけ置いて、押した人にだけモーダルを出す */}
+      </div>
+      <div className="title-bottom">
+        {/* 名前は任意。コピーの下に置くとこすくまくんの顔に重なるので、
+            月の無地なところ = 「はじめる」のすぐ上に置く。
+            入力欄そのものは出さず、押した人にだけモーダルを開く */}
         <button
           type="button"
           className={shownNick ? "nick-chip is-set" : "nick-chip"}
@@ -78,8 +81,6 @@ export default function TitleScreen() {
         >
           {shownNick ? `なまえ: ${shownNick}` : "なまえを つける（にんい）"}
         </button>
-      </div>
-      <div className="title-bottom">
         <button
           type="button"
           className="btn btn-start"

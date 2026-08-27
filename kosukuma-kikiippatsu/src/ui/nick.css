@@ -87,7 +87,8 @@
   margin-bottom: 16px;
 }
 
-.nick-in-modal .nick-input {
+.nick-in-modal .nick-input,
+.nick-in-drawer .nick-input {
   border-color: rgba(43, 38, 32, 0.22);
   background: rgba(255, 255, 255, 0.72);
   -webkit-backdrop-filter: none;
@@ -96,49 +97,71 @@
   color: #2b2620;
 }
 
-.nick-in-modal .nick-input::placeholder {
+.nick-in-modal .nick-input::placeholder,
+.nick-in-drawer .nick-input::placeholder {
   color: rgba(43, 38, 32, 0.34);
 }
 
-.nick-in-modal .nick-input:focus {
+.nick-in-modal .nick-input:focus,
+.nick-in-drawer .nick-input:focus {
   border-color: rgba(216, 160, 0, 0.9);
   background: #fff;
 }
 
-.nick-in-modal .nick-preview {
+/* 地がクリーム色のところで金文字に暗い影を落とすと、
+   文字のまわりに黒いにじみが出て「ぼやけて」見える。影は消す */
+.nick-in-modal .nick-preview,
+.nick-in-drawer .nick-preview {
   color: #a97d00;
   text-shadow: none;
 }
 
-/* タイトルに置く小さなチップ。入力欄そのものは置かない */
+/* タイトルに置くチップ。入力欄そのものは置かない(後ろのこすくまくんに
+   文字が重なって読めなくなるため)。
+   ただの飾りに見えると誰も押さないので、金のふちと ✎ で
+   「ここは押して入れるところ」だと分かる強さにしてある */
 .nick-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 18px;
-  padding: 7px 16px;
+  gap: 7px;
+  margin-bottom: 16px;
+  padding: 9px 20px;
   border-radius: 999px;
-  border: 1.5px solid rgba(255, 255, 255, 0.28);
-  background: rgba(8, 10, 20, 0.7);
+  border: 1.5px solid rgba(245, 196, 0, 0.55);
+  background: rgba(8, 10, 20, 0.78);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  color: #fff;
   font: inherit;
-  font-size: 12.5px;
+  font-size: 13.5px;
+  font-weight: 700;
   letter-spacing: 0.03em;
   cursor: pointer;
   transition:
     border-color 0.18s ease,
-    background 0.18s ease;
+    background 0.18s ease,
+    transform 0.12s ease;
+}
+
+.nick-chip:active {
+  transform: translateY(1px);
+}
+
+.nick-chip::before {
+  content: "✎";
+  font-size: 14px;
+  color: #f5c400;
 }
 
 .nick-chip:hover,
 .nick-chip:focus-visible {
-  border-color: rgba(245, 196, 0, 0.7);
-  background: rgba(8, 10, 20, 0.86);
+  border-color: rgba(245, 196, 0, 0.95);
+  background: rgba(8, 10, 20, 0.9);
 }
 
+/* 名前が入っているときは、押せば直せることが分かればいい */
 .nick-chip.is-set {
-  border-color: rgba(245, 196, 0, 0.55);
+  border-color: rgba(245, 196, 0, 0.85);
   color: #f5c400;
 }
