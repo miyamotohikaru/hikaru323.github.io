@@ -69,7 +69,10 @@ export function tick() {
 
   // 速く回しているほど短く・小さく。ゆっくりのときは輪郭のある「コッ」
   const slow = Math.min(gap / 220, 1);
-  const peak = 0.035 + 0.055 * slow;
+  // 回転音が鳴っているあいだだけ、当たりの音を少し引く。
+  // 同じ大きさのまま重ねると、カチカチが前に出すぎて回転音が埋もれる
+  const duck = now < duckUntil ? 0.8 : 1;
+  const peak = (0.035 + 0.055 * slow) * duck;
   const decay = 0.016 + 0.022 * slow;
 
   if (ctx && ctx.state === "suspended") void ctx.resume();
@@ -170,12 +173,17 @@ export function tapSound() {
 
 /** 回転音が鳴り終わるまでの目安。重ねて鳴らすと濁るので見張る */
 let spinUntil = 0;
+/** 回転音が鳴っているあいだ。この間はカチカチを少し引く */
+let duckUntil = 0;
 
 /**
  * 思いきり払って何枚も送るときの「キュイーン」。
  * パチンコの回転のように、弾いた瞬間に一気に上がってから、
- * 束が止まるまでゆっくり落ちる。カチカチの下に薄く敷くだけで、
- * 主役はあくまで1枚ごとの当たりの音。
+ * 束が止まるまでゆっくり落ちる。
+ *
+ * 鳴りの正体は「共鳴の山」で、のこぎり波そのものではない。
+ * ローパスの Q を立てて音程の少し上を並走させると、あの金属的な鳴りになる。
+ * （帯域通過フィルタで同じことをすると痩せて、カチカチに埋もれてしまう）
  *
  * @param cards  送る枚数
  * @param durMs  束が止まるまでの時間。落ちきる時刻をこれに合わせる
@@ -188,46 +196,62 @@ export function spinSound(cards: number, durMs: number) {
   // 前の回転がまだ鳴っているうちは足さない（唸って濁る）
   if (now < spinUntil) return;
 
-  const dur = Math.min(Math.max(durMs / 1000, 0.28), 1.1);
+  const dur = Math.min(Math.max(durMs / 1000, 0.3), 1.1);
   spinUntil = now + dur * 700;
+  duckUntil = now + dur * 1000;
   const t = ctx.currentTime;
   const n = Math.min(cards, 40);
-  /** 勢いがあるほど高く回る。3枚で約500、40枚で約1460 */
-  const top = 420 + n * 26;
-  const end = 190;
-  /** 上がりきるまで。ここが長いと「キュイ」の立ち上がりが鈍る */
-  const rise = 0.11;
+  /** 勢いがあるほど高く回る。3枚で約660、40枚で約1920 */
+  const top = 560 + n * 34;
+  const end = 210;
+  /** 上がりきるまで。ここが長いと「キュイ」の頭が立たない */
+  const rise = 0.09;
+
+  /** 発振器も共鳴の山も、同じ道すじを倍率だけ変えて通る */
+  const sweep = (p: AudioParam, mul: number) => {
+    p.setValueAtTime(240 * mul, t);
+    p.exponentialRampToValueAtTime(top * mul, t + rise);
+    p.exponentialRampToValueAtTime(end * mul, t + dur);
+  };
+
+  const g = ctx.createGain();
+  /**
+   * カチカチ（山 0.019）より前に出す大きさ。ここを下げると埋もれてしまい、
+   * 「カチカチが速くなっただけ」に聞こえる。前の作りはここで失敗していた
+   */
+  const peak = 0.05 + 0.03 * Math.min(n / 20, 1);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + 0.05);
+  g.gain.setValueAtTime(peak, t + dur * 0.5);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  g.connect(bus);
+
+  // 鳴りの芯。音程の2倍あたりを Q を立てて追わせる
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.Q.value = 12;
+  sweep(lp.frequency, 2.1);
+  lp.connect(g);
 
   const osc = ctx.createOscillator();
   osc.type = "sawtooth";
-  osc.frequency.setValueAtTime(200, t);
-  osc.frequency.exponentialRampToValueAtTime(top, t + rise);
-  osc.frequency.exponentialRampToValueAtTime(end, t + dur);
-
-  // のこぎり波は生のままだと耳に刺さる。
-  // 共鳴の山を音程に少し遅れて追わせると、あの「キュイーン」の芯になる
-  const bp = ctx.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.Q.value = 5.5;
-  bp.frequency.setValueAtTime(400, t);
-  bp.frequency.exponentialRampToValueAtTime(top * 1.6, t + rise * 1.4);
-  bp.frequency.exponentialRampToValueAtTime(end * 1.6, t + dur);
-
-  const lp = ctx.createBiquadFilter();
-  lp.type = "lowpass";
-  lp.frequency.value = 3600;
-
-  const g = ctx.createGain();
-  /** カチッ(0.035〜0.09)より下に置く。回転は下敷きなので張り合わせない */
-  const peak = 0.028 + 0.02 * Math.min(n / 20, 1);
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(peak, t + 0.06);
-  g.gain.setValueAtTime(peak, t + dur * 0.45);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-
-  osc.connect(bp).connect(lp).connect(g).connect(bus);
+  sweep(osc.frequency, 1);
+  const og = ctx.createGain();
+  og.gain.value = 0.65;
+  osc.connect(og).connect(lp);
   osc.start(t);
   osc.stop(t + dur + 0.02);
+
+  // 1オクターブ上を薄く重ねる。上でちらつく成分がないと頭が立たない
+  const hi = ctx.createOscillator();
+  hi.type = "square";
+  hi.detune.value = 8;
+  sweep(hi.frequency, 2);
+  const hg = ctx.createGain();
+  hg.gain.value = 0.16;
+  hi.connect(hg).connect(lp);
+  hi.start(t);
+  hi.stop(t + dur + 0.02);
 
   // 回っている空気。これがないと電子音だけになって、物が回っている感じが出ない
   const src = ctx.createBufferSource();
@@ -238,7 +262,7 @@ export function spinSound(cards: number, durMs: number) {
   hp.frequency.exponentialRampToValueAtTime(500, t + dur);
   const ng = ctx.createGain();
   ng.gain.setValueAtTime(0.0001, t);
-  ng.gain.exponentialRampToValueAtTime(peak * 0.5, t + 0.08);
+  ng.gain.exponentialRampToValueAtTime(peak * 0.35, t + 0.08);
   ng.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.9);
   src.connect(hp).connect(ng).connect(bus);
   src.start(t);
