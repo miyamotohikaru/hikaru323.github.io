@@ -53,8 +53,8 @@ export default function PromptBlock({
         <BreakText
           text={
             tab === "ja"
-              ? "そのまま貼って送るだけ。◇主題の行だけ書き換えれば、◆別のものが同じ様式で出ます。"
-              : "1行目が本文、◆— Negative: 以降が除外語です。◇Midjourney は --no のあとに◆続けてください。"
+              ? "そのまま貼って送るだけ。主題の行だけ書き換えれば、別のものが同じ様式で出ます。"
+              : "1行目が本文、— Negative: 以降が除外語です。Midjourney は --no のあとに続けてください。"
           }
         />
       </p>

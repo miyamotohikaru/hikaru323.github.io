@@ -776,10 +776,42 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   line-height: 1.8;
 }
 
-/* 和文の明示改行。句点で折った1行を block にする ------------------------- */
-.jp-l { display: block; }
-/* 折り返しが起きても、次行が字下げされて見えないようにする */
-.jp-l + .jp-l { margin-top: 0; }
+/* =========================================================================
+   和文の本文の組み方
+   -------------------------------------------------------------------------
+   行を最後まで埋めて、左右の端を揃える。本・新聞・多くのWebサイトと同じ組み。
+   以前は句読点や助詞で機械的に折っていたが、行末が7字・17字・12字…と
+   ばらつき、欄354pxに対して最大175pxの凸凹になって読みにくかった。
+
+   ・text-align: justify … 端を揃える。和文は字幅が一定なので素直に効く
+   ・line-break: strict  … 厳格な禁則。、。」ゃゅょ を行頭に置かない
+   ・hanging-punctuation … 行末の句読点を版面の外へ逃がす（Safariが対応）
+   すべて Safari でも効く。Chrome専用の word-break: auto-phrase は使わない。
+   ========================================================================= */
+.jt,
+.hero__lead p,
+.sec__lead,
+.sty__desc,
+.sty__list li,
+.rc__lead,
+.rc__facts > div > p:not(.label),
+.rcp__how li,
+.rcp__note,
+.fld__note,
+.pb__foot,
+.sa-foot__note,
+.sty__fig figcaption,
+.nf__p {
+  text-align: justify;
+  text-justify: inter-character;
+  line-break: strict;
+  word-break: normal;
+  overflow-wrap: break-word;
+  hanging-punctuation: allow-end;
+}
+
+/* 最終行だけが短いのは組版として正しい。段落の頭は下げない */
+p { text-indent: 0; }
 
 /* =========================================================================
    プロンプトを組む
@@ -932,13 +964,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .fld__lab select { appearance: none; cursor: pointer; }
 
-/* 和文の見出しを、語の途中で折らせない ---------------------------------- */
-.sec__h, .hero__lead, .sec__lead, .sty__tag, .sty__desc, .fld__note, .sa-foot__note {
-  /* Chrome は文節で折ってくれる。効かない環境では下の balance が受ける */
-  word-break: auto-phrase;
-  text-wrap: pretty;
-}
+/* 見出しは行数を釣り合わせる。balance はどのブラウザでも効く -------------- */
 .sec__h { text-wrap: balance; max-width: 18em; }
+.sty__tag, .rc__title, .nf__h { text-wrap: balance; }
 
 /* =========================================================================
    レシピ
@@ -1224,12 +1252,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .link { white-space: nowrap; }
 .pb__tab > span:first-child { white-space: nowrap; }
 
-/* 様式名は語の途中で割らない。「スカンジナビアン・モダ／ン」を防ぐ ------- */
-.card__ja, .sty__ja, .rc__title, .fld__chip b {
-  word-break: auto-phrase;   /* Chrome は文節で折る */
-  overflow-wrap: anywhere;   /* 折れないほど長い名前は最後の手段で折る */
-  text-wrap: pretty;
-}
+/* 様式名。長いカタカナが溢れないようにだけしておく ----------------------- */
+.card__ja, .sty__ja, .fld__chip b { overflow-wrap: anywhere; }
 /* 「近いもの」の枠が狭すぎて名前が割れていた。1列あたりを広げる */
 .sty__relgrid { grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); }
 
@@ -1240,3 +1264,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .rc__title { font-size: clamp(22px, 6.4vw, 30px); }
   .rcp__how li b { display: inline-block; }
 }
+
+/* 見出しを文で折る（perSentence）。本文には使わない ---------------------- */
+.jp-s { display: block; }
