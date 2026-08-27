@@ -375,6 +375,8 @@ export default function ViewScreen({
   // シェアメニューを開いた時点で先読み生成したシェアURLをキャッシュ（about:blankの待ち時間を消すため）
   const sharePrepRef = useRef<{ url: string; creatureId: string } | null>(null);
   const [preparingShare, setPreparingShare] = useState(false);
+  // 写真のデコードに失敗したとき（HEICなど、ブラウザが読めない形式）に出すエラー
+  const [loadError, setLoadError] = useState(false);
 
   const creature = creatures.find((c) => c.id === selectedId)!;
   const catColor = CATEGORY_COLORS[creature.cat];
@@ -444,12 +446,15 @@ export default function ViewScreen({
       return blob;
     });
     normalizedBlobPromiseRef.current = p;
+    // デコード失敗（HEICなど）でも未処理のPromise例外にしない。表示側のエラーは下の読み込みeffectが出す。
+    p.catch(() => {});
     return () => { cancelled = true; };
   }, [mediaFile]);
 
   // Load image and initial render
   useEffect(() => {
     let cancelled = false;
+    setLoadError(false);
 
     (async () => {
       try {
@@ -478,6 +483,11 @@ export default function ViewScreen({
         handleCreatureChange(selectedId, img, w, h);
       } catch (e) {
         console.error("[load] Failed to load image:", e);
+        if (cancelled) return;
+        // 真っ白のまま止まって見えないよう、画面にエラーを出す
+        setLoadError(true);
+        setProcessing(false);
+        setExpanding(false);
       }
     })();
 
@@ -900,8 +910,44 @@ export default function ViewScreen({
           </div>
         </div>
 
+        {/* デコード失敗（HEICなど）のエラー表示。真っ白のまま止まって見えるのを防ぐ。 */}
+        {loadError && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center"
+            style={{ background: "rgba(255,249,242,0.97)", zIndex: 25, borderRadius: 18, padding: 24 }}
+          >
+            <div style={{ fontSize: 40, lineHeight: 1 }}>😵</div>
+            <p
+              className="mt-4"
+              style={{ fontWeight: 900, fontSize: 16, color: "#2D2D2D", textAlign: "center" }}
+            >
+              この形式の写真は変換できません
+            </p>
+            <p
+              className="mt-3"
+              style={{ fontSize: 13, lineHeight: 1.9, color: "#8a8378", textAlign: "center" }}
+            >
+              HEIC（iPhoneでとった写真）などは、
+              <br />このブラウザでは開けないことがあります。
+              <br />JPG・PNG・WebP の写真をえらんでください。
+            </p>
+            <button
+              onClick={onBack}
+              className="mt-5"
+              style={{
+                padding: "10px 20px", borderRadius: 100, border: "none",
+                background: "#2D2D2D", color: "#fff", fontWeight: 900, fontSize: 14,
+                cursor: "pointer", fontFamily: "inherit",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+              }}
+            >
+              べつの写真をえらぶ
+            </button>
+          </div>
+        )}
+
         {/* Loading overlay */}
-        {(processing || expanding) && (
+        {!loadError && (processing || expanding) && (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center"
             style={{ background: "rgba(255,249,242,0.95)", zIndex: 20, borderRadius: 18 }}
