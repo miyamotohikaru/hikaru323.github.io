@@ -7,10 +7,12 @@
 
 import { randomBytes, randomInt } from "node:crypto";
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { TROPHY_GEN_VERSION } from "@/lib/trophy";
 import {
   CHAT_BURST_PER_MIN,
   CHAT_COOLDOWN_SEC,
   CHAT_FETCH,
+  OPERATOR_CHAT_IDS,
   COOLDOWN_SEC,
   HOLE_COUNT,
   SWORD_COLORS,
@@ -87,9 +89,12 @@ export interface IGameStore {
   /** 勝者名を刻む(token一致 & winner_name 未設定のときだけ成功) */
   claim(roundNo: number, token: string, name: string): Promise<ClaimOutcome>;
   /** won_at が入ったラウンドを新しい順でページング */
-  getTrophies(page: number, perPage: number): Promise<TrophyPage>;
+  /** 決着済みラウンドを新しい順に。offset 件とばして limit 件返す */
+  getTrophies(offset: number, limit: number): Promise<TrophyPage>;
   /** コメントを1件書き込む(検閲は呼び出し側で済ませてある) */
   postChat(input: ChatInput): Promise<ChatOutcome>;
+  /** beforeId より古いコメントを新しい順に(「ぜんぶ みる」で さかのぼる用) */
+  chatBefore(beforeId: number, limit: number): Promise<ChatMessage[]>;
 }
 
 // ── 共通ヘルパ ───────────────────────────────────────
@@ -111,6 +116,31 @@ const toMs = (v: string | Date): number =>
 function remainingCooldownSec(lastAtMs: number): number {
   const remaining = COOLDOWN_SEC - (Date.now() - lastAtMs) / 1000;
   return remaining > 0 ? Math.ceil(remaining) : 0;
+}
+
+/**
+ * DBの行を ChatMessage へ。運営として出したものは、書いた人の名前を出さずに
+ * 「おしらせ」として返す(表示側はこのフラグだけ見ればいい)。
+ */
+function applyOperator(m: ChatMessage): ChatMessage {
+  if (!OPERATOR_CHAT_IDS.includes(m.id)) return m;
+  return { ...m, name: null, country: null, operator: true };
+}
+
+function toChatMessage(r: {
+  id: string | number;
+  name: string | null;
+  country: string | null;
+  body: string;
+  created_at: string | Date;
+}): ChatMessage {
+  return applyOperator({
+    id: Number(r.id),
+    name: r.name,
+    country: r.country,
+    body: r.body,
+    at: toIso(r.created_at),
+  });
 }
 
 /** 最終コメント時刻(epoch ms)から連投の残り秒 */
@@ -136,6 +166,8 @@ interface WinnerRow {
   won_at: string | Date;
   winner_hole: number | null;
   stab_count: number;
+  /** そのトロフィーが引いたくじの版。null は 1(記録を始める前の代) */
+  trophy_v?: number | null;
 }
 
 /** アクティブラウンド(winning_hole はサーバー内でのみ扱う) */
@@ -217,11 +249,14 @@ class PostgresStore implements IGameStore {
       WHERE table_name = 'kk_rounds' AND column_name = 'claimed_at'
     `) as { data_type: string }[];
     if (claimedCol.length === 0) {
-      await this.sql`ALTER TABLE kk_rounds ADD COLUMN claimed_at TIMESTAMPTZ`;
+        await this.sql`ALTER TABLE kk_rounds ADD COLUMN claimed_at TIMESTAMPTZ`;
       await this.sql`
         UPDATE kk_rounds SET claimed_at = won_at
         WHERE winner_name IS NOT NULL AND claimed_at IS NULL`;
     }
+    // トロフィーの姿を永久に固定するための「くじの版」。
+    // 既にあるぶんは NULL のまま = 版1(記録を始める前の姿)として読む
+    await this.sql`ALTER TABLE kk_rounds ADD COLUMN IF NOT EXISTS trophy_v INT`;
     // コメント。刺しとちがって代をまたいで残す(「ライブのコメント欄」なので、
     // 代が変わっても流れが途切れないほうが自然)
     await this.sql`
@@ -349,20 +384,15 @@ class PostgresStore implements IGameStore {
       created_at: string | Date;
     }[];
     // BIGSERIAL は文字列で返ることがある。id は並び順と重複排除の鍵なので必ず数値へ
-    return rows.map((r) => ({
-      id: Number(r.id),
-      name: r.name,
-      country: r.country,
-      body: r.body,
-      at: toIso(r.created_at),
-    }));
+    return rows.map(toChatMessage);
   }
 
   /** 指定ラウンドの勝者情報。未決着・存在しないなら null */
   private async winnerOf(roundNo: number): Promise<WinnerInfo | null> {
     if (roundNo < 1) return null;
     const rows = (await this.sql`
-      SELECT round_no, winner_name, winner_country, won_at, winner_hole, stab_count
+      SELECT round_no, winner_name, winner_country, won_at, winner_hole,
+             stab_count, trophy_v
       FROM kk_rounds
       WHERE round_no = ${roundNo} AND won_at IS NOT NULL
     `) as WinnerRow[];
@@ -375,6 +405,7 @@ class PostgresStore implements IGameStore {
       wonAt: toIso(r.won_at),
       holeId: r.winner_hole ?? 0,
       stabCount: r.stab_count,
+      trophyV: r.trophy_v ?? 1,
     };
   }
 
@@ -499,7 +530,8 @@ class PostgresStore implements IGameStore {
           claim_token = ${token},
           winner_country = ${input.country},
           winner_hole = ${input.holeId},
-          winner_name = ${input.nickname}
+          winner_name = ${input.nickname},
+          trophy_v = ${TROPHY_GEN_VERSION}
       WHERE round_no = ${roundNo} AND won_at IS NULL
       RETURNING round_no
     `) as { round_no: number }[];
@@ -555,6 +587,22 @@ class PostgresStore implements IGameStore {
     };
   }
 
+  async chatBefore(beforeId: number, limit: number): Promise<ChatMessage[]> {
+    await this.ensureSchema();
+    const rows = (await this.sql`
+      SELECT id, name, country, body, created_at FROM kk_chat
+      WHERE id < ${beforeId}
+      ORDER BY id DESC LIMIT ${limit}
+    `) as {
+      id: string | number;
+      name: string | null;
+      country: string | null;
+      body: string;
+      created_at: string | Date;
+    }[];
+    return rows.map(toChatMessage);
+  }
+
   async claim(roundNo: number, token: string, name: string): Promise<ClaimOutcome> {
     await this.ensureSchema();
     // token一致 & 未クレームのときだけ1行更新される(条件付きUPDATEで排他)
@@ -572,18 +620,17 @@ class PostgresStore implements IGameStore {
     return { ok: true };
   }
 
-  async getTrophies(page: number, perPage: number): Promise<TrophyPage> {
+  async getTrophies(offset: number, limit: number): Promise<TrophyPage> {
     await this.ensureSchema();
-    const offset = (page - 1) * perPage;
     const [totalRaw, itemsRaw] = await Promise.all([
       this.sql`
         SELECT count(*)::int AS total FROM kk_rounds WHERE won_at IS NOT NULL
       `,
       this.sql`
-        SELECT round_no, winner_name, winner_country, won_at, stab_count
+        SELECT round_no, winner_name, winner_country, won_at, stab_count, trophy_v
         FROM kk_rounds WHERE won_at IS NOT NULL
         ORDER BY won_at DESC
-        LIMIT ${perPage} OFFSET ${offset}
+        LIMIT ${limit} OFFSET ${offset}
       `,
     ]);
     const totalRows = totalRaw as { total: number }[];
@@ -596,6 +643,7 @@ class PostgresStore implements IGameStore {
         country: r.winner_country,
         wonAt: toIso(r.won_at),
         stabCount: r.stab_count,
+        trophyV: r.trophy_v ?? 1,
       })),
     };
   }
@@ -612,6 +660,8 @@ interface MemRound {
   winnerCountry: string | null;
   winnerHole: number | null;
   claimToken: string | null;
+  /** くじの版(トロフィーの姿を固定する印) */
+  trophyV: number;
   /** 名前を刻んだ時刻。null = まだ本人が入れていない(先置きの名前かも) */
   claimedAt: number | null;
   stabCount: number;
@@ -666,6 +716,7 @@ function newMemRound(roundNo: number): MemRound {
     winnerCountry: null,
     winnerHole: null,
     claimToken: null,
+    trophyV: TROPHY_GEN_VERSION,
     claimedAt: null,
     stabCount: 0,
   };
@@ -679,6 +730,7 @@ function memWinnerInfo(r: MemRound): WinnerInfo {
     wonAt: new Date(r.wonAt ?? 0).toISOString(),
     holeId: r.winnerHole ?? 0,
     stabCount: r.stabCount,
+    trophyV: r.trophyV,
   };
 }
 
@@ -779,7 +831,7 @@ class MemoryStore implements IGameStore {
       stabCharms: this.charmsOf(active.roundNo),
       recent,
       prevWinner: prev ? memWinnerInfo(prev) : null,
-      chat: this.data.chat.slice(0, CHAT_FETCH),
+      chat: this.data.chat.slice(0, CHAT_FETCH).map(applyOperator),
     };
   }
 
@@ -869,6 +921,13 @@ class MemoryStore implements IGameStore {
     return { kind: "ok", message };
   }
 
+  async chatBefore(beforeId: number, limit: number): Promise<ChatMessage[]> {
+    return this.data.chat
+      .filter((m) => m.id < beforeId)
+      .slice(0, limit)
+      .map(applyOperator);
+  }
+
   async claim(roundNo: number, token: string, name: string): Promise<ClaimOutcome> {
     const r = this.data.rounds.find(
       (x) => x.roundNo === roundNo && x.wonAt !== null && x.claimToken === token,
@@ -882,19 +941,19 @@ class MemoryStore implements IGameStore {
     return { ok: true };
   }
 
-  async getTrophies(page: number, perPage: number): Promise<TrophyPage> {
+  async getTrophies(offset: number, limit: number): Promise<TrophyPage> {
     const won = this.data.rounds
       .filter((r) => r.wonAt !== null)
       .sort((a, b) => (b.wonAt ?? 0) - (a.wonAt ?? 0));
-    const start = (page - 1) * perPage;
     return {
       total: won.length,
-      items: won.slice(start, start + perPage).map((r) => ({
+      items: won.slice(offset, offset + limit).map((r) => ({
         roundNo: r.roundNo,
         name: r.winnerName ?? "ななしさん",
         country: r.winnerCountry,
         wonAt: new Date(r.wonAt ?? 0).toISOString(),
         stabCount: r.stabCount,
+        trophyV: r.trophyV,
       })),
     };
   }
