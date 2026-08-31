@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import JobCard from "@/components/JobCard";
+import TiltCard from "@/components/TiltCard";
+import DeckView, { FLIPS, FlipId } from "@/components/DeckView";
 import {
   jobs,
   stats,
@@ -14,7 +16,7 @@ import {
   JobStatus,
 } from "@/data/jobs";
 import { useLang, dict } from "@/lib/lang";
-import { saveReturn } from "@/lib/returnNav";
+import { saveDeckAt, saveReturn } from "@/lib/returnNav";
 
 function Chip({
   active,
@@ -70,6 +72,36 @@ export default function IndexView() {
   const [region, setRegion] = useState<string[]>([]);
   const [cause, setCause] = useState<number[]>([]);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
+  /**
+   * 一覧(グリッド) か 束(デッキ) か。
+   * **開いた直後は束。** この図鑑の入口はカードを1枚ずつめくるところなので、
+   * 何もしていない人にはまず束を見せる。一覧は自分で押したときだけ。
+   * いちど選んだ表示は次回も引き継ぐ（localStorage の vja-view）。
+   */
+  const [mode, setMode] = useState<"grid" | "deck">("deck");
+
+  /** 束のときのめくり方 */
+  const [flip, setFlip] = useState<FlipId>("stack");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("vja-view");
+    if (saved === "deck" || saved === "grid") setMode(saved);
+    const f = localStorage.getItem("vja-flip");
+    if (f && FLIPS.some((x) => x.id === f)) setFlip(f as FlipId);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("vja-view", mode);
+    // ヒーローは page.tsx 側にあってここからは触れないので、
+    // いまの表示を html に貼っておいて、詰めるのは CSS にやらせる。
+    // 束のときは版面を詰めないと、カードが一画面に収まらない
+    document.documentElement.dataset.vjaView = mode;
+    return () => {
+      delete document.documentElement.dataset.vjaView;
+    };
+  }, [mode]);
+  useEffect(() => {
+    localStorage.setItem("vja-flip", flip);
+  }, [flip]);
 
   const filtered = useMemo(() => {
     let list = jobs.filter(
@@ -118,10 +150,54 @@ export default function IndexView() {
               </span>
             )}
           </button>
-          <span className="font-mono-label text-xs tracking-[0.25em] text-vja-ink-soft">
-            {filtered.length} / {stats.total}
-          </span>
+          <div className="flex items-center gap-4">
+            {/* 表示の切り替え（索引グリッドはそのまま残し、束表示を足す） */}
+            <div className="vja-modes" role="group" aria-label={en ? "view" : "表示"}>
+              <button
+                onClick={() => setMode("grid")}
+                aria-pressed={mode === "grid"}
+                className={mode === "grid" ? "is-on" : ""}
+              >
+                {en ? "GRID" : "一覧"}
+              </button>
+              <button
+                onClick={() => setMode("deck")}
+                aria-pressed={mode === "deck"}
+                className={mode === "deck" ? "is-on" : ""}
+              >
+                {en ? "DECK" : "束"}
+              </button>
+            </div>
+            <span className="font-mono-label text-xs tracking-[0.25em] text-vja-ink-soft">
+              {filtered.length} / {stats.total}
+            </span>
+          </div>
         </div>
+
+        {/* めくり方の選択（束のときだけ） */}
+        {mode === "deck" && (
+          <div className="flex items-center gap-3 border-b border-vja-line py-2.5">
+            <span className="font-mono-label shrink-0 text-[10px] tracking-[0.3em] text-vja-ink-soft">
+              {en ? "FLIP" : "めくり方"}
+            </span>
+            <div
+              className="vja-flips"
+              role="group"
+              aria-label={en ? "flip style" : "めくり方"}
+            >
+              {FLIPS.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setFlip(f.id)}
+                  aria-pressed={flip === f.id}
+                  className={flip === f.id ? "is-on" : ""}
+                >
+                  {en ? f.en : f.ja}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {open && (
           <div className="rounded-b-lg border border-t-0 border-vja-line bg-vja-paper/60 p-6 md:p-8">
@@ -212,7 +288,7 @@ export default function IndexView() {
         )}
       </div>
 
-      {/* カードグリッド */}
+      {/* カードグリッド / 束 */}
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 md:px-8">
         {filtered.length === 0 ? (
           <p className="py-16 text-center text-sm text-vja-ink-soft">
@@ -220,16 +296,31 @@ export default function IndexView() {
               ? "No cards match these filters."
               : "この条件のカードは、見つかりませんでした。"}
           </p>
+        ) : mode === "deck" ? (
+          <DeckView
+            key={filtered.map((j) => j.no).join(",")}
+            jobs={filtered}
+            flip={flip}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5">
-            {filtered.map((j) => (
+            {filtered.map((j, i) => (
               <Link
                 key={j.no}
                 href={`/jobs/${j.no}`}
-                onClick={() => saveReturn()}
-                className="vja-rise"
+                onClick={() => {
+                  saveReturn();
+                  // 一覧から開いた場合も覚えておき、束に切り替えたときに揃える
+                  saveDeckAt(j.no);
+                }}
+                // 1枚ずつ配られるように少しずつ遅らせる。
+                // 151枚すべてを動かすとレイヤーが増えるので最初の12枚だけにする
+                className={i < 12 ? "vja-rise block" : "block"}
+                style={i < 12 ? { animationDelay: `${i * 45}ms` } : undefined}
               >
-                <JobCard job={j} />
+                <TiltCard variant="index">
+                  <JobCard job={j} />
+                </TiltCard>
               </Link>
             ))}
           </div>

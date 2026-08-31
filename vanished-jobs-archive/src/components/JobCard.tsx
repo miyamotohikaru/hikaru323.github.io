@@ -38,6 +38,12 @@ const OVERSIZED = new Set<string>([]);
 /** 画像ごとの位置微調整（絵柄がカード中央に来るように） */
 const NUDGE: Record<string, string> = {};
 
+/** ひとこと（カード新デザイン）の1行おさめ設定。単位は cqw / em */
+const QUOTE_BASE = 4.8; // 基準の文字サイズ
+const QUOTE_MAX_W = 84; // カード内で使える幅
+const QUOTE_MIN_TRACK = -0.05; // 字間はここまでしか詰めない
+const QUOTE_MIN_SIZE = 4.0; // これ以上小さくするくらいなら折り返す
+
 /** 全角=1・半角=0.5 で実効文字数を数える（長い名前の縮小率計算用） */
 function effLen(s: string) {
   let n = 0;
@@ -151,6 +157,8 @@ function NewCard({
 }) {
   const statusLabel = en ? dict.status[job.status] : statusMeta[job.status].label;
   const nameSize = Math.min(11, 90 / effLen(name));
+  // 読みも必ず1行に（字送り0.5emぶんを見込んで1文字=1.5倍幅で計算）
+  const readingSize = Math.min(3.4, 56 / Math.max(1, effLen(reading)));
   const years = lifespan(span.start, span.end);
 
   // 上段の年代表記は桁数に応じて縮小（B.C.3000等の長い年号対応）
@@ -158,6 +166,19 @@ function NewCard({
   const bigSize = Math.min(6.2, 84 / (yearChars + 2));
   const subSize = bigSize * 0.6;
   const tildeSize = bigSize * 0.72;
+
+  // ひとことは1行に収める。まず字間を詰め、詰めきれない分だけ文字を縮める。
+  // それでも小さくなりすぎる場合（英語の長い文など）は今まで通り折り返す。
+  const quoteText = `「${quote}」`;
+  const quoteLen = effLen(quoteText);
+  const quoteRaw = quoteLen * QUOTE_BASE;
+  let quoteTrack = 0; // 字間(em)
+  let quoteSize = QUOTE_BASE;
+  if (quoteRaw > QUOTE_MAX_W) {
+    quoteTrack = Math.max(QUOTE_MIN_TRACK, QUOTE_MAX_W / quoteRaw - 1);
+    quoteSize = QUOTE_MAX_W / (quoteLen * (1 + quoteTrack));
+  }
+  const quoteOneLine = quoteSize >= QUOTE_MIN_SIZE;
 
   // ステータス別の締め文言
   const closing = en
@@ -192,13 +213,14 @@ function NewCard({
         </div>
 
         {/* 細い下線（全幅） */}
+        {/* 位置合わせは px ではなく cqw（カード幅比例）で。px だと索引の小さいカードで効きすぎてNO.に被る */}
         <div
-          className="-mt-[5px] -ml-[7cqw] w-[60cqw] border-b"
+          className="-mt-[1.5cqw] -ml-[7cqw] w-[60cqw] border-b"
           style={{ borderColor: job.textColor }}
         />
 
         {/* 年代 */}
-        <p className="mt-[2px] whitespace-nowrap font-bold leading-none">
+        <p className="mt-[0.6cqw] whitespace-nowrap font-bold leading-none">
           {en ? (
             <span style={{ fontSize: `${bigSize}cqw` }}>
               {fmtYear(span.start)} – {fmtYear(span.end)}
@@ -219,8 +241,16 @@ function NewCard({
         </p>
 
         {/* ひとこと */}
-        <p className="mt-[2.8cqw] translate-y-[5px] text-center text-[4.8cqw] leading-snug opacity-90">
-          「{quote}」
+        <p
+          className={`mt-[2.8cqw] translate-y-[1.5cqw] text-center leading-snug opacity-90 ${
+            quoteOneLine ? "whitespace-nowrap" : ""
+          }`}
+          style={{
+            fontSize: `${quoteOneLine ? quoteSize : QUOTE_BASE}cqw`,
+            letterSpacing: quoteOneLine ? `${quoteTrack}em` : undefined,
+          }}
+        >
+          {quoteText}
         </p>
 
         {/* イラスト */}
@@ -241,7 +271,10 @@ function NewCard({
         {/* 読み・名前・英名 */}
         <div className="text-center">
           {!en && (
-            <p className="text-[3.4cqw] font-semibold tracking-[0.5em] opacity-80">
+            <p
+              className="whitespace-nowrap font-semibold tracking-[0.5em] opacity-80"
+              style={{ fontSize: `${readingSize}cqw` }}
+            >
               {reading}
             </p>
           )}

@@ -35,7 +35,8 @@ export default function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-vja-line bg-vja-bg/95 backdrop-blur-sm">
+    // 95%不透明の背景の裏でぼかしても見えず、スクロール毎の再合成だけが残るのでぼかしは持たない
+    <header className="sticky top-0 z-40 border-b border-vja-line bg-vja-bg">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-8">
         <Link href="/" className="flex items-baseline gap-3">
           <span className="text-lg font-bold tracking-wide md:text-xl">
