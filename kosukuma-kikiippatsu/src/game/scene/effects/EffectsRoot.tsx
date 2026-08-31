@@ -9,6 +9,7 @@ import StabSword from "./StabSword";
 import ImpactDust from "./ImpactDust";
 import LaunchFx from "./LaunchFx";
 import NewRoundBeam from "./NewRoundBeam";
+import RemoteStabs from "./RemoteStabs";
 import TrophyConfetti from "./TrophyConfetti";
 
 export default function EffectsRoot() {
@@ -21,6 +22,16 @@ export default function EffectsRoot() {
       {sword && <StabSword />}
       <ImpactDust />
       <LaunchFx />
+      {/*
+        他の人の刺しは常駐させる。理由は2つ:
+        ・剣6本ぶんのプール(ジオメトリ/マテリアル)をフェーズが変わるたびに
+          作り直さない。マウント/アンマウントで作るには重すぎる。
+        ・降ってきている途中でフェーズが変わっても、剣を宙に浮かせたまま
+          消さずに着弾させ、必ず endRemoteStab() で Swords へ引き渡せる。
+        「自分のカットシーン中は新しい剣を降らせない」という判断は
+        RemoteStabs の中(phase を見て開始を止める)で行う。
+      */}
+      <RemoteStabs />
       {phase === "new-round" && <NewRoundBeam />}
       {phase === "trophy" && <TrophyConfetti />}
     </group>

@@ -3,22 +3,38 @@
 // 自分の剣。stabbing で「きらめきながら構え → 一気に突き刺す」、
 // suspense で柄が小刻みに震え、safe の間は刺さったまま残る
 // (idle に戻った瞬間に Swords の刺さり済みインスタンスへ引き継がれる)。
+//
+// 剣そのものは共有ビルダー(sword/buildSword)の黒ひげ剣。ここは
+// 「主役の1本」なので、チャームもちゃんと3つぶら下げて揺らす。
 
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { SWORD_COLORS, T_STAB } from "@/lib/config";
+import { charmLevelOf, T_STAB } from "@/lib/config";
 import { useGameStore } from "@/game/store";
 import { getHoleWorld } from "@/game/scene/sharedRefs";
+import {
+  buildToySword,
+  SWORD_DIMS,
+  type ToySword,
+} from "@/game/scene/sword/buildSword";
 import { backOut, easeInCubic, easeOutCubic } from "./easing";
 import { makeCircleTexture, makeStarTexture } from "./textures";
 
-// 寸法(ローカル座標: 剣先が原点、+Y が柄の向き)
-const BLADE_LEN = 1.5;
-const TIP_BURIED = -(BLADE_LEN * 2) / 3; // 刃の 2/3 が埋まる深さ
+// 自分の剣は引きの2ショットでも見えるように大きめの「ヒーローサイズ」。
+// 剣そのものを月の飽和対策で小さくしたので、そのぶん倍率を上げて
+// 画面での見え方(月面から出る高さ ≒ 1.9)は変えない
+const HERO_SCALE = 2.6;
+
+// 高さは「剣先の高さ」で組み立てる(構えの気持ちよさをこの値で調整してきたので)。
+// ルート(=刺さり口)は剣先より刃の埋まるぶんだけ上にある。
+const ROOT_LIFT = SWORD_DIMS.bury * HERO_SCALE;
+const TIP_BURIED = -ROOT_LIFT; // 刺さりきった状態 = ルートが月面ちょうど
 const RAISE_H = 1.9; // 構えの高さ(穴の法線上)
-/** 自分の剣は引きの2ショットでも見えるように大きめの「ヒーローサイズ」 */
-const HERO_SCALE = 1.55;
+
+// 刃に沿ってきらめきが走る範囲(ヒーローサイズでの world units)
+const SPARKLE_FROM = -SWORD_DIMS.bury * HERO_SCALE * 0.92;
+const SPARKLE_TO = (SWORD_DIMS.bladeLen - SWORD_DIMS.bury) * HERO_SCALE * 0.9;
 
 const UP = new THREE.Vector3(0, 1, 0);
 // 毎フレームの割り当てを避けるスクラッチ
@@ -26,72 +42,33 @@ const _pos = new THREE.Vector3();
 const _n = new THREE.Vector3();
 const _qAlign = new THREE.Quaternion();
 const _qYaw = new THREE.Quaternion();
+const _qTilt = new THREE.Quaternion();
+const _eTilt = new THREE.Euler();
 
 interface SwordRig {
-  root: THREE.Group;
-  inner: THREE.Group;
+  sword: ToySword;
   sparkle: THREE.Sprite;
   sparkleMat: THREE.SpriteMaterial;
-  halo: THREE.Sprite;
   haloMat: THREE.SpriteMaterial;
   dispose: () => void;
 }
 
-/** ローポリの剣を手続き生成(刃+鍔+柄+柄頭の星)。柄まわりは選んだ色 */
-function buildSword(hiltHex: string): SwordRig {
-  const geoms: THREE.BufferGeometry[] = [];
-  const mats: THREE.Material[] = [];
-  const tex = makeStarTexture();
-
-  const mesh = (g: THREE.BufferGeometry, m: THREE.Material): THREE.Mesh => {
-    geoms.push(g);
-    if (!mats.includes(m)) mats.push(m);
-    return new THREE.Mesh(g, m);
-  };
-
-  const bladeMat = new THREE.MeshStandardMaterial({
-    color: "#eef2ff",
-    metalness: 0.85,
-    roughness: 0.25,
-    // 引きの構図でも月面に埋もれないよう強めに光らせる
-    emissive: "#7e8ee0",
-    emissiveIntensity: 0.55,
+/** 黒ひげ剣に、構え中のきらめきと「ここに剣がある」ハロを足す */
+function buildRig(): SwordRig {
+  const s = useGameStore.getState();
+  const sword = buildToySword({
+    color: s.swordColor,
+    skin: s.swordSkin,
+    // この1本を数えたあとのチャーム数(10本目の剣には、その場で手に入れた
+    // チャームがもうぶら下がっている)。store.confirmStab と同じ計算
+    charm: charmLevelOf(s.myTotal + 1),
+    scale: HERO_SCALE,
   });
-  const hiltColor = new THREE.Color(hiltHex);
-  const goldMat = new THREE.MeshStandardMaterial({
-    color: hiltColor,
-    metalness: 0.6,
-    roughness: 0.35,
-    emissive: hiltColor.clone().multiplyScalar(0.35),
-    emissiveIntensity: 0.5,
-  });
-  const gripMat = new THREE.MeshStandardMaterial({
-    color: hiltColor.clone().multiplyScalar(0.82), // グリップはひと段暗く
-    roughness: 0.75,
-  });
-
-  // 剣先(四角錐を下向きに。刃と同じく平たくつぶす)
-  const tip = mesh(new THREE.ConeGeometry(0.1, 0.26, 4), bladeMat);
-  tip.rotation.x = Math.PI;
-  tip.position.y = 0.13;
-  tip.scale.z = 0.5;
-  // 刀身
-  const blade = mesh(new THREE.BoxGeometry(0.17, BLADE_LEN - 0.26, 0.055), bladeMat);
-  blade.position.y = 0.26 + (BLADE_LEN - 0.26) / 2;
-  // 鍔
-  const guard = mesh(new THREE.BoxGeometry(0.54, 0.1, 0.14), goldMat);
-  guard.position.y = BLADE_LEN + 0.05;
-  // 柄
-  const grip = mesh(new THREE.CylinderGeometry(0.06, 0.068, 0.4, 8), gripMat);
-  grip.position.y = BLADE_LEN + 0.3;
-  // 柄頭の星(平たい八面体)
-  const pommel = mesh(new THREE.OctahedronGeometry(0.1), goldMat);
-  pommel.position.y = BLADE_LEN + 0.57;
-  pommel.scale.z = 0.55;
 
   // 構え中に刃を走るきらめき(加算スプライト)
+  const starTex = makeStarTexture();
   const sparkleMat = new THREE.SpriteMaterial({
-    map: tex,
+    map: starTex,
     color: "#fff6c8",
     transparent: true,
     opacity: 0,
@@ -114,44 +91,36 @@ function buildSword(hiltHex: string): SwordRig {
     toneMapped: false,
   });
   const halo = new THREE.Sprite(haloMat);
-  halo.position.set(0, BLADE_LEN * 0.55, 0);
-  halo.scale.setScalar(1.15);
+  halo.position.set(0, SWORD_DIMS.top * HERO_SCALE * 0.45, 0);
+  halo.scale.setScalar(1.85);
 
-  const inner = new THREE.Group();
-  inner.add(tip, blade, guard, grip, pommel, sparkle, halo);
-  const root = new THREE.Group();
-  root.add(inner);
-  root.visible = false;
+  // スプライトは剣の大きさに引きずられないよう root 直下へ置く
+  sword.root.add(sparkle, halo);
+  sword.root.visible = false;
 
   return {
-    root,
-    inner,
+    sword,
     sparkle,
     sparkleMat,
-    halo,
     haloMat,
     dispose: () => {
-      geoms.forEach((g) => g.dispose());
-      mats.forEach((m) => m.dispose());
+      sword.dispose();
       sparkleMat.dispose();
       haloMat.dispose();
       haloTex.dispose();
-      tex.dispose();
+      starTex.dispose();
     },
   };
 }
 
 export default function StabSword() {
-  // マウント時(=stabbing 開始時)の選択穴と剣の色を固定。
+  // マウント時(=stabbing 開始時)の選択穴と剣の見た目を固定。
   // 演出中に store 側が変わっても保持する
   const holeId = useMemo(() => useGameStore.getState().selectedHole, []);
-  const rig = useMemo(() => {
-    const idx = useGameStore.getState().swordColor;
-    return buildSword(SWORD_COLORS[idx]?.hex ?? SWORD_COLORS[0].hex);
-  }, []);
+  const rig = useMemo(buildRig, []);
   useEffect(() => () => rig.dispose(), [rig]);
 
-  useFrame(() => {
+  useFrame((state) => {
     if (holeId === null) return;
     const s = useGameStore.getState();
     const hw = getHoleWorld(holeId);
@@ -198,14 +167,19 @@ export default function StabSword() {
       tiltX = Math.sin((t / 1000) * 32) * 0.05 * settle;
     }
 
-    const g = rig.root;
+    const g = rig.sword.root;
     g.visible = true;
-    g.position.copy(_pos).addScaledVector(_n, h);
+    // 剣先の高さ h に、刃が埋まるぶんを足すと刺さり口(=ルート)の高さになる
+    g.position.copy(_pos).addScaledVector(_n, h + ROOT_LIFT);
     _qAlign.setFromUnitVectors(UP, _n);
     _qYaw.setFromAxisAngle(UP, yaw);
-    g.quaternion.copy(_qAlign).multiply(_qYaw);
-    g.scale.setScalar(Math.max(scale, 0.001) * HERO_SCALE);
-    rig.inner.rotation.set(tiltX, 0, tiltZ);
+    // 震えは刺さり口を支点に。刺さった剣が根元で揺れる感じになる
+    _eTilt.set(tiltX, 0, tiltZ);
+    _qTilt.setFromEuler(_eTilt);
+    g.quaternion.copy(_qAlign).multiply(_qYaw).multiply(_qTilt);
+    g.scale.setScalar(Math.max(scale, 0.001));
+    // チャームの揺れ・にじいろの色相
+    rig.sword.update(state.clock.elapsedTime);
 
     // ハロ: 構え〜判定待ちの間ふんわり光り、セーフで消えていく
     const tSec = t / 1000;
@@ -220,8 +194,12 @@ export default function StabSword() {
     // きらめき: 刃に沿って星が走る
     if (sparkleT >= 0) {
       const q = sparkleT;
-      rig.sparkle.position.set(0.09, 0.15 + 1.15 * q, 0.08);
-      const tw = 0.3 * Math.sin(Math.PI * q) * (0.75 + 0.25 * Math.sin(q * 26));
+      rig.sparkle.position.set(
+        0.11,
+        SPARKLE_FROM + (SPARKLE_TO - SPARKLE_FROM) * q,
+        0.09
+      );
+      const tw = 0.34 * Math.sin(Math.PI * q) * (0.75 + 0.25 * Math.sin(q * 26));
       rig.sparkle.scale.setScalar(Math.max(tw, 0.001));
       rig.sparkleMat.opacity = Math.sin(Math.PI * q);
       rig.sparkleMat.rotation = q * 2.5;
@@ -231,5 +209,5 @@ export default function StabSword() {
   });
 
   if (holeId === null) return null;
-  return <primitive object={rig.root} />;
+  return <primitive object={rig.sword.root} />;
 }

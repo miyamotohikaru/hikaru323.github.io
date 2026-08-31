@@ -15,6 +15,11 @@ export type GameEventType =
   | "fanfare" // 勝利ファンファーレ
   | "trophy" // トロフィー授与(キラーン)
   | "new-round" // 新こすくまくん降臨(オルゴール)
+  | "remote-stab" // 他の人の剣が刺さった(遠くのコツン)
+  | "charm-get" // チャーム獲得(チリン)
+  | "skin-unlock" // 剣のスキン解放(キラッ)
+  | "earth-tap" // 地球をつついた(ポコッ)
+  | "earth-boom" // 地球が1000回で爆発
   | "error"; // 失敗トースト(クールダウン/先を越された等)
 
 type Listener = (type: GameEventType) => void;

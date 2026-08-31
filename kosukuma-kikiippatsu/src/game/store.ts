@@ -6,18 +6,28 @@
 import { create } from "zustand";
 import { nanoid } from "nanoid";
 import {
+  CHARMS,
+  charmLevelOf,
   COOLDOWN_SEC,
+  EARTH_BOOM_CLICKS,
   HOLE_COUNT,
   POLL_MS,
+  REMOTE_MAX,
+  REMOTE_STAGGER,
   SWORD_COLORS,
+  SWORD_SKINS,
+  T_EARTH_BOOM,
   T_LAUNCH,
   T_NEW_ROUND,
+  T_REMOTE_STAB,
   T_SAFE,
+  T_SPEECH,
   T_STAB,
   T_SUSPENSE,
   T_TROPHY,
 } from "@/lib/config";
 import { base64ToMask, emptyMask, getBit } from "@/lib/bitmask";
+import { charmOf, packStyle, skinOf } from "@/lib/style";
 import type {
   ClaimResponse,
   StabResult,
@@ -53,6 +63,35 @@ interface Toast {
   msg: string;
 }
 
+/**
+ * 他の人が刺した瞬間の再生キュー。ポーリングでマスクに増えたビットを見つけると
+ * ここへ積まれ、`RemoteStabs` が「剣が降ってきて刺さる」までを演じる。
+ * 演出中の穴は `Swords` 側では描かない(二重に見えないように)。
+ */
+export interface RemoteStab {
+  holeId: number;
+  /** SWORD_COLORS の index */
+  color: number;
+  /** SWORD_SKINS の index */
+  skin: number;
+  /** ぶら下がっているチャームの数 */
+  charm: number;
+  /** 再生開始時刻(epoch ms)。同時到着ぶんは REMOTE_STAGGER ずつずらす */
+  startAt: number;
+}
+
+/** こすくまくんの吹き出し。表示はUI側(`SpeechBubble`)が読む */
+export type SpeechTone = "normal" | "happy" | "worry" | "shock" | "sleepy";
+
+export interface Speech {
+  /** 同じ文でも言い直しを検知できるように毎回ふる連番 */
+  id: number;
+  text: string;
+  tone: SpeechTone;
+  /** この時刻(epoch ms)まで表示する */
+  until: number;
+}
+
 interface GameState {
   phase: Phase;
   /** phase が変わった時刻(performance.now基準ではなく Date.now) */
@@ -64,9 +103,13 @@ interface GameState {
   mask: Uint8Array;
   /** 各穴の剣の色(0=デフォルト金, 1..N=SWORD_COLORSのindex+1) */
   stabColors: Uint8Array;
+  /** 各穴の剣のスキン+チャーム(詰め方は src/lib/style.ts)。0=情報なし */
+  stabStyles: Uint8Array;
   recent: StateResponse["recent"];
   prevWinner: WinnerInfo | null;
   connected: boolean;
+  /** いま「刺さる瞬間」を再生中の、他の人の剣 */
+  remoteStabs: RemoteStab[];
 
   // ── 自分の操作 ──
   selectedHole: number | null;
@@ -81,10 +124,29 @@ interface GameState {
   ready3d: boolean; // 3Dアセット読み込み完了
   /** 選んでいる剣の色(SWORD_COLORSのindex)。localStorageに永続 */
   swordColor: number;
+  /** 選んでいる剣のスキン(SWORD_SKINSのindex)。localStorageに永続 */
+  swordSkin: number;
   /** この代に自分が刺した穴(この端末)。剣を光らせる目印にも使う */
   myStabs: number[];
   /** 自分の通算の刺し回数(この端末) */
   myTotal: number;
+  /** 自分がこすくまくんを とばした回数(この端末)。スキン解放の条件 */
+  myWins: number;
+  /** 獲得したてのチャーム(CHARMSのindex)。演出が終わったら null に戻す */
+  newCharm: number | null;
+  /** 解放したてのスキン(SWORD_SKINSのindex配列)。表彰で見せる */
+  newSkins: number[];
+
+  // ── 地球イースターエッグ ──
+  /** 地球をつついた回数(この端末) */
+  earthClicks: number;
+  /** 地球を爆発させた回数(この端末) */
+  earthBooms: number;
+  /** 爆発した時刻(epoch ms)。null なら地球は無事 */
+  earthBoomAt: number | null;
+
+  /** こすくまくんの吹き出し */
+  speech: Speech | null;
 
   // ── actions ──
   init: () => void;
@@ -98,6 +160,16 @@ interface GameState {
   showToast: (msg: string) => void;
   setMuted: (m: boolean) => void;
   setSwordColor: (c: number) => void;
+  /** スキンを選ぶ。未解放(needWins > myWins)なら無視される */
+  setSwordSkin: (s: number) => void;
+  /** 演出が終わった他人の剣を、通常の剣(Swords)へ引き渡す */
+  endRemoteStab: (holeId: number) => void;
+  /** チャーム獲得演出をとじる */
+  clearNewCharm: () => void;
+  /** 地球をつつく。EARTH_BOOM_CLICKS 回で爆発 */
+  tapEarth: () => void;
+  /** こすくまくんにしゃべらせる */
+  say: (text: string, tone?: SpeechTone, ms?: number) => void;
 }
 
 // ── localStorage helpers(SSR安全) ─────────────────────
@@ -167,15 +239,88 @@ function saveMyStabs(roundNo: number, holes: number[]): void {
   LS.set("kk-my-stabs", JSON.stringify({ r: roundNo, h: holes }));
 }
 
+/** とばした回数から、いま使えるスキンのindex一覧 */
+export function unlockedSkins(wins: number): number[] {
+  const out: number[] = [];
+  SWORD_SKINS.forEach((s, i) => {
+    if (wins >= s.needWins) out.push(i);
+  });
+  return out;
+}
+
+/**
+ * 前回のマスクから増えたビット(=他の人が刺した穴)を拾う。
+ * 同一ラウンド内でビットが消えることはないので差分は必ず「増えた分」。
+ */
+function newlySetHoles(oldMask: Uint8Array, newMask: Uint8Array): number[] {
+  const out: number[] = [];
+  const len = Math.min(oldMask.length, newMask.length);
+  for (let b = 0; b < len; b++) {
+    const diff = newMask[b] & ~oldMask[b];
+    if (diff === 0) continue;
+    for (let bit = 0; bit < 8; bit++) {
+      if (diff & (1 << bit)) {
+        const id = (b << 3) | bit;
+        if (id < HOLE_COUNT) out.push(id);
+      }
+    }
+  }
+  return out;
+}
+
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 let initialized = false;
 /** カットシーン中に届いた新ラウンド状態を退避しておく */
 let pendingState: StateResponse | null = null;
+/** 自分が当てた代。観客としての発射カットシーンを二重再生しないための目印 */
+const myWonRounds = new Set<number>();
 
 export const useGameStore = create<GameState>((set, get) => {
   const setPhase = (phase: Phase) => set({ phase, phaseAt: Date.now() });
+
+  /**
+   * 前回から増えた穴(=他の人が刺した)を「刺さる瞬間」の再生キューへ積む。
+   * 演出中の穴は Swords が描かないので、剣が二重に見えることはない。
+   */
+  const queueRemote = (
+    cur: GameState,
+    rawMask: Uint8Array,
+    colors: Uint8Array,
+    styles: Uint8Array
+  ): RemoteStab[] => {
+    const now = Date.now();
+    // 取りこぼしの保険: 演出コンポーネントが外れた等で残った古い分は畳む
+    const alive = cur.remoteStabs.filter(
+      (r) => now - r.startAt < T_REMOTE_STAB + 4000
+    );
+    const fresh = newlySetHoles(cur.mask, rawMask);
+    if (fresh.length === 0) return alive.length === cur.remoteStabs.length ? cur.remoteStabs : alive;
+
+    const mine = new Set(cur.myStabs);
+    const busy = new Set(alive.map((r) => r.holeId));
+    // すでに走っている演出の後ろへ並べる(同時に降ってこないように)
+    let at = now;
+    for (const r of alive) at = Math.max(at, r.startAt + REMOTE_STAGGER);
+
+    const added: RemoteStab[] = [];
+    for (const holeId of fresh) {
+      if (mine.has(holeId) || busy.has(holeId)) continue;
+      if (alive.length + added.length >= REMOTE_MAX) break;
+      const c = colors[holeId];
+      const style = styles[holeId];
+      added.push({
+        holeId,
+        color: c > 0 && c <= SWORD_COLORS.length ? c - 1 : 0,
+        skin: skinOf(style),
+        charm: charmOf(style),
+        startAt: at,
+      });
+      at += REMOTE_STAGGER;
+    }
+    return added.length > 0 ? [...alive, ...added] : alive;
+  };
 
   /** サーバー状態を表示へ反映 */
   const applyState = (s: StateResponse) => {
@@ -186,8 +331,16 @@ export const useGameStore = create<GameState>((set, get) => {
     const colors = s.stabColorsBase64
       ? base64ToMask(s.stabColorsBase64)
       : new Uint8Array(HOLE_COUNT);
+    const styles = s.stabStylesBase64
+      ? base64ToMask(s.stabStylesBase64)
+      : new Uint8Array(HOLE_COUNT);
     let stabCount = s.stabCount;
+    let remoteStabs: RemoteStab[] = [];
     if (s.roundNo === cur.roundNo) {
+      // 初回ロード(roundNo=0からの立ち上がり)は既存の1000本が一気に
+      // 降ってくることになるので、2回目以降の差分だけを演出する
+      remoteStabs =
+        cur.roundNo > 0 ? queueRemote(cur, mask, colors, styles) : cur.remoteStabs;
       // 同一ラウンド内でビットが消えることはない。自分の刺した直後に
       // 数秒古いキャッシュ応答が来ても剣(と色)が消えないよう和集合をとる
       const old = cur.mask;
@@ -195,6 +348,10 @@ export const useGameStore = create<GameState>((set, get) => {
       const oldC = cur.stabColors;
       for (let i = 0; i < colors.length && i < oldC.length; i++) {
         if (colors[i] === 0) colors[i] = oldC[i];
+      }
+      const oldS = cur.stabStyles;
+      for (let i = 0; i < styles.length && i < oldS.length; i++) {
+        if (styles[i] === 0) styles[i] = oldS[i];
       }
       stabCount = Math.max(stabCount, cur.stabCount);
     }
@@ -206,11 +363,24 @@ export const useGameStore = create<GameState>((set, get) => {
       stabCount,
       mask,
       stabColors: colors,
+      stabStyles: styles,
+      remoteStabs,
       myStabs,
       recent: s.recent,
       prevWinner: s.prevWinner,
       connected: true,
     });
+  };
+
+  /**
+   * 授与式で「けんのスキンを手に入れた」を知らせる。名前が刻まれる演出
+   * (1.0秒)のすこし後に鳴らして、ごほうびが二段構えに見えるようにする。
+   */
+  const announceSkins = () => {
+    if (get().newSkins.length === 0) return;
+    setTimeout(() => {
+      if (get().newSkins.length > 0) emitGameEvent("skin-unlock");
+    }, 1600);
   };
 
   /** カットシーン中に退避した最新状態があれば反映する */
@@ -219,6 +389,84 @@ export const useGameStore = create<GameState>((set, get) => {
       applyState(pendingState);
       pendingState = null;
     }
+  };
+
+  /**
+   * 発射の途中で、まだ刻まれていなかった勝者の名前をもう一度だけ取りにいく。
+   * (当てた人が名前を入れるまで、観客からは「だれか」に見えてしまうため)
+   */
+  const refreshWinnerName = async () => {
+    const li = get().launchInfo;
+    if (!li || li.isMe || li.name) return;
+    try {
+      const res = await fetch("/api/state", { cache: "no-store" });
+      if (!res.ok) return;
+      const s: StateResponse = await res.json();
+      const w = s.prevWinner;
+      const cur = get().launchInfo;
+      if (w?.name && cur && !cur.name && w.roundNo === cur.roundNo) {
+        set({ launchInfo: { ...cur, name: w.name, country: w.country } });
+      }
+      // 退避ぶんも新しい方へ差し替えておく
+      if (!pendingState || s.roundNo >= pendingState.roundNo) pendingState = s;
+    } catch {
+      /* 名前が出ないだけなので黙って諦める */
+    }
+  };
+
+  /**
+   * 観客として発射カットシーンを再生する。
+   * 「だれかが当てた → こすくまくんが飛んでいく」を、月を見ている全員に見せる。
+   */
+  const playSpectatorLaunch = (s: StateResponse) => {
+    pendingState = s;
+    const w = s.prevWinner;
+    set({
+      selectedHole: null,
+      launchInfo: w
+        ? { ...w, isMe: false }
+        : {
+            roundNo: s.roundNo - 1,
+            holeId: 0,
+            name: null,
+            country: null,
+            isMe: false,
+          },
+    });
+    emitGameEvent("win-flash");
+    emitGameEvent("launch");
+    setPhase("launch");
+    void (async () => {
+      setTimeout(() => void refreshWinnerName(), Math.round(T_LAUNCH * 0.45));
+      await sleep(T_LAUNCH);
+      emitGameEvent("new-round");
+      setPhase("new-round");
+      flushPending();
+      await sleep(T_NEW_ROUND);
+      flushPending(); // 降臨中に届いた分も適用してからidleへ
+      setPhase("idle");
+    })();
+  };
+
+  /**
+   * 自分のカットシーンが終わったときの後始末。退避ぶんに「知らないうちに
+   * 決着した代」が含まれていたら、見逃さないように発射から見せる。
+   * @returns true = 観客カットシーンを始めた(呼び出し側は idle にしない)
+   */
+  const flushPendingOrSpectate = (): boolean => {
+    const s = pendingState;
+    const cur = get();
+    if (
+      s &&
+      s.roundNo > cur.roundNo &&
+      cur.roundNo > 0 &&
+      !myWonRounds.has(s.roundNo - 1)
+    ) {
+      playSpectatorLaunch(s);
+      return true;
+    }
+    flushPending();
+    return false;
   };
 
   /** カットシーンなど「今は画面を書き換えたくない」フェーズか */
@@ -243,40 +491,19 @@ export const useGameStore = create<GameState>((set, get) => {
       // 通信は生きている(カットシーン中でも警告は消す)
       if (!get().connected) set({ connected: true });
       const cur = get();
-      if (s.roundNo > cur.roundNo && cur.roundNo > 0) {
+      if (
+        s.roundNo > cur.roundNo &&
+        cur.roundNo > 0 &&
+        !myWonRounds.has(s.roundNo - 1)
+      ) {
         // 誰かが当てて新ラウンドになった
         if (cur.phase === "idle" || cur.phase === "confirming") {
-          // 観客として発射カットシーンを再生
-          pendingState = s;
-          const w = s.prevWinner;
-          set({
-            selectedHole: null,
-            launchInfo: w
-              ? { ...w, isMe: false }
-              : {
-                  roundNo: s.roundNo - 1,
-                  holeId: 0,
-                  name: null,
-                  country: null,
-                  isMe: false,
-                },
-          });
-          emitGameEvent("win-flash");
-          emitGameEvent("launch");
-          setPhase("launch");
-          void (async () => {
-            await sleep(T_LAUNCH);
-            emitGameEvent("new-round");
-            setPhase("new-round");
-            flushPending();
-            await sleep(T_NEW_ROUND);
-            flushPending(); // 降臨中に届いた分も適用してからidleへ
-            setPhase("idle");
-          })();
+          playSpectatorLaunch(s);
           return;
         }
         if (inCutscene()) {
-          pendingState = s; // 自分のカットシーン後に反映
+          // 自分のカットシーンが終わってから、観客として見せる
+          pendingState = s;
           return;
         }
       }
@@ -301,6 +528,8 @@ export const useGameStore = create<GameState>((set, get) => {
     }, POLL_MS + jitter);
   };
 
+  const initialWins = Math.max(0, Number(LS.get("kk-wins") ?? 0) || 0);
+
   return {
     phase: "boot",
     phaseAt: 0,
@@ -308,9 +537,11 @@ export const useGameStore = create<GameState>((set, get) => {
     stabCount: 0,
     mask: emptyMask(),
     stabColors: new Uint8Array(HOLE_COUNT),
+    stabStyles: new Uint8Array(HOLE_COUNT),
     recent: [],
     prevWinner: null,
     connected: true,
+    remoteStabs: [],
     selectedHole: null,
     hoveredHole: null,
     cooldownUntil: 0,
@@ -325,8 +556,21 @@ export const useGameStore = create<GameState>((set, get) => {
       const c = Number(LS.get("kk-sword-color") ?? 0);
       return Number.isInteger(c) && c >= 0 && c < SWORD_COLORS.length ? c : 0;
     })(),
+    swordSkin: (() => {
+      const s = Number(LS.get("kk-sword-skin") ?? 0);
+      if (!Number.isInteger(s) || s < 0 || s >= SWORD_SKINS.length) return 0;
+      // 解放していないスキンが残っていたら既定へ戻す
+      return initialWins >= SWORD_SKINS[s].needWins ? s : 0;
+    })(),
     myStabs: [],
     myTotal: Math.max(0, Number(LS.get("kk-my-total") ?? 0) || 0),
+    myWins: initialWins,
+    newCharm: null,
+    newSkins: [],
+    earthClicks: Math.max(0, Number(LS.get("kk-earth-clicks") ?? 0) || 0),
+    earthBooms: Math.max(0, Number(LS.get("kk-earth-booms") ?? 0) || 0),
+    earthBoomAt: null,
+    speech: null,
 
     init: () => {
       if (initialized) return;
@@ -402,11 +646,17 @@ export const useGameStore = create<GameState>((set, get) => {
       const cur = get();
       if (cur.phase !== "confirming" || cur.selectedHole === null) return;
       const holeId = cur.selectedHole;
+      // この1本を数えたあとのチャーム数を持たせる(10本目の剣には
+      // 「その場で手に入れたチャーム」がもうぶら下がっている)
+      const charmNow = charmLevelOf(cur.myTotal + 1);
+      const styleNow = packStyle(cur.swordSkin, charmNow);
       const body = JSON.stringify({
         holeId,
         roundNo: cur.roundNo,
         fp: getFingerprint(),
         color: cur.swordColor,
+        skin: cur.swordSkin,
+        charm: charmNow,
       });
 
       // 演出とAPIを並走させる。回線ハングでsuspenseに閉じ込められないよう
@@ -450,40 +700,63 @@ export const useGameStore = create<GameState>((set, get) => {
         case "safe": {
           const until = Date.now() + COOLDOWN_SEC * 1000;
           LS.set("kk-cooldown", String(until));
-          // 自分の剣の色と「自分の刺し」を即時反映(次のポーリングを待たない)
+          // 自分の剣の色/スキンと「自分の刺し」を即時反映(次のポーリングを待たない)
           const colors = new Uint8Array(get().stabColors);
           colors[holeId] = cur.swordColor + 1;
+          const styles = new Uint8Array(get().stabStyles);
+          styles[holeId] = styleNow;
           const myStabs = [...get().myStabs, holeId];
           const myTotal = get().myTotal + 1;
           saveMyStabs(cur.roundNo, myStabs);
           LS.set("kk-my-total", String(myTotal));
+          // ちょうどチャームがたまった刺しか
+          const gotCharm =
+            charmLevelOf(myTotal) > charmLevelOf(myTotal - 1)
+              ? charmLevelOf(myTotal) - 1
+              : null;
           set({
             mask: base64ToMask(result.holesBase64),
             stabCount: result.stabCount,
             stabColors: colors,
+            stabStyles: styles,
             myStabs,
             myTotal,
             cooldownUntil: until,
             selectedHole: null,
+            newCharm: gotCharm,
           });
           emitGameEvent("safe");
           setPhase("safe");
+          if (gotCharm !== null) {
+            setTimeout(() => emitGameEvent("charm-get"), 900);
+          }
           await sleep(T_SAFE);
-          flushPending();
-          setPhase("idle");
+          if (!flushPendingOrSpectate()) setPhase("idle");
           break;
         }
         case "win": {
+          // とばした回数が増えると剣のスキンが解放される
+          const winsBefore = get().myWins;
+          const wins = winsBefore + 1;
+          const had = new Set(unlockedSkins(winsBefore));
+          const newSkins = unlockedSkins(wins).filter((i) => !had.has(i));
           if (result.claimToken !== DEMO_TOKEN) {
             // デモの当たりはリロード復元の対象にしない
             LS.set("kk-claim-token", result.claimToken);
             LS.set("kk-claim-round", String(result.roundNo));
+            myWonRounds.add(result.roundNo);
             // 当たりも自分の1回として数える(デモは数えない)
             const myTotal = get().myTotal + 1;
             LS.set("kk-my-total", String(myTotal));
-            set({ myTotal });
+            LS.set("kk-wins", String(wins));
+            const gotCharm =
+              charmLevelOf(myTotal) > charmLevelOf(myTotal - 1)
+                ? charmLevelOf(myTotal) - 1
+                : null;
+            set({ myTotal, myWins: wins, newCharm: gotCharm });
           }
           set({
+            newSkins,
             claimToken: result.claimToken,
             claimRound: result.roundNo,
             selectedHole: null,
@@ -509,8 +782,7 @@ export const useGameStore = create<GameState>((set, get) => {
           });
           get().showToast("いちあしちがいで もう刺さってた！");
           emitGameEvent("error");
-          flushPending();
-          setPhase("idle");
+          if (!flushPendingOrSpectate()) setPhase("idle");
           break;
         case "cooldown": {
           // サーバー判定のクールダウンをローカルにも反映(ピル表示と再打診防止)
@@ -521,8 +793,7 @@ export const useGameStore = create<GameState>((set, get) => {
             `つぎに刺せるまで あと${result.remainingSec}びょう`
           );
           emitGameEvent("error");
-          flushPending();
-          setPhase("idle");
+          if (!flushPendingOrSpectate()) setPhase("idle");
           break;
         }
         case "stale":
@@ -530,15 +801,15 @@ export const useGameStore = create<GameState>((set, get) => {
           get().showToast("あたらしい こすくまくんが きたよ！");
           emitGameEvent("error");
           await fetchState();
-          flushPending(); // suspense中の取得は退避されるので明示的に適用
-          setPhase("idle");
+          // suspense中の取得は退避されるので明示的に。見逃した発射は
+          // ここで観客カットシーンとして再生される
+          if (!flushPendingOrSpectate()) setPhase("idle");
           break;
         default:
           set({ selectedHole: null });
           get().showToast(result.message || "エラーがおきたよ");
           emitGameEvent("error");
-          flushPending();
-          setPhase("idle");
+          if (!flushPendingOrSpectate()) setPhase("idle");
       }
     },
 
@@ -561,6 +832,7 @@ export const useGameStore = create<GameState>((set, get) => {
         emitGameEvent("fanfare");
         emitGameEvent("trophy");
         setPhase("trophy");
+        announceSkins();
         get().showToast("デモモードだから きろくには のこらないよ");
         await sleep(T_TROPHY);
         emitGameEvent("new-round");
@@ -623,6 +895,7 @@ export const useGameStore = create<GameState>((set, get) => {
         emitGameEvent("fanfare");
         emitGameEvent("trophy");
         setPhase("trophy");
+        announceSkins();
         await sleep(T_TROPHY);
         emitGameEvent("new-round");
         setPhase("new-round");
@@ -633,8 +906,9 @@ export const useGameStore = create<GameState>((set, get) => {
           flushPending();
         }
         await sleep(T_NEW_ROUND);
-        flushPending(); // 降臨中に届いた分も適用してからidleへ
-        setPhase("idle");
+        // 降臨中に届いた分も適用してからidleへ(授与式のあいだに次の代が
+        // 決着していたら、その発射も見逃さずに見せる)
+        if (!flushPendingOrSpectate()) setPhase("idle");
       } catch {
         get().showToast("つうしんエラー。もういちどためしてね");
       }
@@ -659,5 +933,68 @@ export const useGameStore = create<GameState>((set, get) => {
       emitGameEvent("ui-tap");
       set({ swordColor: c });
     },
+
+    setSwordSkin: (s: number) => {
+      if (!Number.isInteger(s) || s < 0 || s >= SWORD_SKINS.length) return;
+      const cur = get();
+      if (cur.myWins < SWORD_SKINS[s].needWins) {
+        cur.showToast("こすくまくんを とばすと つかえるよ");
+        emitGameEvent("error");
+        return;
+      }
+      LS.set("kk-sword-skin", String(s));
+      emitGameEvent("ui-tap");
+      set({ swordSkin: s });
+    },
+
+    endRemoteStab: (holeId: number) => {
+      const cur = get();
+      if (!cur.remoteStabs.some((r) => r.holeId === holeId)) return;
+      set({ remoteStabs: cur.remoteStabs.filter((r) => r.holeId !== holeId) });
+    },
+
+    clearNewCharm: () => {
+      if (get().newCharm !== null) set({ newCharm: null });
+    },
+
+    tapEarth: () => {
+      const cur = get();
+      // 爆発中は反応しない(再生を待つ)
+      if (cur.earthBoomAt !== null) return;
+      const clicks = cur.earthClicks + 1;
+      if (clicks >= EARTH_BOOM_CLICKS) {
+        const booms = cur.earthBooms + 1;
+        LS.set("kk-earth-clicks", "0");
+        LS.set("kk-earth-booms", String(booms));
+        set({ earthClicks: 0, earthBooms: booms, earthBoomAt: Date.now() });
+        emitGameEvent("earth-boom");
+        setTimeout(() => {
+          if (get().earthBoomAt !== null) set({ earthBoomAt: null });
+        }, T_EARTH_BOOM);
+        return;
+      }
+      LS.set("kk-earth-clicks", String(clicks));
+      set({ earthClicks: clicks });
+      emitGameEvent("earth-tap");
+    },
+
+    say: (text: string, tone: SpeechTone = "normal", ms = T_SPEECH) => {
+      if (!text) return;
+      set({
+        speech: { id: Date.now(), text, tone, until: Date.now() + ms },
+      });
+    },
   };
 });
+
+/** チャームの定義(UI/3Dから index で引く) */
+export function charmAt(index: number) {
+  return CHARMS[Math.min(Math.max(index, 0), CHARMS.length - 1)];
+}
+
+// 開発時だけ window.__kk からストアを触れるようにする。
+// 「他の人が刺した瞬間」や「チャーム獲得」のように、ひとりでは再現しづらい
+// 状態を手で作って見た目を確認するため(本番ビルドには含まれない)。
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+  (window as unknown as { __kk: typeof useGameStore }).__kk = useGameStore;
+}

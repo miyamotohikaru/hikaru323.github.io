@@ -3,8 +3,9 @@
 
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { HOLE_COUNT, SWORD_COLORS } from "@/lib/config";
+import { CHARMS, HOLE_COUNT, SWORD_COLORS, SWORD_SKINS } from "@/lib/config";
 import { maskToBase64 } from "@/lib/bitmask";
+import { packStyle } from "@/lib/style";
 import type { StabRequest, StabResult } from "@/lib/types";
 import { getStore } from "@/server/store";
 
@@ -28,15 +29,15 @@ function parseBody(v: unknown): StabRequest | null {
     return null;
   }
   if (typeof fp !== "string" || fp.length === 0) return null;
-  // 剣の色は任意。不正値はエラーにせずデフォルト(未指定)扱い
-  const color =
-    typeof o.color === "number" &&
-    Number.isInteger(o.color) &&
-    o.color >= 0 &&
-    o.color < SWORD_COLORS.length
-      ? o.color
+  // 見た目(色・スキン・チャーム)は任意。不正値はエラーにせず既定へ丸める
+  const inRange = (v: unknown, max: number): number | undefined =>
+    typeof v === "number" && Number.isInteger(v) && v >= 0 && v < max
+      ? v
       : undefined;
-  return { holeId, roundNo, fp: fp.slice(0, 64), color };
+  const color = inRange(o.color, SWORD_COLORS.length);
+  const skin = inRange(o.skin, SWORD_SKINS.length);
+  const charm = inRange(o.charm, CHARMS.length + 1);
+  return { holeId, roundNo, fp: fp.slice(0, 64), color, skin, charm };
 }
 
 function json(body: StabResult, status = 200): NextResponse {
@@ -70,6 +71,11 @@ export async function POST(req: Request): Promise<NextResponse> {
       fp: body.fp,
       country,
       color: body.color ?? null,
+      // スキンとチャームは1バイトに詰めて保存する(src/lib/style.ts)
+      style:
+        body.skin || body.charm
+          ? packStyle(body.skin ?? 0, body.charm ?? 0)
+          : null,
     });
 
     switch (outcome.kind) {

@@ -94,6 +94,24 @@ export default function AudioDirector() {
         case "new-round":
           sfx.newRound();
           break;
+        case "remote-stab":
+          sfx.remoteStab();
+          break;
+        case "charm-get":
+          sfx.charmGet();
+          break;
+        case "skin-unlock":
+          sfx.skinUnlock();
+          break;
+        case "earth-tap":
+          // 進捗でピッチを上げるため、いま何回目かを渡す。
+          // store 側は set() のあとに emit するので、この値は更新済み。
+          // リロードをまたいでも localStorage 由来の正しい回数になる。
+          sfx.earthTap(useGameStore.getState().earthClicks);
+          break;
+        case "earth-boom":
+          sfx.earthBoom();
+          break;
         case "error":
           sfx.error();
           break;

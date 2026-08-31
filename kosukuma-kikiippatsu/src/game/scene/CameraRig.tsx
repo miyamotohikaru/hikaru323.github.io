@@ -2,7 +2,7 @@
 
 // フェーズ駆動のカメラ演出。title/idleはOrbitControlsでユーザー操作、
 // それ以外は controls を無効化して easing.damp3 でカメラを運ぶ。
-// "impact" イベントで減衰振動のカメラシェイク。
+// "impact" イベントと sharedRefs.requestShake() で減衰振動のカメラシェイク。
 
 import { useEffect, useRef, type ComponentRef } from "react";
 import * as THREE from "three";
@@ -12,7 +12,7 @@ import { damp3 } from "maath/easing";
 import { MOON_RADIUS } from "@/lib/config";
 import { useGameStore } from "@/game/store";
 import { onGameEvent } from "@/game/events";
-import { getHoleWorld, kosukumaWorldPos } from "./sharedRefs";
+import { cameraShake, getHoleWorld, kosukumaWorldPos } from "./sharedRefs";
 
 type ControlsImpl = ComponentRef<typeof OrbitControls>;
 
@@ -25,6 +25,24 @@ const TROPHY_POS = new THREE.Vector3(0, 4.5, 14);
 const TROPHY_TARGET = new THREE.Vector3(0, 3, 0);
 
 const SHAKE_DUR = 0.4;
+
+// ── 地球イースターエッグの爆発ショット ──────────────────
+// 1000回つついたごほうびが「画面のすみで小さく光る」だけにならないよう、
+// 爆発のあいだだけ地球へ寄る。Earth.tsx の position と同じ値。
+const EARTH_WORLD = new THREE.Vector3(-18, 8, -28);
+/** 寄ったときのカメラ〜地球の距離。半径2の地球が画面高の約30%になる */
+const BOOM_CAM_DIST = 16;
+const BOOM_IN = 0.32; // 寄りきるまで(秒)
+const BOOM_OUT_AT = 4.2; // ここから元の絵へ戻りはじめる(秒)
+const BOOM_OUT = 0.9; // 戻りにかける時間(秒)
+const _bdir = new THREE.Vector3();
+const _bpos = new THREE.Vector3();
+const _blook = new THREE.Vector3();
+/** 0..1 をなめらかに */
+const smooth01 = (x: number): number => {
+  const t = x < 0 ? 0 : x > 1 ? 1 : x;
+  return t * t * (3 - 2 * t);
+};
 
 // 3/4アングル計算用のスクラッチ
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
@@ -196,11 +214,44 @@ export default function CameraRig() {
       cam.lookAt(lookRef.current);
     }
 
+    // ── 地球の爆発中だけ、地球へ寄る(ごほうびを大きく見せる) ──
+    // OrbitControls の内部状態には触らないので、重みを0に戻せば
+    // ユーザーが回していた元の絵にそのまま戻る。
+    // ゲーム本編のカットシーン(刺す〜授与式)は邪魔しない。
+    if (s.earthBoomAt !== null && (orbit || phase === "confirming")) {
+      const bt = (Date.now() - s.earthBoomAt) / 1000;
+      const w = Math.min(
+        smooth01(bt / BOOM_IN),
+        1 - smooth01((bt - BOOM_OUT_AT) / BOOM_OUT)
+      );
+      if (w > 0.002) {
+        // いまの視線方向を保ったまま近づく(急に振り回して酔わせない)
+        _bdir.subVectors(cam.position, EARTH_WORLD);
+        if (_bdir.lengthSq() < 1) _bdir.set(0, 0.25, 1);
+        _bdir.normalize();
+        _bpos.copy(EARTH_WORLD).addScaledVector(_bdir, BOOM_CAM_DIST);
+        cam.position.lerp(_bpos, w);
+        _blook.copy(orbit && controls ? controls.target : lookRef.current);
+        _blook.lerp(EARTH_WORLD, w);
+        cam.lookAt(_blook);
+      }
+    }
+
     // カメラシェイク(減衰振動)。位置に足すだけなので操作中でも安全
+    let amp = 0;
     if (shakeRef.current > 0) {
       shakeRef.current = Math.max(0, shakeRef.current - delta);
       const k = shakeRef.current / SHAKE_DUR;
-      const amp = 0.16 * k * k;
+      amp = 0.16 * k * k;
+    }
+    // エフェクト側からの依頼(地球の爆発など)も消費する。強い方を採用して
+    // 足し合わせない = 同時に来ても酔わせない
+    const nowSec = performance.now() / 1000;
+    if (cameraShake.endsAt > nowSec) {
+      const k = (cameraShake.endsAt - nowSec) / cameraShake.dur;
+      amp = Math.max(amp, cameraShake.amp * k * k);
+    }
+    if (amp > 0) {
       const now = state.clock.elapsedTime;
       cam.position.x += Math.sin(now * 63) * amp;
       cam.position.y += Math.cos(now * 51) * amp * 0.7;

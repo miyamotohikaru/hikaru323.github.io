@@ -37,11 +37,46 @@ boot → title → idle ⇄ confirming → stabbing → suspense → safe → id
 |---|---|---|
 | 共有(済) | `src/lib/*`, `src/game/store.ts`, `src/game/events.ts`, `src/app/{layout,page,globals}` | 定数・型・状態機械・イベントバス |
 | A: バックエンド | `src/server/*`, `src/app/api/**/route.ts` | Neon Postgres + メモリfallback |
-| C: 3Dシーン | `src/game/scene/{GameCanvas,Moon,Holes,Swords,Kosukuma,Starfield,Earth,CameraRig}.tsx` | месяц・穴・剣・こすくま・カメラ |
-| D: エフェクト | `src/game/scene/effects/*` | 刺し/発射/降臨の粒子・フラッシュ |
-| E: UI | `src/ui/{TitleScreen,Hud,NameModal,Toast,HelpModal,CooldownPill,Feed}.tsx`, `src/ui/ui.css` | HUD・タイトル・モーダル |
+| C: 3Dシーン | `src/game/scene/{GameCanvas,Moon,Holes,Swords,Kosukuma,Starfield,Earth,CameraRig,SpeechAnchor}.tsx`, `src/game/scene/sword/*` | 月・穴・剣・こすくま・カメラ |
+| D: エフェクト | `src/game/scene/effects/*` | 刺し/発射/降臨/他人の刺し/地球爆発の粒子・フラッシュ |
+| E: UI | `src/ui/{TitleScreen,Hud,NameModal,Toast,HelpModal,CooldownPill,Feed,SwordRack,CharmShelf}.tsx`, `src/ui/ui.css` | HUD・タイトル・モーダル |
 | F: トロフィー | `src/lib/trophy.ts`, `src/game/trophy/*`, `src/app/trophies/page.tsx`, `src/ui/TrophyHall.tsx` | 手続き生成トロフィーとホール |
 | G: 音 | `src/game/audio/{sfx,ambient}.ts`, `src/game/audio/AudioDirector.tsx` | WebAudio合成のSFX/環境音 |
+| H: セリフ | `src/game/speech/{lines,SpeechDirector}.tsx`, `src/ui/{SpeechBubble.tsx,speech.css}` | こすくまくんの吹き出し |
+
+## 剣の見た目(2026-08-07 更新)
+
+黒ひげ危機一発の付属剣にならい、**刃も柄も同じ色の1色成型プラスチック**。
+1本の剣は「色 × スキン × チャーム」の3要素でできている。
+
+- **色** `SWORD_COLORS`(8色) — 誰でも選べる。`kk_stabs.color` に index を保存。
+- **スキン** `SWORD_SKINS`(プラスチック/ぎん/きん/クリスタル/にじいろ) —
+  こすくまくんを**とばした人だけ**が解放できる(`needWins`)。とばした回数は
+  端末の localStorage(`kk-wins`)が正。
+- **チャーム** `CHARMS`(12種) — 通算で10本刺すごとに増える、剣にぶら下げるかざり。
+  持っている数は `charmLevelOf(myTotal)`。
+
+スキンとチャームは**1バイトに詰めて**穴ごとに配る(`src/lib/style.ts`。
+bit0-2=skin / bit3-7=charm)。1000穴でも約1.4KBなので `/api/state` を太らせない。
+DBは `kk_stabs.style SMALLINT`(既存行は NULL のまま = 既定の見た目)。
+
+## 「他の人がいる」の見せかた(2026-08-07 追加)
+
+このゲームは全世界が同じ月をつつく。**他の人の気配**を2段階で見せる。
+
+1. **他の人が刺す瞬間** — `/api/state` のポーリングでマスクに増えたビットを
+   `store.remoteStabs` に積み、`RemoteStabs` が「剣が降ってきて刺さる」までを演じる。
+   演出中の穴は `Swords` 側では描かない(着弾したら `endRemoteStab()` で引き渡す)。
+   同時に届いたぶんは `REMOTE_STAGGER` ずつずらし、`REMOTE_MAX` 本までを演出する。
+2. **こすくまくんが飛ぶ瞬間** — 誰かが当てて `roundNo` が進んだら、月を見ている
+   全員が発射カットシーンを見る(`playSpectatorLaunch`)。自分が刺している最中で
+   見逃した場合も、自分の演出が終わってから再生する(`flushPendingOrSpectate`)。
+   当てた人がまだ名前を刻んでいないときは、発射の途中で一度だけ取り直す。
+
+## 隠し要素
+
+- 遠景の地球を `EARTH_BOOM_CLICKS`(=1000)回つつくと爆発する。回数は端末ごと
+  (localStorage `kk-earth-clicks`)。爆発後は `T_EARTH_BOOM` かけて再生する。
 
 ## 主要な契約
 

@@ -35,6 +35,11 @@ export interface StateResponse {
    * 0=色情報なし(デフォルト金) / 1..N = SWORD_COLORS のindex+1
    */
   stabColorsBase64: string;
+  /**
+   * 各穴の剣のスキンとチャーム。Uint8Array(HOLE_COUNT)をbase64化したもの。
+   * 詰め方は `src/lib/style.ts` (bit0-2=skin / bit3-7=charm)。0=情報なし。
+   */
+  stabStylesBase64: string;
   /** 新しい順・最大12件 */
   recent: StabEvent[];
   /** 直前のラウンドの勝者(roundNo-1)。初代ならnull */
@@ -50,6 +55,10 @@ export interface StabRequest {
   fp: string;
   /** 選んだ剣の色(SWORD_COLORSのindex)。省略時はデフォルト(金) */
   color?: number;
+  /** 選んだ剣のスキン(SWORD_SKINSのindex)。省略時は0=プラスチック */
+  skin?: number;
+  /** そのとき持っていたチャームの数(0..CHARMS.length)。省略時は0 */
+  charm?: number;
 }
 
 /** POST /api/stab のレスポンス(discriminated union) */

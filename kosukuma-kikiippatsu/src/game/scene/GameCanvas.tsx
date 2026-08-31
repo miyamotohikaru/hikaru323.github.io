@@ -12,6 +12,7 @@ import Moon from "./Moon";
 import Holes from "./Holes";
 import Swords from "./Swords";
 import Kosukuma from "./Kosukuma";
+import SpeechAnchor from "./SpeechAnchor";
 import Starfield from "./Starfield";
 import Earth from "./Earth";
 import CameraRig from "./CameraRig";
@@ -57,6 +58,8 @@ export default function GameCanvas() {
         <Holes />
         <Swords />
         <Kosukuma />
+        {/* Kosukuma のあとに置く: 更新ずみのワールド座標をその場で投影する */}
+        <SpeechAnchor />
         <EffectsRoot />
         <TrophyCeremony />
         <ReadyNotifier />

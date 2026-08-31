@@ -21,6 +21,8 @@ export interface SnapshotData {
   mask: Uint8Array;
   /** 各穴の剣の色(0=色なし/デフォルト, 1..N=SWORD_COLORSのindex+1) */
   stabColors: Uint8Array;
+  /** 各穴の剣のスキン+チャーム(詰め方は src/lib/style.ts)。0=情報なし */
+  stabStyles: Uint8Array;
   /** 現ラウンドの新しい順・最大12件 */
   recent: StabEvent[];
   /** 直前ラウンド(roundNo-1)の勝者。初代なら null */
@@ -36,6 +38,8 @@ export interface StabInput {
   country: string | null;
   /** 剣の色(SWORD_COLORSのindex)。未指定は null(デフォルト表示) */
   color: number | null;
+  /** スキン+チャームを詰めた1バイト(src/lib/style.ts)。未指定は null */
+  style: number | null;
 }
 
 /** stab の結果。ルートが StabResult(HTTP形)へ変換する */
@@ -156,11 +160,13 @@ class PostgresStore implements IGameStore {
         fp TEXT,
         country TEXT,
         color SMALLINT,
+        style SMALLINT,
         created_at TIMESTAMPTZ DEFAULT now(),
         PRIMARY KEY (round_no, hole_id)
       )`;
-    // 既存テーブルへの後付けマイグレーション(既存の刺しは color=NULL のまま残る)
+    // 既存テーブルへの後付けマイグレーション(既存の刺しは NULL のまま残る)
     await this.sql`ALTER TABLE kk_stabs ADD COLUMN IF NOT EXISTS color SMALLINT`;
+    await this.sql`ALTER TABLE kk_stabs ADD COLUMN IF NOT EXISTS style SMALLINT`;
     // レート制限(直近の刺し検索)用インデックス
     await this.sql`CREATE INDEX IF NOT EXISTS kk_stabs_ip_idx ON kk_stabs (ip_hash, created_at)`;
     await this.sql`CREATE INDEX IF NOT EXISTS kk_stabs_fp_idx ON kk_stabs (fp, created_at)`;
@@ -198,23 +204,27 @@ class PostgresStore implements IGameStore {
     return created;
   }
 
-  /** そのラウンドの刺さり状態(ビットマスク+色) */
+  /** そのラウンドの刺さり状態(ビットマスク+色+スキン/チャーム) */
   private async stabsStateOf(
     roundNo: number,
-  ): Promise<{ mask: Uint8Array; colors: Uint8Array }> {
+  ): Promise<{ mask: Uint8Array; colors: Uint8Array; styles: Uint8Array }> {
     const rows = (await this.sql`
-      SELECT hole_id, color FROM kk_stabs WHERE round_no = ${roundNo}
-    `) as { hole_id: number; color: number | null }[];
+      SELECT hole_id, color, style FROM kk_stabs WHERE round_no = ${roundNo}
+    `) as { hole_id: number; color: number | null; style: number | null }[];
     const mask = emptyMask();
     const colors = new Uint8Array(HOLE_COUNT);
+    const styles = new Uint8Array(HOLE_COUNT);
     for (const r of rows) {
       if (r.hole_id < 0 || r.hole_id >= HOLE_COUNT) continue;
       setBit(mask, r.hole_id);
       if (r.color !== null && r.color >= 0 && r.color < SWORD_COLORS.length) {
         colors[r.hole_id] = r.color + 1; // 0は「色なし」に予約
       }
+      if (r.style !== null && r.style > 0 && r.style <= 255) {
+        styles[r.hole_id] = r.style;
+      }
     }
-    return { mask, colors };
+    return { mask, colors, styles };
   }
 
   private async maskOf(roundNo: number): Promise<Uint8Array> {
@@ -271,6 +281,7 @@ class PostgresStore implements IGameStore {
       stabCount: active.stabCount,
       mask: stabs.mask,
       stabColors: stabs.colors,
+      stabStyles: stabs.styles,
       recent,
       prevWinner,
     };
@@ -306,8 +317,8 @@ class PostgresStore implements IGameStore {
     // PK(round_no, hole_id) 衝突なら ins が0行 → UPDATE も0行 = 先客あり
     const inserted = (await this.sql.query(
       `WITH ins AS (
-         INSERT INTO kk_stabs (round_no, hole_id, ip_hash, fp, country, color)
-         VALUES ($1, $2, $3, $4, $5, $6)
+         INSERT INTO kk_stabs (round_no, hole_id, ip_hash, fp, country, color, style)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (round_no, hole_id) DO NOTHING
          RETURNING hole_id
        )
@@ -321,6 +332,7 @@ class PostgresStore implements IGameStore {
         input.fp,
         input.country,
         input.color,
+        input.style,
       ],
     )) as { stab_count: number }[];
 
@@ -445,6 +457,7 @@ interface MemStab {
   holeId: number;
   country: string | null;
   color: number | null;
+  style: number | null;
   at: number; // epoch ms
 }
 
@@ -528,6 +541,17 @@ class MemoryStore implements IGameStore {
     return colors;
   }
 
+  private stylesOf(roundNo: number): Uint8Array {
+    const styles = new Uint8Array(HOLE_COUNT);
+    for (const s of this.stabsOf(roundNo).values()) {
+      if (s.holeId < 0 || s.holeId >= HOLE_COUNT) continue;
+      if (s.style !== null && s.style > 0 && s.style <= 255) {
+        styles[s.holeId] = s.style;
+      }
+    }
+    return styles;
+  }
+
   async getSnapshot(): Promise<SnapshotData> {
     const active = this.activeRound();
     const recent: StabEvent[] = [...this.stabsOf(active.roundNo).values()]
@@ -549,6 +573,7 @@ class MemoryStore implements IGameStore {
       stabCount: active.stabCount,
       mask: this.maskOf(active.roundNo),
       stabColors: this.colorsOf(active.roundNo),
+      stabStyles: this.stylesOf(active.roundNo),
       recent,
       prevWinner: prev ? memWinnerInfo(prev) : null,
     };
@@ -581,6 +606,7 @@ class MemoryStore implements IGameStore {
       holeId: input.holeId,
       country: input.country,
       color: input.color,
+      style: input.style,
       at: now,
     });
     active.stabCount += 1;
